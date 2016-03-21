@@ -1,0 +1,180 @@
+\pset null _null_
+SET client_min_messages = warning;
+CREATE TABLE test_class_r (
+  a serial primary key, 
+  b text unique not null default e'Hello, world!\n', 
+  c timestamp without time zone check(c > '2001-01-01'), 
+  d timestamp with time zone,
+  v tsvector
+);
+COMMENT ON TABLE test_class_r IS 'Comment1';
+SELECT pg_ddl_script('test_class_r'::regclass);
+                                     pg_ddl_script                                     
+---------------------------------------------------------------------------------------
+ --                                                                                   +
+ -- Name: test_class_r; Type: TABLE; Schema: public; Owner: root                      +
+ --                                                                                   +
+                                                                                      +
+ CREATE TABLE test_class_r (                                                          +
+     a integer NOT NULL,                                                              +
+     b text NOT NULL,                                                                 +
+     c timestamp without time zone,                                                   +
+     d timestamp with time zone,                                                      +
+     v tsvector                                                                       +
+ );                                                                                   +
+ COMMENT ON TABLE  test_class_r IS "Comment1";                                        +
+ ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);+
+ ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!                          +
+ '::text;                                                                             +
+                                                                                      +
+ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key                           +
+   UNIQUE (b);                                                                        +
+ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey                            +
+   PRIMARY KEY (a);                                                                   +
+ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check                         +
+   CHECK ((c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone));             +
+                                                                                      +
+                                                                                      +
+ ALTER TABLE test_class_r OWNER TO root;                                              +
+ REVOKE ALL ON test_class_r FROM PUBLIC;                                              +
+ GRANT INSERT ON test_class_r TO root WITH GRANT OPTION;                              +
+ GRANT SELECT ON test_class_r TO root WITH GRANT OPTION;                              +
+ GRANT UPDATE ON test_class_r TO root WITH GRANT OPTION;                              +
+ GRANT DELETE ON test_class_r TO root WITH GRANT OPTION;                              +
+ GRANT TRUNCATE ON test_class_r TO root WITH GRANT OPTION;                            +
+ GRANT REFERENCES ON test_class_r TO root WITH GRANT OPTION;                          +
+ GRANT TRIGGER ON test_class_r TO root WITH GRANT OPTION;                             +
+ 
+(1 row)
+
+CREATE TABLE test_class_r2 (
+  i serial, 
+  a int references test_class_r(a)
+);
+SELECT pg_ddl_script('test_class_r2'::regclass);
+                                      pg_ddl_script                                      
+-----------------------------------------------------------------------------------------
+ --                                                                                     +
+ -- Name: test_class_r2; Type: TABLE; Schema: public; Owner: root                       +
+ --                                                                                     +
+                                                                                        +
+ CREATE TABLE test_class_r2 (                                                           +
+     i integer NOT NULL,                                                                +
+     a integer                                                                          +
+ );                                                                                     +
+ COMMENT ON TABLE  test_class_r2 IS NULL;                                               +
+ ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);+
+                                                                                        +
+ ALTER TABLE test_class_r2 ADD CONSTRAINT test_class_r2_a_fkey                          +
+   FOREIGN KEY (a) REFERENCES test_class_r(a);                                          +
+                                                                                        +
+                                                                                        +
+ ALTER TABLE test_class_r2 OWNER TO root;                                               +
+ REVOKE ALL ON test_class_r2 FROM PUBLIC;                                               +
+ GRANT INSERT ON test_class_r2 TO root WITH GRANT OPTION;                               +
+ GRANT SELECT ON test_class_r2 TO root WITH GRANT OPTION;                               +
+ GRANT UPDATE ON test_class_r2 TO root WITH GRANT OPTION;                               +
+ GRANT DELETE ON test_class_r2 TO root WITH GRANT OPTION;                               +
+ GRANT TRUNCATE ON test_class_r2 TO root WITH GRANT OPTION;                             +
+ GRANT REFERENCES ON test_class_r2 TO root WITH GRANT OPTION;                           +
+ GRANT TRIGGER ON test_class_r2 TO root WITH GRANT OPTION;                              +
+ 
+(1 row)
+
+CREATE VIEW test_class_v AS
+SELECT * FROM test_class_r 
+  WITH CHECK OPTION;
+SELECT pg_ddl_script('test_class_v'::regclass);
+                         pg_ddl_script                          
+----------------------------------------------------------------
+ --                                                            +
+ -- Name: test_class_v; Type: VIEW; Schema: public; Owner: root+
+ --                                                            +
+                                                               +
+ CREATE OR REPLACE VIEW test_class_v AS                        +
+  SELECT test_class_r.a,                                       +
+     test_class_r.b,                                           +
+     test_class_r.c,                                           +
+     test_class_r.d,                                           +
+     test_class_r.v                                            +
+    FROM test_class_r;                                         +
+ COMMENT ON VIEW  test_class_v IS NULL;                        +
+                                                               +
+                                                               +
+ ALTER TABLE test_class_v OWNER TO root;                       +
+ REVOKE ALL ON test_class_v FROM PUBLIC;                       +
+ GRANT INSERT ON test_class_v TO root WITH GRANT OPTION;       +
+ GRANT SELECT ON test_class_v TO root WITH GRANT OPTION;       +
+ GRANT UPDATE ON test_class_v TO root WITH GRANT OPTION;       +
+ GRANT DELETE ON test_class_v TO root WITH GRANT OPTION;       +
+ GRANT TRUNCATE ON test_class_v TO root WITH GRANT OPTION;     +
+ GRANT REFERENCES ON test_class_v TO root WITH GRANT OPTION;   +
+ GRANT TRIGGER ON test_class_v TO root WITH GRANT OPTION;      +
+ 
+(1 row)
+
+CREATE MATERIALIZED VIEW test_class_m AS
+SELECT * FROM test_class_r;
+SELECT pg_ddl_script('test_class_m'::regclass);
+                                pg_ddl_script                                
+-----------------------------------------------------------------------------
+ --                                                                         +
+ -- Name: test_class_m; Type: MATERIALIZED VIEW; Schema: public; Owner: root+
+ --                                                                         +
+                                                                            +
+ CREATE MATERIALIZED VIEW test_class_m AS                                   +
+  SELECT test_class_r.a,                                                    +
+     test_class_r.b,                                                        +
+     test_class_r.c,                                                        +
+     test_class_r.d,                                                        +
+     test_class_r.v                                                         +
+    FROM test_class_r;                                                      +
+ COMMENT ON MATERIALIZED VIEW  test_class_m IS NULL;                        +
+                                                                            +
+                                                                            +
+ ALTER TABLE test_class_m OWNER TO root;                                    +
+ REVOKE ALL ON test_class_m FROM PUBLIC;                                    +
+ 
+(1 row)
+
+SELECT pg_ddl_script('pg_ddl_oid_info'::regproc);
+                                 pg_ddl_script                                  
+--------------------------------------------------------------------------------
+ --                                                                            +
+ -- Name: pg_ddl_oid_info(oid); Type: FUNCTION; Schema: pg_catalog; Owner: root+
+ --                                                                            +
+                                                                               +
+ CREATE OR REPLACE FUNCTION pg_ddl_oid_info(oid)                               +
+   RETURNS record                                                              +
+   VOLATILE                                                                    +
+   LANGUAGE 'sql'                                                              +
+   SECURITY INVOKER                                                            +
+   AS $ddl$                                                                    +
+   SELECT c.relname AS name,                                                   +
+          n.nspname AS namespace,                                              +
+          coalesce(tt.column2,c.relkind::text) AS kind                         +
+     FROM pg_class c JOIN pg_namespace n ON (n.oid=c.relnamespace)             +
+     left join (                                                               +
+        values ('r','TABLE'),                                                  +
+               ('v','VIEW'),                                                   +
+               ('i','INDEX'),                                                  +
+               ('S','SEQUENCE'),                                               +
+               ('s','SPECIAL'),                                                +
+               ('m','MATERIALIZED VIEW')                                       +
+     ) as tt on tt.column1 = c.relkind                                         +
+    WHERE c.oid = $1                                                           +
+ $ddl$;                                                                        +
+                                                                               +
+ ALTER FUNCTION pg_ddl_oid_info(oid) OWNER TO root;                            +
+ REVOKE ALL ON FUNCTION pg_ddl_oid_info(oid) FROM PUBLIC;                      +
+                                                                               +
+ 
+(1 row)
+
+/*
+CREATE DOMAIN test_type_d text check(value is not null);
+SELECT pg_ddl_script('test_type_d'::regtype);
+
+CREATE TYPE test_type_c AS (i integer, t text, d test_type_d);
+SELECT pg_ddl_script('test_type_c'::regtype);
+*/
