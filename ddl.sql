@@ -492,20 +492,16 @@ $function$;
 
 CREATE FUNCTION pg_ddl_grants_on_class(regclass) 
  RETURNS text
- LANGUAGE plpgsql
+ LANGUAGE sql
  AS $_$
-DECLARE 
- ddl text; 
- obj record;
-
- sql_identifier text; 
-BEGIN 
- obj := pg_ddl_oid_info($1);
- sql_identifier := $1::text;
- 
- SELECT INTO ddl  
-   string_agg ('GRANT '||privilege_type|| 
-                ' ON '||sql_identifier||' TO '|| 
+ with obj as (
+   select * from pg_ddl_oid_info($1)
+ )
+ select
+   'REVOKE ALL ON '||text($1)||' FROM PUBLIC;'||E'\n'||
+   coalesce(
+    string_agg ('GRANT '||privilege_type|| 
+                ' ON '||text($1)||' TO '|| 
                 CASE grantee  
                  WHEN 'PUBLIC' THEN 'PUBLIC' 
                  ELSE quote_ident(grantee) 
@@ -514,13 +510,12 @@ BEGIN
                  WHEN 'YES' THEN ' WITH GRANT OPTION' 
                  ELSE '' 
                 END || 
-                E';\n', '') 
- FROM  information_schema.table_privileges g 
+                E';\n', ''),
+    '')
+ FROM information_schema.table_privileges g 
+ join obj on (true)
  WHERE table_schema=obj.namespace 
-   AND table_name=obj.name; 
- 
- RETURN 'REVOKE ALL ON '||text($1)||' FROM PUBLIC;'||E'\n'||coalesce(ddl,''); 
-END 
+   AND table_name=obj.name
 $_$;
 
 ---------------------------------------------------
