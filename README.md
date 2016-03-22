@@ -15,6 +15,12 @@ Rationale
 5. you have to write all this hairy stuff in your software
 6. problems with versions
 
+This tools uses information schema and standard SQL as much as possible, but for any actual use decoding of
+PostgreSQL system catalogs is required. Querying pg_catalog can turn out to be quite complicated for a somewhat casual SQL user.
+Some other SQL databases support commands like SHOW CREATE TABLE or provide SQL callable functions for the purpose. 
+
+
+
 pgdump
 ------
 

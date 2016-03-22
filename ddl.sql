@@ -135,6 +135,8 @@ AS $function$
   WHERE nc.oid = c.connamespace AND nr.oid = r.relnamespace AND c.conrelid = r.oid;
 $function$;
 
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION pg_ddl_get_rules(
   OUT namespace text, OUT class_name text, OUT rule_name text, OUT rule_event text, OUT is_instead boolean, 
   OUT rule_definition text, OUT regclass regclass)
@@ -272,18 +274,13 @@ $function$;
 
 CREATE FUNCTION pg_ddl_create_table(regclass)
  RETURNS text
- LANGUAGE plpgsql
+ LANGUAGE sql
 AS $function$
-DECLARE
- object ALIAS FOR $1;
- ddl TEXT;
-
-BEGIN
- SELECT INTO ddl
+ SELECT 
 'CREATE TABLE '||(oid::regclass::text)||E' (\n'||
   coalesce(''||(
    SELECT coalesce(string_agg('    '||definition,E',\n'),'')
-     FROM pg_ddl_get_columns(object)
+     FROM pg_ddl_get_columns($1)
     WHERE regclass = $1 AND is_local
   )||E'\n','')||
   ')'||
@@ -296,25 +293,17 @@ BEGIN
   ELSE ''
  END 
  FROM pg_class c
- WHERE oid = object
- AND relkind='r';
-
- RETURN ddl;
-END
+ WHERE oid = $1
+ AND relkind='r'
 $function$;
 
 ---------------------------------------------------
 
 CREATE FUNCTION pg_ddl_create_view(regclass)
  RETURNS text
- LANGUAGE plpgsql
+ LANGUAGE sql
 AS $function$
-DECLARE
- object ALIAS FOR $1;
- ddl TEXT;
-
-BEGIN
- SELECT INTO ddl
+ SELECT 
  'CREATE '||
   case relkind 
   when 'v' THEN 'OR REPLACE VIEW ' 
@@ -322,26 +311,17 @@ BEGIN
   end || (oid::regclass::text) || E' AS\n'||
   pg_catalog.pg_get_viewdef(oid,true)||E'\n'
  FROM pg_class t
- WHERE oid = object
- AND relkind = 'v' OR relkind = 'm';
-
- RETURN ddl;
-END
+ WHERE oid = $1
+ AND relkind = 'v' OR relkind = 'm'
 $function$;
 
 ---------------------------------------------------
 
 CREATE FUNCTION pg_ddl_create_class(regclass)
  RETURNS text
- LANGUAGE plpgsql
+ LANGUAGE sql
 AS $function$
-DECLARE 
- object ALIAS FOR $1; 
- ddl TEXT; 
- 
-BEGIN 
- SELECT INTO ddl 
-
+ SELECT 
 '--
 -- Name: '||coalesce(c.relname,'')||'; Type: '||coalesce(tt.column2,c.relkind)||'; Schema: '||n.nspname||'; Owner: '||coalesce(pg_get_userbyid(c.relowner),'')||'
 --
@@ -349,8 +329,8 @@ BEGIN
 ' ||
 
  CASE 
-  WHEN relkind in ('v','m') THEN pg_ddl_create_view(object) 
-  ELSE pg_ddl_create_table(object) || E';\n' 
+  WHEN relkind in ('v','m') THEN pg_ddl_create_view($1) 
+  ELSE pg_ddl_create_table($1) || E';\n' 
  END ||
   'COMMENT ON '||coalesce(tt.column2,c.relkind) || '  '  || (c.oid::regclass::text) ||
   ' IS ' || coalesce(quote_ident(obj_description(c.oid)),'NULL') || E';\n'  || 
@@ -358,7 +338,7 @@ BEGIN
            'COMMENT ON COLUMN ' || (c.oid::regclass::text) || '.' || quote_ident(name) ||
            ' IS ' || coalesce(quote_literal(comment),'NULL') || E';\n', ''
          ) 
-    from pg_ddl_get_columns(object) 
+    from pg_ddl_get_columns($1) 
    where regclass = $1 
      and comment IS NOT NULL 
   ) || E'\n',
@@ -373,152 +353,103 @@ BEGIN
               ('s','SPECIAL'),
               ('m','MATERIALIZED VIEW')
     ) as tt on tt.column1 = c.relkind
-  where c.oid = object; 
-
- return ddl; 
-END 
+  where c.oid = $1
 $function$;
 
 ---------------------------------------------------
 
 CREATE FUNCTION pg_ddl_alter_table_defaults(regclass)
  RETURNS text
- LANGUAGE plpgsql
-AS $function$DECLARE 
- object ALIAS FOR $1; 
- ddl text; 
- 
-BEGIN 
- SELECT INTO ddl 
-  string_agg( 
-   'ALTER TABLE '||text(regclass::regclass)|| 
-  ' ALTER '||quote_ident(name)|| 
-  ' SET DEFAULT '||"default"||E';\n',
-  ''
- ) 
- FROM pg_ddl_get_columns(object)
- WHERE regclass = object 
- AND "default" is not null; 
-
- return coalesce(ddl||E'\n','');
-END 
+ LANGUAGE sql
+AS $function$
+  select 
+    coalesce(
+      string_agg( 
+        'ALTER TABLE '||text(regclass::regclass)|| 
+          ' ALTER '||quote_ident(name)|| 
+          ' SET DEFAULT '||"default", 
+        E';\n') || E';\n\n', 
+    '')
+   from pg_ddl_get_columns($1)
+  where regclass = $1 and "default" is not null
 $function$;
 
 ---------------------------------------------------
 
 CREATE FUNCTION pg_ddl_create_constraints(regclass)
  RETURNS text
- LANGUAGE plpgsql
+ LANGUAGE sql
 AS $function$
-DECLARE
- object alias for $1;
- definition RECORD;
- definitions TEXT;
- sql_identifier TEXT;
-BEGIN  
- definitions := '';
- FOR definition IN 
- SELECT
- 'ALTER TABLE ' || text(regclass(regclass)) ||  ' ADD CONSTRAINT ' || quote_ident(constraint_name) || 
- E'\n  ' || constraint_definition || E';\n'
-  AS sql
- FROM pg_ddl_get_constraints()
- WHERE regclass=$1
- ORDER BY constraint_type DESC, sysid
- LOOP
-  definitions := definitions || definition.sql;
- END LOOP;
-
- RETURN coalesce(definitions || E'\n','');
-END;
+ with cs as (
+  SELECT
+   'ALTER TABLE ' || text(regclass(regclass)) ||  
+   ' ADD CONSTRAINT ' || quote_ident(constraint_name) || 
+   E'\n  ' || constraint_definition as sql
+    from pg_ddl_get_constraints()
+   where regclass=$1
+   order by constraint_type desc, sysid
+ )
+ select coalesce(string_agg(sql,E';\n') || E';\n\n','')
+   from cs
 $function$;
 
 ---------------------------------------------------
 
 CREATE FUNCTION pg_ddl_create_rules(regclass)
  RETURNS text
- LANGUAGE plpgsql
-AS $function$DECLARE
- class ALIAS FOR $1;
- ddl text;
-BEGIN
-
- SELECT INTO ddl 
-  string_agg(rule_definition||E'\n','')
- FROM pg_ddl_get_rules()
- WHERE regclass = class
- AND rule_definition IS NOT NULL;
-
- RETURN coalesce(ddl||E'\n','');
-
-END
+ LANGUAGE sql
+AS $function$
+  select 
+    coalesce(
+      string_agg(rule_definition,E'\n')||E'\n\n',
+      '')
+    from pg_ddl_get_rules()
+   where regclass = $1
+     and rule_definition is not null
 $function$;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_triggers(object regclass)
+CREATE FUNCTION pg_ddl_create_triggers(regclass)
  RETURNS text
- LANGUAGE plpgsql
+ LANGUAGE sql
 AS $function$
-DECLARE 
- definition RECORD; 
- definitions TEXT; 
- sql_identifier TEXT; 
-BEGIN 
- sql_identifier := object::text; 
- definitions := '';
- FOR definition IN  
- SELECT 
-  'CREATE TRIGGER '||quote_ident(trigger_name)||' '|| 
-  action_order||' '||event_manipulation|| 
-  ' ON '|| sql_identifier ||' 
-  FOR EACH '|| action_orientation ||  
-  ' EXECUTE PROCEDURE '||action_statement||E';\n' AS sql 
- FROM pg_ddl_get_triggers()
- WHERE regclass=object 
- AND is_constraint IS NULL 
- LOOP 
-   definitions := definitions || definition.sql; 
- END LOOP; 
- 
- RETURN coalesce(definitions||E'\n',''); 
-END
+ with tg as (
+  select 
+   'CREATE TRIGGER '||quote_ident(trigger_name)||
+   ' '||action_order||' '||event_manipulation|| 
+   ' ON '|| text($1) ||E'\n   FOR EACH '|| action_orientation ||  
+   ' EXECUTE PROCEDURE '||action_statement AS sql 
+ from pg_ddl_get_triggers() where regclass = $1 and is_constraint is null
+ order by trigger_name 
+ -- per SQL triggers get calles in order created vs name as in postgresql
+ )
+ select coalesce(string_agg(sql,E';\n')||E';\n','')
+   from tg
 $function$;
 
 ---------------------------------------------------
 
 CREATE FUNCTION pg_ddl_create_indexes(regclass)
  RETURNS text
- LANGUAGE plpgsql
-AS $function$DECLARE
- object ALIAS FOR $1;
- ddl TEXT;
-
-BEGIN
- SELECT INTO ddl
-  string_agg(indexdef||E';\n','')
+ LANGUAGE sql
+AS $function$
+ SELECT coalesce( string_agg(indexdef||E';\n','') || E'\n' , '')
  FROM pg_ddl_get_indexes()
- WHERE sysid = object
+ WHERE sysid = $1
  AND constraint_name is null
- ;
- 
- RETURN coalesce(ddl||E'\n','');
-END
 $function$;
+
+---------------------------------------------------
 
 CREATE FUNCTION pg_ddl_alter_owner(regclass)
  RETURNS text
- LANGUAGE plpgsql
-AS $function$DECLARE 
- ddl text; 
- 
-BEGIN 
- SELECT INTO ddl string_agg('ALTER TABLE '||text($1)||' OWNER TO '||quote_ident(pg_get_userbyid(c.relowner))||E';\n', '') 
- FROM pg_class c
- WHERE oid = $1;
-
- return coalesce(ddl,'');
-END 
+ LANGUAGE sql
+AS $function$
+ select 
+   'ALTER TABLE '||text($1)||' OWNER TO '||quote_ident(pg_get_userbyid(c.relowner))||E';\n'
+   from pg_class c
+  where oid = $1
 $function$;
 
 ---------------------------------------------------

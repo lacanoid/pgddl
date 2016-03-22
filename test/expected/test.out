@@ -34,7 +34,6 @@ SELECT pg_ddl_script('test_class_r'::regclass);
  ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check                         +
    CHECK ((c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone));             +
                                                                                       +
-                                                                                      +
  ALTER TABLE test_class_r OWNER TO root;                                              +
  REVOKE ALL ON test_class_r FROM PUBLIC;                                              +
  GRANT INSERT ON test_class_r TO root WITH GRANT OPTION;                              +
@@ -68,7 +67,6 @@ SELECT pg_ddl_script('test_class_r2'::regclass);
  ALTER TABLE test_class_r2 ADD CONSTRAINT test_class_r2_a_fkey                          +
    FOREIGN KEY (a) REFERENCES test_class_r(a);                                          +
                                                                                         +
-                                                                                        +
  ALTER TABLE test_class_r2 OWNER TO root;                                               +
  REVOKE ALL ON test_class_r2 FROM PUBLIC;                                               +
  GRANT INSERT ON test_class_r2 TO root WITH GRANT OPTION;                               +
@@ -99,8 +97,6 @@ SELECT pg_ddl_script('test_class_v'::regclass);
      test_class_r.v                                            +
     FROM test_class_r;                                         +
  COMMENT ON VIEW  test_class_v IS NULL;                        +
-                                                               +
-                                                               +
  ALTER TABLE test_class_v OWNER TO root;                       +
  REVOKE ALL ON test_class_v FROM PUBLIC;                       +
  GRANT INSERT ON test_class_v TO root WITH GRANT OPTION;       +
@@ -130,8 +126,6 @@ SELECT pg_ddl_script('test_class_m'::regclass);
      test_class_r.v                                                         +
     FROM test_class_r;                                                      +
  COMMENT ON MATERIALIZED VIEW  test_class_m IS NULL;                        +
-                                                                            +
-                                                                            +
  ALTER TABLE test_class_m OWNER TO root;                                    +
  REVOKE ALL ON test_class_m FROM PUBLIC;                                    +
  
