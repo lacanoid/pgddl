@@ -28,6 +28,7 @@ CREATE EXTENSION ddl;
  function pg_ddl_get_triggers()
  function pg_ddl_grants_on_class(regclass)
  function pg_ddl_oid_info(oid)
- function pg_ddl_script(oid)
-(19 rows)
+ function pg_ddl_script(regclass)
+ function pg_ddl_script(regprocedure)
+(20 rows)
 

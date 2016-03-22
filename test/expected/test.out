@@ -131,7 +131,7 @@ SELECT pg_ddl_script('test_class_m'::regclass);
  
 (1 row)
 
-SELECT pg_ddl_script('pg_ddl_oid_info'::regproc);
+SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
                                  pg_ddl_script                                  
 --------------------------------------------------------------------------------
  --                                                                            +

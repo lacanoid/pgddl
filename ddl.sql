@@ -519,41 +519,31 @@ CREATE FUNCTION pg_ddl_grants_on_class(regclass)
 $_$;
 
 ---------------------------------------------------
---	Main script generating function
+--	Main script generating functions
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_script(my_class oid)
+CREATE FUNCTION pg_ddl_script(regclass)
  RETURNS text
- LANGUAGE plpgsql
+ LANGUAGE sql
 AS $function$
-declare 
- script text; 
- res text; 
- oid1 oid;
-begin 
- select oid from pg_class where oid=my_class into oid1;
- if found then
-   select into script 
-     pg_ddl_create_class(my_class)|| 
-     pg_ddl_alter_table_defaults(my_class)|| 
-     pg_ddl_create_constraints(my_class)|| 
-     pg_ddl_create_rules(my_class) || 
-     pg_ddl_create_triggers(my_class) ||
-     pg_ddl_create_indexes(my_class) ||
-     pg_ddl_alter_owner(my_class) ||
-     pg_ddl_grants_on_class(my_class);
-   return script;
- end if;
+   select 
+     pg_ddl_create_class($1)|| 
+     pg_ddl_alter_table_defaults($1)|| 
+     pg_ddl_create_constraints($1)|| 
+     pg_ddl_create_rules($1) || 
+     pg_ddl_create_triggers($1) ||
+     pg_ddl_create_indexes($1) ||
+     pg_ddl_alter_owner($1) ||
+     pg_ddl_grants_on_class($1)
+$function$;
 
- select oid from pg_proc where oid=my_class into oid1;
- if found then
-   select pg_ddl_create_function(my_class)
-     into script;
-   return script;
- end if;
+---------------------------------------------------
 
- raise exception 'UNSUPPORTED OBJECT %',my_class;   
-end 
+CREATE FUNCTION pg_ddl_script(regprocedure)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+   select pg_ddl_create_function($1)
 $function$;
 
 

@@ -29,7 +29,7 @@ SELECT * FROM test_class_r;
 
 SELECT pg_ddl_script('test_class_m'::regclass);
 
-SELECT pg_ddl_script('pg_ddl_oid_info'::regproc);
+SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
 
 /*
 CREATE DOMAIN test_type_d text check(value is not null);
