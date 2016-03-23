@@ -1,7 +1,7 @@
 PG_CONFIG = pg_config
 PKG_CONFIG = pkg-config
 
-extension_version = 0
+extension_version = 0.1
 
 EXTENSION = ddl
 DATA_built = ddl--$(extension_version).sql

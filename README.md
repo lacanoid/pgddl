@@ -1,69 +1,26 @@
 DDL extractor functions  for PostgreSQL
 =======================================
 
-A set of in-database SQL functions for decompiling objects in a PostgreSQL database to DDL (data definition language).
-Kind of SQL implementation of pg_dump (which is external tool) inside the database itself.
-Plus you can use it with any PostgreSQL compatible client which support running SQL queries.
-It's obviously not going to replace pg_dump any time soon, but perhaps it can provide
-some common ground for better tooling in the future.
+This is an SQL-only extension for PostgreSQL that provides functions for generating 
+SQL DDL scripts for objects stored in a database.
 
-Rationale
-1. higher level grouping of available functions
-2. current ddl generation is hard
-3. support in more tools
-4. clean slate
-5. you have to write all this hairy stuff in your software
-6. problems with versions
+Advantages over using other tools like `psql` or `pgdump` include:
 
-This tools uses information schema and standard SQL as much as possible, but for any actual use decoding of
-PostgreSQL system catalogs is required. Querying pg_catalog can turn out to be quite complicated for a somewhat casual SQL user.
-Some other SQL databases support commands like SHOW CREATE TABLE or provide SQL callable functions for the purpose. 
+- You can use it with any client which support running plain SQL queries
+- No shell commands with hairy options required (for running pg_dump), just use SELECT
+- Created scripts are somewhat more intended to be run manually in a client
+
+Some other SQL databases support commands like SHOW CREATE TABLE or provide callable 
+functions for the purpose. 
+
+It is currently woefully incomplete, but still useful. Tested on PostgreSQL 9.4.
 
 
-
-pgdump
-------
-
-psql
-----
-Command line client psql contains lots of packaged SQL for handling metadata 
-mainly to support code comple
-
-pgAdmin3
---------
-PgAdmin3 DDL generation and schema handling code is an interesting 
-mix of wxWidgets GUI toolkit (C++) and SQL.
-
-
-This will hopefully help to keep SQL code in one place.
-
-...
-
-This is an extension for PostgreSQL that provides a `uri` data type.
-Advantages over using plain `text` for storing URIs include:
-
-- URI syntax checking
-- functions for extracting URI components
-- human-friendly sorting
-
-The actual URI parsing is provided by the
-[uriparser](http://uriparser.sourceforge.net/) library, which supports
-URI syntax as per [RFC 3986](http://tools.ietf.org/html/rfc3986).
-
-Note that this might not be the right data type to use if you want to
-store user-provided URI data, such as HTTP referrers, since they might
-contain arbitrary junk.
+Plans on how to make this support newer fetures AND older servers are being considered.
+ 
 
 Installation
 ------------
-
-You need to have the above-mentioned `uriparser` library installed.
-It is included in many operating system distributions and package
-management systems.  `pkg-config` will be used to find it.  I
-recommend at least version 0.8.0.  Older versions will also work, but
-they apparently contain some bugs and might fail to correctly accept
-or reject URI syntax corner cases.  This is mainly a problem if your
-application needs to be robust against junk input.
 
 To build and install this module:
 
@@ -77,94 +34,51 @@ or selecting a specific PostgreSQL installation:
 
 And finally inside the database:
 
-    CREATE EXTENSION uri;
+    CREATE EXTENSION ddl;
 
 Using
 -----
 
-This module provides a data type `uri` that you can use like a normal
-type.  For example:
+This module provides one polymorphic end user function `pg_ddl_script` 
+that you can use to obtain SQL DDL source for a particular database object.
+
+Currently supported object types are `regclass` and `regprocedure`.
+
+- `pg_ddl_script(regclass) returns text`
+
+    Extracts SQL DDL source of class (table or view) `regclass`.
+
+- `pg_ddl_script(regprocedure) returns text`
+
+    Extracts SQL DDL source of function `regprocedure`.
+
+For example:
 
 ```sql
-CREATE TABLE links (
+CREATE TABLE users (
     id int PRIMARY KEY,
-    link uri
+    name text
 );
 
-INSERT INTO links VALUES (1, 'https://github.com/petere/pgddl');
+SELECT pg_ddl_script('users'::regclass);
 ```
 
-A number of functions are provided to extract parts of a URI:
+A number of other functions are provided to extract more specific objects:
 
-- `uri_scheme(uri) returns text`
+- `pg_ddl_create_table(regclass) returns text`
 
-    Extracts the scheme of a URI, for example `http` or `ftp` or
-    `mailto`.
+    Extracts SQL DDL source of a table.
 
-- `uri_userinfo(uri) returns text`
+- `pg_ddl_create_view(regclass) returns text`
 
-    Extracts the user info part of a URI.  This is normally a user
-    name, but could also be of the form `username:password`.  If the
-    URI does not contain a user info part, then this will return null.
+    Extracts SQL DDL source of a view.
 
-- `uri_host(uri) returns text`
+- `pg_ddl_create_class(regclass) returns text`
 
-    Extracts the host of a URI, for example `www.example.com` or
-    `192.168.0.1`.  (For IPv6 addresses, the brackets are not included
-    here.)  If there is no host, the return value is null.
+    Extracts SQL DDL source of a table or view.
 
-- `uri_host_inet(uri) returns inet`
+- `pg_ddl_create_function(regprocedure) returns text`
 
-    If the host is a raw IP address, then this will return it as an
-    `inet` datum.  Otherwise (not an IP address or no host at all),
-    the return value is null.
+    Extracts SQL DDL source of a function.
 
-- `uri_port(uri) returns integer`
-
-    Extracts the port of a URI as an integer, for example `5432`.  If
-    no port is specified, the return value is null.
-
-- `uri_path(uri) returns text`
-
-    Extracts the path component of a URI.  Logically, a URI always
-    contains a path.  The return value can be an empty string but
-    never null.
-
-- `uri_path_array(uri) returns text[]`
-
-    Returns the path component of a URI as an array, with the path
-    split at the slash characters.  This is probably not as useful as
-    the `uri_path` function, but it is provided here because the
-    `uriparser` library exposes it.
-
-- `uri_query(uri) returns text`
-
-    Extracts the query part of a URI (roughly speaking, everything
-    after the `?`).  If there is no query part, returns null.
-
-- `uri_fragment(uri) returns text`
-
-    Extracts the fragment part of a URI (roughly speaking, everything
-    after the `#`).  If there is no fragment part, returns null.
-
-Other functions:
-
-- `uri_normalize(uri) returns uri`
-
-    Performs syntax-based normalization of the URI.  This includes
-    case normalization, percent-encoding normalization, and removing
-    redundant `.` and `..` path segments.  See
-    [RFC 3986 section 6.2.2](http://tools.ietf.org/html/rfc3986#section-6.2.2)
-    for the full details.
-
-    Note that this module (and similar modules in other programming
-    languages) compares URIs for equality in their original form,
-    without normalization.  If you want to consider distinct URIs
-    without regard for mostly irrelevant syntax differences, pass them
-    through this function.
-
-- `uri_escape(text) returns text`
-
-    Percent-encodes all unreserved characters from the text. This can
-    be useful for constructing URIs from strings.
 
