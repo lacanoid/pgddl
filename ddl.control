@@ -1,6 +1,4 @@
 comment = 'DDL extractor functions'
 default_version = 0.1
-relocatable = false
 schema = pg_catalog
-requires = 'plpgsql'
 

@@ -2,6 +2,8 @@
 
 SET client_min_messages = warning;
 
+SELECT pg_ddl_script('int'::regtype::oid::regclass);
+
 CREATE TABLE test_class_r (
   a serial primary key, 
   b text unique not null default e'Hello, world!\n', 
@@ -31,6 +33,12 @@ SELECT pg_ddl_script('test_class_m'::regclass);
 
 SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
 
+create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
+$$ select 3.14, 'now'::text $$ language sql;
+
+select * from funfun(1);
+SELECT pg_ddl_script('funfun'::regproc);
+
 /*
 CREATE DOMAIN test_type_d text check(value is not null);
 SELECT pg_ddl_script('test_type_d'::regtype);
@@ -38,5 +46,6 @@ SELECT pg_ddl_script('test_type_d'::regtype);
 CREATE TYPE test_type_c AS (i integer, t text, d test_type_d);
 SELECT pg_ddl_script('test_type_c'::regtype);
 */
+
 
 

@@ -8,6 +8,7 @@ Advantages over using other tools like `psql` or `pgdump` include:
 
 - You can use it with any client which support running plain SQL queries
 - No shell commands with hairy options required (for running pg_dump), just use SELECT
+- With SQL you can dump things like say only functions with matching name from all schemas
 - Created scripts are somewhat more intended to be run manually in a client
 
 Some other SQL databases support commands like SHOW CREATE TABLE or provide callable 
@@ -39,18 +40,20 @@ And finally inside the database:
 Using
 -----
 
-This module provides one polymorphic end user function `pg_ddl_script` 
-that you can use to obtain SQL DDL source for a particular database object.
+This module provides one main end user function `pg_ddl_script` that 
+you can use to obtain SQL DDL source for a particular database object.
 
-Currently supported object types are `regclass` and `regprocedure`.
+Currently supported object types are `regclass`,`regproc` and `regprocedure`.
+You will need to cast object name or oid to appropriate type.
 
 - `pg_ddl_script(regclass) returns text`
 
-    Extracts SQL DDL source of class (table or view) `regclass`.
+    Extracts SQL DDL source of a class (table or view) `regclass`.
 
+- `pg_ddl_script(regproc) returns text`
 - `pg_ddl_script(regprocedure) returns text`
 
-    Extracts SQL DDL source of function `regprocedure`.
+    Extracts SQL DDL source of a function.
 
 For example:
 

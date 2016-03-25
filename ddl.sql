@@ -24,13 +24,15 @@ CREATE TYPE pg_ddl_options AS (
 
 CREATE FUNCTION pg_ddl_oid_info(
   IN oid,  
-  OUT name name,  OUT namespace name,  OUT kind text)
+  OUT oid oid, OUT name name,  OUT namespace name,  OUT kind text, OUT owner name)
  RETURNS record
  LANGUAGE sql
 AS $function$
-  SELECT c.relname AS name,
+  SELECT c.oid,
+         c.relname AS name,
          n.nspname AS namespace,
-         coalesce(tt.column2,c.relkind::text) AS kind
+         coalesce(tt.column2,c.relkind::text) AS kind,
+         pg_get_userbyid(c.relowner) AS owner
     FROM pg_class c JOIN pg_namespace n ON (n.oid=c.relnamespace)
     left join (
        values ('r','TABLE'),
@@ -38,10 +40,13 @@ AS $function$
               ('i','INDEX'),
               ('S','SEQUENCE'),
               ('s','SPECIAL'),
-              ('m','MATERIALIZED VIEW')
+              ('m','MATERIALIZED VIEW'),
+              ('c','TYPE'),
+              ('t','TOAST'),
+              ('f','FOREIGN TABLE')
     ) as tt on tt.column1 = c.relkind
    WHERE c.oid = $1
-$function$;
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -49,8 +54,7 @@ CREATE FUNCTION pg_ddl_get_columns(
   IN regclass,  
   OUT name name,  OUT type text,  OUT size integer,  OUT not_null boolean,  OUT "default" text, 
   OUT comment text,  OUT primary_key name,  OUT is_local boolean,  OUT attstorage text,  OUT ord smallint,  OUT namespace name, 
-  OUT class_name name,  OUT sql_identifier text,  OUT nuls boolean, 
-  OUT "NullF" real,  OUT "DistF" real,  OUT "DistN" numeric,  OUT regclass oid,  OUT definition text)
+  OUT class_name name,  OUT sql_identifier text, OUT oid,  OUT definition text)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
@@ -64,21 +68,7 @@ AS $function$
         a.attislocal AS is_local, a.attstorage::text, a.attnum AS ord, s.nspname AS namespace, 
         c.relname AS class_name, 
         (c.oid::regclass)::text || '.' || quote_ident(a.attname) AS sql_identifier,
-        CASE t.typname
-            WHEN 'numeric'::name THEN false
-            WHEN 'bool'::name THEN false
-            ELSE true
-        END AS nuls, 
-         st.stanullfrac AS "NullF", 
-        CASE
-            WHEN st.stadistinct < 0::double precision THEN - st.stadistinct
-            ELSE NULL::real
-        END AS "DistF", 
-        CASE
-            WHEN st.stadistinct >= 0::double precision THEN st.stadistinct
-            ELSE NULL::real
-        END::numeric AS "DistN", 
-        c.oid AS regclass, 
+        c.oid, 
         (((quote_ident(a.attname::text) || ' '::text) || format_type(t.oid, NULL::integer)) || 
         CASE
             WHEN (a.atttypmod - 4) > 65536 THEN ((('('::text || (((a.atttypmod - 4) / 65536)::text)) || ','::text) || (((a.atttypmod - 4) % 65536)::text)) || ')'::text
@@ -96,12 +86,11 @@ AS $function$
    LEFT JOIN pg_constraint con ON con.conrelid = c.oid AND (a.attnum = ANY (con.conkey)) AND con.contype = 'p'::"char"
    LEFT JOIN pg_type t ON t.oid = a.atttypid
    JOIN pg_namespace tn ON tn.oid = t.typnamespace
-   LEFT JOIN pg_statistic st ON st.starelid = c.oid AND st.staattnum = a.attnum
   WHERE (c.relkind = ANY (ARRAY['r'::"char", 'v'::"char", ''::"char", 'c'::"char"])) AND a.attnum > 0 
   AND NOT a.attisdropped AND has_table_privilege(c.oid, 'select'::text) AND has_schema_privilege(s.oid, 'usage'::text)
     AND c.oid = $1
   ORDER BY s.nspname, c.relname, a.attnum;
-$function$;
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -127,7 +116,7 @@ AS $function$
             WHEN 'p'::"char" THEN 'PRIMARY KEY'::text
             WHEN 'u'::"char" THEN 'UNIQUE'::text
             ELSE NULL::text
-        END AS constraint_type, pg_get_constraintdef(c.oid) AS constraint_definition, 
+        END AS constraint_type, pg_get_constraintdef(c.oid,true) AS constraint_definition, 
         c.condeferrable AS is_deferrable, 
         c.condeferred  AS initially_deferred, 
         r.oid as regclass, c.oid AS sysid
@@ -242,7 +231,8 @@ AS $function$
         p.proname AS name, 
         pg_description.description AS comment, 
         u.rolname AS owner,
-        p.oid::regprocedure::text AS sql_identifier, l.lanname AS language, 
+        p.oid::regprocedure::text AS sql_identifier, 
+        l.lanname AS language, 
         CASE p.provolatile
             WHEN 'i'::"char" THEN 'IMMUTABLE'::text
             WHEN 's'::"char" THEN 'STABLE'::text
@@ -250,7 +240,10 @@ AS $function$
             ELSE NULL::text
         END AS attributes, 
         p.proretset AS retset, 
-        p.prorettype = 'trigger'::regtype::oid AS is_trigger, text(p.prorettype::regtype) AS returns, oidvectortypes(p.proargtypes) AS arguments, 
+        p.prorettype = 'trigger'::regtype::oid AS is_trigger, 
+        text(p.prorettype::regtype) AS returns, 
+        pg_get_function_arguments(p.oid) AS arguments, 
+--        oidvectortypes(p.proargtypes) AS argtypes, 
         p.prosrc AS definition, 
         CASE p.prosecdef
             WHEN true THEN 'DEFINER'::text
@@ -260,7 +253,7 @@ AS $function$
             WHEN true THEN 'STRICT'::text
             ELSE NULL
         END AS is_strict, 
-        p.proargtypes AS argtypes
+        p.proargtypes AS proargtypes
    FROM pg_proc p
    LEFT JOIN pg_namespace s ON s.oid = p.pronamespace
    LEFT JOIN pg_language l ON l.oid = p.prolang
@@ -276,26 +269,27 @@ CREATE FUNCTION pg_ddl_create_table(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
- SELECT 
-'CREATE TABLE '||(oid::regclass::text)||E' (\n'||
-  coalesce(''||(
-   SELECT coalesce(string_agg('    '||definition,E',\n'),'')
-     FROM pg_ddl_get_columns($1)
-    WHERE regclass = $1 AND is_local
-  )||E'\n','')||
-  ')'||
- (SELECT 
-  coalesce(' INHERITS(' || string_agg(i.inhparent::regclass::text,', ') || ')', '')
-  FROM pg_inherits i
-  WHERE i.inhrelid = $1) ||
- CASE relhasoids
-  WHEN true THEN ' WITH OIDS'
-  ELSE ''
- END 
+  SELECT 
+  'CREATE TABLE '||(oid::regclass::text)
+  ||
+  E' (\n'||
+    coalesce(''||(
+      SELECT coalesce(string_agg('    '||definition,E',\n'),'')
+        FROM pg_ddl_get_columns($1) WHERE is_local
+    )||E'\n','')||')'
+  ||
+  (SELECT 
+    coalesce(' INHERITS(' || string_agg(i.inhparent::regclass::text,', ') || ')', '')
+     FROM pg_inherits i WHERE i.inhrelid = $1) 
+  ||
+  CASE relhasoids WHEN true THEN ' WITH OIDS' ELSE '' END 
+  ||
+  E';\n'
+
  FROM pg_class c
  WHERE oid = $1
  AND relkind='r'
-$function$;
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -313,7 +307,7 @@ AS $function$
  FROM pg_class t
  WHERE oid = $1
  AND relkind = 'v' OR relkind = 'm'
-$function$;
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -321,40 +315,38 @@ CREATE FUNCTION pg_ddl_create_class(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
+ with 
+
+ obj as (
+   select * from pg_ddl_oid_info($1)
+ ),
+
+ comments as (
+   select 'COMMENT ON COLUMN ' || text($1) || '.' || quote_ident(name) ||
+          '  IS ' || quote_nullable(comment) || ';' as cc
+     from pg_ddl_get_columns($1) 
+    where comment IS NOT NULL 
+ )
+
  SELECT 
+
 '--
--- Name: '||coalesce(c.relname,'')||'; Type: '||coalesce(tt.column2,c.relkind)||'; Schema: '||n.nspname||'; Owner: '||coalesce(pg_get_userbyid(c.relowner),'')||'
+-- Name: '||(obj.name)||'; Type: '||(obj.kind)||'; Schema: '||(obj.namespace)||'; Owner: '||(obj.owner)||'
 --
 
 ' ||
 
  CASE 
-  WHEN relkind in ('v','m') THEN pg_ddl_create_view($1) 
-  ELSE pg_ddl_create_table($1) || E';\n' 
- END ||
-  'COMMENT ON '||coalesce(tt.column2,c.relkind) || '  '  || (c.oid::regclass::text) ||
-  ' IS ' || coalesce(quote_ident(obj_description(c.oid)),'NULL') || E';\n'  || 
-  coalesce((select string_agg(
-           'COMMENT ON COLUMN ' || (c.oid::regclass::text) || '.' || quote_ident(name) ||
-           ' IS ' || coalesce(quote_literal(comment),'NULL') || E';\n', ''
-         ) 
-    from pg_ddl_get_columns($1) 
-   where regclass = $1 
-     and comment IS NOT NULL 
-  ) || E'\n',
-         '') 
-    from pg_class c 
-    join pg_namespace n on n.oid=c.relnamespace
-    left join (
-       values ('r','TABLE'),
-              ('v','VIEW'),
-              ('i','INDEX'),
-              ('S','SEQUENCE'),
-              ('s','SPECIAL'),
-              ('m','MATERIALIZED VIEW')
-    ) as tt on tt.column1 = c.relkind
-  where c.oid = $1
-$function$;
+  WHEN obj.kind in ('VIEW','MATERIALIZED VIEW') THEN pg_ddl_create_view($1)  
+  WHEN obj.kind in ('TABLE') THEN pg_ddl_create_table($1)
+  ELSE ' -- UNSUPPORTED OBJECT'
+ END || E'\n' ||
+  'COMMENT ON ' || obj.kind || '  '  || text($1) ||
+  ' IS ' || quote_nullable(obj_description(obj.oid)) || E';\n'  || 
+  coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'') || E'\n'
+    from obj
+    
+$function$ strict;
 
 ---------------------------------------------------
 
@@ -365,14 +357,14 @@ AS $function$
   select 
     coalesce(
       string_agg( 
-        'ALTER TABLE '||text(regclass::regclass)|| 
+        'ALTER TABLE '||text($1)|| 
           ' ALTER '||quote_ident(name)|| 
           ' SET DEFAULT '||"default", 
         E';\n') || E';\n\n', 
     '')
    from pg_ddl_get_columns($1)
-  where regclass = $1 and "default" is not null
-$function$;
+  where "default" is not null
+$function$ strict;
 
 ---------------------------------------------------
 
@@ -391,7 +383,7 @@ AS $function$
  )
  select coalesce(string_agg(sql,E';\n') || E';\n\n','')
    from cs
-$function$;
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -406,7 +398,7 @@ AS $function$
     from pg_ddl_get_rules()
    where regclass = $1
      and rule_definition is not null
-$function$;
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -426,7 +418,7 @@ AS $function$
  )
  select coalesce(string_agg(sql,E';\n')||E';\n','')
    from tg
-$function$;
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -438,7 +430,7 @@ AS $function$
  FROM pg_ddl_get_indexes()
  WHERE sysid = $1
  AND constraint_name is null
-$function$;
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -450,7 +442,7 @@ AS $function$
    'ALTER TABLE '||text($1)||' OWNER TO '||quote_ident(pg_get_userbyid(c.relowner))||E';\n'
    from pg_class c
   where oid = $1
-$function$;
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -464,7 +456,12 @@ SELECT
 --
 
 ' ||
-E'CREATE OR REPLACE FUNCTION ' || sql_identifier || ' 
+E'CREATE OR REPLACE FUNCTION ' ||
+    case 
+     when namespace = current_schema() then ''
+     else quote_ident(namespace) || '.'
+    end ||
+    quote_ident(name)||'('||arguments||')'|| ' 
   RETURNS ' || 
   CASE retset
   WHEN true THEN 'SETOF ' ELSE '' END || 
@@ -485,7 +482,7 @@ AS ddl
 FROM pg_ddl_get_functions()
 WHERE sysid = $1 
  
-$function$;
+$function$  strict;
 
 
 ---------------------------------------------------
@@ -493,7 +490,7 @@ $function$;
 CREATE FUNCTION pg_ddl_grants_on_class(regclass) 
  RETURNS text
  LANGUAGE sql
- AS $_$
+ AS $function$
  with obj as (
    select * from pg_ddl_oid_info($1)
  )
@@ -516,7 +513,7 @@ CREATE FUNCTION pg_ddl_grants_on_class(regclass)
  join obj on (true)
  WHERE table_schema=obj.namespace 
    AND table_name=obj.name
-$_$;
+$function$  strict;
 
 ---------------------------------------------------
 --	Main script generating functions
@@ -527,15 +524,15 @@ CREATE FUNCTION pg_ddl_script(regclass)
  LANGUAGE sql
 AS $function$
    select 
-     pg_ddl_create_class($1)|| 
-     pg_ddl_alter_table_defaults($1)|| 
-     pg_ddl_create_constraints($1)|| 
+     pg_ddl_create_class($1) || 
+     pg_ddl_alter_table_defaults($1) || 
+     pg_ddl_create_constraints($1) || 
      pg_ddl_create_rules($1) || 
      pg_ddl_create_triggers($1) ||
      pg_ddl_create_indexes($1) ||
      pg_ddl_alter_owner($1) ||
      pg_ddl_grants_on_class($1)
-$function$;
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -544,6 +541,13 @@ CREATE FUNCTION pg_ddl_script(regprocedure)
  LANGUAGE sql
 AS $function$
    select pg_ddl_create_function($1)
-$function$;
+$function$  strict;
+
+CREATE FUNCTION pg_ddl_script(regproc)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+   select pg_ddl_create_function($1)
+$function$  strict;
 
 
