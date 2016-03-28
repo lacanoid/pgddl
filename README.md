@@ -14,8 +14,9 @@ Advantages over using other tools like `psql` or `pgdump` include:
 Some other SQL databases support commands like SHOW CREATE TABLE or provide callable 
 functions for the purpose. 
 
-It is currently woefully incomplete, but still useful. Tested on PostgreSQL 9.4.
-
+It is currently rather incomplete, but still useful. 
+It provides support for most basic objects. 
+Tested on PostgreSQL 9.4.
 
 Plans on how to make this support newer fetures AND older servers are being considered.
  
@@ -44,7 +45,7 @@ This module provides one main end user function `pg_ddl_script` that
 you can use to obtain SQL DDL source for a particular database object.
 
 Currently supported object types are `regclass`,`regproc` and `regprocedure`.
-You will need to cast object name or oid to appropriate type.
+You will probably want to cast object name or oid to appropriate type.
 
 - `pg_ddl_script(regclass) returns text`
 

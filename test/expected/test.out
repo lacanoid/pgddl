@@ -54,10 +54,11 @@ SELECT pg_ddl_script('test_class_r'::regclass);
  
 (1 row)
 
-CREATE TABLE test_class_r2 (
+CREATE UNLOGGED TABLE test_class_r2 (
   i serial, 
   a int references test_class_r(a)
 );
+alter table test_class_r2 set with oids;
 SELECT pg_ddl_script('test_class_r2'::regclass);
                                       pg_ddl_script                                      
 -----------------------------------------------------------------------------------------
@@ -65,10 +66,10 @@ SELECT pg_ddl_script('test_class_r2'::regclass);
  -- Name: test_class_r2; Type: TABLE; Schema: public; Owner: root                       +
  --                                                                                     +
                                                                                         +
- CREATE TABLE test_class_r2 (                                                           +
+ CREATE UNLOGGED TABLE test_class_r2 (                                                  +
      i integer NOT NULL,                                                                +
      a integer                                                                          +
- );                                                                                     +
+ ) WITH OIDS;                                                                           +
                                                                                         +
  COMMENT ON TABLE  test_class_r2 IS NULL;                                               +
                                                                                         +
@@ -146,42 +147,48 @@ SELECT pg_ddl_script('test_class_m'::regclass);
 (1 row)
 
 SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
-                                                               pg_ddl_script                                                                
---------------------------------------------------------------------------------------------------------------------------------------------
- --                                                                                                                                        +
- -- Name: pg_ddl_oid_info(oid); Type: FUNCTION; Schema: pg_catalog; Owner: root                                                            +
- --                                                                                                                                        +
-                                                                                                                                           +
- CREATE OR REPLACE FUNCTION pg_catalog.pg_ddl_oid_info(oid, OUT oid oid, OUT name name, OUT namespace name, OUT kind text, OUT owner name) +
-   RETURNS record                                                                                                                          +
-   VOLATILE                                                                                                                                +
-   STRICT                                                                                                                                  +
-   LANGUAGE 'sql'                                                                                                                          +
-   SECURITY INVOKER                                                                                                                        +
-   AS $ddl$                                                                                                                                +
-   SELECT c.oid,                                                                                                                           +
-          c.relname AS name,                                                                                                               +
-          n.nspname AS namespace,                                                                                                          +
-          coalesce(tt.column2,c.relkind::text) AS kind,                                                                                    +
-          pg_get_userbyid(c.relowner) AS owner                                                                                             +
-     FROM pg_class c JOIN pg_namespace n ON (n.oid=c.relnamespace)                                                                         +
-     left join (                                                                                                                           +
-        values ('r','TABLE'),                                                                                                              +
-               ('v','VIEW'),                                                                                                               +
-               ('i','INDEX'),                                                                                                              +
-               ('S','SEQUENCE'),                                                                                                           +
-               ('s','SPECIAL'),                                                                                                            +
-               ('m','MATERIALIZED VIEW'),                                                                                                  +
-               ('c','TYPE'),                                                                                                               +
-               ('t','TOAST'),                                                                                                              +
-               ('f','FOREIGN TABLE')                                                                                                       +
-     ) as tt on tt.column1 = c.relkind                                                                                                     +
-    WHERE c.oid = $1                                                                                                                       +
- $ddl$;                                                                                                                                    +
-                                                                                                                                           +
- ALTER FUNCTION pg_ddl_oid_info(oid) OWNER TO root;                                                                                        +
- REVOKE ALL ON FUNCTION pg_ddl_oid_info(oid) FROM PUBLIC;                                                                                  +
-                                                                                                                                           +
+                                 pg_ddl_script                                  
+--------------------------------------------------------------------------------
+ --                                                                            +
+ -- Name: pg_ddl_oid_info(oid); Type: FUNCTION; Schema: pg_catalog; Owner: root+
+ --                                                                            +
+                                                                               +
+ CREATE OR REPLACE FUNCTION pg_catalog.pg_ddl_oid_info(oid,                    +
+   OUT oid oid,                                                                +
+   OUT name name,                                                              +
+   OUT namespace name,                                                         +
+   OUT kind text,                                                              +
+   OUT owner name)                                                             +
+   RETURNS record                                                              +
+   VOLATILE                                                                    +
+   STRICT                                                                      +
+   LANGUAGE 'sql'                                                              +
+   COST 100                                                                    +
+   SECURITY INVOKER                                                            +
+   AS $ddl$                                                                    +
+   SELECT c.oid,                                                               +
+          c.relname AS name,                                                   +
+          n.nspname AS namespace,                                              +
+          coalesce(tt.column2,c.relkind::text) AS kind,                        +
+          pg_get_userbyid(c.relowner) AS owner                                 +
+     FROM pg_class c JOIN pg_namespace n ON (n.oid=c.relnamespace)             +
+     left join (                                                               +
+        values ('r','TABLE'),                                                  +
+               ('v','VIEW'),                                                   +
+               ('i','INDEX'),                                                  +
+               ('S','SEQUENCE'),                                               +
+               ('s','SPECIAL'),                                                +
+               ('m','MATERIALIZED VIEW'),                                      +
+               ('c','TYPE'),                                                   +
+               ('t','TOAST'),                                                  +
+               ('f','FOREIGN TABLE')                                           +
+     ) as tt on tt.column1 = c.relkind                                         +
+    WHERE c.oid = $1                                                           +
+ $ddl$;                                                                        +
+                                                                               +
+ ALTER FUNCTION pg_ddl_oid_info(oid) OWNER TO root;                            +
+ REVOKE ALL ON FUNCTION pg_ddl_oid_info(oid) FROM PUBLIC;                      +
+                                                                               +
  
 (1 row)
 
@@ -194,22 +201,25 @@ select * from funfun(1);
 (1 row)
 
 SELECT pg_ddl_script('funfun'::regproc);
-                                            pg_ddl_script                                            
------------------------------------------------------------------------------------------------------
- --                                                                                                 +
- -- Name: funfun(integer,text); Type: FUNCTION; Schema: public; Owner: root                         +
- --                                                                                                 +
-                                                                                                    +
- CREATE OR REPLACE FUNCTION funfun(a integer, b text DEFAULT NULL::text, OUT c numeric, OUT d text) +
-   RETURNS SETOF record                                                                             +
-   VOLATILE                                                                                         +
-   LANGUAGE 'sql'                                                                                   +
-   SECURITY INVOKER                                                                                 +
-   AS $ddl$ select 3.14, 'now'::text $ddl$;                                                         +
-                                                                                                    +
- ALTER FUNCTION funfun(integer,text) OWNER TO root;                                                 +
- REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;                                           +
-                                                                                                    +
+                               pg_ddl_script                                
+----------------------------------------------------------------------------
+ --                                                                        +
+ -- Name: funfun(integer,text); Type: FUNCTION; Schema: public; Owner: root+
+ --                                                                        +
+                                                                           +
+ CREATE OR REPLACE FUNCTION funfun(a integer, b text DEFAULT NULL::text,   +
+   OUT c numeric,                                                          +
+   OUT d text)                                                             +
+   RETURNS SETOF record                                                    +
+   VOLATILE                                                                +
+   LANGUAGE 'sql'                                                          +
+   COST 100 ROWS 1000                                                      +
+   SECURITY INVOKER                                                        +
+   AS $ddl$ select 3.14, 'now'::text $ddl$;                                +
+                                                                           +
+ ALTER FUNCTION funfun(integer,text) OWNER TO root;                        +
+ REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;                  +
+                                                                           +
  
 (1 row)
 

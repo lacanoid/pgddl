@@ -14,10 +14,11 @@ CREATE TABLE test_class_r (
 COMMENT ON TABLE test_class_r IS 'Comment1';
 SELECT pg_ddl_script('test_class_r'::regclass);
 
-CREATE TABLE test_class_r2 (
+CREATE UNLOGGED TABLE test_class_r2 (
   i serial, 
   a int references test_class_r(a)
 );
+alter table test_class_r2 set with oids;
 SELECT pg_ddl_script('test_class_r2'::regclass);
 
 CREATE VIEW test_class_v AS
