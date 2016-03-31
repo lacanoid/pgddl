@@ -3,6 +3,7 @@
 SET client_min_messages = warning;
 
 SELECT pg_ddl_script('int'::regtype::oid::regclass);
+select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regprocedure);
 
 CREATE TABLE test_class_r (
   a serial primary key, 
@@ -12,6 +13,7 @@ CREATE TABLE test_class_r (
   v tsvector
 );
 COMMENT ON TABLE test_class_r IS 'Comment1';
+select kind, sql_identifier from pg_ddl_oid_info('test_class_r'::regclass);
 SELECT pg_ddl_script('test_class_r'::regclass);
 
 CREATE UNLOGGED TABLE test_class_r2 (
@@ -32,10 +34,13 @@ SELECT * FROM test_class_r;
 
 SELECT pg_ddl_script('test_class_m'::regclass);
 
+select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regprocedure);
 SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
 
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
-$$ select 3.14, 'now'::text $$ language sql;
+$$ select 3.14, 'now'::text $$ language sql cost 123 rows 19
+set xmloption = content
+;
 
 select * from funfun(1);
 SELECT pg_ddl_script('funfun'::regproc);

@@ -1,4 +1,3 @@
 comment = 'DDL extractor functions'
 default_version = 0.1
-schema = pg_catalog
 

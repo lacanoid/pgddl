@@ -1,16 +1,16 @@
 CREATE EXTENSION ddl;
 \dx ddl
-             List of installed extensions
- Name | Version |   Schema   |       Description       
-------+---------+------------+-------------------------
- ddl  | 0.1     | pg_catalog | DDL extractor functions
+           List of installed extensions
+ Name | Version | Schema |       Description       
+------+---------+--------+-------------------------
+ ddl  | 0.1     | public | DDL extractor functions
 (1 row)
 
 \dx+ ddl
            Objects in extension "ddl"
                Object Description               
 ------------------------------------------------
- function pg_ddl_alter_owner(regclass)
+ function pg_ddl_alter_owner(oid)
  function pg_ddl_alter_table_defaults(regclass)
  function pg_ddl_banner(text,text,text,text)
  function pg_ddl_create_class(regclass)
@@ -28,9 +28,10 @@ CREATE EXTENSION ddl;
  function pg_ddl_get_rules(regclass)
  function pg_ddl_get_triggers(regclass)
  function pg_ddl_grants_on_class(regclass)
+ function pg_ddl_grants_on_proc(regproc)
  function pg_ddl_oid_info(oid)
  function pg_ddl_script(regclass)
  function pg_ddl_script(regproc)
  function pg_ddl_script(regprocedure)
-(22 rows)
+(23 rows)
 

@@ -24,7 +24,7 @@ CREATE TYPE pg_ddl_options AS (
 
 CREATE FUNCTION pg_ddl_oid_info(
   IN oid,  
-  OUT oid oid, OUT name name,  OUT namespace name,  OUT kind text, OUT owner name)
+  OUT oid oid, OUT name name,  OUT namespace name,  OUT kind text, OUT owner name, OUT sql_identifier text)
  RETURNS record
  LANGUAGE sql
 AS $function$
@@ -32,7 +32,8 @@ AS $function$
          c.relname AS name,
          n.nspname AS namespace,
          coalesce(tt.column2,c.relkind::text) AS kind,
-         pg_get_userbyid(c.relowner) AS owner
+         pg_get_userbyid(c.relowner) AS owner,
+         text($1::regclass) AS sql_identifier
     FROM pg_class c JOIN pg_namespace n ON (n.oid=c.relnamespace)
     left join (
        values ('r','TABLE'),
@@ -46,6 +47,15 @@ AS $function$
               ('f','FOREIGN TABLE')
     ) as tt on tt.column1 = c.relkind
    WHERE c.oid = $1
+   UNION 
+  SELECT p.oid,
+         p.proname AS name,
+         n.nspname AS namespace,
+         'FUNCTION' AS kind,
+         pg_get_userbyid(p.proowner) AS owner,
+         text($1::regprocedure) AS sql_identifier
+    FROM pg_proc p JOIN pg_namespace n ON (n.oid=p.pronamespace)
+   WHERE p.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -113,13 +123,14 @@ AS $function$
  SELECT nc.nspname AS namespace, 
         r.relname AS class_name, 
         c.conname AS constraint_name, 
-        CASE c.contype
-            WHEN 'c'::"char" THEN 'CHECK'::text
-            WHEN 'f'::"char" THEN 'FOREIGN KEY'::text
-            WHEN 'p'::"char" THEN 'PRIMARY KEY'::text
-            WHEN 'u'::"char" THEN 'UNIQUE'::text
-            ELSE NULL::text
-        END AS constraint_type, pg_get_constraintdef(c.oid,true) AS constraint_definition, 
+        case c.contype
+            when 'c'::"char" then 'CHECK'::text
+            when 'f'::"char" then 'FOREIGN KEY'::text
+            when 'p'::"char" then 'PRIMARY KEY'::text
+            when 'u'::"char" then 'UNIQUE'::text
+            else NULL::text
+        end,
+        pg_get_constraintdef(c.oid,true) AS constraint_definition,
         c.condeferrable AS is_deferrable, 
         c.condeferred  AS initially_deferred, 
         r.oid as regclass, c.oid AS sysid
@@ -159,7 +170,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_get_triggers(
   regclass default null,
   OUT is_constraint text, OUT trigger_name text, OUT action_order text, 
   OUT event_manipulation text, OUT event_object_sql_identifier text, OUT action_statement text, OUT action_orientation text, 
-  OUT regclass regclass, OUT procid oid, OUT regprocedure regprocedure, OUT event_object_schema text, 
+  OUT trigger_definition text, OUT regclass regclass, OUT regprocedure regprocedure, OUT event_object_schema text, 
   OUT event_object_table text, OUT trigger_key text)
  RETURNS SETOF record
  LANGUAGE sql
@@ -190,8 +201,13 @@ AS $function$
         CASE t.tgtype::integer & 1
             WHEN 1 THEN 'ROW'::text
             ELSE 'STATEMENT'::text
-        END AS action_orientation, c.oid::regclass AS regclass, p.oid AS procid, p.oid::regprocedure AS regprocedure, s.nspname::text AS event_object_schema,
-         c.relname::text AS event_object_table, (quote_ident(t.tgname::text) || ' ON '::text) || c.oid::regclass::text AS trigger_key
+        END AS action_orientation, 
+        pg_get_triggerdef(t.oid,true) as trigger_definition,
+        c.oid::regclass AS regclass, 
+        p.oid::regprocedure AS regprocedure, 
+        s.nspname::text AS event_object_schema,
+        c.relname::text AS event_object_table, 
+        (quote_ident(t.tgname::text) || ' ON '::text) || c.oid::regclass::text AS trigger_key
    FROM pg_trigger t
    LEFT JOIN pg_class c ON c.oid = t.tgrelid
    LEFT JOIN pg_namespace s ON s.oid = c.relnamespace
@@ -199,6 +215,8 @@ AS $function$
    LEFT JOIN pg_namespace s1 ON s1.oid = p.pronamespace
    WHERE coalesce(c.oid=$1,true)
 $function$;
+
+---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION pg_ddl_get_indexes(
   regclass default null,
@@ -300,12 +318,12 @@ CREATE FUNCTION pg_ddl_create_table(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
-  SELECT 
-  'CREATE '||
+  select 
+    'CREATE '||
   case relpersistence
-  when 'u' then 'UNLOGGED '
-  when 't' then 'TEMPORARY '
-  else ''
+    when 'u' then 'UNLOGGED '
+    when 't' then 'TEMPORARY '
+    else ''
   end
   ||'TABLE '||(oid::regclass::text)
   ||
@@ -334,11 +352,11 @@ CREATE FUNCTION pg_ddl_create_view(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
- SELECT 
+ select 
  'CREATE '||
   case relkind 
-  when 'v' THEN 'OR REPLACE VIEW ' 
-  when 'm' THEN 'MATERIALIZED VIEW '
+    when 'v' THEN 'OR REPLACE VIEW ' 
+    when 'm' THEN 'MATERIALIZED VIEW '
   end || (oid::regclass::text) || E' AS\n'||
   pg_catalog.pg_get_viewdef(oid,true)||E'\n'
  FROM pg_class t
@@ -423,10 +441,7 @@ CREATE FUNCTION pg_ddl_create_rules(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
-  select 
-    coalesce(
-      string_agg(rule_definition,E'\n')||E'\n\n',
-      '')
+  select coalesce(string_agg(rule_definition,E'\n')||E'\n\n','')
     from pg_ddl_get_rules()
    where regclass = $1
      and rule_definition is not null
@@ -465,14 +480,16 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_alter_owner(regclass)
+CREATE FUNCTION pg_ddl_alter_owner(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
+ with obj as (
+   select * from pg_ddl_oid_info($1)
+ )
  select 
-   'ALTER TABLE '||text($1)||' OWNER TO '||quote_ident(pg_get_userbyid(c.relowner))||E';\n'
-   from pg_class c
-  where oid = $1
+   'ALTER '||kind||' '||sql_identifier||' OWNER TO '||quote_ident(owner)||E';\n'
+   from obj
 $function$  strict;
 
 ---------------------------------------------------
@@ -481,30 +498,13 @@ CREATE FUNCTION pg_ddl_create_function(regproc)
  RETURNS text
  LANGUAGE sql
 AS $function$ 
-SELECT pg_ddl_banner(sql_identifier,'FUNCTION',namespace,owner)
- ||
-E'CREATE OR REPLACE FUNCTION ' ||
-    case 
-     when namespace = current_schema() then ''
-     else quote_ident(namespace) || '.'
-    end ||
-    quote_ident(name)||'('||replace(arguments,', OUT',E',\n  OUT')||')'|| ' 
-  RETURNS ' || CASE retset WHEN true THEN 'SETOF ' ELSE '' END || returns ||  
-  coalesce(E'\n  '||attributes,'') || coalesce(E'\n  '||is_strict,'') || ' 
-  LANGUAGE ' || quote_literal(language) || ' 
-  COST ' || cost || 
-  CASE retset WHEN true THEN ' ROWS ' || rows ELSE '' END || '
-  SECURITY ' || security || ' 
-  AS $ddl$'||definition|| '$ddl$; 
-' || coalesce(' 
-COMMENT ON FUNCTION ' || sql_identifier || '  
-  IS '||quote_literal(comment)||'; 
-','') || 
- E'\nALTER FUNCTION '||sql_identifier||' OWNER TO '||quote_ident(owner)||';'|| 
- E'\nREVOKE ALL ON FUNCTION '||sql_identifier||E' FROM PUBLIC;\n\n' 
-AS ddl 
-FROM pg_ddl_get_functions($1)
- 
+ with obj as (
+   select * from pg_ddl_oid_info($1)
+ )
+ select
+  pg_ddl_banner(sql_identifier,'FUNCTION',namespace,owner) ||
+  pg_get_functiondef($1) || E'\n'
+   from obj
 $function$  strict;
 
 
@@ -539,6 +539,37 @@ CREATE FUNCTION pg_ddl_grants_on_class(regclass)
 $function$  strict;
 
 ---------------------------------------------------
+
+CREATE FUNCTION pg_ddl_grants_on_proc(regproc) 
+ RETURNS text
+ LANGUAGE sql
+ AS $function$
+ with 
+ obj as (
+   select * from pg_ddl_oid_info($1)
+ )
+ select
+   'REVOKE ALL ON '||text($1::regprocedure)||' FROM PUBLIC;'||E'\n'||
+   coalesce(
+    string_agg ('GRANT '||privilege_type|| 
+                ' ON FUNCTION '||text($1::regprocedure)||' TO '|| 
+                CASE grantee  
+                 WHEN 'PUBLIC' THEN 'PUBLIC' 
+                 ELSE quote_ident(grantee) 
+                END || 
+                CASE is_grantable  
+                 WHEN 'YES' THEN ' WITH GRANT OPTION' 
+                 ELSE '' 
+                END || 
+                E';\n', ''),
+    '')
+ FROM information_schema.routine_privileges g 
+ join obj on (true)
+ WHERE routine_schema=obj.namespace 
+   AND specific_name=obj.name||'_'||obj.oid
+$function$  strict;
+
+---------------------------------------------------
 --	Main script generating functions
 ---------------------------------------------------
 
@@ -563,14 +594,16 @@ CREATE FUNCTION pg_ddl_script(regprocedure)
  RETURNS text
  LANGUAGE sql
 AS $function$
-   select pg_ddl_create_function($1)
+   select 
+     pg_ddl_create_function($1) ||
+     pg_ddl_alter_owner($1) ||
+     pg_ddl_grants_on_proc($1)
 $function$  strict;
 
 CREATE FUNCTION pg_ddl_script(regproc)
  RETURNS text
  LANGUAGE sql
-AS $function$
-   select pg_ddl_create_function($1)
-$function$  strict;
+AS $$ select pg_ddl_script($1::regprocedure) $$;
+
 
 
