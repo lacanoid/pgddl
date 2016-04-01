@@ -2,7 +2,6 @@
 
 SET client_min_messages = warning;
 
-SELECT pg_ddl_script('int'::regtype::oid::regclass);
 select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regprocedure);
 
 create function trig() returns trigger as 
@@ -62,11 +61,15 @@ select * from funfun(1);
 SELECT pg_ddl_script('funfun'::regproc);
 
 /*
-CREATE DOMAIN test_type_d text check(value is not null);
-SELECT pg_ddl_script('test_type_d'::regtype);
+create type test_type_e as enum ('foo','bar','baz','qux');
+select pg_ddl_script('test_type_e'::regtype);
 
-CREATE TYPE test_type_c AS (i integer, t text, d test_type_d);
-SELECT pg_ddl_script('test_type_c'::regtype);
+create domain test_type_d text check(value is not null);
+select pg_ddl_script('test_type_d'::regtype);
+
+create type test_type_c as (i integer, t text, d test_type_d);
+select pg_ddl_script('test_type_c'::regtype);
+select pg_ddl_script('test_type_c'::regclass);
 */
 
 

@@ -42,8 +42,9 @@ Tasks
 - dump comments on constraints, indexes, triggers
 - find out the minimum version of Postgres this works on
 
-- support for other object types
+- support for dumping whole schemas
 - recursive dumper which handles dependancies
+- support for other postgres objects
 
 Other tools
 -----------

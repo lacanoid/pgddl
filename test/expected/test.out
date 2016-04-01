@@ -1,11 +1,5 @@
 \pset null _null_
 SET client_min_messages = warning;
-SELECT pg_ddl_script('int'::regtype::oid::regclass);
- pg_ddl_script 
----------------
- _null_
-(1 row)
-
 select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regprocedure);
    kind   |    sql_identifier    
 ----------+----------------------
@@ -198,10 +192,10 @@ SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
    SELECT c.oid,                                                                                                                                               +
           c.relname AS name,                                                                                                                                   +
           n.nspname AS namespace,                                                                                                                              +
-          coalesce(tt.column2,c.relkind::text) AS kind,                                                                                                        +
+          coalesce(cc.column2,c.relkind::text) AS kind,                                                                                                        +
           pg_get_userbyid(c.relowner) AS owner,                                                                                                                +
           text($1::regclass) AS sql_identifier                                                                                                                 +
-     FROM pg_class c JOIN pg_namespace n ON (n.oid=c.relnamespace)                                                                                             +
+     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace                                                                                               +
      left join (                                                                                                                                               +
         values ('r','TABLE'),                                                                                                                                  +
                ('v','VIEW'),                                                                                                                                   +
@@ -212,7 +206,7 @@ SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
                ('c','TYPE'),                                                                                                                                   +
                ('t','TOAST'),                                                                                                                                  +
                ('f','FOREIGN TABLE')                                                                                                                           +
-     ) as tt on tt.column1 = c.relkind                                                                                                                         +
+     ) as cc on cc.column1 = c.relkind                                                                                                                         +
     WHERE c.oid = $1                                                                                                                                           +
     UNION                                                                                                                                                      +
    SELECT p.oid,                                                                                                                                               +
@@ -221,8 +215,25 @@ SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
           'FUNCTION' AS kind,                                                                                                                                  +
           pg_get_userbyid(p.proowner) AS owner,                                                                                                                +
           text($1::regprocedure) AS sql_identifier                                                                                                             +
-     FROM pg_proc p JOIN pg_namespace n ON (n.oid=p.pronamespace)                                                                                              +
+     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace                                                                                                +
     WHERE p.oid = $1                                                                                                                                           +
+    UNION                                                                                                                                                      +
+   SELECT t.oid,                                                                                                                                               +
+          t.typname AS name,                                                                                                                                   +
+          n.nspname AS namespace,                                                                                                                              +
+          coalesce(tt.column2,t.typtype::text) AS kind,                                                                                                        +
+          pg_get_userbyid(t.typowner) AS owner,                                                                                                                +
+          format_type($1,null) AS sql_identifier                                                                                                               +
+     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace                                                                                                +
+     left join (                                                                                                                                               +
+        values ('b','BASE'),                                                                                                                                   +
+               ('c','COMPOSITE'),                                                                                                                              +
+               ('d','DOMAIN'),                                                                                                                                 +
+               ('e','ENUM'),                                                                                                                                   +
+               ('p','PSEUDO'),                                                                                                                                 +
+               ('r','RANGE')                                                                                                                                   +
+     ) as tt on tt.column1 = t.typtype                                                                                                                         +
+    WHERE t.oid = $1                                                                                                                                           +
  $function$                                                                                                                                                    +
                                                                                                                                                                +
  COMMENT ON FUNCTION pg_ddl_oid_info(oid) IS NULL;                                                                                                             +
@@ -269,9 +280,13 @@ SELECT pg_ddl_script('funfun'::regproc);
 (1 row)
 
 /*
-CREATE DOMAIN test_type_d text check(value is not null);
-SELECT pg_ddl_script('test_type_d'::regtype);
+create type test_type_e as enum ('foo','bar','baz','qux');
+select pg_ddl_script('test_type_e'::regtype);
 
-CREATE TYPE test_type_c AS (i integer, t text, d test_type_d);
-SELECT pg_ddl_script('test_type_c'::regtype);
+create domain test_type_d text check(value is not null);
+select pg_ddl_script('test_type_d'::regtype);
+
+create type test_type_c as (i integer, t text, d test_type_d);
+select pg_ddl_script('test_type_c'::regtype);
+select pg_ddl_script('test_type_c'::regclass);
 */

@@ -21,10 +21,10 @@ AS $function$
   SELECT c.oid,
          c.relname AS name,
          n.nspname AS namespace,
-         coalesce(tt.column2,c.relkind::text) AS kind,
+         coalesce(cc.column2,c.relkind::text) AS kind,
          pg_get_userbyid(c.relowner) AS owner,
          text($1::regclass) AS sql_identifier
-    FROM pg_class c JOIN pg_namespace n ON (n.oid=c.relnamespace)
+    FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     left join (
        values ('r','TABLE'),
               ('v','VIEW'),
@@ -35,7 +35,7 @@ AS $function$
               ('c','TYPE'),
               ('t','TOAST'),
               ('f','FOREIGN TABLE')
-    ) as tt on tt.column1 = c.relkind
+    ) as cc on cc.column1 = c.relkind
    WHERE c.oid = $1
    UNION 
   SELECT p.oid,
@@ -44,8 +44,25 @@ AS $function$
          'FUNCTION' AS kind,
          pg_get_userbyid(p.proowner) AS owner,
          text($1::regprocedure) AS sql_identifier
-    FROM pg_proc p JOIN pg_namespace n ON (n.oid=p.pronamespace)
+    FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
    WHERE p.oid = $1
+   UNION 
+  SELECT t.oid,
+         t.typname AS name,
+         n.nspname AS namespace,
+         coalesce(tt.column2,t.typtype::text) AS kind,
+         pg_get_userbyid(t.typowner) AS owner,
+         format_type($1,null) AS sql_identifier
+    FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
+    left join (
+       values ('b','BASE'),
+              ('c','COMPOSITE'),
+              ('d','DOMAIN'),
+              ('e','ENUM'),
+              ('p','PSEUDO'),
+              ('r','RANGE')
+    ) as tt on tt.column1 = t.typtype
+   WHERE t.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
