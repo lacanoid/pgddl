@@ -12,6 +12,9 @@ select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regproc
  FUNCTION | pg_ddl_oid_info(oid)
 (1 row)
 
+create function trig() returns trigger as 
+$$begin return old; end $$
+language plpgsql;
 CREATE TABLE test_class_r (
   a serial primary key, 
   b text unique not null default e'Hello, world!\n', 
@@ -26,43 +29,53 @@ select kind, sql_identifier from pg_ddl_oid_info('test_class_r'::regclass);
  TABLE | test_class_r
 (1 row)
 
+create trigger aaaa before 
+update on test_class_r
+   for each row when (old.* is distinct from new.*) execute procedure trig('AAAA');
+create unique index idx1 on test_class_r (lower(b)) where b is not null;
+create index idx2 on test_class_r using gin (v);
 SELECT pg_ddl_script('test_class_r'::regclass);
-                                     pg_ddl_script                                     
----------------------------------------------------------------------------------------
- --                                                                                   +
- -- Name: test_class_r; Type: TABLE; Schema: public; Owner: root                      +
- --                                                                                   +
-                                                                                      +
- CREATE TABLE test_class_r (                                                          +
-     a integer NOT NULL,                                                              +
-     b text NOT NULL,                                                                 +
-     c timestamp without time zone,                                                   +
-     d timestamp with time zone,                                                      +
-     v tsvector                                                                       +
- );                                                                                   +
-                                                                                      +
- COMMENT ON TABLE  test_class_r IS 'Comment1';                                        +
-                                                                                      +
- ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);+
- ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!                          +
- '::text;                                                                             +
-                                                                                      +
- ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key                           +
-   UNIQUE (b);                                                                        +
- ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey                            +
-   PRIMARY KEY (a);                                                                   +
- ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check                         +
-   CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);               +
-                                                                                      +
- ALTER TABLE test_class_r OWNER TO root;                                              +
- REVOKE ALL ON test_class_r FROM PUBLIC;                                              +
- GRANT INSERT ON test_class_r TO root WITH GRANT OPTION;                              +
- GRANT SELECT ON test_class_r TO root WITH GRANT OPTION;                              +
- GRANT UPDATE ON test_class_r TO root WITH GRANT OPTION;                              +
- GRANT DELETE ON test_class_r TO root WITH GRANT OPTION;                              +
- GRANT TRUNCATE ON test_class_r TO root WITH GRANT OPTION;                            +
- GRANT REFERENCES ON test_class_r TO root WITH GRANT OPTION;                          +
- GRANT TRIGGER ON test_class_r TO root WITH GRANT OPTION;                             +
+                                                           pg_ddl_script                                                            
+------------------------------------------------------------------------------------------------------------------------------------
+ --                                                                                                                                +
+ -- Name: test_class_r; Type: TABLE; Schema: public; Owner: root                                                                   +
+ --                                                                                                                                +
+                                                                                                                                   +
+ CREATE TABLE test_class_r (                                                                                                       +
+     a integer NOT NULL,                                                                                                           +
+     b text NOT NULL,                                                                                                              +
+     c timestamp without time zone,                                                                                                +
+     d timestamp with time zone,                                                                                                   +
+     v tsvector                                                                                                                    +
+ );                                                                                                                                +
+                                                                                                                                   +
+ COMMENT ON TABLE test_class_r IS 'Comment1';                                                                                      +
+                                                                                                                                   +
+ ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);                                             +
+ ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!                                                                       +
+ '::text;                                                                                                                          +
+                                                                                                                                   +
+ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key                                                                        +
+   UNIQUE (b);                                                                                                                     +
+ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey                                                                         +
+   PRIMARY KEY (a);                                                                                                                +
+ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check                                                                      +
+   CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);                                                            +
+                                                                                                                                   +
+ CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);                                            +
+ CREATE INDEX idx2 ON test_class_r USING gin (v);                                                                                  +
+                                                                                                                                   +
+ CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');+
+                                                                                                                                   +
+ ALTER TABLE test_class_r OWNER TO root;                                                                                           +
+ REVOKE ALL ON test_class_r FROM PUBLIC;                                                                                           +
+ GRANT INSERT ON test_class_r TO root WITH GRANT OPTION;                                                                           +
+ GRANT SELECT ON test_class_r TO root WITH GRANT OPTION;                                                                           +
+ GRANT UPDATE ON test_class_r TO root WITH GRANT OPTION;                                                                           +
+ GRANT DELETE ON test_class_r TO root WITH GRANT OPTION;                                                                           +
+ GRANT TRUNCATE ON test_class_r TO root WITH GRANT OPTION;                                                                         +
+ GRANT REFERENCES ON test_class_r TO root WITH GRANT OPTION;                                                                       +
+ GRANT TRIGGER ON test_class_r TO root WITH GRANT OPTION;                                                                          +
  
 (1 row)
 
@@ -83,7 +96,7 @@ SELECT pg_ddl_script('test_class_r2'::regclass);
      a integer                                                                          +
  ) WITH OIDS;                                                                           +
                                                                                         +
- COMMENT ON TABLE  test_class_r2 IS NULL;                                               +
+ COMMENT ON TABLE test_class_r2 IS NULL;                                                +
                                                                                         +
  ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);+
                                                                                         +
@@ -120,7 +133,7 @@ SELECT pg_ddl_script('test_class_v'::regclass);
      test_class_r.v                                            +
     FROM test_class_r;                                         +
                                                                +
- COMMENT ON VIEW  test_class_v IS NULL;                        +
+ COMMENT ON VIEW test_class_v IS NULL;                         +
                                                                +
  ALTER VIEW test_class_v OWNER TO root;                        +
  REVOKE ALL ON test_class_v FROM PUBLIC;                       +
@@ -151,7 +164,7 @@ SELECT pg_ddl_script('test_class_m'::regclass);
      test_class_r.v                                                         +
     FROM test_class_r;                                                      +
                                                                             +
- COMMENT ON MATERIALIZED VIEW  test_class_m IS NULL;                        +
+ COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;                         +
                                                                             +
  ALTER MATERIALIZED VIEW test_class_m OWNER TO root;                        +
  REVOKE ALL ON test_class_m FROM PUBLIC;                                    +
@@ -206,6 +219,8 @@ SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
     WHERE p.oid = $1                                                                                                                                           +
  $function$                                                                                                                                                    +
                                                                                                                                                                +
+ COMMENT ON FUNCTION pg_ddl_oid_info(oid) IS NULL;                                                                                                             +
+                                                                                                                                                               +
  ALTER FUNCTION pg_ddl_oid_info(oid) OWNER TO root;                                                                                                            +
  REVOKE ALL ON pg_ddl_oid_info(oid) FROM PUBLIC;                                                                                                               +
  GRANT EXECUTE ON FUNCTION pg_ddl_oid_info(oid) TO PUBLIC;                                                                                                     +
@@ -217,6 +232,7 @@ create function funfun(a int, b text default null, out c numeric, out d text) re
 $$ select 3.14, 'now'::text $$ language sql cost 123 rows 19
 set xmloption = content
 ;
+comment on function funfun(int,text) is 'Use more comments!';
 select * from funfun(1);
   c   |  d  
 ------+-----
@@ -236,6 +252,8 @@ SELECT pg_ddl_script('funfun'::regproc);
   COST 123 ROWS 19                                                                                        +
   SET xmloption TO 'content'                                                                              +
  AS $function$ select 3.14, 'now'::text $function$                                                        +
+                                                                                                          +
+ COMMENT ON FUNCTION funfun(integer,text) IS 'Use more comments!';                                        +
                                                                                                           +
  ALTER FUNCTION funfun(integer,text) OWNER TO root;                                                       +
  REVOKE ALL ON funfun(integer,text) FROM PUBLIC;                                                          +

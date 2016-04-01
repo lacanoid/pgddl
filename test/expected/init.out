@@ -13,6 +13,7 @@ CREATE EXTENSION ddl;
  function pg_ddl_alter_owner(oid)
  function pg_ddl_alter_table_defaults(regclass)
  function pg_ddl_banner(text,text,text,text)
+ function pg_ddl_comment(oid)
  function pg_ddl_create_class(regclass)
  function pg_ddl_create_constraints(regclass)
  function pg_ddl_create_function(regproc)
@@ -33,5 +34,5 @@ CREATE EXTENSION ddl;
  function pg_ddl_script(regclass)
  function pg_ddl_script(regproc)
  function pg_ddl_script(regprocedure)
-(23 rows)
+(24 rows)
 

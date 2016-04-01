@@ -4,15 +4,22 @@ DDL extractor functions  for PostgreSQL
 This is an SQL-only extension for PostgreSQL that provides functions for generating 
 SQL DDL scripts for objects stored in a database.
 
-Advantages over using other tools like `psql` or `pgdump` include:
-
-- You can use it with any client which support running plain SQL queries
-- No shell commands with hairy options required (for running pg_dump), just use SELECT
-- With SQL you can dump things like say only functions with matching name from all schemas
-- Created scripts are somewhat more intended to be run manually in a client
-
 Some other SQL databases support commands like SHOW CREATE TABLE or provide callable 
 functions for the purpose. 
+
+PostgreSQL currently does not provide overall in-server DDL extracting functions,
+but rather just separate `pg_dump` program, which is an external tool to the server 
+and therefore usually requires shell access or local installation to use.
+
+PostgreSQL does however provide a number of helper functions which greatly help with
+reconstructing DDL and are of course used by this extension.
+
+Advantages over using other tools like `psql` or `pgdump` include:
+
+- You can use it extract DDL with any client which support running plain SQL queries
+- With SQL you can dump things like say only functions with matching names from chosen schemas
+- Created scripts are somewhat more intended to be run and copy/pasted manually by the DBA
+- No shell commands with hairy options required (for running pg_dump), just use SELECT
 
 It is currently rather incomplete, but still useful. 
 It provides support for most basic objects. 
@@ -37,6 +44,14 @@ or selecting a specific PostgreSQL installation:
 And finally inside the database:
 
     CREATE EXTENSION ddl;
+
+It you use multiple schemas, you will need to have variable `search_path` 
+set appropriately for the extension to work. To make it work with any value of
+`search_path`, you can install the extension in the `pg_catalog` schema:
+
+    CREATE EXTENSION ddl SCHEMA pg_catalog;
+
+This of course requires superuser privileges.
 
 Using
 -----
@@ -67,7 +82,11 @@ CREATE TABLE users (
 SELECT pg_ddl_script('users'::regclass);
 ```
 
-A number of other functions are provided to extract more specific objects:
+A number of other functions are provided to extract more specific objects.
+They are used internally by the extension and are possibly subject to change in 
+future versions of the extension. They are generraly not intended to be used
+by the end user. 
+They are:
 
 - `pg_ddl_create_table(regclass) returns text`
 
