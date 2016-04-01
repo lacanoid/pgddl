@@ -7,18 +7,6 @@ SET client_min_messages = warning;
 
 ---------------------------------------------------
 
-/*
-CREATE TYPE pg_ddl_options AS (
-  ddldrop  boolean, -- generate DROP statements
-  ddlcor   boolean, -- CREATE OR REPLACE 
-  ddlalter boolean, -- prefer ALTER to CREATE
-  ddline   boolean, -- IF NOT EXISTS
-  ddlwrap  boolean, -- wrap in BEGIN / END
-  ddldep   boolean, -- output objects which depend on this object too
-  ddldata  boolean  -- add statements preserve / copy table data
-);
-*/
-
 ---------------------------------------------------
 --	Helpers for digesting system catalogs
 ---------------------------------------------------
@@ -76,21 +64,26 @@ AS $function$
         CASE
             WHEN (a.atttypmod - 4) > 0 THEN a.atttypmod - 4
             ELSE NULL::integer
-        END AS size, a.attnotnull AS not_null, 
-        def.adsrc AS "default", col_description(c.oid, a.attnum::integer) AS comment, 
+        END AS size, 
+        a.attnotnull AS not_null, 
+        def.adsrc AS "default", 
+        col_description(c.oid, a.attnum::integer) AS comment, 
         con.conname AS primary_key, 
-        a.attislocal AS is_local, a.attstorage::text, a.attnum AS ord, s.nspname AS namespace, 
+        a.attislocal AS is_local, 
+        a.attstorage::text, 
+        a.attnum AS ord, 
+        s.nspname AS namespace, 
         c.relname AS class_name, 
-        (c.oid::regclass)::text || '.' || quote_ident(a.attname) AS sql_identifier,
+        text(c.oid::regclass) || '.' || quote_ident(a.attname) AS sql_identifier,
         c.oid, 
-        (((quote_ident(a.attname::text) || ' '::text) || format_type(t.oid, NULL::integer)) || 
+        quote_ident(a.attname::text) || ' ' || format_type(t.oid, NULL::integer) || 
         CASE
             WHEN (a.atttypmod - 4) > 65536 
-            THEN ((('('::text || (((a.atttypmod - 4) / 65536)::text)) || ','::text) || (((a.atttypmod - 4) % 65536)::text)) || ')'::text
+            THEN '(' || ((a.atttypmod - 4) / 65536) || ',' || ((a.atttypmod - 4) % 65536) || ')'
             WHEN (a.atttypmod - 4) > 0 
-            THEN ('('::text || ((a.atttypmod - 4)::text)) || ')'::text
-            ELSE ''::text
-        END) || 
+            THEN '(' || (a.atttypmod - 4) || ')'
+            ELSE ''
+        END || 
         CASE
             WHEN a.attnotnull THEN ' NOT NULL'::text
             ELSE ''::text
