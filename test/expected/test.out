@@ -80,8 +80,11 @@ SELECT pg_ddl_script('test_class_r'::regclass);
 (1 row)
 
 CREATE UNLOGGED TABLE test_class_r2 (
-  i serial, 
-  a int references test_class_r(a)
+  i  serial, 
+  a  int references test_class_r(a),
+  cc char(20),
+  vv varchar(20),
+  n  numeric(10,2)
 );
 alter table test_class_r2 set with oids;
 SELECT pg_ddl_script('test_class_r2'::regclass);
@@ -93,7 +96,10 @@ SELECT pg_ddl_script('test_class_r2'::regclass);
                                                                                         +
  CREATE UNLOGGED TABLE test_class_r2 (                                                  +
      i integer NOT NULL,                                                                +
-     a integer                                                                          +
+     a integer,                                                                         +
+     cc character(20),                                                                  +
+     vv character varying(20),                                                          +
+     n numeric(10,2)                                                                    +
  ) WITH OIDS;                                                                           +
                                                                                         +
  COMMENT ON TABLE test_class_r2 IS NULL;                                                +

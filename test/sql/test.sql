@@ -29,8 +29,11 @@ create index idx2 on test_class_r using gin (v);
 SELECT pg_ddl_script('test_class_r'::regclass);
 
 CREATE UNLOGGED TABLE test_class_r2 (
-  i serial, 
-  a int references test_class_r(a)
+  i  serial, 
+  a  int references test_class_r(a),
+  cc char(20),
+  vv varchar(20),
+  n  numeric(10,2)
 );
 alter table test_class_r2 set with oids;
 SELECT pg_ddl_script('test_class_r2'::regclass);
