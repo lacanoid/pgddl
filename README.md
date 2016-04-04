@@ -7,11 +7,11 @@ SQL DDL scripts for objects stored in a database.
 Some other SQL databases support commands like SHOW CREATE TABLE or provide 
 other fascilities for the purpose. 
 
-PostgreSQL currently does not provide overall in-server DDL extracting functions,
-but rather just separate `pg_dump` program, which is an external tool to the server 
-and therefore usually requires shell access or local installation to use.
+PostgreSQL currently doesn't provide overall in-server DDL extracting functions,
+but rather just a separate `pg_dump` program. It is an external tool to the server 
+and therefore requires shell access or local installation to be of use.
 
-PostgreSQL however already provide a number of helper functions which greatly help with
+PostgreSQL however already provides a number of helper functions which greatly help with
 reconstructing DDL and are of course used by this extension.
 
 Advantages over using other tools like `psql` or `pgdump` include:
