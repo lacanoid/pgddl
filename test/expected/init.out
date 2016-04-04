@@ -19,6 +19,7 @@ CREATE EXTENSION ddl;
  function pg_ddl_create_function(regproc)
  function pg_ddl_create_indexes(regclass)
  function pg_ddl_create_rules(regclass)
+ function pg_ddl_create_sequence(regclass)
  function pg_ddl_create_table(regclass)
  function pg_ddl_create_triggers(regclass)
  function pg_ddl_create_type_domain(regtype)
@@ -37,5 +38,5 @@ CREATE EXTENSION ddl;
  function pg_ddl_script(regproc)
  function pg_ddl_script(regprocedure)
  function pg_ddl_script(regtype)
-(27 rows)
+(28 rows)
 

@@ -436,3 +436,27 @@ select pg_ddl_script('test_type_c'::regclass);
  
 (1 row)
 
+create sequence test_type_S increment 4 start 2;
+comment on sequence test_type_S is 'interleave';
+select pg_ddl_script('test_type_S'::regclass);
+                           pg_ddl_script                           
+-------------------------------------------------------------------
+ --                                                               +
+ -- Name: test_type_s; Type: SEQUENCE; Schema: public; Owner: root+
+ --                                                               +
+                                                                  +
+ CREATE SEQUENCE test_type_s;                                     +
+ ALTER SEQUENCE test_type_s                                       +
+  INCREMENT BY 4                                                  +
+  MINVALUE 1                                                      +
+  MAXVALUE 9223372036854775807                                    +
+  START WITH 2                                                    +
+  NO CYCLE;                                                       +
+                                                                  +
+ COMMENT ON SEQUENCE test_type_s IS 'interleave';                 +
+                                                                  +
+ ALTER SEQUENCE test_type_s OWNER TO root;                        +
+ REVOKE ALL ON test_type_s FROM PUBLIC;                           +
+ 
+(1 row)
+

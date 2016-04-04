@@ -78,4 +78,8 @@ comment on column test_type_c.i is 'my class class column i';
 select pg_ddl_script('test_type_c'::regtype);
 select pg_ddl_script('test_type_c'::regclass);
 
+create sequence test_type_S increment 4 start 2;
+comment on sequence test_type_S is 'interleave';
+select pg_ddl_script('test_type_S'::regclass);
+
 

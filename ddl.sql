@@ -408,6 +408,28 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE FUNCTION pg_ddl_create_sequence(regclass)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+ with obj as (select * from pg_ddl_oid_info($1))
+ select 
+ 'CREATE SEQUENCE '||(oid::regclass::text) || E';\n'
+ ||'ALTER SEQUENCE '||(oid::regclass::text) 
+ ||E'\n INCREMENT BY '||increment
+ ||E'\n MINVALUE '||minimum_value
+ ||E'\n MAXVALUE '||maximum_value
+ ||E'\n START WITH '||start_value
+ ||E'\n '|| case cycle_option when 'YES' then 'CYCLE' else 'NO CYCLE' end
+ ||E';\n'
+ FROM information_schema.sequences s JOIN obj ON (true)
+ WHERE sequence_schema = obj.namespace
+   AND sequence_name = obj.name
+   AND obj.kind = 'SEQUENCE'
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE FUNCTION pg_ddl_create_type_enum(regtype)
  RETURNS text
  LANGUAGE sql
@@ -467,6 +489,7 @@ AS $function$
  case 
   when obj.kind in ('VIEW','MATERIALIZED VIEW') then pg_ddl_create_view($1)  
   when obj.kind in ('TABLE','TYPE') then pg_ddl_create_table($1)
+  when obj.kind in ('SEQUENCE') then pg_ddl_create_sequence($1)
   else '-- UNSUPPORTED OBJECT: '||obj.kind
  end 
   || E'\n' ||
