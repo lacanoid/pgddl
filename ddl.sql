@@ -420,7 +420,7 @@ ee as (
   where enumtypid = $1
   order by enumsortorder
 )
-select 'CREATE TYPE ' || format_type($1,null) || ' AS ENUM (' || E'\n  ' ||
+select 'CREATE TYPE ' || format_type($1,null) || ' AS ENUM (' || E'\n ' ||
        string_agg(label,E'\n ') || E'\n);\n\n'
   from ee
 $function$  strict;
@@ -457,7 +457,7 @@ AS $function$
 
  comments as (
    select 'COMMENT ON COLUMN ' || text($1) || '.' || quote_ident(name) ||
-          '  IS ' || quote_nullable(comment) || ';' as cc
+          ' IS ' || quote_nullable(comment) || ';' as cc
      from pg_ddl_get_columns($1) 
     where comment IS NOT NULL 
  )
@@ -467,7 +467,7 @@ AS $function$
  case 
   when obj.kind in ('VIEW','MATERIALIZED VIEW') then pg_ddl_create_view($1)  
   when obj.kind in ('TABLE','TYPE') then pg_ddl_create_table($1)
-  else ' -- UNSUPPORTED OBJECT'
+  else '-- UNSUPPORTED OBJECT: '||obj.kind
  end 
   || E'\n' ||
   case when obj.kind not in ('TYPE') then pg_ddl_comment($1) else '' end
@@ -616,7 +616,7 @@ CREATE FUNCTION pg_ddl_grants_on_proc(regproc)
  AS $function$
  with obj as (select * from pg_ddl_oid_info($1))
  select
-   'REVOKE ALL ON '||text($1::regprocedure)||' FROM PUBLIC;'||E'\n'||
+   'REVOKE ALL ON FUNCTION '||text($1::regprocedure)||' FROM PUBLIC;'||E'\n'||
    coalesce(
     string_agg ('GRANT '||privilege_type|| 
                 ' ON FUNCTION '||text($1::regprocedure)||' TO '|| 

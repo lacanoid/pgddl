@@ -320,7 +320,7 @@ SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
  COMMENT ON FUNCTION pg_ddl_oid_info(oid) IS NULL;                                                                                                                                +
                                                                                                                                                                                   +
  ALTER FUNCTION pg_ddl_oid_info(oid) OWNER TO root;                                                                                                                               +
- REVOKE ALL ON pg_ddl_oid_info(oid) FROM PUBLIC;                                                                                                                                  +
+ REVOKE ALL ON FUNCTION pg_ddl_oid_info(oid) FROM PUBLIC;                                                                                                                         +
  GRANT EXECUTE ON FUNCTION pg_ddl_oid_info(oid) TO PUBLIC;                                                                                                                        +
  GRANT EXECUTE ON FUNCTION pg_ddl_oid_info(oid) TO root WITH GRANT OPTION;                                                                                                        +
  
@@ -354,7 +354,7 @@ SELECT pg_ddl_script('funfun'::regproc);
  COMMENT ON FUNCTION funfun(integer,text) IS 'Use more comments!';                                        +
                                                                                                           +
  ALTER FUNCTION funfun(integer,text) OWNER TO root;                                                       +
- REVOKE ALL ON funfun(integer,text) FROM PUBLIC;                                                          +
+ REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;                                                 +
  GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;                                                +
  GRANT EXECUTE ON FUNCTION funfun(integer,text) TO root WITH GRANT OPTION;                                +
  
@@ -366,7 +366,7 @@ select pg_ddl_script('test_type_e'::regtype);
                pg_ddl_script               
 -------------------------------------------
  CREATE TYPE test_type_e AS ENUM (        +
-   'foo'                                  +
+  'foo'                                   +
   'bar'                                   +
   'baz'                                   +
   'qux'                                   +
@@ -397,42 +397,42 @@ create type test_type_c as (i integer, t text, d test_type_d);
 comment on type test_type_c is 'my class type';
 comment on column test_type_c.i is 'my class class column i';
 select pg_ddl_script('test_type_c'::regtype);
-                         pg_ddl_script                          
-----------------------------------------------------------------
- --                                                            +
- -- Name: test_type_c; Type: TYPE; Schema: public; Owner: root +
- --                                                            +
-                                                               +
- CREATE TYPE test_type_c AS (                                  +
-     i integer,                                                +
-     t text,                                                   +
-     d test_type_d                                             +
- );                                                            +
-                                                               +
- COMMENT ON COLUMN test_type_c.i  IS 'my class class column i';+
-                                                               +
- COMMENT ON TYPE test_type_c IS 'my class type';               +
- ALTER TYPE test_type_c OWNER TO root;                         +
+                         pg_ddl_script                         
+---------------------------------------------------------------
+ --                                                           +
+ -- Name: test_type_c; Type: TYPE; Schema: public; Owner: root+
+ --                                                           +
+                                                              +
+ CREATE TYPE test_type_c AS (                                 +
+     i integer,                                               +
+     t text,                                                  +
+     d test_type_d                                            +
+ );                                                           +
+                                                              +
+ COMMENT ON COLUMN test_type_c.i IS 'my class class column i';+
+                                                              +
+ COMMENT ON TYPE test_type_c IS 'my class type';              +
+ ALTER TYPE test_type_c OWNER TO root;                        +
  
 (1 row)
 
 select pg_ddl_script('test_type_c'::regclass);
-                         pg_ddl_script                          
-----------------------------------------------------------------
- --                                                            +
- -- Name: test_type_c; Type: TYPE; Schema: public; Owner: root +
- --                                                            +
-                                                               +
- CREATE TYPE test_type_c AS (                                  +
-     i integer,                                                +
-     t text,                                                   +
-     d test_type_d                                             +
- );                                                            +
-                                                               +
- COMMENT ON COLUMN test_type_c.i  IS 'my class class column i';+
-                                                               +
- COMMENT ON TYPE test_type_c IS 'my class type';               +
- ALTER TYPE test_type_c OWNER TO root;                         +
+                         pg_ddl_script                         
+---------------------------------------------------------------
+ --                                                           +
+ -- Name: test_type_c; Type: TYPE; Schema: public; Owner: root+
+ --                                                           +
+                                                              +
+ CREATE TYPE test_type_c AS (                                 +
+     i integer,                                               +
+     t text,                                                  +
+     d test_type_d                                            +
+ );                                                           +
+                                                              +
+ COMMENT ON COLUMN test_type_c.i IS 'my class class column i';+
+                                                              +
+ COMMENT ON TYPE test_type_c IS 'my class type';              +
+ ALTER TYPE test_type_c OWNER TO root;                        +
  
 (1 row)
 
