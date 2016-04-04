@@ -26,13 +26,15 @@ create unique index idx1 on test_class_r (lower(b)) where b is not null;
 create index idx2 on test_class_r using gin (v);
 
 SELECT pg_ddl_script('test_class_r'::regclass);
+SELECT pg_ddl_script('test_class_r'::regtype);
 
 CREATE UNLOGGED TABLE test_class_r2 (
   i  serial, 
-  a  int references test_class_r(a),
+  a  int,
   cc char(20),
   vv varchar(20),
-  n  numeric(10,2)
+  n  numeric(10,2),
+  constraint "blah" foreign key (a) references test_class_r(a) deferrable initially deferred
 );
 alter table test_class_r2 set with oids;
 SELECT pg_ddl_script('test_class_r2'::regclass);
@@ -42,9 +44,11 @@ SELECT * FROM test_class_r
   WITH CHECK OPTION;
 
 SELECT pg_ddl_script('test_class_v'::regclass);
+SELECT pg_ddl_script('test_class_v'::regtype);
 
 CREATE MATERIALIZED VIEW test_class_m AS
 SELECT * FROM test_class_r;
+create unique index test_class_mi ON test_class_m (a);
 
 SELECT pg_ddl_script('test_class_m'::regclass);
 
@@ -60,17 +64,18 @@ comment on function funfun(int,text) is 'Use more comments!';
 select * from funfun(1);
 SELECT pg_ddl_script('funfun'::regproc);
 
-/*
 create type test_type_e as enum ('foo','bar','baz','qux');
+comment on type test_type_e is 'my enum';
 select pg_ddl_script('test_type_e'::regtype);
 
-create domain test_type_d text check(value is not null);
+create domain test_type_d numeric(10,2) check(value is not null) check(value>6) default 7;
+comment on type test_type_d is 'my domain';
 select pg_ddl_script('test_type_d'::regtype);
 
 create type test_type_c as (i integer, t text, d test_type_d);
+comment on type test_type_c is 'my class type';
+comment on column test_type_c.i is 'my class class column i';
 select pg_ddl_script('test_type_c'::regtype);
 select pg_ddl_script('test_type_c'::regclass);
-*/
-
 
 

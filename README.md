@@ -4,14 +4,14 @@ DDL extractor functions  for PostgreSQL
 This is an SQL-only extension for PostgreSQL that provides functions for generating 
 SQL DDL scripts for objects stored in a database.
 
-Some other SQL databases support commands like SHOW CREATE TABLE or provide callable 
-functions for the purpose. 
+Some other SQL databases support commands like SHOW CREATE TABLE or provide 
+other fascilities for the purpose. 
 
 PostgreSQL currently does not provide overall in-server DDL extracting functions,
 but rather just separate `pg_dump` program, which is an external tool to the server 
 and therefore usually requires shell access or local installation to use.
 
-PostgreSQL does however provide a number of helper functions which greatly help with
+PostgreSQL however already provide a number of helper functions which greatly help with
 reconstructing DDL and are of course used by this extension.
 
 Advantages over using other tools like `psql` or `pgdump` include:
@@ -22,8 +22,8 @@ Advantages over using other tools like `psql` or `pgdump` include:
 - No shell commands with hairy options required (for running pg_dump), just use SELECT
 
 It is currently rather incomplete, but still useful. 
-It provides support for most basic objects. 
-Tested on PostgreSQL 9.4.
+It provides support for the basic user-level objects. 
+Tested on PostgreSQL 9.4. Might work with earlier versions.
 
 Plans on how to make this support newer fetures AND older servers are being considered.
  
@@ -59,17 +59,24 @@ Using
 This module provides one main end user function `pg_ddl_script` that 
 you can use to obtain SQL DDL source for a particular database object.
 
-Currently supported object types are `regclass`,`regproc` and `regprocedure`.
+Currently supported object types are `regclass`,`regtype`,`regproc`,`regprocedure`.
 You will probably want to cast object name or oid to appropriate type.
 
 - `pg_ddl_script(regclass) returns text`
 
     Extracts SQL DDL source of a class (table or view) `regclass`.
+    This also includes all associated comments, ownership, constraints, 
+    indexes, triggers, rules, grants, etc...
 
 - `pg_ddl_script(regproc) returns text`
 - `pg_ddl_script(regprocedure) returns text`
 
-    Extracts SQL DDL source of a function.
+    Extracts SQL DDL source of a function `regproc`.
+
+- `pg_ddl_script(regtype) returns text`
+
+    Extracts SQL DDL source for a type `regtype`.
+    Currently enums, domains and composites are supported.
 
 For example:
 
@@ -80,13 +87,18 @@ CREATE TABLE users (
 );
 
 SELECT pg_ddl_script('users'::regclass);
+
+CREATE TYPE my_enum AS ENUM ('foo','bar');
+
+SELECT pg_ddl_script('my_enum'::regtype);
+
 ```
 
 A number of other functions are provided to extract more specific objects.
-They are used internally by the extension and are possibly subject to change in 
-future versions of the extension. They are generraly not intended to be used
-by the end user. 
-They are:
+Their names all begin with `pg_ddl_`. They are used internally by the extension 
+and are possibly subject to change in future versions of the extension. 
+They are generally not intended to be used by the end user. 
+Nevertheless, some of them are:
 
 - `pg_ddl_create_table(regclass) returns text`
 
@@ -98,7 +110,7 @@ They are:
 
 - `pg_ddl_create_class(regclass) returns text`
 
-    Extracts SQL DDL source of a table or view.
+    Extracts SQL DDL source of a table or a view.
 
 - `pg_ddl_create_function(regprocedure) returns text`
 

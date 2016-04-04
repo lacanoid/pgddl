@@ -14,7 +14,7 @@ SET client_min_messages = warning;
 CREATE FUNCTION pg_ddl_oid_info(
   IN oid,  
   OUT oid oid, OUT name name,  OUT namespace name,  
-  OUT kind text, OUT owner name, OUT sql_identifier text)
+  OUT kind text, OUT owner name, OUT sql_kind text, OUT sql_identifier text)
  RETURNS record
  LANGUAGE sql
 AS $function$
@@ -23,6 +23,7 @@ AS $function$
          n.nspname AS namespace,
          coalesce(cc.column2,c.relkind::text) AS kind,
          pg_get_userbyid(c.relowner) AS owner,
+         coalesce(cc.column2,c.relkind::text) AS sql_kind,
          text($1::regclass) AS sql_identifier
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     left join (
@@ -43,6 +44,7 @@ AS $function$
          n.nspname AS namespace,
          'FUNCTION' AS kind,
          pg_get_userbyid(p.proowner) AS owner,
+         'FUNCTION' AS sql_kind,
          text($1::regprocedure) AS sql_identifier
     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
    WHERE p.oid = $1
@@ -52,15 +54,16 @@ AS $function$
          n.nspname AS namespace,
          coalesce(tt.column2,t.typtype::text) AS kind,
          pg_get_userbyid(t.typowner) AS owner,
+         coalesce(tt.column3,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
     left join (
-       values ('b','BASE'),
-              ('c','COMPOSITE'),
-              ('d','DOMAIN'),
-              ('e','ENUM'),
-              ('p','PSEUDO'),
-              ('r','RANGE')
+       values ('b','BASE','TYPE'),
+              ('c','COMPOSITE','TYPE'),
+              ('d','DOMAIN','DOMAIN'),
+              ('e','ENUM','TYPE'),
+              ('p','PSEUDO','TYPE'),
+              ('r','RANGE','TYPE')
     ) as tt on tt.column1 = t.typtype
    WHERE t.oid = $1
 $function$  strict;
@@ -260,11 +263,11 @@ AS $function$
         cc.conname::text AS constraint_name
    FROM pg_index x
    JOIN pg_class c ON c.oid = x.indrelid
+   JOIN pg_namespace n ON n.oid = c.relnamespace
    JOIN pg_class i ON i.oid = x.indexrelid
    JOIN pg_depend d ON d.objid = x.indexrelid
-   JOIN pg_namespace n ON n.oid = c.relnamespace
    LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
-  WHERE c.relkind = 'r'::"char" AND i.relkind = 'i'::"char" 
+  WHERE c.relkind in ('r','m') AND i.relkind = 'i'::"char" 
     AND coalesce(c.oid = $1,true)
 $function$;
 
@@ -336,10 +339,25 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE FUNCTION pg_ddl_comment(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+ with obj as (select * from pg_ddl_oid_info($1))
+ select
+  'COMMENT ON ' || obj.sql_kind
+   || ' '  || sql_identifier ||
+  ' IS ' || quote_nullable(obj_description(oid)) || E';\n'
+   from obj
+$function$;
+
+---------------------------------------------------
+
 CREATE FUNCTION pg_ddl_create_table(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
+  with obj as (select * from pg_ddl_oid_info($1))
   select 
     'CREATE '||
   case relpersistence
@@ -347,7 +365,9 @@ AS $function$
     when 't' then 'TEMPORARY '
     else ''
   end
-  ||'TABLE '||(oid::regclass::text)
+  || obj.kind || ' ' 
+  || obj.sql_identifier
+  || case obj.kind when 'TYPE' then ' AS' else '' end 
   ||
   E' (\n'||
     coalesce(''||(
@@ -363,9 +383,9 @@ AS $function$
   ||
   E';\n'
 
- FROM pg_class c
- WHERE oid = $1
- AND relkind='r'
+ FROM pg_class c join obj on (true)
+ WHERE c.oid = $1
+-- AND relkind in ('r','c')
 $function$  strict;
 
 ---------------------------------------------------
@@ -388,16 +408,44 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_comment(oid)
+CREATE FUNCTION pg_ddl_create_type_enum(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$
- with obj as (select * from pg_ddl_oid_info($1))
- select
-  'COMMENT ON ' || kind || ' '  || sql_identifier ||
-  ' IS ' || quote_nullable(obj_description(oid)) || E';\n'
-   from obj
-$function$;
+with
+ee as (
+ select 
+   quote_nullable(enumlabel) as label
+   from pg_enum
+  where enumtypid = $1
+  order by enumsortorder
+)
+select 'CREATE TYPE ' || format_type($1,null) || ' AS ENUM (' || E'\n  ' ||
+       string_agg(label,E'\n ') || E'\n);\n\n'
+  from ee
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE FUNCTION pg_ddl_create_type_domain(regtype)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with
+cc as (
+  select pg_get_constraintdef(oid) as definition
+    from pg_constraint con
+   where con.contypid = $1
+   order by oid
+)
+select 'CREATE DOMAIN ' || format_type(t.oid,null) 
+       || E'\n AS ' || format_type(t.typbasetype,typtypmod) 
+       || coalesce(E'\n '||(SELECT string_agg(definition,E'\n ') FROM cc),'')
+       || coalesce(E'\n DEFAULT ' || t.typdefault, '')
+       || E';\n\n'
+  from pg_type t
+ where oid = $1
+$function$  strict;
 
 ---------------------------------------------------
 
@@ -418,11 +466,12 @@ AS $function$
   ||
  case 
   when obj.kind in ('VIEW','MATERIALIZED VIEW') then pg_ddl_create_view($1)  
-  when obj.kind in ('TABLE') then pg_ddl_create_table($1)
+  when obj.kind in ('TABLE','TYPE') then pg_ddl_create_table($1)
   else ' -- UNSUPPORTED OBJECT'
  end 
   || E'\n' ||
-  pg_ddl_comment($1) ||
+  case when obj.kind not in ('TYPE') then pg_ddl_comment($1) else '' end
+  ||
   coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'') || E'\n'
     from obj
     
@@ -512,7 +561,7 @@ CREATE FUNCTION pg_ddl_alter_owner(oid)
 AS $function$
  with obj as (select * from pg_ddl_oid_info($1))
  select 
-   'ALTER '||kind||' '||sql_identifier||' OWNER TO '||quote_ident(owner)||E';\n'
+   'ALTER '||sql_kind||' '||sql_identifier||' OWNER TO '||quote_ident(owner)||E';\n'
    from obj
 $function$  strict;
 
@@ -525,7 +574,7 @@ AS $function$
  with obj as (select * from pg_ddl_oid_info($1))
  select
   pg_ddl_banner(sql_identifier,'FUNCTION',namespace,owner) ||
-  pg_get_functiondef($1) || E'\n' ||
+  trim(trailing E'\n' from pg_get_functiondef($1)) || E';\n\n' ||
   pg_ddl_comment($1) || E'\n'
    from obj
 $function$  strict;
@@ -591,31 +640,47 @@ $function$  strict;
 --	Main script generating functions
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_script(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_script(regtype)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ select null::text $function$;
+-- will be defined later
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddl_script(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
    select 
-     pg_ddl_create_class($1) || 
-     pg_ddl_alter_table_defaults($1) || 
-     pg_ddl_create_constraints($1) || 
-     pg_ddl_create_indexes($1) ||
-     pg_ddl_create_triggers($1) ||
-     pg_ddl_create_rules($1) || 
-     pg_ddl_alter_owner($1) ||
-     pg_ddl_grants_on_class($1)
+     pg_ddl_create_class($1) 
+     || pg_ddl_alter_table_defaults($1) 
+     || pg_ddl_create_constraints($1) 
+     || pg_ddl_create_indexes($1) 
+     || pg_ddl_create_triggers($1) 
+     || pg_ddl_create_rules($1) 
+     || pg_ddl_alter_owner($1) 
+     || pg_ddl_grants_on_class($1)
+    from pg_class c
+   where c.oid = $1 and c.relkind <> 'c'
+   union 
+  select pg_ddl_script(t.oid::regtype)
+    from pg_class c
+    left join pg_type t on (c.oid=t.typrelid)
+   where c.oid = $1 and c.relkind = 'c'
+
 $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_script(regprocedure)
+CREATE OR REPLACE FUNCTION pg_ddl_script(regprocedure)
  RETURNS text
  LANGUAGE sql
 AS $function$
    select 
-     pg_ddl_create_function($1) ||
-     pg_ddl_alter_owner($1) ||
-     pg_ddl_grants_on_proc($1)
+     pg_ddl_create_function($1) 
+     || pg_ddl_alter_owner($1) 
+     || pg_ddl_grants_on_proc($1)
 $function$  strict;
 
 CREATE FUNCTION pg_ddl_script(regproc)
@@ -623,5 +688,35 @@ CREATE FUNCTION pg_ddl_script(regproc)
  LANGUAGE sql
 AS $$ select pg_ddl_script($1::regprocedure) $$;
 
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddl_script(regtype)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+   select pg_ddl_create_class(c.oid::regclass) -- type
+          || pg_ddl_comment(t.oid)
+          || pg_ddl_alter_owner(t.oid) 
+     from pg_type t
+     join pg_class c on (c.oid=t.typrelid)
+    where t.oid = $1 and t.typtype = 'c' and c.relkind = 'c'
+    union
+   select pg_ddl_script(c.oid::regclass) -- table, etc
+     from pg_type t
+     join pg_class c on (c.oid=t.typrelid)
+    where t.oid = $1 and t.typtype = 'c' and c.relkind <> 'c'
+    union
+   select pg_ddl_create_type_enum(t.oid)
+          || pg_ddl_comment(t.oid)
+          || pg_ddl_alter_owner(t.oid) 
+     from pg_type t
+    where t.oid = $1 and t.typtype = 'e'
+    union
+   select pg_ddl_create_type_domain(t.oid)
+          || pg_ddl_comment(t.oid)
+          || pg_ddl_alter_owner(t.oid) 
+     from pg_type t
+    where t.oid = $1 and t.typtype = 'd'
+$function$  strict;
 
 

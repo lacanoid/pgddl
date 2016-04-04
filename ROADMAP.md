@@ -33,18 +33,29 @@ Tasks
 -----
 
 - support for regtypes
+-- enums
+-- domains
+-- composites (dump as tables and views when appropriate)
+
+- support for sequences
+
 - support for other missing stuff:
 -- storage parameters
 -- tablespaces
 
 - improve simple tests
-- make tests which compare to output of pg_dump
-- dump comments on constraints, indexes, triggers
+- make some tests to test if what we make actually runs
+- make some tests which compare to output of pg_dump for any sql file:
+  test load file -> pg_dump compared to load file -> ddl_dump -> reload -> pg_dump
+- dump also comments on constraints, indexes, triggers, etc...
 - find out the minimum version of Postgres this works on
 
 - support for dumping whole schemas
 - recursive dumper which handles dependancies
+- support for foreign tables
+- support for roles
 - support for other postgres objects
+
 
 Other tools
 -----------
