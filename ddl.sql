@@ -403,7 +403,7 @@ AS $function$
   pg_catalog.pg_get_viewdef(oid,true)||E'\n'
  FROM pg_class t
  WHERE oid = $1
- AND relkind = 'v' OR relkind = 'm'
+   AND relkind in ('v','c')
 $function$  strict;
 
 ---------------------------------------------------
