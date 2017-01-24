@@ -471,6 +471,32 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE FUNCTION pg_ddl_create_index(regclass)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+ with ii as (
+ SELECT CASE d.refclassid
+            WHEN 'pg_constraint'::regclass 
+            THEN 'ALTER TABLE ' || text(c.oid::regclass) 
+                 || ' ADD CONSTRAINT ' || quote_ident(cc.conname) 
+                 || ' ' || pg_get_constraintdef(cc.oid)
+            ELSE pg_get_indexdef(i.oid)
+        END AS indexdef 
+   FROM pg_index x
+   JOIN pg_class c ON c.oid = x.indrelid
+   JOIN pg_class i ON i.oid = x.indexrelid
+   JOIN pg_depend d ON d.objid = x.indexrelid
+   LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
+  WHERE c.relkind in ('r','m') AND i.relkind = 'i'::"char" 
+    AND i.oid = $1
+)
+ SELECT indexdef || E';\n'
+   FROM ii
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE FUNCTION pg_ddl_create_class(regclass)
  RETURNS text
  LANGUAGE sql
@@ -490,6 +516,7 @@ AS $function$
   when obj.kind in ('VIEW','MATERIALIZED VIEW') then pg_ddl_create_view($1)  
   when obj.kind in ('TABLE','TYPE') then pg_ddl_create_table($1)
   when obj.kind in ('SEQUENCE') then pg_ddl_create_sequence($1)
+  when obj.kind in ('INDEX') then pg_ddl_create_index($1)
   else '-- UNSUPPORTED OBJECT: '||obj.kind
  end 
   || E'\n' ||
@@ -583,9 +610,12 @@ CREATE FUNCTION pg_ddl_alter_owner(oid)
  LANGUAGE sql
 AS $function$
  with obj as (select * from pg_ddl_oid_info($1))
- select 
-   'ALTER '||sql_kind||' '||sql_identifier||' OWNER TO '||quote_ident(owner)||E';\n'
-   from obj
+ select
+   case
+     when obj.kind = 'INDEX' then ''
+     else 'ALTER '||sql_kind||' '||sql_identifier||' OWNER TO '||quote_ident(owner)||E';\n'
+   end
+  from obj 
 $function$  strict;
 
 ---------------------------------------------------
@@ -611,7 +641,6 @@ CREATE FUNCTION pg_ddl_grants_on_class(regclass)
  AS $function$
  with obj as (select * from pg_ddl_oid_info($1))
  select
-   'REVOKE ALL ON '||text($1)||' FROM PUBLIC;'||E'\n'||
    coalesce(
     string_agg ('GRANT '||privilege_type|| 
                 ' ON '||text($1)||' TO '|| 

@@ -62,7 +62,6 @@ SELECT pg_ddl_script('test_class_r'::regclass);
  CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');+
                                                                                                                                    +
  ALTER TABLE test_class_r OWNER TO root;                                                                                           +
- REVOKE ALL ON test_class_r FROM PUBLIC;                                                                                           +
  GRANT INSERT ON test_class_r TO root WITH GRANT OPTION;                                                                           +
  GRANT SELECT ON test_class_r TO root WITH GRANT OPTION;                                                                           +
  GRANT UPDATE ON test_class_r TO root WITH GRANT OPTION;                                                                           +
@@ -107,7 +106,6 @@ SELECT pg_ddl_script('test_class_r'::regtype);
  CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');+
                                                                                                                                    +
  ALTER TABLE test_class_r OWNER TO root;                                                                                           +
- REVOKE ALL ON test_class_r FROM PUBLIC;                                                                                           +
  GRANT INSERT ON test_class_r TO root WITH GRANT OPTION;                                                                           +
  GRANT SELECT ON test_class_r TO root WITH GRANT OPTION;                                                                           +
  GRANT UPDATE ON test_class_r TO root WITH GRANT OPTION;                                                                           +
@@ -115,6 +113,20 @@ SELECT pg_ddl_script('test_class_r'::regtype);
  GRANT TRUNCATE ON test_class_r TO root WITH GRANT OPTION;                                                                         +
  GRANT REFERENCES ON test_class_r TO root WITH GRANT OPTION;                                                                       +
  GRANT TRIGGER ON test_class_r TO root WITH GRANT OPTION;                                                                          +
+ 
+(1 row)
+
+SELECT pg_ddl_script('idx1'::regclass);
+                                     pg_ddl_script                                      
+----------------------------------------------------------------------------------------
+ --                                                                                    +
+ -- Name: idx1; Type: INDEX; Schema: public; Owner: root                               +
+ --                                                                                    +
+                                                                                       +
+ CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);+
+                                                                                       +
+ COMMENT ON INDEX idx1 IS NULL;                                                        +
+                                                                                       +
  
 (1 row)
 
@@ -150,7 +162,6 @@ SELECT pg_ddl_script('test_class_r2'::regclass);
    FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED;            +
                                                                                         +
  ALTER TABLE test_class_r2 OWNER TO root;                                               +
- REVOKE ALL ON test_class_r2 FROM PUBLIC;                                               +
  GRANT INSERT ON test_class_r2 TO root WITH GRANT OPTION;                               +
  GRANT SELECT ON test_class_r2 TO root WITH GRANT OPTION;                               +
  GRANT UPDATE ON test_class_r2 TO root WITH GRANT OPTION;                               +
@@ -182,7 +193,6 @@ SELECT pg_ddl_script('test_class_v'::regclass);
  COMMENT ON VIEW test_class_v IS NULL;                         +
                                                                +
  ALTER VIEW test_class_v OWNER TO root;                        +
- REVOKE ALL ON test_class_v FROM PUBLIC;                       +
  GRANT INSERT ON test_class_v TO root WITH GRANT OPTION;       +
  GRANT SELECT ON test_class_v TO root WITH GRANT OPTION;       +
  GRANT UPDATE ON test_class_v TO root WITH GRANT OPTION;       +
@@ -211,7 +221,6 @@ SELECT pg_ddl_script('test_class_v'::regtype);
  COMMENT ON VIEW test_class_v IS NULL;                         +
                                                                +
  ALTER VIEW test_class_v OWNER TO root;                        +
- REVOKE ALL ON test_class_v FROM PUBLIC;                       +
  GRANT INSERT ON test_class_v TO root WITH GRANT OPTION;       +
  GRANT SELECT ON test_class_v TO root WITH GRANT OPTION;       +
  GRANT UPDATE ON test_class_v TO root WITH GRANT OPTION;       +
@@ -245,7 +254,6 @@ SELECT pg_ddl_script('test_class_m'::regclass);
  CREATE UNIQUE INDEX test_class_mi ON test_class_m USING btree (a);         +
                                                                             +
  ALTER MATERIALIZED VIEW test_class_m OWNER TO root;                        +
- REVOKE ALL ON test_class_m FROM PUBLIC;                                    +
  
 (1 row)
 
@@ -456,7 +464,6 @@ select pg_ddl_script('test_type_S'::regclass);
  COMMENT ON SEQUENCE test_type_s IS 'interleave';                 +
                                                                   +
  ALTER SEQUENCE test_type_s OWNER TO root;                        +
- REVOKE ALL ON test_type_s FROM PUBLIC;                           +
  
 (1 row)
 

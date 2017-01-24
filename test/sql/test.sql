@@ -27,6 +27,7 @@ create index idx2 on test_class_r using gin (v);
 
 SELECT pg_ddl_script('test_class_r'::regclass);
 SELECT pg_ddl_script('test_class_r'::regtype);
+SELECT pg_ddl_script('idx1'::regclass);
 
 CREATE UNLOGGED TABLE test_class_r2 (
   i  serial, 
