@@ -1,0 +1,52 @@
+{
+   "name": "pgddl",
+   "abstract": "DDL Extractor Functions",
+   "description": "A set of SQL only functions for recreatimng DDL for object in a database",
+   "version": "0.2",
+   "maintainer": [
+      "Ziga Kranjec <ziga@ljudmila.org>"
+   ],
+   "license": {
+      "PostgreSQL": "http://www.postgresql.org/about/licence"
+   },
+   "prereqs": {
+      "runtime": {
+         "requires": {
+            "plpgsql": 0,
+            "PostgreSQL": "9.4.0"
+         },
+         "recommends": {
+            "PostgreSQL": "9.4.0"
+         }
+      }
+   },
+   "provides": {
+     "pgddl": {
+       "file": "ddl.sql",
+       "docfile": "README.md",
+       "version": "0.2",
+       "abstract": "DDL Extractor Functions"
+     }
+   },
+   "resources": {
+      "homepage": "https://github.com/lacanoid/pgddl/wiki",
+      "bugtracker": {
+         "web": "https://github.com/lacanoid/pgddl/issues"
+      },
+      "repository": {
+        "url":  "https://github.com/lacanoid/pgddl.git",
+        "web":  "https://github.com/lacanoid/pgddl",
+        "type": "git"
+      }
+   },
+   "generated_by": "Ziga Kranjec",
+   "meta-spec": {
+      "version": "1.0.0",
+      "url": "http://pgxn.org/meta/spec.txt"
+   },
+   "tags": [
+      "administration",
+      "ddl",
+      "meta"
+   ]
+}
