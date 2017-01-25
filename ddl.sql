@@ -723,6 +723,9 @@ AS $function$
 
 $function$  strict;
 
+COMMENT ON FUNCTION pg_ddl_script(regclass) IS 'Get SQL definition for a table, view, sequence or index';
+
+
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION pg_ddl_script(regprocedure)
@@ -735,10 +738,14 @@ AS $function$
      || pg_ddl_grants_on_proc($1)
 $function$  strict;
 
+COMMENT ON FUNCTION pg_ddl_script(regprocedure) IS 'Get SQL definition for a function/procedure';
+
 CREATE FUNCTION pg_ddl_script(regproc)
  RETURNS text
  LANGUAGE sql
 AS $$ select pg_ddl_script($1::regprocedure) $$;
+
+COMMENT ON FUNCTION pg_ddl_script(regproc) IS 'Get SQL definition for a function/procedure';
 
 ---------------------------------------------------
 
@@ -771,4 +778,4 @@ AS $function$
     where t.oid = $1 and t.typtype = 'd'
 $function$  strict;
 
-
+COMMENT ON FUNCTION pg_ddl_script(regtype) IS 'Get SQL definition for user defined data type';
