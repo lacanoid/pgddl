@@ -74,7 +74,7 @@ CREATE FUNCTION pg_ddl_get_columns(
   IN regclass,  
   OUT name name,  OUT type text,  OUT size integer,  OUT not_null boolean,  
   OUT "default" text, OUT comment text,  OUT primary_key name,  
-  OUT is_local boolean,  OUT attstorage text,  OUT ord smallint,  
+  OUT is_local boolean,  OUT storage text,  OUT collation text, OUT ord smallint,  
   OUT namespace name, OUT class_name name,  OUT sql_identifier text, 
   OUT oid, OUT definition text)
  RETURNS SETOF record
@@ -90,7 +90,8 @@ AS $function$
         col_description(c.oid, a.attnum::integer) AS comment, 
         con.conname AS primary_key, 
         a.attislocal AS is_local, 
-        a.attstorage::text, 
+        a.attstorage::text AS storage,
+        nullif(col.collcollate::text,'') AS collation, 
         a.attnum AS ord, 
         s.nspname AS namespace, 
         c.relname AS class_name, 
@@ -105,6 +106,11 @@ AS $function$
             ELSE ''
         END || 
         CASE
+            WHEN length(col.collcollate) > 0 
+            THEN ' COLLATE ' || quote_ident(col.collcollate::text)
+            ELSE ''
+        END ||
+        CASE
             WHEN a.attnotnull THEN ' NOT NULL'::text
             ELSE ''::text
         END AS definition
@@ -114,6 +120,7 @@ AS $function$
    LEFT JOIN pg_attrdef def ON c.oid = def.adrelid AND a.attnum = def.adnum
    LEFT JOIN pg_constraint con ON con.conrelid = c.oid AND (a.attnum = ANY (con.conkey)) AND con.contype = 'p'::"char"
    LEFT JOIN pg_type t ON t.oid = a.atttypid
+   LEFT JOIN pg_collation col ON col.oid = a.attcollation
    JOIN pg_namespace tn ON tn.oid = t.typnamespace
   WHERE (c.relkind = ANY (ARRAY['r'::"char", 'v'::"char", ''::"char", 'c'::"char"])) AND a.attnum > 0 
     AND NOT a.attisdropped 

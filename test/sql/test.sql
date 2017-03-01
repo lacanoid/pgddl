@@ -83,4 +83,12 @@ create sequence test_type_S increment 4 start 2;
 comment on sequence test_type_S is 'interleave';
 select pg_ddl_script('test_type_S'::regclass);
 
+create table test_collation (
+	id serial,
+	c text collate "C" not null,
+	en text collate "en_US",
+	t text
+);
+select pg_ddl_script('test_collation'::regclass);
+
 

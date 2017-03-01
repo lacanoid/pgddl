@@ -41,7 +41,9 @@ Tasks
 
 - support for other missing stuff:
 -- storage parameters
+-- collations
 -- tablespaces
+-- serial (alter sequence set owner column)
 
 - improve simple tests
 - make some tests to test if what we make actually runs

@@ -467,3 +467,38 @@ select pg_ddl_script('test_type_S'::regclass);
  
 (1 row)
 
+create table test_collation (
+	id serial,
+	c text collate "C" not null,
+	en text collate "en_US",
+	t text
+);
+select pg_ddl_script('test_collation'::regclass);
+                                        pg_ddl_script                                        
+---------------------------------------------------------------------------------------------
+ --                                                                                         +
+ -- Name: test_collation; Type: TABLE; Schema: public; Owner: root                          +
+ --                                                                                         +
+                                                                                            +
+ CREATE TABLE test_collation (                                                              +
+     id integer NOT NULL,                                                                   +
+     c text COLLATE "C" NOT NULL,                                                           +
+     en text COLLATE "en_US.utf8",                                                          +
+     t text                                                                                 +
+ );                                                                                         +
+                                                                                            +
+ COMMENT ON TABLE test_collation IS NULL;                                                   +
+                                                                                            +
+ ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);+
+                                                                                            +
+ ALTER TABLE test_collation OWNER TO root;                                                  +
+ GRANT INSERT ON test_collation TO root WITH GRANT OPTION;                                  +
+ GRANT SELECT ON test_collation TO root WITH GRANT OPTION;                                  +
+ GRANT UPDATE ON test_collation TO root WITH GRANT OPTION;                                  +
+ GRANT DELETE ON test_collation TO root WITH GRANT OPTION;                                  +
+ GRANT TRUNCATE ON test_collation TO root WITH GRANT OPTION;                                +
+ GRANT REFERENCES ON test_collation TO root WITH GRANT OPTION;                              +
+ GRANT TRIGGER ON test_collation TO root WITH GRANT OPTION;                                 +
+ 
+(1 row)
+
