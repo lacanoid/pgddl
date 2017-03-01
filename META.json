@@ -39,7 +39,7 @@
         "type": "git"
       }
    },
-   "generated_by": "Ziga Kranjec",
+   "generated_by": "Ziga Kranjec <ziga@ljudmila.org>",
    "meta-spec": {
       "version": "1.0.0",
       "url": "http://pgxn.org/meta/spec.txt"

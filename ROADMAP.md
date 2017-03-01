@@ -14,30 +14,17 @@ This tool uses information schema and standard SQL as much as possible,
 but for any actual practical use decoding of PostgreSQL system catalogs is required. 
 Querying pg_catalog can turn out to be quite complicated for a somewhat casual SQL user.
 
-This will hopefully help to keep SQL code in one place.
-
-Options
--------
-
-CREATE TYPE pg_ddl_options AS (
-  ddldrop  boolean, -- generate DROP statements
-  ddlalter boolean, -- prefer ALTER to CREATE
-  ddlcor   boolean, -- CREATE OR REPLACE 
-  ddline   boolean, -- IF NOT EXISTS
-  ddlwrap  boolean, -- wrap in BEGIN / END
-  ddldep   boolean, -- output objects which depend on this object too
-  ddldata  boolean  -- add statements preserve / copy table data
-);
+This will hopefully help to keep relevant SQL code for these thing in one place.
 
 Tasks
 -----
 
 - support for regtypes
--- enums
--- domains
--- composites (dump as tables and views when appropriate)
+-- range types
+-- base types
 
-- support for sequences
+- suppport for regclass
+-- foreign tables
 
 - support for other missing stuff:
 -- storage parameters
@@ -54,13 +41,27 @@ Tasks
 
 - support for dumping whole schemas
 - recursive dumper which handles dependancies
-- support for foreign tables
 - support for roles
 - support for other postgres objects
 
+Options
+-------
 
-Other tools
------------
+Some options as to what and how to dump stuff might be required:
+
+    CREATE TYPE pg_ddl_options AS (
+      ddldrop  boolean, -- generate DROP statements
+      ddlalter boolean, -- prefer ALTER to CREATE
+      ddlcor   boolean, -- CREATE OR REPLACE 
+      ddline   boolean, -- IF NOT EXISTS
+      ddlwrap  boolean, -- wrap in BEGIN / END
+      ddldep   boolean, -- output objects which depend on this object too
+      ddldata  boolean  -- add statements preserve / copy table data
+    );
+
+
+Other DDL dumping tools
+-----------------------
 
 ### psql
 
