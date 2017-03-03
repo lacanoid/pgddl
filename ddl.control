@@ -1,3 +1,5 @@
 comment = 'DDL extractor functions'
-default_version = 0.3
+default_version = 0.4
+relocatable = true
+
 

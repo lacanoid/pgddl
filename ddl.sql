@@ -24,7 +24,7 @@ AS $function$
          coalesce(cc.column2,c.relkind::text) AS kind,
          pg_get_userbyid(c.relowner) AS owner,
          coalesce(cc.column2,c.relkind::text) AS sql_kind,
-         text($1::regclass) AS sql_identifier
+         cast($1::regclass AS text) AS sql_identifier
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     left join (
        values ('r','TABLE'),
@@ -45,7 +45,7 @@ AS $function$
          'FUNCTION' AS kind,
          pg_get_userbyid(p.proowner) AS owner,
          'FUNCTION' AS sql_kind,
-         text($1::regprocedure) AS sql_identifier
+         cast($1::regprocedure AS text) AS sql_identifier
     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
    WHERE p.oid = $1
    UNION 

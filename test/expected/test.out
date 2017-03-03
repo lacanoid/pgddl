@@ -130,6 +130,20 @@ SELECT pg_ddl_script('idx1'::regclass);
  
 (1 row)
 
+SELECT pg_ddl_script('idx2'::regclass);
+                      pg_ddl_script                      
+---------------------------------------------------------
+ --                                                     +
+ -- Name: idx2; Type: INDEX; Schema: public; Owner: root+
+ --                                                     +
+                                                        +
+ CREATE INDEX idx2 ON test_class_r USING gin (v);       +
+                                                        +
+ COMMENT ON INDEX idx2 IS NULL;                         +
+                                                        +
+ 
+(1 row)
+
 CREATE UNLOGGED TABLE test_class_r2 (
   i  serial, 
   a  int,
@@ -281,7 +295,7 @@ SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
           coalesce(cc.column2,c.relkind::text) AS kind,                                                                                                                           +
           pg_get_userbyid(c.relowner) AS owner,                                                                                                                                   +
           coalesce(cc.column2,c.relkind::text) AS sql_kind,                                                                                                                       +
-          text($1::regclass) AS sql_identifier                                                                                                                                    +
+          cast($1::regclass AS text) AS sql_identifier                                                                                                                            +
      FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace                                                                                                                  +
      left join (                                                                                                                                                                  +
         values ('r','TABLE'),                                                                                                                                                     +
@@ -302,7 +316,7 @@ SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
           'FUNCTION' AS kind,                                                                                                                                                     +
           pg_get_userbyid(p.proowner) AS owner,                                                                                                                                   +
           'FUNCTION' AS sql_kind,                                                                                                                                                 +
-          text($1::regprocedure) AS sql_identifier                                                                                                                                +
+          cast($1::regprocedure AS text) AS sql_identifier                                                                                                                        +
      FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace                                                                                                                   +
     WHERE p.oid = $1                                                                                                                                                              +
     UNION                                                                                                                                                                         +
