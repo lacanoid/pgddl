@@ -11,7 +11,7 @@ SET client_min_messages = warning;
 --  Helpers for digesting system catalogs
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_oid_info(
+CREATE OR REPLACE FUNCTION pg_ddl_oid_info(
   IN oid,  
   OUT oid oid, OUT name name,  OUT namespace name,  
   OUT kind text, OUT owner name, OUT sql_kind text, OUT sql_identifier text)
@@ -70,7 +70,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_get_columns(
+CREATE OR REPLACE FUNCTION pg_ddl_get_columns(
   IN regclass,  
   OUT name name,  OUT type text,  OUT size integer,  OUT not_null boolean,  
   OUT "default" text, OUT comment text,  OUT primary_key name,  
@@ -332,7 +332,7 @@ $function$;
 --  DDL generator functions for individial object types
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_banner(name text, kind text, namespace text, owner text)
+CREATE OR REPLACE FUNCTION pg_ddl_banner(name text, kind text, namespace text, owner text)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -346,7 +346,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_comment(oid)
+CREATE OR REPLACE FUNCTION pg_ddl_comment(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -360,7 +360,7 @@ $function$;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_table(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_create_table(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -397,7 +397,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_view(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_create_view(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -415,7 +415,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_sequence(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_create_sequence(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -437,7 +437,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_type_base(regtype)
+CREATE OR REPLACE FUNCTION pg_ddl_create_type_base(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -481,7 +481,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_type_enum(regtype)
+CREATE OR REPLACE FUNCTION pg_ddl_create_type_enum(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -500,7 +500,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_type_domain(regtype)
+CREATE OR REPLACE FUNCTION pg_ddl_create_type_domain(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -522,7 +522,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_index(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_create_index(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -548,7 +548,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_class(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_create_class(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -580,7 +580,7 @@ $function$ strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_alter_table_defaults(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_alter_table_defaults(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -598,7 +598,7 @@ $function$ strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_constraints(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_create_constraints(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -616,7 +616,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_rules(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_create_rules(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -628,7 +628,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_triggers(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_create_triggers(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -644,7 +644,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_indexes(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_create_indexes(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -656,7 +656,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_alter_owner(oid)
+CREATE OR REPLACE FUNCTION pg_ddl_alter_owner(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -671,7 +671,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_create_function(regproc)
+CREATE OR REPLACE FUNCTION pg_ddl_create_function(regproc)
  RETURNS text
  LANGUAGE sql
 AS $function$ 
@@ -686,7 +686,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_grants_on_class(regclass) 
+CREATE OR REPLACE FUNCTION pg_ddl_grants_on_class(regclass) 
  RETURNS text
  LANGUAGE sql
  AS $function$
@@ -713,7 +713,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE FUNCTION pg_ddl_grants_on_proc(regproc) 
+CREATE OR REPLACE FUNCTION pg_ddl_grants_on_proc(regproc) 
  RETURNS text
  LANGUAGE sql
  AS $function$
@@ -791,7 +791,7 @@ $function$  strict;
 
 COMMENT ON FUNCTION pg_ddl_script(regprocedure) IS 'Get SQL definition for a function/procedure';
 
-CREATE FUNCTION pg_ddl_script(regproc)
+CREATE OR REPLACE FUNCTION pg_ddl_script(regproc)
  RETURNS text
  LANGUAGE sql
 AS $$ select pg_ddl_script($1::regprocedure) $$;
