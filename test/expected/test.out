@@ -516,3 +516,136 @@ select pg_ddl_script('test_collation'::regclass);
  
 (1 row)
 
+select pg_ddl_script('int'::regtype);
+                                 pg_ddl_script                                 
+-------------------------------------------------------------------------------
+ CREATE TYPE integer (                                                        +
+   INPUT = int4in,                                                            +
+   OUTPUT = int4out,                                                          +
+   SEND = int4send,                                                           +
+   RECEIVE = int4recv,                                                        +
+   INTERNALLENGTH = 4,                                                        +
+   PASSEDBYVALUE ,                                                            +
+   ALIGNMENT = int4,                                                          +
+   STORAGE = plain,                                                           +
+   CATEGORY = 'N',                                                            +
+   DELIMITER = ',',                                                           +
+   COLLATABLE = false                                                         +
+ );                                                                           +
+                                                                              +
+ COMMENT ON TYPE integer IS '-2 billion to 2 billion integer, 4-byte storage';+
+ ALTER TYPE integer OWNER TO postgres;                                        +
+ 
+(1 row)
+
+select pg_ddl_script('int[]'::regtype);
+              pg_ddl_script              
+-----------------------------------------
+ CREATE TYPE integer[] (                +
+   INPUT = array_in,                    +
+   OUTPUT = array_out,                  +
+   SEND = array_send,                   +
+   RECEIVE = array_recv,                +
+   ANALYZE = array_typanalyze,          +
+   INTERNALLENGTH = VARIABLE,           +
+   ALIGNMENT = int4,                    +
+   STORAGE = extended,                  +
+   CATEGORY = 'A',                      +
+   ELEMENT = integer,                   +
+   DELIMITER = ',',                     +
+   COLLATABLE = false                   +
+ );                                     +
+                                        +
+ COMMENT ON TYPE integer[] IS NULL;     +
+ ALTER TYPE integer[] OWNER TO postgres;+
+ 
+(1 row)
+
+select pg_ddl_script('uuid'::regtype);
+              pg_ddl_script               
+------------------------------------------
+ CREATE TYPE uuid (                      +
+   INPUT = uuid_in,                      +
+   OUTPUT = uuid_out,                    +
+   SEND = uuid_send,                     +
+   RECEIVE = uuid_recv,                  +
+   INTERNALLENGTH = 16,                  +
+   ALIGNMENT = char,                     +
+   STORAGE = plain,                      +
+   CATEGORY = 'U',                       +
+   DELIMITER = ',',                      +
+   COLLATABLE = false                    +
+ );                                      +
+                                         +
+ COMMENT ON TYPE uuid IS 'UUID datatype';+
+ ALTER TYPE uuid OWNER TO postgres;      +
+ 
+(1 row)
+
+select pg_ddl_script('text'::regtype);
+                             pg_ddl_script                             
+-----------------------------------------------------------------------
+ CREATE TYPE text (                                                   +
+   INPUT = textin,                                                    +
+   OUTPUT = textout,                                                  +
+   SEND = textsend,                                                   +
+   RECEIVE = textrecv,                                                +
+   INTERNALLENGTH = VARIABLE,                                         +
+   ALIGNMENT = int4,                                                  +
+   STORAGE = extended,                                                +
+   CATEGORY = 'S',                                                    +
+   PREFERRED = true,                                                  +
+   DELIMITER = ',',                                                   +
+   COLLATABLE = true                                                  +
+ );                                                                   +
+                                                                      +
+ COMMENT ON TYPE text IS 'variable-length string, no limit specified';+
+ ALTER TYPE text OWNER TO postgres;                                   +
+ 
+(1 row)
+
+select pg_ddl_script('timestamptz'::regtype);
+                                pg_ddl_script                                
+-----------------------------------------------------------------------------
+ CREATE TYPE timestamp with time zone (                                     +
+   INPUT = timestamptz_in,                                                  +
+   OUTPUT = timestamptz_out,                                                +
+   SEND = timestamptz_send,                                                 +
+   RECEIVE = timestamptz_recv,                                              +
+   TYPMOD_IN = timestamptztypmodin,                                         +
+   TYPMOD_OUT = timestamptztypmodout,                                       +
+   INTERNALLENGTH = 8,                                                      +
+   ALIGNMENT = double,                                                      +
+   STORAGE = plain,                                                         +
+   CATEGORY = 'D',                                                          +
+   PREFERRED = true,                                                        +
+   DELIMITER = ',',                                                         +
+   COLLATABLE = false                                                       +
+ );                                                                         +
+                                                                            +
+ COMMENT ON TYPE timestamp with time zone IS 'date and time with time zone';+
+ ALTER TYPE timestamp with time zone OWNER TO postgres;                     +
+ 
+(1 row)
+
+select pg_ddl_script('xml'::regtype);
+             pg_ddl_script             
+---------------------------------------
+ CREATE TYPE xml (                    +
+   INPUT = xml_in,                    +
+   OUTPUT = xml_out,                  +
+   SEND = xml_send,                   +
+   RECEIVE = xml_recv,                +
+   INTERNALLENGTH = VARIABLE,         +
+   ALIGNMENT = int4,                  +
+   STORAGE = extended,                +
+   CATEGORY = 'U',                    +
+   DELIMITER = ',',                   +
+   COLLATABLE = false                 +
+ );                                   +
+                                      +
+ COMMENT ON TYPE xml IS 'XML content';+
+ ALTER TYPE xml OWNER TO postgres;    +
+ 
+(1 row)
+

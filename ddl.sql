@@ -1,5 +1,5 @@
 --
---	DDL extraction functions
+--  DDL extraction functions
 --
 ---------------------------------------------------
 
@@ -8,7 +8,7 @@ SET client_min_messages = warning;
 ---------------------------------------------------
 
 ---------------------------------------------------
---	Helpers for digesting system catalogs
+--  Helpers for digesting system catalogs
 ---------------------------------------------------
 
 CREATE FUNCTION pg_ddl_oid_info(
@@ -329,7 +329,7 @@ AS $function$
 $function$;
 
 ---------------------------------------------------
---	DDL generator functions for individial object types
+--  DDL generator functions for individial object types
 ---------------------------------------------------
 
 CREATE FUNCTION pg_ddl_banner(name text, kind text, namespace text, owner text)
@@ -437,6 +437,50 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE FUNCTION pg_ddl_create_type_base(regtype)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n ' 
+       || E' INPUT = '  || cast(t.typinput::regproc as text)  
+       || E',\n  OUTPUT = ' || cast(t.typoutput::regproc as text)  
+       || coalesce(E',\n  SEND = ' || nullif(cast(t.typsend::regproc as text),'-'),'') 
+       || coalesce(E',\n  RECEIVE = ' || nullif(cast(t.typreceive::regproc as text),'-'),'')
+       || coalesce(E',\n  TYPMOD_IN = ' || nullif(cast(t.typmodin::regproc as text),'-'),'')
+       || coalesce(E',\n  TYPMOD_OUT = ' || nullif(cast(t.typmodout::regproc as text),'-'),'')
+       || coalesce(E',\n  ANALYZE = ' || nullif(cast(t.typanalyze::regproc as text),'-'),'')
+       || E',\n  INTERNALLENGTH = ' || case when t.typlen < 0 then 'VARIABLE' else cast(t.typlen as text) end
+       || case when t.typbyval then E',\n  PASSEDBYVALUE ' else '' end
+       || E',\n  ALIGNMENT = ' || 
+		case t.typalign
+			when 'c' then 'char'
+			when 's' then 'int2'
+			when 'i' then 'int4'
+			when 'd' then 'double'
+		end 
+       || E',\n  STORAGE = ' || 
+		case t.typstorage
+			when 'p' then 'plain'
+			when 'e' then 'external'
+			when 'm' then 'main'
+			when 'x' then 'extended'
+		end 
+       || E',\n  CATEGORY = ' || quote_nullable(t.typcategory)  
+       || case when t.typispreferred then E',\n  PREFERRED = true' else '' end
+       || case when t.typdefault is not null then E',\n  DEFAULT = ' || quote_nullable(t.typdefault)
+          else '' end
+       || case when t.typelem <> 0 then E',\n  ELEMENT = ' || format_type(t.typelem,null)
+          else '' end
+       || E',\n  DELIMITER = ' || quote_nullable(t.typdelim)  
+       || E',\n  COLLATABLE = ' || 
+          case when t.typcollation <> 0 then 'true' else 'false' end
+       || E'\n);\n\n'
+  from pg_type t
+ where oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE FUNCTION pg_ddl_create_type_enum(regtype)
  RETURNS text
  LANGUAGE sql
@@ -524,7 +568,7 @@ AS $function$
   when obj.kind in ('TABLE','TYPE') then pg_ddl_create_table($1)
   when obj.kind in ('SEQUENCE') then pg_ddl_create_sequence($1)
   when obj.kind in ('INDEX') then pg_ddl_create_index($1)
-  else '-- UNSUPPORTED OBJECT: '||obj.kind
+  else '-- UNSUPPORTED CLASS: '||obj.kind
  end 
   || E'\n' ||
   case when obj.kind not in ('TYPE') then pg_ddl_comment($1) else '' end
@@ -696,7 +740,7 @@ CREATE FUNCTION pg_ddl_grants_on_proc(regproc)
 $function$  strict;
 
 ---------------------------------------------------
---	Main script generating functions
+--  Main script generating functions
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION pg_ddl_script(regtype)
@@ -772,17 +816,16 @@ AS $function$
      join pg_class c on (c.oid=t.typrelid)
     where t.oid = $1 and t.typtype = 'c' and c.relkind <> 'c'
     union
-   select pg_ddl_create_type_enum(t.oid)
+   select case t.typtype
+            when 'e' then pg_ddl_create_type_enum(t.oid)
+            when 'd' then pg_ddl_create_type_domain(t.oid)
+            when 'b' then pg_ddl_create_type_base(t.oid)
+		    else '-- UNSUPPORTED TYPE: ' || t.typtype
+		  end 
           || pg_ddl_comment(t.oid)
           || pg_ddl_alter_owner(t.oid) 
      from pg_type t
-    where t.oid = $1 and t.typtype = 'e'
-    union
-   select pg_ddl_create_type_domain(t.oid)
-          || pg_ddl_comment(t.oid)
-          || pg_ddl_alter_owner(t.oid) 
-     from pg_type t
-    where t.oid = $1 and t.typtype = 'd'
+    where t.oid = $1 
 $function$  strict;
 
 COMMENT ON FUNCTION pg_ddl_script(regtype) IS 'Get SQL definition for user defined data type';

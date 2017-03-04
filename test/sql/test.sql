@@ -92,4 +92,10 @@ create table test_collation (
 );
 select pg_ddl_script('test_collation'::regclass);
 
+select pg_ddl_script('int'::regtype);
+select pg_ddl_script('int[]'::regtype);
+select pg_ddl_script('uuid'::regtype);
+select pg_ddl_script('text'::regtype);
+select pg_ddl_script('timestamptz'::regtype);
+select pg_ddl_script('xml'::regtype);
 
