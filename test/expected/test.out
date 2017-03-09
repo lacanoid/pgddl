@@ -17,6 +17,7 @@ CREATE TABLE test_class_r (
   v tsvector
 );
 COMMENT ON TABLE test_class_r IS 'Comment1';
+grant select on test_class_r to public;
 select kind, sql_identifier from pg_ddl_oid_info('test_class_r'::regclass);
  kind  | sql_identifier 
 -------+----------------
@@ -62,13 +63,7 @@ SELECT pg_ddl_script('test_class_r'::regclass);
  CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');+
                                                                                                                                    +
  ALTER TABLE test_class_r OWNER TO root;                                                                                           +
- GRANT INSERT ON test_class_r TO root WITH GRANT OPTION;                                                                           +
- GRANT SELECT ON test_class_r TO root WITH GRANT OPTION;                                                                           +
- GRANT UPDATE ON test_class_r TO root WITH GRANT OPTION;                                                                           +
- GRANT DELETE ON test_class_r TO root WITH GRANT OPTION;                                                                           +
- GRANT TRUNCATE ON test_class_r TO root WITH GRANT OPTION;                                                                         +
- GRANT REFERENCES ON test_class_r TO root WITH GRANT OPTION;                                                                       +
- GRANT TRIGGER ON test_class_r TO root WITH GRANT OPTION;                                                                          +
+ GRANT SELECT ON test_class_r TO PUBLIC;                                                                                           +
  
 (1 row)
 
@@ -106,13 +101,7 @@ SELECT pg_ddl_script('test_class_r'::regtype);
  CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');+
                                                                                                                                    +
  ALTER TABLE test_class_r OWNER TO root;                                                                                           +
- GRANT INSERT ON test_class_r TO root WITH GRANT OPTION;                                                                           +
- GRANT SELECT ON test_class_r TO root WITH GRANT OPTION;                                                                           +
- GRANT UPDATE ON test_class_r TO root WITH GRANT OPTION;                                                                           +
- GRANT DELETE ON test_class_r TO root WITH GRANT OPTION;                                                                           +
- GRANT TRUNCATE ON test_class_r TO root WITH GRANT OPTION;                                                                         +
- GRANT REFERENCES ON test_class_r TO root WITH GRANT OPTION;                                                                       +
- GRANT TRIGGER ON test_class_r TO root WITH GRANT OPTION;                                                                          +
+ GRANT SELECT ON test_class_r TO PUBLIC;                                                                                           +
  
 (1 row)
 
@@ -176,13 +165,6 @@ SELECT pg_ddl_script('test_class_r2'::regclass);
    FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED;            +
                                                                                         +
  ALTER TABLE test_class_r2 OWNER TO root;                                               +
- GRANT INSERT ON test_class_r2 TO root WITH GRANT OPTION;                               +
- GRANT SELECT ON test_class_r2 TO root WITH GRANT OPTION;                               +
- GRANT UPDATE ON test_class_r2 TO root WITH GRANT OPTION;                               +
- GRANT DELETE ON test_class_r2 TO root WITH GRANT OPTION;                               +
- GRANT TRUNCATE ON test_class_r2 TO root WITH GRANT OPTION;                             +
- GRANT REFERENCES ON test_class_r2 TO root WITH GRANT OPTION;                           +
- GRANT TRIGGER ON test_class_r2 TO root WITH GRANT OPTION;                              +
  
 (1 row)
 
@@ -207,13 +189,6 @@ SELECT pg_ddl_script('test_class_v'::regclass);
  COMMENT ON VIEW test_class_v IS NULL;                         +
                                                                +
  ALTER VIEW test_class_v OWNER TO root;                        +
- GRANT INSERT ON test_class_v TO root WITH GRANT OPTION;       +
- GRANT SELECT ON test_class_v TO root WITH GRANT OPTION;       +
- GRANT UPDATE ON test_class_v TO root WITH GRANT OPTION;       +
- GRANT DELETE ON test_class_v TO root WITH GRANT OPTION;       +
- GRANT TRUNCATE ON test_class_v TO root WITH GRANT OPTION;     +
- GRANT REFERENCES ON test_class_v TO root WITH GRANT OPTION;   +
- GRANT TRIGGER ON test_class_v TO root WITH GRANT OPTION;      +
  
 (1 row)
 
@@ -235,13 +210,6 @@ SELECT pg_ddl_script('test_class_v'::regtype);
  COMMENT ON VIEW test_class_v IS NULL;                         +
                                                                +
  ALTER VIEW test_class_v OWNER TO root;                        +
- GRANT INSERT ON test_class_v TO root WITH GRANT OPTION;       +
- GRANT SELECT ON test_class_v TO root WITH GRANT OPTION;       +
- GRANT UPDATE ON test_class_v TO root WITH GRANT OPTION;       +
- GRANT DELETE ON test_class_v TO root WITH GRANT OPTION;       +
- GRANT TRUNCATE ON test_class_v TO root WITH GRANT OPTION;     +
- GRANT REFERENCES ON test_class_v TO root WITH GRANT OPTION;   +
- GRANT TRIGGER ON test_class_v TO root WITH GRANT OPTION;      +
  
 (1 row)
 
@@ -506,13 +474,6 @@ select pg_ddl_script('test_collation'::regclass);
  ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);+
                                                                                             +
  ALTER TABLE test_collation OWNER TO root;                                                  +
- GRANT INSERT ON test_collation TO root WITH GRANT OPTION;                                  +
- GRANT SELECT ON test_collation TO root WITH GRANT OPTION;                                  +
- GRANT UPDATE ON test_collation TO root WITH GRANT OPTION;                                  +
- GRANT DELETE ON test_collation TO root WITH GRANT OPTION;                                  +
- GRANT TRUNCATE ON test_collation TO root WITH GRANT OPTION;                                +
- GRANT REFERENCES ON test_collation TO root WITH GRANT OPTION;                              +
- GRANT TRIGGER ON test_collation TO root WITH GRANT OPTION;                                 +
  
 (1 row)
 
