@@ -16,6 +16,7 @@ CREATE TABLE test_class_r (
   v tsvector
 );
 COMMENT ON TABLE test_class_r IS 'Comment1';
+grant select on test_class_r to public;
 select kind, sql_identifier from pg_ddl_oid_info('test_class_r'::regclass);
 
 create trigger aaaa before 

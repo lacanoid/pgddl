@@ -709,6 +709,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_grants_on_class(regclass)
  join obj on (true)
  WHERE table_schema=obj.namespace 
    AND table_name=obj.name
+   AND grantee<>obj.owner
 $function$  strict;
 
 ---------------------------------------------------
