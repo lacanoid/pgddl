@@ -15,7 +15,7 @@ CREATE FOREIGN TABLE test_class_f (
 ) 
 SERVER serv
 OPTIONS ( filename 'pgddltest.tmp', format 'text' );
-COMMENT ON FOREIGN TABLE test_class_f IS 'Foreign table';
+COMMENT ON FOREIGN TABLE test_class_f IS 'A Foreign table';
 COMMENT ON COLUMN test_class_f.line IS 'A Line of text';
 GRANT ALL ON test_class_f TO PUBLIC;
 

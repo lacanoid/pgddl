@@ -387,9 +387,9 @@ AS $function$
   CASE relhasoids WHEN true THEN ' WITH OIDS' ELSE '' END 
   ||
   coalesce(
-    E'\nSERVER '||quote_ident(fs.srvname)||E'\n'||'OPTIONS ( '||
-    (select string_agg(quote_ident(option_name)||' '||quote_nullable(option_value),', ')
-       from pg_options_to_table(ft.ftoptions))||' )'
+    E'\nSERVER '||quote_ident(fs.srvname)||E'\nOPTIONS (\n'||
+    (select string_agg('    '||quote_ident(option_name)||' '||quote_nullable(option_value),E',\n')
+       from pg_options_to_table(ft.ftoptions))||E'\n)'
     ,'') 
   ||
   E';\n'
