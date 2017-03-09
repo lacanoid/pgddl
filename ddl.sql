@@ -111,7 +111,8 @@ AS $function$
    JOIN pg_namespace s ON s.oid = c.relnamespace
    JOIN pg_attribute a ON c.oid = a.attrelid
    LEFT JOIN pg_attrdef def ON c.oid = def.adrelid AND a.attnum = def.adnum
-   LEFT JOIN pg_constraint con ON con.conrelid = c.oid AND (a.attnum = ANY (con.conkey)) AND con.contype = 'p'
+   LEFT JOIN pg_constraint con 
+        ON con.conrelid = c.oid AND (a.attnum = ANY (con.conkey)) AND con.contype = 'p'
    LEFT JOIN pg_type t ON t.oid = a.atttypid
    LEFT JOIN pg_collation col ON col.oid = a.attcollation
    JOIN pg_namespace tn ON tn.oid = t.typnamespace
@@ -162,19 +163,22 @@ $function$;
 
 CREATE OR REPLACE FUNCTION pg_ddl_get_rules(
   regclass default null,
-  OUT namespace text, OUT class_name text, OUT rule_name text, OUT rule_event text, OUT is_instead boolean, 
-  OUT rule_definition text, OUT regclass regclass)
+  OUT namespace text, OUT class_name text, OUT rule_name text, OUT rule_event text, 
+  OUT is_instead boolean, OUT rule_definition text, OUT regclass regclass)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
- SELECT n.nspname::text AS namespace, c.relname::text AS class_name, r.rulename::text AS rule_name, 
+ SELECT n.nspname::text AS namespace, 
+        c.relname::text AS class_name, 
+        r.rulename::text AS rule_name, 
         CASE
             WHEN r.ev_type = '1'::"char" THEN 'SELECT'::text
             WHEN r.ev_type = '2'::"char" THEN 'UPDATE'::text
             WHEN r.ev_type = '3'::"char" THEN 'INSERT'::text
             WHEN r.ev_type = '4'::"char" THEN 'DELETE'::text
             ELSE 'UNKNOWN'::text
-        END AS rule_event, r.is_instead, pg_get_ruledef(r.oid, true) AS rule_definition, c.oid::regclass AS regclass
+        END AS rule_event, r.is_instead, pg_get_ruledef(r.oid, true) AS rule_definition, 
+        c.oid::regclass AS regclass
    FROM pg_rewrite r
    JOIN pg_class c ON c.oid = r.ev_class
    JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -227,7 +231,7 @@ AS $function$
         p.oid::regprocedure AS regprocedure, 
         s.nspname::text AS event_object_schema,
         c.relname::text AS event_object_table, 
-        (quote_ident(t.tgname::text) || ' ON '::text) || c.oid::regclass::text AS trigger_key
+        (quote_ident(t.tgname::text) || ' ON ') || c.oid::regclass::text AS trigger_key
    FROM pg_trigger t
    LEFT JOIN pg_class c ON c.oid = t.tgrelid
    LEFT JOIN pg_namespace s ON s.oid = c.relnamespace
@@ -381,7 +385,9 @@ AS $function$
   ||
   coalesce(
     E'\nSERVER '||quote_ident(fs.srvname)||E'\nOPTIONS (\n'||
-    (select string_agg('    '||quote_ident(option_name)||' '||quote_nullable(option_value),E',\n')
+    (select string_agg(
+              '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
+              E',\n')
        from pg_options_to_table(ft.ftoptions))||E'\n)'
     ,'') 
   ||
@@ -447,7 +453,8 @@ select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n '
        || coalesce(E',\n  TYPMOD_IN = ' || nullif(cast(t.typmodin::regproc as text),'-'),'')
        || coalesce(E',\n  TYPMOD_OUT = ' || nullif(cast(t.typmodout::regproc as text),'-'),'')
        || coalesce(E',\n  ANALYZE = ' || nullif(cast(t.typanalyze::regproc as text),'-'),'')
-       || E',\n  INTERNALLENGTH = ' || case when t.typlen < 0 then 'VARIABLE' else cast(t.typlen as text) end
+       || E',\n  INTERNALLENGTH = ' 
+       || case when  t.typlen < 0 then 'VARIABLE' else cast(t.typlen as text) end
        || case when t.typbyval then E',\n  PASSEDBYVALUE' else '' end
        || E',\n  ALIGNMENT = ' || 
 		case t.typalign
@@ -465,7 +472,9 @@ select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n '
 		end 
        || E',\n  CATEGORY = ' || quote_nullable(t.typcategory)  
        || case when t.typispreferred then E',\n  PREFERRED = true' else '' end
-       || case when t.typdefault is not null then E',\n  DEFAULT = ' || quote_nullable(t.typdefault)
+       || case 
+          when t.typdefault is not null 
+          then E',\n  DEFAULT = ' || quote_nullable(t.typdefault)
           else '' end
        || case when t.typelem <> 0 then E',\n  ELEMENT = ' || format_type(t.typelem,null)
           else '' end
@@ -672,7 +681,8 @@ AS $function$
  select
    case
      when obj.kind = 'INDEX' then ''
-     else 'ALTER '||sql_kind||' '||sql_identifier||' OWNER TO '||quote_ident(owner)||E';\n'
+     else 'ALTER '||sql_kind||' '||sql_identifier||
+          ' OWNER TO '||quote_ident(owner)||E';\n'
    end
   from obj 
 $function$  strict;
@@ -783,7 +793,8 @@ AS $function$
 
 $function$  strict;
 
-COMMENT ON FUNCTION pg_ddl_script(regclass) IS 'Get SQL definition for a table, view, sequence or index';
+COMMENT ON FUNCTION pg_ddl_script(regclass) 
+     IS 'Get SQL definition for a table, view, sequence or index';
 
 
 ---------------------------------------------------
@@ -798,14 +809,16 @@ AS $function$
      || pg_ddl_grants_on_proc($1)
 $function$  strict;
 
-COMMENT ON FUNCTION pg_ddl_script(regprocedure) IS 'Get SQL definition for a function/procedure';
+COMMENT ON FUNCTION pg_ddl_script(regprocedure) 
+     IS 'Get SQL definition for a function/procedure';
 
 CREATE OR REPLACE FUNCTION pg_ddl_script(regproc)
  RETURNS text
  LANGUAGE sql
 AS $$ select pg_ddl_script($1::regprocedure) $$;
 
-COMMENT ON FUNCTION pg_ddl_script(regproc) IS 'Get SQL definition for a function/procedure';
+COMMENT ON FUNCTION pg_ddl_script(regproc) 
+     IS 'Get SQL definition for a function/procedure';
 
 ---------------------------------------------------
 
@@ -837,4 +850,5 @@ AS $function$
     where t.oid = $1 
 $function$  strict;
 
-COMMENT ON FUNCTION pg_ddl_script(regtype) IS 'Get SQL definition for user defined data type';
+COMMENT ON FUNCTION pg_ddl_script(regtype) 
+     IS 'Get SQL definition for user defined data type';
