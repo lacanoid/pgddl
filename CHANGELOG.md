@@ -1,13 +1,14 @@
 Version 0.5
 -----------
 - support for foreign tables
+- support for reloptions (alter view set)
 
 Version 0.4
 -----------
 - initial support for base types
 - do not dump owner grants
 - use CREATE OR REPLACE in extension
-- index name bug fix
+- empty index name bug fix
 
 Version 0.3
 -----------

@@ -564,6 +564,13 @@ AS $function$
           ' IS ' || quote_nullable(comment) || ';' as cc
      from pg_ddl_get_columns($1) 
     where comment IS NOT NULL 
+ ),
+
+ settings as (
+   select 'ALTER ' || obj.kind || ' ' || text($1) || ' SET (' || 
+          quote_ident(option_name)||' '||quote_nullable(option_value) ||');' as ss
+     from pg_options_to_table((select reloptions from pg_class where oid = $1))
+     join obj on (true)
  )
 
  select pg_ddl_banner(obj.name,obj.kind,obj.namespace,obj.owner) 
@@ -575,10 +582,13 @@ AS $function$
   when obj.kind in ('INDEX') then pg_ddl_create_index($1)
   else '-- UNSUPPORTED CLASS: '||obj.kind
  end 
-  || E'\n' ||
+  ||
   case when obj.kind not in ('TYPE') then pg_ddl_comment($1) else '' end
   ||
-  coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'') || E'\n'
+  coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'')
+  ||
+  coalesce(E'\n'||(select string_agg(ss,E'\n')||E'\n' from settings),'') 
+  || E'\n'
     from obj
     
 $function$ strict;
