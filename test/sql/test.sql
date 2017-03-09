@@ -97,6 +97,5 @@ select pg_ddl_script('int'::regtype);
 select pg_ddl_script('int[]'::regtype);
 select pg_ddl_script('uuid'::regtype);
 select pg_ddl_script('text'::regtype);
-select pg_ddl_script('timestamptz'::regtype);
 select pg_ddl_script('xml'::regtype);
 

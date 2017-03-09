@@ -565,30 +565,6 @@ select pg_ddl_script('text'::regtype);
  
 (1 row)
 
-select pg_ddl_script('timestamptz'::regtype);
-                                pg_ddl_script                                
------------------------------------------------------------------------------
- CREATE TYPE timestamp with time zone (                                     +
-   INPUT = timestamptz_in,                                                  +
-   OUTPUT = timestamptz_out,                                                +
-   SEND = timestamptz_send,                                                 +
-   RECEIVE = timestamptz_recv,                                              +
-   TYPMOD_IN = timestamptztypmodin,                                         +
-   TYPMOD_OUT = timestamptztypmodout,                                       +
-   INTERNALLENGTH = 8,                                                      +
-   ALIGNMENT = double,                                                      +
-   STORAGE = plain,                                                         +
-   CATEGORY = 'D',                                                          +
-   PREFERRED = true,                                                        +
-   DELIMITER = ',',                                                         +
-   COLLATABLE = false                                                       +
- );                                                                         +
-                                                                            +
- COMMENT ON TYPE timestamp with time zone IS 'date and time with time zone';+
- ALTER TYPE timestamp with time zone OWNER TO postgres;                     +
- 
-(1 row)
-
 select pg_ddl_script('xml'::regtype);
              pg_ddl_script             
 ---------------------------------------
