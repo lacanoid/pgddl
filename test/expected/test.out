@@ -43,6 +43,7 @@ SELECT pg_ddl_script('test_class_r'::regclass);
      d timestamp with time zone,                                                                                                   +
      v tsvector                                                                                                                    +
  );                                                                                                                                +
+                                                                                                                                   +
  COMMENT ON TABLE test_class_r IS 'Comment1';                                                                                      +
                                                                                                                                    +
  ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);                                             +
@@ -86,6 +87,7 @@ SELECT pg_ddl_script('test_class_r'::regtype);
      d timestamp with time zone,                                                                                                   +
      v tsvector                                                                                                                    +
  );                                                                                                                                +
+                                                                                                                                   +
  COMMENT ON TABLE test_class_r IS 'Comment1';                                                                                      +
                                                                                                                                    +
  ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);                                             +
@@ -123,6 +125,7 @@ SELECT pg_ddl_script('idx1'::regclass);
  --                                                                                    +
                                                                                        +
  CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);+
+                                                                                       +
  COMMENT ON INDEX idx1 IS NULL;                                                        +
                                                                                        +
  
@@ -136,6 +139,7 @@ SELECT pg_ddl_script('idx2'::regclass);
  --                                                     +
                                                         +
  CREATE INDEX idx2 ON test_class_r USING gin (v);       +
+                                                        +
  COMMENT ON INDEX idx2 IS NULL;                         +
                                                         +
  
@@ -164,6 +168,7 @@ SELECT pg_ddl_script('test_class_r2'::regclass);
      vv character varying(20),                                                          +
      n numeric(10,2)                                                                    +
  ) WITH OIDS;                                                                           +
+                                                                                        +
  COMMENT ON TABLE test_class_r2 IS NULL;                                                +
                                                                                         +
  ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);+
@@ -192,9 +197,10 @@ SELECT pg_ddl_script('test_class_v'::regclass);
      test_class_r.d,                                           +
      test_class_r.v                                            +
     FROM test_class_r;                                         +
+                                                               +
  COMMENT ON VIEW test_class_v IS NULL;                         +
                                                                +
- ALTER VIEW test_class_v SET (check_option 'cascaded');        +
+ ALTER VIEW test_class_v SET (check_option='cascaded');        +
                                                                +
  ALTER VIEW test_class_v OWNER TO root;                        +
  
@@ -214,9 +220,10 @@ SELECT pg_ddl_script('test_class_v'::regtype);
      test_class_r.d,                                           +
      test_class_r.v                                            +
     FROM test_class_r;                                         +
+                                                               +
  COMMENT ON VIEW test_class_v IS NULL;                         +
                                                                +
- ALTER VIEW test_class_v SET (check_option 'cascaded');        +
+ ALTER VIEW test_class_v SET (check_option='cascaded');        +
                                                                +
  ALTER VIEW test_class_v OWNER TO root;                        +
  
@@ -239,6 +246,7 @@ SELECT pg_ddl_script('test_class_m'::regclass);
      test_class_r.d,                                                        +
      test_class_r.v                                                         +
     FROM test_class_r;                                                      +
+                                                                            +
  COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;                         +
                                                                             +
  CREATE UNIQUE INDEX test_class_mi ON test_class_m USING btree (a);         +
@@ -406,6 +414,7 @@ select pg_ddl_script('test_type_c'::regtype);
      t text,                                                  +
      d test_type_d                                            +
  );                                                           +
+                                                              +
  COMMENT ON COLUMN test_type_c.i IS 'my class class column i';+
                                                               +
  COMMENT ON TYPE test_type_c IS 'my class type';              +
@@ -425,6 +434,7 @@ select pg_ddl_script('test_type_c'::regclass);
      t text,                                                  +
      d test_type_d                                            +
  );                                                           +
+                                                              +
  COMMENT ON COLUMN test_type_c.i IS 'my class class column i';+
                                                               +
  COMMENT ON TYPE test_type_c IS 'my class type';              +
@@ -448,6 +458,7 @@ select pg_ddl_script('test_type_S'::regclass);
   MAXVALUE 9223372036854775807                                    +
   START WITH 2                                                    +
   NO CYCLE;                                                       +
+                                                                  +
  COMMENT ON SEQUENCE test_type_s IS 'interleave';                 +
                                                                   +
  ALTER SEQUENCE test_type_s OWNER TO root;                        +
@@ -473,6 +484,7 @@ select pg_ddl_script('test_collation'::regclass);
      en text COLLATE "en_US.utf8",                                                          +
      t text                                                                                 +
  );                                                                                         +
+                                                                                            +
  COMMENT ON TABLE test_collation IS NULL;                                                   +
                                                                                             +
  ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);+
@@ -610,9 +622,10 @@ select pg_ddl_script('test_class_v_opt1'::regclass);
      test_class_v.v                                                 +
     FROM test_class_v                                               +
    ORDER BY test_class_v.a;                                         +
+                                                                    +
  COMMENT ON VIEW test_class_v_opt1 IS NULL;                         +
                                                                     +
- ALTER VIEW test_class_v_opt1 SET (security_barrier 'true');        +
+ ALTER VIEW test_class_v_opt1 SET (security_barrier='true');        +
                                                                     +
  ALTER VIEW test_class_v_opt1 OWNER TO root;                        +
  
@@ -633,9 +646,10 @@ select pg_ddl_script('test_class_v_opt2'::regclass);
      test_class_v.v                                                 +
     FROM test_class_v                                               +
    ORDER BY test_class_v.a;                                         +
+                                                                    +
  COMMENT ON VIEW test_class_v_opt2 IS NULL;                         +
                                                                     +
- ALTER VIEW test_class_v_opt2 SET (security_barrier 'true');        +
+ ALTER VIEW test_class_v_opt2 SET (security_barrier='true');        +
                                                                     +
  ALTER VIEW test_class_v_opt2 OWNER TO root;                        +
  

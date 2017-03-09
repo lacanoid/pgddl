@@ -568,7 +568,7 @@ AS $function$
 
  settings as (
    select 'ALTER ' || obj.kind || ' ' || text($1) || ' SET (' || 
-          quote_ident(option_name)||' '||quote_nullable(option_value) ||');' as ss
+          quote_ident(option_name)||'='||quote_nullable(option_value) ||');' as ss
      from pg_options_to_table((select reloptions from pg_class where oid = $1))
      join obj on (true)
  )
@@ -582,7 +582,7 @@ AS $function$
   when obj.kind in ('INDEX') then pg_ddl_create_index($1)
   else '-- UNSUPPORTED CLASS: '||obj.kind
  end 
-  ||
+  || E'\n' ||
   case when obj.kind not in ('TYPE') then pg_ddl_comment($1) else '' end
   ||
   coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'')
