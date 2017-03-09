@@ -97,14 +97,7 @@ AS $function$
         c.relname AS class_name, 
         text(c.oid::regclass) || '.' || quote_ident(a.attname) AS sql_identifier,
         c.oid, 
-        quote_ident(a.attname::text) || ' ' || format_type(t.oid, NULL::integer) || 
-        CASE
-            WHEN (a.atttypmod - 4) > 65536 
-            THEN '(' || ((a.atttypmod - 4) / 65536) || ',' || ((a.atttypmod - 4) % 65536) || ')'
-            WHEN (a.atttypmod - 4) > 0 
-            THEN '(' || (a.atttypmod - 4) || ')'
-            ELSE ''
-        END || 
+        quote_ident(a.attname::text) || ' ' || format_type(t.oid, a.atttypmod) || 
         CASE
             WHEN length(col.collcollate) > 0 
             THEN ' COLLATE ' || quote_ident(col.collcollate::text)

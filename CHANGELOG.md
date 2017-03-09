@@ -2,11 +2,12 @@ Version 0.5
 -----------
 - support for foreign tables
 - support for reloptions (alter view set)
+- bugfix when printing [] before typmod
 
 Version 0.4
 -----------
 - initial support for base types
-- do not dump owner grants
+- do not dump owner grants on classes
 - use CREATE OR REPLACE in extension
 - empty index name bug fix
 

@@ -13,6 +13,10 @@ CREATE TABLE test_class_r (
   b text unique not null default e'Hello, world!\n', 
   c timestamp without time zone check(c > '2001-01-01'), 
   d timestamp with time zone,
+  e numeric(30)[],
+  f numeric(10,2)[],
+  g varchar(10)[],
+  h varchar[],
   v tsvector
 );
 COMMENT ON TABLE test_class_r IS 'Comment1';
