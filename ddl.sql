@@ -118,14 +118,12 @@ AS $function$
    JOIN pg_namespace s ON s.oid = c.relnamespace
    JOIN pg_attribute a ON c.oid = a.attrelid
    LEFT JOIN pg_attrdef def ON c.oid = def.adrelid AND a.attnum = def.adnum
-   LEFT JOIN pg_constraint con ON con.conrelid = c.oid AND (a.attnum = ANY (con.conkey)) AND con.contype = 'p'::"char"
+   LEFT JOIN pg_constraint con ON con.conrelid = c.oid AND (a.attnum = ANY (con.conkey)) AND con.contype = 'p'
    LEFT JOIN pg_type t ON t.oid = a.atttypid
    LEFT JOIN pg_collation col ON col.oid = a.attcollation
    JOIN pg_namespace tn ON tn.oid = t.typnamespace
-  WHERE (c.relkind = ANY (ARRAY['r'::"char", 'v'::"char", ''::"char", 'c'::"char"])) AND a.attnum > 0 
-    AND NOT a.attisdropped 
-    AND has_table_privilege(c.oid, 'select') 
-    AND has_schema_privilege(s.oid, 'usage')
+  WHERE c.relkind IN ('r','v','c','f') AND a.attnum > 0 AND NOT a.attisdropped 
+    AND has_table_privilege(c.oid, 'select') AND has_schema_privilege(s.oid, 'usage')
     AND c.oid = $1
   ORDER BY s.nspname, c.relname, a.attnum;
 $function$  strict;
@@ -388,9 +386,16 @@ AS $function$
   ||
   CASE relhasoids WHEN true THEN ' WITH OIDS' ELSE '' END 
   ||
+  coalesce(
+    E'\nSERVER '||quote_ident(fs.srvname)||E'\n'||'OPTIONS ( '||
+    (select string_agg(quote_ident(option_name)||' '||quote_nullable(option_value),', ')
+       from pg_options_to_table(ft.ftoptions))||' )'
+    ,'') 
+  ||
   E';\n'
-
- FROM pg_class c join obj on (true)
+ FROM pg_class c JOIN obj ON (true)
+ LEFT JOIN pg_foreign_table  ft ON (c.oid = ft.ftrelid)
+ LEFT JOIN pg_foreign_server fs ON (ft.ftserver = fs.oid)
  WHERE c.oid = $1
 -- AND relkind in ('r','c')
 $function$  strict;
@@ -450,7 +455,7 @@ select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n '
        || coalesce(E',\n  TYPMOD_OUT = ' || nullif(cast(t.typmodout::regproc as text),'-'),'')
        || coalesce(E',\n  ANALYZE = ' || nullif(cast(t.typanalyze::regproc as text),'-'),'')
        || E',\n  INTERNALLENGTH = ' || case when t.typlen < 0 then 'VARIABLE' else cast(t.typlen as text) end
-       || case when t.typbyval then E',\n  PASSEDBYVALUE ' else '' end
+       || case when t.typbyval then E',\n  PASSEDBYVALUE' else '' end
        || E',\n  ALIGNMENT = ' || 
 		case t.typalign
 			when 'c' then 'char'
@@ -565,7 +570,7 @@ AS $function$
   ||
  case 
   when obj.kind in ('VIEW','MATERIALIZED VIEW') then pg_ddl_create_view($1)  
-  when obj.kind in ('TABLE','TYPE') then pg_ddl_create_table($1)
+  when obj.kind in ('TABLE','TYPE','FOREIGN TABLE') then pg_ddl_create_table($1)
   when obj.kind in ('SEQUENCE') then pg_ddl_create_sequence($1)
   when obj.kind in ('INDEX') then pg_ddl_create_index($1)
   else '-- UNSUPPORTED CLASS: '||obj.kind

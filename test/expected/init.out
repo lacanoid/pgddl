@@ -3,7 +3,7 @@ CREATE EXTENSION ddl;
            List of installed extensions
  Name | Version | Schema |       Description       
 ------+---------+--------+-------------------------
- ddl  | 0.4     | public | DDL extractor functions
+ ddl  | 0.5     | public | DDL extractor functions
 (1 row)
 
 \dx+ ddl
