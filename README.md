@@ -123,4 +123,4 @@ Nevertheless, some of them are:
 
     Extracts SQL DDL source of a function.
 
-
+See file `ddl.sql` for details.
