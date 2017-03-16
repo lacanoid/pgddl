@@ -18,9 +18,10 @@ reconstructing DDL and are of course used by this extension.
 Advantages over using other tools like `psql` or `pgdump` include:
 
 - You can use it extract DDL with any client which support running plain SQL queries
-- With SQL you can dump things like say only functions with matching names from chosen schemas
+- With SQL you can select things to dump things using usual SQL semantics (WHERE, etc)
 - Created scripts are somewhat more intended to be run and copy/pasted manually by the DBA
-- No shell commands with hairy options required (for running pg_dump), just use SELECT
+  into other databases/scripts. This means prefering ALTER to CREATE and such.
+- No shell access or shell commands with hairy options required (for running pg_dump), just use SELECT!
 
 It is currently rather incomplete, but still useful. 
 It provides support for the basic user-level objects. 
@@ -101,6 +102,10 @@ Their names all begin with `pg_ddl_`. They are used internally by the extension
 and are possibly subject to change in future versions of the extension. 
 They are generally not intended to be used by the end user. 
 Nevertheless, some of them are:
+
+- `pg_ddl_oid_info(oid) returns table(oid oid, name name, namespace name, kind text, owner name, sql_kind text, sql_identifier text)`
+
+    Identify an object by object ID, `oid`. This function is used a lot in others.
 
 - `pg_ddl_create_table(regclass) returns text`
 
