@@ -2,8 +2,8 @@ DDL extractor functions  for PostgreSQL
 =======================================
 
 This is an SQL-only extension for PostgreSQL that provides uniform functions for generating 
-SQL DDL scripts for objects stored in a database. It contains a lot of magick to convert
-Postgres catalogs to nicely formatted SQL snippets.
+SQL DDL scripts for objects stored in a database. It contains a lot of foo to convert
+Postgres system catalogs to nicely formatted SQL snippets.
 
 Some other SQL databases support commands like SHOW CREATE TABLE or provide 
 other fascilities for the purpose. 
@@ -14,6 +14,7 @@ and therefore requires shell access or local installation to be of use.
 
 PostgreSQL however already provides a number of helper functions which greatly help with
 reconstructing DDL and are of course used by this extension.
+It also has awesome query capabilities which are be used.
 
 Advantages over using other tools like `psql` or `pgdump` include:
 
