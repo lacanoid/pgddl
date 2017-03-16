@@ -21,7 +21,8 @@ Advantages over using other tools like `psql` or `pgdump` include:
 - You can use it extract DDL with any client which support running plain SQL queries
 - With SQL you can select things to dump things using usual SQL semantics (WHERE, etc)
 - Created scripts are somewhat more intended to be run and copy/pasted manually by the DBA
-  into other databases/scripts. This means prefering ALTER to CREATE and such.
+  into other databases/scripts. This means prefering ALTER to CREATE, creating indexes which
+  are part of a constraint with ADD CONSTRAINT and such.
 - No shell access or shell commands with hairy options required (for running pg_dump), just use SELECT!
 
 It is currently rather incomplete, but still useful. 
