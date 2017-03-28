@@ -14,12 +14,12 @@ and therefore requires shell access or local installation to be of use.
 
 PostgreSQL however already provides a number of helper functions which greatly help with
 reconstructing DDL and are of course used by this extension.
-It also has awesome query capabilities which are be used.
+It also has sophisticated query capabilities which make this project possible.
 
 Advantages over using other tools like `psql` or `pgdump` include:
 
 - You can use it extract DDL with any client which support running plain SQL queries
-- With SQL you can select things to dump things using usual SQL semantics (WHERE, etc)
+- With SQL you can select things to dump by using usual SQL semantics (WHERE, etc)
 - Created scripts are somewhat more intended to be run and copy/pasted manually by the DBA
   into other databases/scripts. This means prefering ALTER to CREATE, creating indexes which
   are part of a constraint with ADD CONSTRAINT and such.
