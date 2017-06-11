@@ -529,14 +529,14 @@ cc as (
    order by oid
 )
 select 'CREATE DOMAIN ' || format_type(t.oid,null) 
-       || E'\n AS ' || format_type(t.typbasetype,typtypmod) 
+       || E' AS ' || format_type(t.typbasetype,typtypmod) 
        || coalesce(E'\n '||(select string_agg(definition,E'\n ') from cc),'')
        || case
             when length(col.collcollate) > 0 
-            then ' COLLATE ' || quote_ident(col.collcollate::text)
+            then E'\n  COLLATE ' || quote_ident(col.collcollate::text)
             else ''
           end 
-       || coalesce(E'\n DEFAULT ' || t.typdefault, '')
+       || coalesce(E'\n  DEFAULT ' || t.typdefault, '')
        || E';\n\n'
   from pg_type t
   left join pg_collation col on (col.oid=t.typcollation)

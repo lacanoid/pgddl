@@ -1,0 +1,180 @@
+\pset null _null_
+\pset format unaligned
+SET client_min_messages = warning;
+create type test_type_e as enum ('foo','bar','baz','qux');
+comment on type test_type_e is 'my enum';
+select pg_ddl_script('test_type_e'::regtype);
+pg_ddl_script
+CREATE TYPE test_type_e AS ENUM (
+ 'foo'
+ 'bar'
+ 'baz'
+ 'qux'
+);
+
+COMMENT ON TYPE test_type_e IS 'my enum';
+ALTER TYPE test_type_e OWNER TO root;
+
+(1 row)
+create domain test_type_d numeric(10,2) check(value is not null) check(value>6) default 7;
+comment on type test_type_d is 'my domain';
+select pg_ddl_script('test_type_d'::regtype);
+pg_ddl_script
+CREATE DOMAIN test_type_d AS numeric(10,2)
+ CHECK ((VALUE IS NOT NULL))
+ CHECK ((VALUE > (6)::numeric))
+  DEFAULT 7;
+
+COMMENT ON DOMAIN test_type_d IS 'my domain';
+ALTER DOMAIN test_type_d OWNER TO root;
+
+(1 row)
+create type test_type_c as (i integer, t text, d test_type_d);
+comment on type test_type_c is 'my class type';
+comment on column test_type_c.i is 'my class class column i';
+select pg_ddl_script('test_type_c'::regtype);
+pg_ddl_script
+--
+-- Name: test_type_c; Type: TYPE; Schema: public; Owner: root
+--
+
+CREATE TYPE test_type_c AS (
+    i integer,
+    t text,
+    d test_type_d
+);
+
+COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
+
+COMMENT ON TYPE test_type_c IS 'my class type';
+ALTER TYPE test_type_c OWNER TO root;
+
+(1 row)
+select pg_ddl_script('test_type_c'::regclass);
+pg_ddl_script
+--
+-- Name: test_type_c; Type: TYPE; Schema: public; Owner: root
+--
+
+CREATE TYPE test_type_c AS (
+    i integer,
+    t text,
+    d test_type_d
+);
+
+COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
+
+COMMENT ON TYPE test_type_c IS 'my class type';
+ALTER TYPE test_type_c OWNER TO root;
+
+(1 row)
+create domain test_collation_d text collate "en_US" default '***';
+select pg_ddl_script('test_collation_d'::regtype);
+pg_ddl_script
+CREATE DOMAIN test_collation_d AS text
+  COLLATE "en_US.utf8"
+  DEFAULT '***'::text;
+
+COMMENT ON DOMAIN test_collation_d IS NULL;
+ALTER DOMAIN test_collation_d OWNER TO root;
+
+(1 row)
+select pg_ddl_script('int'::regtype);
+pg_ddl_script
+CREATE TYPE integer (
+  INPUT = int4in,
+  OUTPUT = int4out,
+  SEND = int4send,
+  RECEIVE = int4recv,
+  INTERNALLENGTH = 4,
+  PASSEDBYVALUE,
+  ALIGNMENT = int4,
+  STORAGE = plain,
+  CATEGORY = 'N',
+  DELIMITER = ',',
+  COLLATABLE = false
+);
+
+COMMENT ON TYPE integer IS '-2 billion to 2 billion integer, 4-byte storage';
+ALTER TYPE integer OWNER TO postgres;
+
+(1 row)
+select pg_ddl_script('int[]'::regtype);
+pg_ddl_script
+CREATE TYPE integer[] (
+  INPUT = array_in,
+  OUTPUT = array_out,
+  SEND = array_send,
+  RECEIVE = array_recv,
+  ANALYZE = array_typanalyze,
+  INTERNALLENGTH = VARIABLE,
+  ALIGNMENT = int4,
+  STORAGE = extended,
+  CATEGORY = 'A',
+  ELEMENT = integer,
+  DELIMITER = ',',
+  COLLATABLE = false
+);
+
+COMMENT ON TYPE integer[] IS NULL;
+ALTER TYPE integer[] OWNER TO postgres;
+
+(1 row)
+select pg_ddl_script('uuid'::regtype);
+pg_ddl_script
+CREATE TYPE uuid (
+  INPUT = uuid_in,
+  OUTPUT = uuid_out,
+  SEND = uuid_send,
+  RECEIVE = uuid_recv,
+  INTERNALLENGTH = 16,
+  ALIGNMENT = char,
+  STORAGE = plain,
+  CATEGORY = 'U',
+  DELIMITER = ',',
+  COLLATABLE = false
+);
+
+COMMENT ON TYPE uuid IS 'UUID datatype';
+ALTER TYPE uuid OWNER TO postgres;
+
+(1 row)
+select pg_ddl_script('text'::regtype);
+pg_ddl_script
+CREATE TYPE text (
+  INPUT = textin,
+  OUTPUT = textout,
+  SEND = textsend,
+  RECEIVE = textrecv,
+  INTERNALLENGTH = VARIABLE,
+  ALIGNMENT = int4,
+  STORAGE = extended,
+  CATEGORY = 'S',
+  PREFERRED = true,
+  DELIMITER = ',',
+  COLLATABLE = true
+);
+
+COMMENT ON TYPE text IS 'variable-length string, no limit specified';
+ALTER TYPE text OWNER TO postgres;
+
+(1 row)
+select pg_ddl_script('xml'::regtype);
+pg_ddl_script
+CREATE TYPE xml (
+  INPUT = xml_in,
+  OUTPUT = xml_out,
+  SEND = xml_send,
+  RECEIVE = xml_recv,
+  INTERNALLENGTH = VARIABLE,
+  ALIGNMENT = int4,
+  STORAGE = extended,
+  CATEGORY = 'U',
+  DELIMITER = ',',
+  COLLATABLE = false
+);
+
+COMMENT ON TYPE xml IS 'XML content';
+ALTER TYPE xml OWNER TO postgres;
+
+(1 row)
