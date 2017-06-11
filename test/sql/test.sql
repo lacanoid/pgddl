@@ -1,4 +1,5 @@
 \pset null _null_
+\pset format unaligned
 
 SET client_min_messages = warning;
 
@@ -96,6 +97,9 @@ create table test_collation (
 	t text
 );
 select pg_ddl_script('test_collation'::regclass);
+
+create domain test_collation_d text collate "en_US" default '***';
+select pg_ddl_script('test_collation_d'::regtype);
 
 select pg_ddl_script('int'::regtype);
 select pg_ddl_script('int[]'::regtype);

@@ -1,12 +1,12 @@
 PG_CONFIG = pg_config
 PKG_CONFIG = pkg-config
 
-extension_version = 0.5
+extension_version = 0.6
 
 EXTENSION = ddl
 DATA_built = ddl--$(extension_version).sql
 
-REGRESS = init test fdw
+REGRESS = init role type test fdw
 REGRESS_OPTS = --inputdir=test
 
 PGXS := $(shell $(PG_CONFIG) --pgxs)

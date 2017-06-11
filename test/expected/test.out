@@ -1,11 +1,10 @@
 \pset null _null_
+\pset format unaligned
 SET client_min_messages = warning;
 select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regprocedure);
-   kind   |    sql_identifier    
-----------+----------------------
- FUNCTION | pg_ddl_oid_info(oid)
+kind|sql_identifier
+FUNCTION|pg_ddl_oid_info(oid)
 (1 row)
-
 create function trig() returns trigger as 
 $$begin return old; end $$
 language plpgsql;
@@ -23,140 +22,130 @@ CREATE TABLE test_class_r (
 COMMENT ON TABLE test_class_r IS 'Comment1';
 grant all on test_class_r to public;
 select kind, sql_identifier from pg_ddl_oid_info('test_class_r'::regclass);
- kind  | sql_identifier 
--------+----------------
- TABLE | test_class_r
+kind|sql_identifier
+TABLE|test_class_r
 (1 row)
-
 create trigger aaaa before 
 update on test_class_r
    for each row when (old.* is distinct from new.*) execute procedure trig('AAAA');
 create unique index idx1 on test_class_r (lower(b)) where b is not null;
 create index idx2 on test_class_r using gin (v);
 SELECT pg_ddl_script('test_class_r'::regclass);
-                                                           pg_ddl_script                                                            
-------------------------------------------------------------------------------------------------------------------------------------
- --                                                                                                                                +
- -- Name: test_class_r; Type: TABLE; Schema: public; Owner: root                                                                   +
- --                                                                                                                                +
-                                                                                                                                   +
- CREATE TABLE test_class_r (                                                                                                       +
-     a integer NOT NULL,                                                                                                           +
-     b text NOT NULL,                                                                                                              +
-     c timestamp without time zone,                                                                                                +
-     d timestamp with time zone,                                                                                                   +
-     e numeric(30,0)[],                                                                                                            +
-     f numeric(10,2)[],                                                                                                            +
-     g character varying(10)[],                                                                                                    +
-     h character varying[],                                                                                                        +
-     v tsvector                                                                                                                    +
- );                                                                                                                                +
-                                                                                                                                   +
- COMMENT ON TABLE test_class_r IS 'Comment1';                                                                                      +
-                                                                                                                                   +
- ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);                                             +
- ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!                                                                       +
- '::text;                                                                                                                          +
-                                                                                                                                   +
- ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key                                                                        +
-   UNIQUE (b);                                                                                                                     +
- ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey                                                                         +
-   PRIMARY KEY (a);                                                                                                                +
- ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check                                                                      +
-   CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);                                                            +
-                                                                                                                                   +
- CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);                                            +
- CREATE INDEX idx2 ON test_class_r USING gin (v);                                                                                  +
-                                                                                                                                   +
- CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');+
-                                                                                                                                   +
- ALTER TABLE test_class_r OWNER TO root;                                                                                           +
- GRANT INSERT ON test_class_r TO PUBLIC;                                                                                           +
- GRANT SELECT ON test_class_r TO PUBLIC;                                                                                           +
- GRANT UPDATE ON test_class_r TO PUBLIC;                                                                                           +
- GRANT DELETE ON test_class_r TO PUBLIC;                                                                                           +
- GRANT TRUNCATE ON test_class_r TO PUBLIC;                                                                                         +
- GRANT REFERENCES ON test_class_r TO PUBLIC;                                                                                       +
- GRANT TRIGGER ON test_class_r TO PUBLIC;                                                                                          +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_class_r; Type: TABLE; Schema: public; Owner: root
+--
 
+CREATE TABLE test_class_r (
+    a integer NOT NULL,
+    b text NOT NULL,
+    c timestamp without time zone,
+    d timestamp with time zone,
+    e numeric(30,0)[],
+    f numeric(10,2)[],
+    g character varying(10)[],
+    h character varying[],
+    v tsvector
+);
+
+COMMENT ON TABLE test_class_r IS 'Comment1';
+
+ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
+ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
+'::text;
+
+ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key
+  UNIQUE (b);
+ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey
+  PRIMARY KEY (a);
+ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
+  CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
+
+CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
+CREATE INDEX idx2 ON test_class_r USING gin (v);
+
+CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
+
+ALTER TABLE test_class_r OWNER TO root;
+GRANT INSERT ON test_class_r TO PUBLIC;
+GRANT SELECT ON test_class_r TO PUBLIC;
+GRANT UPDATE ON test_class_r TO PUBLIC;
+GRANT DELETE ON test_class_r TO PUBLIC;
+GRANT TRUNCATE ON test_class_r TO PUBLIC;
+GRANT REFERENCES ON test_class_r TO PUBLIC;
+GRANT TRIGGER ON test_class_r TO PUBLIC;
+
+(1 row)
 SELECT pg_ddl_script('test_class_r'::regtype);
-                                                           pg_ddl_script                                                            
-------------------------------------------------------------------------------------------------------------------------------------
- --                                                                                                                                +
- -- Name: test_class_r; Type: TABLE; Schema: public; Owner: root                                                                   +
- --                                                                                                                                +
-                                                                                                                                   +
- CREATE TABLE test_class_r (                                                                                                       +
-     a integer NOT NULL,                                                                                                           +
-     b text NOT NULL,                                                                                                              +
-     c timestamp without time zone,                                                                                                +
-     d timestamp with time zone,                                                                                                   +
-     e numeric(30,0)[],                                                                                                            +
-     f numeric(10,2)[],                                                                                                            +
-     g character varying(10)[],                                                                                                    +
-     h character varying[],                                                                                                        +
-     v tsvector                                                                                                                    +
- );                                                                                                                                +
-                                                                                                                                   +
- COMMENT ON TABLE test_class_r IS 'Comment1';                                                                                      +
-                                                                                                                                   +
- ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);                                             +
- ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!                                                                       +
- '::text;                                                                                                                          +
-                                                                                                                                   +
- ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key                                                                        +
-   UNIQUE (b);                                                                                                                     +
- ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey                                                                         +
-   PRIMARY KEY (a);                                                                                                                +
- ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check                                                                      +
-   CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);                                                            +
-                                                                                                                                   +
- CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);                                            +
- CREATE INDEX idx2 ON test_class_r USING gin (v);                                                                                  +
-                                                                                                                                   +
- CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');+
-                                                                                                                                   +
- ALTER TABLE test_class_r OWNER TO root;                                                                                           +
- GRANT INSERT ON test_class_r TO PUBLIC;                                                                                           +
- GRANT SELECT ON test_class_r TO PUBLIC;                                                                                           +
- GRANT UPDATE ON test_class_r TO PUBLIC;                                                                                           +
- GRANT DELETE ON test_class_r TO PUBLIC;                                                                                           +
- GRANT TRUNCATE ON test_class_r TO PUBLIC;                                                                                         +
- GRANT REFERENCES ON test_class_r TO PUBLIC;                                                                                       +
- GRANT TRIGGER ON test_class_r TO PUBLIC;                                                                                          +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_class_r; Type: TABLE; Schema: public; Owner: root
+--
 
+CREATE TABLE test_class_r (
+    a integer NOT NULL,
+    b text NOT NULL,
+    c timestamp without time zone,
+    d timestamp with time zone,
+    e numeric(30,0)[],
+    f numeric(10,2)[],
+    g character varying(10)[],
+    h character varying[],
+    v tsvector
+);
+
+COMMENT ON TABLE test_class_r IS 'Comment1';
+
+ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
+ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
+'::text;
+
+ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key
+  UNIQUE (b);
+ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey
+  PRIMARY KEY (a);
+ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
+  CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
+
+CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
+CREATE INDEX idx2 ON test_class_r USING gin (v);
+
+CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
+
+ALTER TABLE test_class_r OWNER TO root;
+GRANT INSERT ON test_class_r TO PUBLIC;
+GRANT SELECT ON test_class_r TO PUBLIC;
+GRANT UPDATE ON test_class_r TO PUBLIC;
+GRANT DELETE ON test_class_r TO PUBLIC;
+GRANT TRUNCATE ON test_class_r TO PUBLIC;
+GRANT REFERENCES ON test_class_r TO PUBLIC;
+GRANT TRIGGER ON test_class_r TO PUBLIC;
+
+(1 row)
 SELECT pg_ddl_script('idx1'::regclass);
-                                     pg_ddl_script                                      
-----------------------------------------------------------------------------------------
- --                                                                                    +
- -- Name: idx1; Type: INDEX; Schema: public; Owner: root                               +
- --                                                                                    +
-                                                                                       +
- CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);+
-                                                                                       +
- COMMENT ON INDEX idx1 IS NULL;                                                        +
-                                                                                       +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: idx1; Type: INDEX; Schema: public; Owner: root
+--
 
+CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
+
+COMMENT ON INDEX idx1 IS NULL;
+
+
+(1 row)
 SELECT pg_ddl_script('idx2'::regclass);
-                      pg_ddl_script                      
----------------------------------------------------------
- --                                                     +
- -- Name: idx2; Type: INDEX; Schema: public; Owner: root+
- --                                                     +
-                                                        +
- CREATE INDEX idx2 ON test_class_r USING gin (v);       +
-                                                        +
- COMMENT ON INDEX idx2 IS NULL;                         +
-                                                        +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: idx2; Type: INDEX; Schema: public; Owner: root
+--
 
+CREATE INDEX idx2 ON test_class_r USING gin (v);
+
+COMMENT ON INDEX idx2 IS NULL;
+
+
+(1 row)
 CREATE UNLOGGED TABLE test_class_r2 (
   i  serial, 
   a  int,
@@ -167,328 +156,312 @@ CREATE UNLOGGED TABLE test_class_r2 (
 );
 alter table test_class_r2 set with oids;
 SELECT pg_ddl_script('test_class_r2'::regclass);
-                                      pg_ddl_script                                      
------------------------------------------------------------------------------------------
- --                                                                                     +
- -- Name: test_class_r2; Type: TABLE; Schema: public; Owner: root                       +
- --                                                                                     +
-                                                                                        +
- CREATE UNLOGGED TABLE test_class_r2 (                                                  +
-     i integer NOT NULL,                                                                +
-     a integer,                                                                         +
-     cc character(20),                                                                  +
-     vv character varying(20),                                                          +
-     n numeric(10,2)                                                                    +
- ) WITH OIDS;                                                                           +
-                                                                                        +
- COMMENT ON TABLE test_class_r2 IS NULL;                                                +
-                                                                                        +
- ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);+
-                                                                                        +
- ALTER TABLE test_class_r2 ADD CONSTRAINT blah                                          +
-   FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED;            +
-                                                                                        +
- ALTER TABLE test_class_r2 OWNER TO root;                                               +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_class_r2; Type: TABLE; Schema: public; Owner: root
+--
 
+CREATE UNLOGGED TABLE test_class_r2 (
+    i integer NOT NULL,
+    a integer,
+    cc character(20),
+    vv character varying(20),
+    n numeric(10,2)
+) WITH OIDS;
+
+COMMENT ON TABLE test_class_r2 IS NULL;
+
+ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
+
+ALTER TABLE test_class_r2 ADD CONSTRAINT blah
+  FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED;
+
+ALTER TABLE test_class_r2 OWNER TO root;
+
+(1 row)
 CREATE VIEW test_class_v AS
 SELECT * FROM test_class_r 
   WITH CHECK OPTION;
 SELECT pg_ddl_script('test_class_v'::regclass);
-                         pg_ddl_script                          
-----------------------------------------------------------------
- --                                                            +
- -- Name: test_class_v; Type: VIEW; Schema: public; Owner: root+
- --                                                            +
-                                                               +
- CREATE OR REPLACE VIEW test_class_v AS                        +
-  SELECT test_class_r.a,                                       +
-     test_class_r.b,                                           +
-     test_class_r.c,                                           +
-     test_class_r.d,                                           +
-     test_class_r.e,                                           +
-     test_class_r.f,                                           +
-     test_class_r.g,                                           +
-     test_class_r.h,                                           +
-     test_class_r.v                                            +
-    FROM test_class_r;                                         +
-                                                               +
- COMMENT ON VIEW test_class_v IS NULL;                         +
-                                                               +
- ALTER VIEW test_class_v SET (check_option='cascaded');        +
-                                                               +
- ALTER VIEW test_class_v OWNER TO root;                        +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_class_v; Type: VIEW; Schema: public; Owner: root
+--
 
+CREATE OR REPLACE VIEW test_class_v AS
+ SELECT test_class_r.a,
+    test_class_r.b,
+    test_class_r.c,
+    test_class_r.d,
+    test_class_r.e,
+    test_class_r.f,
+    test_class_r.g,
+    test_class_r.h,
+    test_class_r.v
+   FROM test_class_r;
+
+COMMENT ON VIEW test_class_v IS NULL;
+
+ALTER VIEW test_class_v SET (check_option='cascaded');
+
+ALTER VIEW test_class_v OWNER TO root;
+
+(1 row)
 SELECT pg_ddl_script('test_class_v'::regtype);
-                         pg_ddl_script                          
-----------------------------------------------------------------
- --                                                            +
- -- Name: test_class_v; Type: VIEW; Schema: public; Owner: root+
- --                                                            +
-                                                               +
- CREATE OR REPLACE VIEW test_class_v AS                        +
-  SELECT test_class_r.a,                                       +
-     test_class_r.b,                                           +
-     test_class_r.c,                                           +
-     test_class_r.d,                                           +
-     test_class_r.e,                                           +
-     test_class_r.f,                                           +
-     test_class_r.g,                                           +
-     test_class_r.h,                                           +
-     test_class_r.v                                            +
-    FROM test_class_r;                                         +
-                                                               +
- COMMENT ON VIEW test_class_v IS NULL;                         +
-                                                               +
- ALTER VIEW test_class_v SET (check_option='cascaded');        +
-                                                               +
- ALTER VIEW test_class_v OWNER TO root;                        +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_class_v; Type: VIEW; Schema: public; Owner: root
+--
 
+CREATE OR REPLACE VIEW test_class_v AS
+ SELECT test_class_r.a,
+    test_class_r.b,
+    test_class_r.c,
+    test_class_r.d,
+    test_class_r.e,
+    test_class_r.f,
+    test_class_r.g,
+    test_class_r.h,
+    test_class_r.v
+   FROM test_class_r;
+
+COMMENT ON VIEW test_class_v IS NULL;
+
+ALTER VIEW test_class_v SET (check_option='cascaded');
+
+ALTER VIEW test_class_v OWNER TO root;
+
+(1 row)
 CREATE MATERIALIZED VIEW test_class_m AS
 SELECT * FROM test_class_r;
 create unique index test_class_mi ON test_class_m (a);
 SELECT pg_ddl_script('test_class_m'::regclass);
-                                pg_ddl_script                                
------------------------------------------------------------------------------
- --                                                                         +
- -- Name: test_class_m; Type: MATERIALIZED VIEW; Schema: public; Owner: root+
- --                                                                         +
-                                                                            +
- CREATE MATERIALIZED VIEW test_class_m AS                                   +
-  SELECT test_class_r.a,                                                    +
-     test_class_r.b,                                                        +
-     test_class_r.c,                                                        +
-     test_class_r.d,                                                        +
-     test_class_r.e,                                                        +
-     test_class_r.f,                                                        +
-     test_class_r.g,                                                        +
-     test_class_r.h,                                                        +
-     test_class_r.v                                                         +
-    FROM test_class_r;                                                      +
-                                                                            +
- COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;                         +
-                                                                            +
- CREATE UNIQUE INDEX test_class_mi ON test_class_m USING btree (a);         +
-                                                                            +
- ALTER MATERIALIZED VIEW test_class_m OWNER TO root;                        +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_class_m; Type: MATERIALIZED VIEW; Schema: public; Owner: root
+--
 
+CREATE MATERIALIZED VIEW test_class_m AS
+ SELECT test_class_r.a,
+    test_class_r.b,
+    test_class_r.c,
+    test_class_r.d,
+    test_class_r.e,
+    test_class_r.f,
+    test_class_r.g,
+    test_class_r.h,
+    test_class_r.v
+   FROM test_class_r;
+
+COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;
+
+CREATE UNIQUE INDEX test_class_mi ON test_class_m USING btree (a);
+
+ALTER MATERIALIZED VIEW test_class_m OWNER TO root;
+
+(1 row)
 select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regprocedure);
-   kind   |    sql_identifier    
-----------+----------------------
- FUNCTION | pg_ddl_oid_info(oid)
+kind|sql_identifier
+FUNCTION|pg_ddl_oid_info(oid)
 (1 row)
-
 SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
-                                                                                   pg_ddl_script                                                                                   
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- --                                                                                                                                                                               +
- -- Name: pg_ddl_oid_info(oid); Type: FUNCTION; Schema: public; Owner: root                                                                                                       +
- --                                                                                                                                                                               +
-                                                                                                                                                                                  +
- CREATE OR REPLACE FUNCTION public.pg_ddl_oid_info(oid, OUT oid oid, OUT name name, OUT namespace name, OUT kind text, OUT owner name, OUT sql_kind text, OUT sql_identifier text)+
-  RETURNS record                                                                                                                                                                  +
-  LANGUAGE sql                                                                                                                                                                    +
-  STRICT                                                                                                                                                                          +
- AS $function$                                                                                                                                                                    +
-   SELECT c.oid,                                                                                                                                                                  +
-          c.relname AS name,                                                                                                                                                      +
-          n.nspname AS namespace,                                                                                                                                                 +
-          coalesce(cc.column2,c.relkind::text) AS kind,                                                                                                                           +
-          pg_get_userbyid(c.relowner) AS owner,                                                                                                                                   +
-          coalesce(cc.column2,c.relkind::text) AS sql_kind,                                                                                                                       +
-          cast($1::regclass AS text) AS sql_identifier                                                                                                                            +
-     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace                                                                                                                  +
-     left join (                                                                                                                                                                  +
-        values ('r','TABLE'),                                                                                                                                                     +
-               ('v','VIEW'),                                                                                                                                                      +
-               ('i','INDEX'),                                                                                                                                                     +
-               ('S','SEQUENCE'),                                                                                                                                                  +
-               ('s','SPECIAL'),                                                                                                                                                   +
-               ('m','MATERIALIZED VIEW'),                                                                                                                                         +
-               ('c','TYPE'),                                                                                                                                                      +
-               ('t','TOAST'),                                                                                                                                                     +
-               ('f','FOREIGN TABLE')                                                                                                                                              +
-     ) as cc on cc.column1 = c.relkind                                                                                                                                            +
-    WHERE c.oid = $1                                                                                                                                                              +
-    UNION                                                                                                                                                                         +
-   SELECT p.oid,                                                                                                                                                                  +
-          p.proname AS name,                                                                                                                                                      +
-          n.nspname AS namespace,                                                                                                                                                 +
-          'FUNCTION' AS kind,                                                                                                                                                     +
-          pg_get_userbyid(p.proowner) AS owner,                                                                                                                                   +
-          'FUNCTION' AS sql_kind,                                                                                                                                                 +
-          cast($1::regprocedure AS text) AS sql_identifier                                                                                                                        +
-     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace                                                                                                                   +
-    WHERE p.oid = $1                                                                                                                                                              +
-    UNION                                                                                                                                                                         +
-   SELECT t.oid,                                                                                                                                                                  +
-          t.typname AS name,                                                                                                                                                      +
-          n.nspname AS namespace,                                                                                                                                                 +
-          coalesce(tt.column2,t.typtype::text) AS kind,                                                                                                                           +
-          pg_get_userbyid(t.typowner) AS owner,                                                                                                                                   +
-          coalesce(tt.column3,t.typtype::text) AS sql_kind,                                                                                                                       +
-          format_type($1,null) AS sql_identifier                                                                                                                                  +
-     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace                                                                                                                   +
-     left join (                                                                                                                                                                  +
-        values ('b','BASE','TYPE'),                                                                                                                                               +
-               ('c','COMPOSITE','TYPE'),                                                                                                                                          +
-               ('d','DOMAIN','DOMAIN'),                                                                                                                                           +
-               ('e','ENUM','TYPE'),                                                                                                                                               +
-               ('p','PSEUDO','TYPE'),                                                                                                                                             +
-               ('r','RANGE','TYPE')                                                                                                                                               +
-     ) as tt on tt.column1 = t.typtype                                                                                                                                            +
-    WHERE t.oid = $1                                                                                                                                                              +
- $function$;                                                                                                                                                                      +
-                                                                                                                                                                                  +
- COMMENT ON FUNCTION pg_ddl_oid_info(oid) IS NULL;                                                                                                                                +
-                                                                                                                                                                                  +
- ALTER FUNCTION pg_ddl_oid_info(oid) OWNER TO root;                                                                                                                               +
- REVOKE ALL ON FUNCTION pg_ddl_oid_info(oid) FROM PUBLIC;                                                                                                                         +
- GRANT EXECUTE ON FUNCTION pg_ddl_oid_info(oid) TO PUBLIC;                                                                                                                        +
- GRANT EXECUTE ON FUNCTION pg_ddl_oid_info(oid) TO root WITH GRANT OPTION;                                                                                                        +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: pg_ddl_oid_info(oid); Type: FUNCTION; Schema: public; Owner: root
+--
 
+CREATE OR REPLACE FUNCTION public.pg_ddl_oid_info(oid, OUT oid oid, OUT name name, OUT namespace name, OUT kind text, OUT owner name, OUT sql_kind text, OUT sql_identifier text)
+ RETURNS record
+ LANGUAGE sql
+ STRICT
+AS $function$
+  SELECT c.oid,
+         c.relname AS name,
+         n.nspname AS namespace,
+         coalesce(cc.column2,c.relkind::text) AS kind,
+         pg_get_userbyid(c.relowner) AS owner,
+         coalesce(cc.column2,c.relkind::text) AS sql_kind,
+         cast($1::regclass AS text) AS sql_identifier
+    FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    left join (
+         values ('r','TABLE'),
+                ('v','VIEW'),
+                ('i','INDEX'),
+                ('S','SEQUENCE'),
+                ('s','SPECIAL'),
+                ('m','MATERIALIZED VIEW'),
+                ('c','TYPE'),
+                ('t','TOAST'),
+                ('f','FOREIGN TABLE')
+    ) as cc on cc.column1 = c.relkind
+   WHERE c.oid = $1
+   UNION 
+  SELECT p.oid,
+         p.proname AS name,
+         n.nspname AS namespace,
+         'FUNCTION' AS kind,
+         pg_get_userbyid(p.proowner) AS owner,
+         'FUNCTION' AS sql_kind,
+         cast($1::regprocedure AS text) AS sql_identifier
+    FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE p.oid = $1
+   UNION 
+  SELECT t.oid,
+         t.typname AS name,
+         n.nspname AS namespace,
+         coalesce(tt.column2,t.typtype::text) AS kind,
+         pg_get_userbyid(t.typowner) AS owner,
+         coalesce(tt.column3,t.typtype::text) AS sql_kind,
+         format_type($1,null) AS sql_identifier
+    FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
+    left join (
+         values ('b','BASE','TYPE'),
+                ('c','COMPOSITE','TYPE'),
+                ('d','DOMAIN','DOMAIN'),
+                ('e','ENUM','TYPE'),
+                ('p','PSEUDO','TYPE'),
+                ('r','RANGE','TYPE')
+    ) as tt on tt.column1 = t.typtype
+   WHERE t.oid = $1
+   UNION
+  SELECT r.oid,
+         r.rolname as name,
+         null as namespace,
+         case when rolcanlogin then 'USER' else 'GROUP' end as kind,
+         null as owner,
+         'ROLE' as sql_kind,
+         quote_ident(r.rolname) as sql_identifier
+    FROM pg_authid r
+   WHERE r.oid = $1
+$function$;
+
+COMMENT ON FUNCTION pg_ddl_oid_info(oid) IS NULL;
+
+ALTER FUNCTION pg_ddl_oid_info(oid) OWNER TO root;
+REVOKE ALL ON FUNCTION pg_ddl_oid_info(oid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pg_ddl_oid_info(oid) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION pg_ddl_oid_info(oid) TO root WITH GRANT OPTION;
+
+(1 row)
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
 $$ select 3.14, 'now'::text $$ language sql cost 123 rows 19
 set xmloption = content
 ;
 comment on function funfun(int,text) is 'Use more comments!';
 select * from funfun(1);
-  c   |  d  
-------+-----
- 3.14 | now
+c|d
+3.14|now
 (1 row)
-
 SELECT pg_ddl_script('funfun'::regproc);
-                                               pg_ddl_script                                               
------------------------------------------------------------------------------------------------------------
- --                                                                                                       +
- -- Name: funfun(integer,text); Type: FUNCTION; Schema: public; Owner: root                               +
- --                                                                                                       +
-                                                                                                          +
- CREATE OR REPLACE FUNCTION public.funfun(a integer, b text DEFAULT NULL::text, OUT c numeric, OUT d text)+
-  RETURNS SETOF record                                                                                    +
-  LANGUAGE sql                                                                                            +
-  COST 123 ROWS 19                                                                                        +
-  SET xmloption TO 'content'                                                                              +
- AS $function$ select 3.14, 'now'::text $function$;                                                       +
-                                                                                                          +
- COMMENT ON FUNCTION funfun(integer,text) IS 'Use more comments!';                                        +
-                                                                                                          +
- ALTER FUNCTION funfun(integer,text) OWNER TO root;                                                       +
- REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;                                                 +
- GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;                                                +
- GRANT EXECUTE ON FUNCTION funfun(integer,text) TO root WITH GRANT OPTION;                                +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: funfun(integer,text); Type: FUNCTION; Schema: public; Owner: root
+--
 
+CREATE OR REPLACE FUNCTION public.funfun(a integer, b text DEFAULT NULL::text, OUT c numeric, OUT d text)
+ RETURNS SETOF record
+ LANGUAGE sql
+ COST 123 ROWS 19
+ SET xmloption TO 'content'
+AS $function$ select 3.14, 'now'::text $function$;
+
+COMMENT ON FUNCTION funfun(integer,text) IS 'Use more comments!';
+
+ALTER FUNCTION funfun(integer,text) OWNER TO root;
+REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION funfun(integer,text) TO root WITH GRANT OPTION;
+
+(1 row)
 create type test_type_e as enum ('foo','bar','baz','qux');
 comment on type test_type_e is 'my enum';
 select pg_ddl_script('test_type_e'::regtype);
-               pg_ddl_script               
--------------------------------------------
- CREATE TYPE test_type_e AS ENUM (        +
-  'foo'                                   +
-  'bar'                                   +
-  'baz'                                   +
-  'qux'                                   +
- );                                       +
-                                          +
- COMMENT ON TYPE test_type_e IS 'my enum';+
- ALTER TYPE test_type_e OWNER TO root;    +
- 
-(1 row)
+pg_ddl_script
+CREATE TYPE test_type_e AS ENUM (
+ 'foo'
+ 'bar'
+ 'baz'
+ 'qux'
+);
 
+COMMENT ON TYPE test_type_e IS 'my enum';
+ALTER TYPE test_type_e OWNER TO root;
+
+(1 row)
 create domain test_type_d numeric(10,2) check(value is not null) check(value>6) default 7;
 comment on type test_type_d is 'my domain';
 select pg_ddl_script('test_type_d'::regtype);
-                 pg_ddl_script                 
------------------------------------------------
- CREATE DOMAIN test_type_d                    +
-  AS numeric(10,2)                            +
-  CHECK ((VALUE IS NOT NULL))                 +
-  CHECK ((VALUE > (6)::numeric))              +
-  DEFAULT 7;                                  +
-                                              +
- COMMENT ON DOMAIN test_type_d IS 'my domain';+
- ALTER DOMAIN test_type_d OWNER TO root;      +
- 
-(1 row)
+pg_ddl_script
+CREATE DOMAIN test_type_d
+ AS numeric(10,2)
+ CHECK ((VALUE IS NOT NULL))
+ CHECK ((VALUE > (6)::numeric))
+ DEFAULT 7;
 
+COMMENT ON DOMAIN test_type_d IS 'my domain';
+ALTER DOMAIN test_type_d OWNER TO root;
+
+(1 row)
 create type test_type_c as (i integer, t text, d test_type_d);
 comment on type test_type_c is 'my class type';
 comment on column test_type_c.i is 'my class class column i';
 select pg_ddl_script('test_type_c'::regtype);
-                         pg_ddl_script                         
----------------------------------------------------------------
- --                                                           +
- -- Name: test_type_c; Type: TYPE; Schema: public; Owner: root+
- --                                                           +
-                                                              +
- CREATE TYPE test_type_c AS (                                 +
-     i integer,                                               +
-     t text,                                                  +
-     d test_type_d                                            +
- );                                                           +
-                                                              +
- COMMENT ON COLUMN test_type_c.i IS 'my class class column i';+
-                                                              +
- COMMENT ON TYPE test_type_c IS 'my class type';              +
- ALTER TYPE test_type_c OWNER TO root;                        +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_type_c; Type: TYPE; Schema: public; Owner: root
+--
 
+CREATE TYPE test_type_c AS (
+    i integer,
+    t text,
+    d test_type_d
+);
+
+COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
+
+COMMENT ON TYPE test_type_c IS 'my class type';
+ALTER TYPE test_type_c OWNER TO root;
+
+(1 row)
 select pg_ddl_script('test_type_c'::regclass);
-                         pg_ddl_script                         
----------------------------------------------------------------
- --                                                           +
- -- Name: test_type_c; Type: TYPE; Schema: public; Owner: root+
- --                                                           +
-                                                              +
- CREATE TYPE test_type_c AS (                                 +
-     i integer,                                               +
-     t text,                                                  +
-     d test_type_d                                            +
- );                                                           +
-                                                              +
- COMMENT ON COLUMN test_type_c.i IS 'my class class column i';+
-                                                              +
- COMMENT ON TYPE test_type_c IS 'my class type';              +
- ALTER TYPE test_type_c OWNER TO root;                        +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_type_c; Type: TYPE; Schema: public; Owner: root
+--
 
+CREATE TYPE test_type_c AS (
+    i integer,
+    t text,
+    d test_type_d
+);
+
+COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
+
+COMMENT ON TYPE test_type_c IS 'my class type';
+ALTER TYPE test_type_c OWNER TO root;
+
+(1 row)
 create sequence test_type_S increment 4 start 2;
 comment on sequence test_type_S is 'interleave';
 select pg_ddl_script('test_type_S'::regclass);
-                           pg_ddl_script                           
--------------------------------------------------------------------
- --                                                               +
- -- Name: test_type_s; Type: SEQUENCE; Schema: public; Owner: root+
- --                                                               +
-                                                                  +
- CREATE SEQUENCE test_type_s;                                     +
- ALTER SEQUENCE test_type_s                                       +
-  INCREMENT BY 4                                                  +
-  MINVALUE 1                                                      +
-  MAXVALUE 9223372036854775807                                    +
-  START WITH 2                                                    +
-  NO CYCLE;                                                       +
-                                                                  +
- COMMENT ON SEQUENCE test_type_s IS 'interleave';                 +
-                                                                  +
- ALTER SEQUENCE test_type_s OWNER TO root;                        +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_type_s; Type: SEQUENCE; Schema: public; Owner: root
+--
 
+CREATE SEQUENCE test_type_s;
+ALTER SEQUENCE test_type_s
+ INCREMENT BY 4
+ MINVALUE 1
+ MAXVALUE 9223372036854775807
+ START WITH 2
+ NO CYCLE;
+
+COMMENT ON SEQUENCE test_type_s IS 'interleave';
+
+ALTER SEQUENCE test_type_s OWNER TO root;
+
+(1 row)
 create table test_collation (
 	id serial,
 	c text collate "C" not null,
@@ -496,194 +469,189 @@ create table test_collation (
 	t text
 );
 select pg_ddl_script('test_collation'::regclass);
-                                        pg_ddl_script                                        
----------------------------------------------------------------------------------------------
- --                                                                                         +
- -- Name: test_collation; Type: TABLE; Schema: public; Owner: root                          +
- --                                                                                         +
-                                                                                            +
- CREATE TABLE test_collation (                                                              +
-     id integer NOT NULL,                                                                   +
-     c text COLLATE "C" NOT NULL,                                                           +
-     en text COLLATE "en_US.utf8",                                                          +
-     t text                                                                                 +
- );                                                                                         +
-                                                                                            +
- COMMENT ON TABLE test_collation IS NULL;                                                   +
-                                                                                            +
- ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);+
-                                                                                            +
- ALTER TABLE test_collation OWNER TO root;                                                  +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_collation; Type: TABLE; Schema: public; Owner: root
+--
 
+CREATE TABLE test_collation (
+    id integer NOT NULL,
+    c text COLLATE "C" NOT NULL,
+    en text COLLATE "en_US.utf8",
+    t text
+);
+
+COMMENT ON TABLE test_collation IS NULL;
+
+ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
+
+ALTER TABLE test_collation OWNER TO root;
+
+(1 row)
+create domain test_collation_d text collate "en_US" default '***';
+select pg_ddl_script('test_collation_d'::regtype);
+pg_ddl_script
+CREATE DOMAIN test_collation_d
+ AS text COLLATE "en_US.utf8"
+ DEFAULT '***'::text;
+
+COMMENT ON DOMAIN test_collation_d IS NULL;
+ALTER DOMAIN test_collation_d OWNER TO root;
+
+(1 row)
 select pg_ddl_script('int'::regtype);
-                                 pg_ddl_script                                 
--------------------------------------------------------------------------------
- CREATE TYPE integer (                                                        +
-   INPUT = int4in,                                                            +
-   OUTPUT = int4out,                                                          +
-   SEND = int4send,                                                           +
-   RECEIVE = int4recv,                                                        +
-   INTERNALLENGTH = 4,                                                        +
-   PASSEDBYVALUE,                                                             +
-   ALIGNMENT = int4,                                                          +
-   STORAGE = plain,                                                           +
-   CATEGORY = 'N',                                                            +
-   DELIMITER = ',',                                                           +
-   COLLATABLE = false                                                         +
- );                                                                           +
-                                                                              +
- COMMENT ON TYPE integer IS '-2 billion to 2 billion integer, 4-byte storage';+
- ALTER TYPE integer OWNER TO postgres;                                        +
- 
-(1 row)
+pg_ddl_script
+CREATE TYPE integer (
+  INPUT = int4in,
+  OUTPUT = int4out,
+  SEND = int4send,
+  RECEIVE = int4recv,
+  INTERNALLENGTH = 4,
+  PASSEDBYVALUE,
+  ALIGNMENT = int4,
+  STORAGE = plain,
+  CATEGORY = 'N',
+  DELIMITER = ',',
+  COLLATABLE = false
+);
 
+COMMENT ON TYPE integer IS '-2 billion to 2 billion integer, 4-byte storage';
+ALTER TYPE integer OWNER TO postgres;
+
+(1 row)
 select pg_ddl_script('int[]'::regtype);
-              pg_ddl_script              
------------------------------------------
- CREATE TYPE integer[] (                +
-   INPUT = array_in,                    +
-   OUTPUT = array_out,                  +
-   SEND = array_send,                   +
-   RECEIVE = array_recv,                +
-   ANALYZE = array_typanalyze,          +
-   INTERNALLENGTH = VARIABLE,           +
-   ALIGNMENT = int4,                    +
-   STORAGE = extended,                  +
-   CATEGORY = 'A',                      +
-   ELEMENT = integer,                   +
-   DELIMITER = ',',                     +
-   COLLATABLE = false                   +
- );                                     +
-                                        +
- COMMENT ON TYPE integer[] IS NULL;     +
- ALTER TYPE integer[] OWNER TO postgres;+
- 
-(1 row)
+pg_ddl_script
+CREATE TYPE integer[] (
+  INPUT = array_in,
+  OUTPUT = array_out,
+  SEND = array_send,
+  RECEIVE = array_recv,
+  ANALYZE = array_typanalyze,
+  INTERNALLENGTH = VARIABLE,
+  ALIGNMENT = int4,
+  STORAGE = extended,
+  CATEGORY = 'A',
+  ELEMENT = integer,
+  DELIMITER = ',',
+  COLLATABLE = false
+);
 
+COMMENT ON TYPE integer[] IS NULL;
+ALTER TYPE integer[] OWNER TO postgres;
+
+(1 row)
 select pg_ddl_script('uuid'::regtype);
-              pg_ddl_script               
-------------------------------------------
- CREATE TYPE uuid (                      +
-   INPUT = uuid_in,                      +
-   OUTPUT = uuid_out,                    +
-   SEND = uuid_send,                     +
-   RECEIVE = uuid_recv,                  +
-   INTERNALLENGTH = 16,                  +
-   ALIGNMENT = char,                     +
-   STORAGE = plain,                      +
-   CATEGORY = 'U',                       +
-   DELIMITER = ',',                      +
-   COLLATABLE = false                    +
- );                                      +
-                                         +
- COMMENT ON TYPE uuid IS 'UUID datatype';+
- ALTER TYPE uuid OWNER TO postgres;      +
- 
-(1 row)
+pg_ddl_script
+CREATE TYPE uuid (
+  INPUT = uuid_in,
+  OUTPUT = uuid_out,
+  SEND = uuid_send,
+  RECEIVE = uuid_recv,
+  INTERNALLENGTH = 16,
+  ALIGNMENT = char,
+  STORAGE = plain,
+  CATEGORY = 'U',
+  DELIMITER = ',',
+  COLLATABLE = false
+);
 
+COMMENT ON TYPE uuid IS 'UUID datatype';
+ALTER TYPE uuid OWNER TO postgres;
+
+(1 row)
 select pg_ddl_script('text'::regtype);
-                             pg_ddl_script                             
------------------------------------------------------------------------
- CREATE TYPE text (                                                   +
-   INPUT = textin,                                                    +
-   OUTPUT = textout,                                                  +
-   SEND = textsend,                                                   +
-   RECEIVE = textrecv,                                                +
-   INTERNALLENGTH = VARIABLE,                                         +
-   ALIGNMENT = int4,                                                  +
-   STORAGE = extended,                                                +
-   CATEGORY = 'S',                                                    +
-   PREFERRED = true,                                                  +
-   DELIMITER = ',',                                                   +
-   COLLATABLE = true                                                  +
- );                                                                   +
-                                                                      +
- COMMENT ON TYPE text IS 'variable-length string, no limit specified';+
- ALTER TYPE text OWNER TO postgres;                                   +
- 
-(1 row)
+pg_ddl_script
+CREATE TYPE text (
+  INPUT = textin,
+  OUTPUT = textout,
+  SEND = textsend,
+  RECEIVE = textrecv,
+  INTERNALLENGTH = VARIABLE,
+  ALIGNMENT = int4,
+  STORAGE = extended,
+  CATEGORY = 'S',
+  PREFERRED = true,
+  DELIMITER = ',',
+  COLLATABLE = true
+);
 
+COMMENT ON TYPE text IS 'variable-length string, no limit specified';
+ALTER TYPE text OWNER TO postgres;
+
+(1 row)
 select pg_ddl_script('xml'::regtype);
-             pg_ddl_script             
----------------------------------------
- CREATE TYPE xml (                    +
-   INPUT = xml_in,                    +
-   OUTPUT = xml_out,                  +
-   SEND = xml_send,                   +
-   RECEIVE = xml_recv,                +
-   INTERNALLENGTH = VARIABLE,         +
-   ALIGNMENT = int4,                  +
-   STORAGE = extended,                +
-   CATEGORY = 'U',                    +
-   DELIMITER = ',',                   +
-   COLLATABLE = false                 +
- );                                   +
-                                      +
- COMMENT ON TYPE xml IS 'XML content';+
- ALTER TYPE xml OWNER TO postgres;    +
- 
-(1 row)
+pg_ddl_script
+CREATE TYPE xml (
+  INPUT = xml_in,
+  OUTPUT = xml_out,
+  SEND = xml_send,
+  RECEIVE = xml_recv,
+  INTERNALLENGTH = VARIABLE,
+  ALIGNMENT = int4,
+  STORAGE = extended,
+  CATEGORY = 'U',
+  DELIMITER = ',',
+  COLLATABLE = false
+);
 
+COMMENT ON TYPE xml IS 'XML content';
+ALTER TYPE xml OWNER TO postgres;
+
+(1 row)
 create view test_class_v_opt1 with (security_barrier) 
 as select * from test_class_v order by 1;
 create view test_class_v_opt2 
 as select * from test_class_v order by 1;
 alter  view test_class_v_opt2 set (security_barrier='true');
 select pg_ddl_script('test_class_v_opt1'::regclass);
-                            pg_ddl_script                            
----------------------------------------------------------------------
- --                                                                 +
- -- Name: test_class_v_opt1; Type: VIEW; Schema: public; Owner: root+
- --                                                                 +
-                                                                    +
- CREATE OR REPLACE VIEW test_class_v_opt1 AS                        +
-  SELECT test_class_v.a,                                            +
-     test_class_v.b,                                                +
-     test_class_v.c,                                                +
-     test_class_v.d,                                                +
-     test_class_v.e,                                                +
-     test_class_v.f,                                                +
-     test_class_v.g,                                                +
-     test_class_v.h,                                                +
-     test_class_v.v                                                 +
-    FROM test_class_v                                               +
-   ORDER BY test_class_v.a;                                         +
-                                                                    +
- COMMENT ON VIEW test_class_v_opt1 IS NULL;                         +
-                                                                    +
- ALTER VIEW test_class_v_opt1 SET (security_barrier='true');        +
-                                                                    +
- ALTER VIEW test_class_v_opt1 OWNER TO root;                        +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_class_v_opt1; Type: VIEW; Schema: public; Owner: root
+--
 
+CREATE OR REPLACE VIEW test_class_v_opt1 AS
+ SELECT test_class_v.a,
+    test_class_v.b,
+    test_class_v.c,
+    test_class_v.d,
+    test_class_v.e,
+    test_class_v.f,
+    test_class_v.g,
+    test_class_v.h,
+    test_class_v.v
+   FROM test_class_v
+  ORDER BY test_class_v.a;
+
+COMMENT ON VIEW test_class_v_opt1 IS NULL;
+
+ALTER VIEW test_class_v_opt1 SET (security_barrier='true');
+
+ALTER VIEW test_class_v_opt1 OWNER TO root;
+
+(1 row)
 select pg_ddl_script('test_class_v_opt2'::regclass);
-                            pg_ddl_script                            
----------------------------------------------------------------------
- --                                                                 +
- -- Name: test_class_v_opt2; Type: VIEW; Schema: public; Owner: root+
- --                                                                 +
-                                                                    +
- CREATE OR REPLACE VIEW test_class_v_opt2 AS                        +
-  SELECT test_class_v.a,                                            +
-     test_class_v.b,                                                +
-     test_class_v.c,                                                +
-     test_class_v.d,                                                +
-     test_class_v.e,                                                +
-     test_class_v.f,                                                +
-     test_class_v.g,                                                +
-     test_class_v.h,                                                +
-     test_class_v.v                                                 +
-    FROM test_class_v                                               +
-   ORDER BY test_class_v.a;                                         +
-                                                                    +
- COMMENT ON VIEW test_class_v_opt2 IS NULL;                         +
-                                                                    +
- ALTER VIEW test_class_v_opt2 SET (security_barrier='true');        +
-                                                                    +
- ALTER VIEW test_class_v_opt2 OWNER TO root;                        +
- 
-(1 row)
+pg_ddl_script
+--
+-- Name: test_class_v_opt2; Type: VIEW; Schema: public; Owner: root
+--
 
+CREATE OR REPLACE VIEW test_class_v_opt2 AS
+ SELECT test_class_v.a,
+    test_class_v.b,
+    test_class_v.c,
+    test_class_v.d,
+    test_class_v.e,
+    test_class_v.f,
+    test_class_v.g,
+    test_class_v.h,
+    test_class_v.v
+   FROM test_class_v
+  ORDER BY test_class_v.a;
+
+COMMENT ON VIEW test_class_v_opt2 IS NULL;
+
+ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
+
+ALTER VIEW test_class_v_opt2 OWNER TO root;
+
+(1 row)

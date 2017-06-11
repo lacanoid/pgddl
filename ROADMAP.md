@@ -7,7 +7,7 @@ Plus it couldn't handle dumping say only functions from certain schema.
 I have since then learned how to fix my database and pg_dump got options like -n.
 
 But the idea of a database being able to dump itself more autonomously persisted.
-After all, if LISP can do it, why not Postgres with it's awesome SQL power? 
+After all, if LISP can do it, why not Postgres with its' awesome SQL power? 
 Information is all there in the system catalogs, one just needs to decypher it.
 
 This tool uses information schema and standard SQL as much as possible, 
@@ -21,14 +21,14 @@ Tasks
 
 - support for regtypes
 -- range types
--- base types
+-- !base types
 
 - suppport for regclass
--- foreign tables
+-- !foreign tables
 
 - support for other missing stuff:
 -- storage parameters
--- collations
+-- !collations
 -- tablespaces
 -- serial (alter sequence set owner column)
 
@@ -41,7 +41,7 @@ Tasks
 
 - support for dumping whole schemas
 - recursive dumper which handles dependancies
-- support for roles
+- !support for roles
 - support for other postgres objects
 
 Options

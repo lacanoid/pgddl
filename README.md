@@ -27,7 +27,7 @@ Advantages over using other tools like `psql` or `pgdump` include:
 
 It is currently rather incomplete, but still useful. 
 It provides support for the basic user-level objects. 
-Tested on PostgreSQL 9.4. Might work with earlier versions.
+Tested on PostgreSQL 9.6. Might work with earlier versions.
 
 Plans on how to make this support newer fetures AND older servers are being considered.
  
@@ -64,8 +64,8 @@ Using
 This module provides one main end user function `pg_ddl_script` that 
 you can use to obtain SQL DDL source for a particular database object.
 
-Currently supported object types are `regclass`,`regtype`,`regproc`,`regprocedure`.
-You will probably want to cast object name or oid to appropriate type.
+Currently supported object types are `regclass`,`regtype`,`regproc`,`regprocedure` 
+and `regrole`. You will probably want to cast object name or oid to appropriate type.
 
 - `pg_ddl_script(regclass) returns text`
 
@@ -83,6 +83,10 @@ You will probably want to cast object name or oid to appropriate type.
     Extracts SQL DDL source for a type `regtype`.
     Currently enums, domains and composites are supported.
 
+- `pg_ddl_script(regrole) returns text`
+
+    Extracts SQL DDL definition for the role `regrole`.
+
 For example:
 
 ```sql
@@ -96,6 +100,8 @@ SELECT pg_ddl_script('users'::regclass);
 CREATE TYPE my_enum AS ENUM ('foo','bar');
 
 SELECT pg_ddl_script('my_enum'::regtype);
+
+SELECT pg_ddl_script(current_role::regrole);
 
 ```
 

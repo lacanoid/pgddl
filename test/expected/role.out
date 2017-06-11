@@ -1,0 +1,75 @@
+\pset null _null_
+\pset format unaligned
+begin;
+create user pgddl_test_user nologin nosuperuser
+encrypted password 'md5db6d137a5ac4e8c22bed58e3e6687aca';
+alter user pgddl_test_user valid until '2100-01-01';
+comment on role pgddl_test_user
+is 'pg_ddl test user...';
+alter user pgddl_test_user 
+set standard_conforming_strings=true;
+create role pgddl_test_user2 login connection limit 100;
+create role pgddl_test_user3 valid until 'infinity';
+grant pgddl_test_user2 to pgddl_test_user;
+grant pgddl_test_user3 to pgddl_test_user with admin option;
+select pg_ddl_script('pgddl_test_user'::regrole);
+pg_ddl_script
+CREATE GROUP pgddl_test_user;
+ALTER ROLE pgddl_test_user WITH
+  NOLOGIN
+  NOSUPERUSER
+  INHERIT
+  NOCREATEDB
+  NOCREATEROLE
+  NOREPLICATION
+  NOBYPASSRLS;
+
+COMMENT ON ROLE pgddl_test_user IS 'pg_ddl test user...';
+
+ALTER ROLE pgddl_test_user ENCRYPTED PASSWORD 'md5db6d137a5ac4e8c22bed58e3e6687aca';
+ALTER ROLE pgddl_test_user VALID UNTIL '2100-01-01 00:00:00-08';
+
+ALTER ROLE pgddl_test_user SET standard_conforming_strings=true;
+
+GRANT pgddl_test_user2 TO pgddl_test_user;
+GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
+
+
+(1 row)
+select pg_ddl_script('pgddl_test_user3'::regrole);
+pg_ddl_script
+CREATE GROUP pgddl_test_user3;
+ALTER ROLE pgddl_test_user3 WITH
+  NOLOGIN
+  NOSUPERUSER
+  INHERIT
+  NOCREATEDB
+  NOCREATEROLE
+  NOREPLICATION
+  NOBYPASSRLS;
+
+ALTER ROLE pgddl_test_user3 VALID UNTIL 'infinity';
+
+GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
+
+
+(1 row)
+select pg_ddl_script('pgddl_test_user2'::regrole);
+pg_ddl_script
+CREATE USER pgddl_test_user2;
+ALTER ROLE pgddl_test_user2 WITH
+  LOGIN
+  NOSUPERUSER
+  INHERIT
+  NOCREATEDB
+  NOCREATEROLE
+  NOREPLICATION
+  NOBYPASSRLS;
+
+ALTER ROLE pgddl_test_user2 CONNECTION LIMIT 100;
+
+GRANT pgddl_test_user2 TO pgddl_test_user;
+
+
+(1 row)
+abort;

@@ -27,15 +27,15 @@ AS $function$
          cast($1::regclass AS text) AS sql_identifier
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     left join (
-       values ('r','TABLE'),
-              ('v','VIEW'),
-              ('i','INDEX'),
-              ('S','SEQUENCE'),
-              ('s','SPECIAL'),
-              ('m','MATERIALIZED VIEW'),
-              ('c','TYPE'),
-              ('t','TOAST'),
-              ('f','FOREIGN TABLE')
+         values ('r','TABLE'),
+                ('v','VIEW'),
+                ('i','INDEX'),
+                ('S','SEQUENCE'),
+                ('s','SPECIAL'),
+                ('m','MATERIALIZED VIEW'),
+                ('c','TYPE'),
+                ('t','TOAST'),
+                ('f','FOREIGN TABLE')
     ) as cc on cc.column1 = c.relkind
    WHERE c.oid = $1
    UNION 
@@ -58,14 +58,24 @@ AS $function$
          format_type($1,null) AS sql_identifier
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
     left join (
-       values ('b','BASE','TYPE'),
-              ('c','COMPOSITE','TYPE'),
-              ('d','DOMAIN','DOMAIN'),
-              ('e','ENUM','TYPE'),
-              ('p','PSEUDO','TYPE'),
-              ('r','RANGE','TYPE')
+         values ('b','BASE','TYPE'),
+                ('c','COMPOSITE','TYPE'),
+                ('d','DOMAIN','DOMAIN'),
+                ('e','ENUM','TYPE'),
+                ('p','PSEUDO','TYPE'),
+                ('r','RANGE','TYPE')
     ) as tt on tt.column1 = t.typtype
    WHERE t.oid = $1
+   UNION
+  SELECT r.oid,
+         r.rolname as name,
+         null as namespace,
+         case when rolcanlogin then 'USER' else 'GROUP' end as kind,
+         null as owner,
+         'ROLE' as sql_kind,
+         quote_ident(r.rolname) as sql_identifier
+    FROM pg_authid r
+   WHERE r.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -520,11 +530,17 @@ cc as (
 )
 select 'CREATE DOMAIN ' || format_type(t.oid,null) 
        || E'\n AS ' || format_type(t.typbasetype,typtypmod) 
-       || coalesce(E'\n '||(SELECT string_agg(definition,E'\n ') FROM cc),'')
+       || coalesce(E'\n '||(select string_agg(definition,E'\n ') from cc),'')
+       || case
+            when length(col.collcollate) > 0 
+            then ' COLLATE ' || quote_ident(col.collcollate::text)
+            else ''
+          end 
        || coalesce(E'\n DEFAULT ' || t.typdefault, '')
        || E';\n\n'
   from pg_type t
- where oid = $1
+  left join pg_collation col on (col.oid=t.typcollation)
+ where t.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -701,6 +717,67 @@ AS $function$
    from obj
 $function$  strict;
 
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddl_create_role(regrole)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+with 
+q1 as (
+ select 
+   'CREATE ' || case when rolcanlogin then 'USER' else 'GROUP' end 
+   ||' '||quote_ident(rolname)|| E';\n' ||
+   'ALTER ROLE '|| quote_ident(rolname) || E' WITH\n  ' ||
+   case when rolcanlogin then 'LOGIN' else 'NOLOGIN' end || E'\n  ' ||
+   case when rolsuper then 'SUPERUSER' else 'NOSUPERUSER' end || E'\n  ' ||
+   case when rolinherit then 'INHERIT' else 'NOINHERIT' end || E'\n  ' ||
+   case when rolcreatedb then 'CREATEDB' else 'NOCREATEDB' end || E'\n  ' ||
+   case when rolcreaterole then 'CREATEROLE' else 'NOCREATEROLE' end || E'\n  ' || 
+   case when rolreplication then 'REPLICATION' else 'NOREPLICATION' end || E'\n  ' ||
+   case when rolbypassrls then 'BYPASSRLS' else 'NOBYPASSRLS' end || E';\n' ||
+   case 
+     when description is not null 
+     then E'\n'
+          ||'COMMENT ON ROLE '||quote_ident(rolname)
+          ||' IS '||quote_literal(description)||E';\n'
+     else ''
+   end || E'\n' ||
+   case when rolpassword is not null 
+        then 'ALTER ROLE '|| quote_ident(rolname)||
+             ' ENCRYPTED PASSWORD '||quote_literal(rolpassword)||E';\n' 
+        else '' 
+   end ||
+   case when rolvaliduntil is not null 
+        then 'ALTER ROLE '|| quote_ident(rolname)||
+             ' VALID UNTIL '||quote_nullable(rolvaliduntil)||E';\n' 
+        else '' 
+   end ||
+   case when rolconnlimit>=0  
+        then 'ALTER ROLE '|| quote_ident(rolname)||
+             ' CONNECTION LIMIT '||rolconnlimit||E';\n' 
+        else '' 
+   end ||
+   E'\n' as ddl
+   from pg_authid a
+   left join pg_shdescription d on d.objoid=a.oid
+  where a.oid = $1
+ ),
+q2 as (
+ select string_agg('ALTER ROLE ' || quote_ident(rolname)
+                   ||' SET '||pg_roles.rolconfig[i]||E';\n','')
+    as ddl_config
+  from pg_roles,
+  generate_series(
+     (select array_lower(rolconfig,1) from pg_roles where oid=$1),
+     (select array_upper(rolconfig,1) from pg_roles where oid=$1)
+  ) as generate_series(i)
+ where oid = $1
+ ) 
+select ddl||coalesce(ddl_config||E'\n','')
+  from q1,q2; 
+$function$  strict
+set datestyle = iso;
 
 ---------------------------------------------------
 
@@ -756,6 +833,31 @@ CREATE OR REPLACE FUNCTION pg_ddl_grants_on_proc(regproc)
  join obj on (true)
  WHERE routine_schema=obj.namespace 
    AND specific_name=obj.name||'_'||obj.oid
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddl_grants_on_role(regrole) 
+ RETURNS text
+ LANGUAGE sql
+ AS $function$
+with 
+q as (
+ select 'GRANT '||quote_ident(cast(roleid::regrole as text))||
+        ' TO '||quote_ident(cast(member::regrole as text))||
+        case
+          when admin_option then ' WITH ADMIN OPTION'
+          else ''
+        end||
+        E';\n'
+        as ddl1
+   from pg_auth_members where (member = $1 or roleid = $1)
+  order by roleid = $1,
+           cast(roleid::regrole as text), 
+           cast(member::regrole as text)
+)
+select coalesce(string_agg(ddl1,'')||E'\n','')
+  from q
 $function$  strict;
 
 ---------------------------------------------------
@@ -822,6 +924,20 @@ COMMENT ON FUNCTION pg_ddl_script(regproc)
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION pg_ddl_script(regrole)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+   select 
+     pg_ddl_create_role($1) 
+     || pg_ddl_grants_on_role($1)
+$function$  strict;
+
+COMMENT ON FUNCTION pg_ddl_script(regrole) 
+     IS 'Get SQL definition for a role';
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION pg_ddl_script(regtype)
  RETURNS text
  LANGUAGE sql
@@ -842,12 +958,12 @@ AS $function$
             when 'e' then pg_ddl_create_type_enum(t.oid)
             when 'd' then pg_ddl_create_type_domain(t.oid)
             when 'b' then pg_ddl_create_type_base(t.oid)
-		    else '-- UNSUPPORTED TYPE: ' || t.typtype
+		    else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
 		  end 
           || pg_ddl_comment(t.oid)
           || pg_ddl_alter_owner(t.oid) 
      from pg_type t
-    where t.oid = $1 
+    where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;
 
 COMMENT ON FUNCTION pg_ddl_script(regtype) 
