@@ -1,4 +1,4 @@
-Version 0.6a
+Version 0.6
 -----------
 - support for dumping regroles
 - support for collations on domains
