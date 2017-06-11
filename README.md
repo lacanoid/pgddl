@@ -65,7 +65,7 @@ This module provides one main end user function `pg_ddl_script` that
 you can use to obtain SQL DDL source for a particular database object.
 
 Currently supported object types are `regclass`,`regtype`,`regproc`,`regprocedure` 
-and `regrole`. You will probably want to cast object name or oid to appropriate type.
+and `regrole`. You will probably want to cast object name or oid to the appropriate type.
 
 - `pg_ddl_script(regclass) returns text`
 
@@ -81,11 +81,10 @@ and `regrole`. You will probably want to cast object name or oid to appropriate 
 - `pg_ddl_script(regtype) returns text`
 
     Extracts SQL DDL source for a type `regtype`.
-    Currently enums, domains and composites are supported.
 
 - `pg_ddl_script(regrole) returns text`
 
-    Extracts SQL DDL definition for the role `regrole`.
+    Extracts SQL DDL definition for a role `regrole`.
 
 For example:
 
