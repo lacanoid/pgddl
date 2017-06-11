@@ -27,6 +27,7 @@ CREATE EXTENSION ddl;
  function pg_ddl_create_type_base(regtype)
  function pg_ddl_create_type_domain(regtype)
  function pg_ddl_create_type_enum(regtype)
+ function pg_ddl_create_type_range(regtype)
  function pg_ddl_create_view(regclass)
  function pg_ddl_get_columns(regclass)
  function pg_ddl_get_constraints(regclass)
@@ -43,5 +44,5 @@ CREATE EXTENSION ddl;
  function pg_ddl_script(regprocedure)
  function pg_ddl_script(regrole)
  function pg_ddl_script(regtype)
-(33 rows)
+(34 rows)
 

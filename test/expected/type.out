@@ -178,3 +178,16 @@ COMMENT ON TYPE xml IS 'XML content';
 ALTER TYPE xml OWNER TO postgres;
 
 (1 row)
+select pg_ddl_script('daterange'::regtype);
+pg_ddl_script
+CREATE TYPE daterange AS RANGE (
+  SUBTYPE = date,
+  SUBTYPE_OPCLASS = date_ops,
+  CANONICAL = daterange_canonical,
+  SUBTYPE_DIFF = daterange_subdiff
+);
+
+COMMENT ON TYPE daterange IS 'range of dates';
+ALTER TYPE daterange OWNER TO postgres;
+
+(1 row)

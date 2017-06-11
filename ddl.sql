@@ -498,6 +498,29 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION pg_ddl_create_type_range(regtype)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+select 'CREATE TYPE ' || format_type($1,null) || ' AS RANGE ('
+       || E'\n  SUBTYPE = '  || format_type(r.rngsubtype,null)
+       || coalesce(E',\n  SUBTYPE_OPCLASS = '  || quote_ident(opc.opcname),'')
+       || case
+            when length(col.collcollate) > 0 
+            then E',\n  COLLATION = ' || quote_ident(col.collcollate::text)
+            else ''
+          end 
+       || coalesce(E',\n  CANONICAL = ' || nullif(cast(r.rngcanonical::regproc as text),'-'),'')
+       || coalesce(E',\n  SUBTYPE_DIFF = ' || nullif(cast(r.rngsubdiff::regproc as text),'-'),'')
+       || E'\n);\n\n'
+  from pg_range r
+  left join pg_opclass opc on (opc.oid=r.rngsubopc)
+  left join pg_collation col on (col.oid=r.rngcollation)
+ where r.rngtypid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION pg_ddl_create_type_enum(regtype)
  RETURNS text
  LANGUAGE sql
@@ -734,8 +757,8 @@ q1 as (
    case when rolinherit then 'INHERIT' else 'NOINHERIT' end || E'\n  ' ||
    case when rolcreatedb then 'CREATEDB' else 'NOCREATEDB' end || E'\n  ' ||
    case when rolcreaterole then 'CREATEROLE' else 'NOCREATEROLE' end || E'\n  ' || 
-   case when rolreplication then 'REPLICATION' else 'NOREPLICATION' end || E'\n  ' ||
-   case when rolbypassrls then 'BYPASSRLS' else 'NOBYPASSRLS' end || E';\n' ||
+   case when rolreplication then 'REPLICATION' else 'NOREPLICATION' end || E';\n  ' ||
+-- 9.5+ case when rolbypassrls then 'BYPASSRLS' else 'NOBYPASSRLS' end || E';\n' ||
    case 
      when description is not null 
      then E'\n'
@@ -958,6 +981,7 @@ AS $function$
             when 'e' then pg_ddl_create_type_enum(t.oid)
             when 'd' then pg_ddl_create_type_domain(t.oid)
             when 'b' then pg_ddl_create_type_base(t.oid)
+            when 'r' then pg_ddl_create_type_range(t.oid)
 		    else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
 		  end 
           || pg_ddl_comment(t.oid)

@@ -1,8 +1,8 @@
 Version 0.6a
 -----------
-- initial support for dumping regroles
+- support for dumping regroles
 - support for collations on domains
-- initial support for range types
+- support for range types
 
 Version 0.5
 -----------
