@@ -19,18 +19,12 @@ This will hopefully help to keep relevant SQL code for these thing in one place.
 Tasks
 -----
 
-- support for regtypes
--- range types
--- !base types
-
-- suppport for regclass
--- !foreign tables
-
 - support for other missing stuff:
 -- storage parameters
--- !collations
 -- tablespaces
 -- serial (alter sequence set owner column)
+-- column permissions
+-- aggregates
 
 - improve simple tests
 - make some tests to test if what we make actually runs
@@ -41,8 +35,11 @@ Tasks
 
 - support for dumping whole schemas
 - recursive dumper which handles dependancies
-- !support for roles
 - support for other postgres objects
+-- regconfig
+-- regdictionary
+-- regoper,regoperator
+
 
 Options
 -------

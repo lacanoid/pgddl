@@ -1,9 +1,9 @@
 \pset null _null_
 \pset format unaligned
 SET client_min_messages = warning;
-select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regprocedure);
+select kind, sql_identifier from pg_ddl_identify('pg_ddl_identify(oid)'::regprocedure);
 kind|sql_identifier
-FUNCTION|pg_ddl_oid_info(oid)
+FUNCTION|pg_ddl_identify(oid)
 (1 row)
 create function trig() returns trigger as 
 $$begin return old; end $$
@@ -21,7 +21,7 @@ CREATE TABLE test_class_r (
 );
 COMMENT ON TABLE test_class_r IS 'Comment1';
 grant all on test_class_r to public;
-select kind, sql_identifier from pg_ddl_oid_info('test_class_r'::regclass);
+select kind, sql_identifier from pg_ddl_identify('test_class_r'::regclass);
 kind|sql_identifier
 TABLE|test_class_r
 (1 row)
@@ -260,22 +260,23 @@ CREATE UNIQUE INDEX test_class_mi ON test_class_m USING btree (a);
 ALTER MATERIALIZED VIEW test_class_m OWNER TO root;
 
 (1 row)
-select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regprocedure);
+select kind, sql_identifier from pg_ddl_identify('pg_ddl_identify(oid)'::regprocedure);
 kind|sql_identifier
-FUNCTION|pg_ddl_oid_info(oid)
+FUNCTION|pg_ddl_identify(oid)
 (1 row)
-SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
+SELECT pg_ddl_script('pg_ddl_identify(oid)'::regprocedure);
 pg_ddl_script
 --
--- Name: pg_ddl_oid_info(oid); Type: FUNCTION; Schema: public; Owner: root
+-- Name: pg_ddl_identify(oid); Type: FUNCTION; Schema: public; Owner: root
 --
 
-CREATE OR REPLACE FUNCTION public.pg_ddl_oid_info(oid, OUT oid oid, OUT name name, OUT namespace name, OUT kind text, OUT owner name, OUT sql_kind text, OUT sql_identifier text)
+CREATE OR REPLACE FUNCTION public.pg_ddl_identify(oid, OUT oid oid, OUT classid regclass, OUT name name, OUT namespace name, OUT kind text, OUT owner name, OUT sql_kind text, OUT sql_identifier text)
  RETURNS record
  LANGUAGE sql
  STRICT
 AS $function$
   SELECT c.oid,
+         'pg_class'::regclass,
          c.relname AS name,
          n.nspname AS namespace,
          coalesce(cc.column2,c.relkind::text) AS kind,
@@ -283,7 +284,7 @@ AS $function$
          coalesce(cc.column2,c.relkind::text) AS sql_kind,
          cast($1::regclass AS text) AS sql_identifier
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-    left join (
+    LEFT join (
          values ('r','TABLE'),
                 ('v','VIEW'),
                 ('i','INDEX'),
@@ -297,6 +298,7 @@ AS $function$
    WHERE c.oid = $1
    UNION 
   SELECT p.oid,
+         'pg_proc'::regclass,
          p.proname AS name,
          n.nspname AS namespace,
          'FUNCTION' AS kind,
@@ -307,6 +309,7 @@ AS $function$
    WHERE p.oid = $1
    UNION 
   SELECT t.oid,
+         'pg_type'::regclass,
          t.typname AS name,
          n.nspname AS namespace,
          coalesce(tt.column2,t.typtype::text) AS kind,
@@ -314,7 +317,7 @@ AS $function$
          coalesce(tt.column3,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
-    left join (
+    LEFT join (
          values ('b','BASE','TYPE'),
                 ('c','COMPOSITE','TYPE'),
                 ('d','DOMAIN','DOMAIN'),
@@ -325,6 +328,7 @@ AS $function$
    WHERE t.oid = $1
    UNION
   SELECT r.oid,
+         'pg_authid'::regclass,
          r.rolname as name,
          null as namespace,
          case when rolcanlogin then 'USER' else 'GROUP' end as kind,
@@ -333,14 +337,61 @@ AS $function$
          quote_ident(r.rolname) as sql_identifier
     FROM pg_authid r
    WHERE r.oid = $1
+   UNION
+  SELECT con.oid,
+         'pg_constraint'::regclass,
+         con.conname as name,
+         c.relname as namespace,
+         coalesce(tt.column2,con.contype) as kind,
+         null as owner,
+         'CONSTRAINT' as sql_kind,
+         quote_ident(con.conname)||' ON '||cast(c.oid::regclass as text) as sql_identifier
+    FROM pg_constraint con join pg_class c on (con.conrelid=c.oid)
+    LEFT join (
+         values ('f','FOREIGN KEY'),
+                ('c','CHECK'),
+                ('x','EXCLUDE'),
+                ('u','UNIQUE'),
+                ('p','PRIMARY KEY'),
+                ('t','TRIGGER')
+         ) as tt on tt.column1 = con.contype
+   WHERE con.oid = $1
+   UNION
+  SELECT t.oid,
+         'pg_trigger'::regclass,
+         t.tgname as name,
+         c.relname as namespace,
+	     CASE t.tgtype::integer & 2
+            WHEN 2 THEN 'BEFORE'::text
+            WHEN 0 THEN 'AFTER'::text
+            ELSE NULL::text
+         END AS kind, 
+         null as owner,
+         'TRIGGER' as sql_kind,
+         quote_ident(t.tgname)||' ON '||cast(c.oid::regclass as text) as sql_identifier
+    FROM pg_trigger t join pg_class c on (t.tgrelid=c.oid)
+   WHERE t.oid = $1
+   UNION
+  SELECT ad.oid,
+         'pg_attrdef'::regclass,
+         a.attname as name,
+         c.relname as namespace,
+         'DEFAULT' as kind,
+         null as owner,
+         'DEFAULT' as sql_kind,
+         cast(c.oid::regclass as text)||'.'||quote_ident(a.attname) as sql_identifier
+    FROM pg_attrdef ad 
+    JOIN pg_class c ON (ad.adrelid=c.oid)
+    JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
+   WHERE ad.oid = $1
 $function$;
 
-COMMENT ON FUNCTION pg_ddl_oid_info(oid) IS NULL;
+COMMENT ON FUNCTION pg_ddl_identify(oid) IS NULL;
 
-ALTER FUNCTION pg_ddl_oid_info(oid) OWNER TO root;
-REVOKE ALL ON FUNCTION pg_ddl_oid_info(oid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION pg_ddl_oid_info(oid) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION pg_ddl_oid_info(oid) TO root WITH GRANT OPTION;
+ALTER FUNCTION pg_ddl_identify(oid) OWNER TO root;
+REVOKE ALL ON FUNCTION pg_ddl_identify(oid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pg_ddl_identify(oid) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION pg_ddl_identify(oid) TO root WITH GRANT OPTION;
 
 (1 row)
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
@@ -475,5 +526,116 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 ALTER VIEW test_class_v_opt2 OWNER TO root;
+
+(1 row)
+select pg_ddl_script('test_class_v_opt2'::regclass::oid);
+pg_ddl_script
+--
+-- Name: test_class_v_opt2; Type: VIEW; Schema: public; Owner: root
+--
+
+CREATE OR REPLACE VIEW test_class_v_opt2 AS
+ SELECT test_class_v.a,
+    test_class_v.b,
+    test_class_v.c,
+    test_class_v.d,
+    test_class_v.e,
+    test_class_v.f,
+    test_class_v.g,
+    test_class_v.h,
+    test_class_v.v
+   FROM test_class_v
+  ORDER BY test_class_v.a;
+
+COMMENT ON VIEW test_class_v_opt2 IS NULL;
+
+ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
+
+ALTER VIEW test_class_v_opt2 OWNER TO root;
+
+(1 row)
+select pg_ddl_script('test_class_v_opt2');
+pg_ddl_script
+--
+-- Name: test_class_v_opt2; Type: VIEW; Schema: public; Owner: root
+--
+
+CREATE OR REPLACE VIEW test_class_v_opt2 AS
+ SELECT test_class_v.a,
+    test_class_v.b,
+    test_class_v.c,
+    test_class_v.d,
+    test_class_v.e,
+    test_class_v.f,
+    test_class_v.g,
+    test_class_v.h,
+    test_class_v.v
+   FROM test_class_v
+  ORDER BY test_class_v.a;
+
+COMMENT ON VIEW test_class_v_opt2 IS NULL;
+
+ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
+
+ALTER VIEW test_class_v_opt2 OWNER TO root;
+
+(1 row)
+create or replace function test_proc_1() returns text as
+$$ select 'Hello, world!'::text $$ language sql;
+select pg_ddl_script('test_proc_1'::regproc);
+pg_ddl_script
+--
+-- Name: test_proc_1(); Type: FUNCTION; Schema: public; Owner: root
+--
+
+CREATE OR REPLACE FUNCTION public.test_proc_1()
+ RETURNS text
+ LANGUAGE sql
+AS $function$ select 'Hello, world!'::text $function$;
+
+COMMENT ON FUNCTION test_proc_1() IS NULL;
+
+ALTER FUNCTION test_proc_1() OWNER TO root;
+REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
+
+(1 row)
+select pg_ddl_script('test_proc_1'::regproc::oid);
+pg_ddl_script
+--
+-- Name: test_proc_1(); Type: FUNCTION; Schema: public; Owner: root
+--
+
+CREATE OR REPLACE FUNCTION public.test_proc_1()
+ RETURNS text
+ LANGUAGE sql
+AS $function$ select 'Hello, world!'::text $function$;
+
+COMMENT ON FUNCTION test_proc_1() IS NULL;
+
+ALTER FUNCTION test_proc_1() OWNER TO root;
+REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
+
+(1 row)
+select pg_ddl_script('test_proc_1()');
+pg_ddl_script
+--
+-- Name: test_proc_1(); Type: FUNCTION; Schema: public; Owner: root
+--
+
+CREATE OR REPLACE FUNCTION public.test_proc_1()
+ RETURNS text
+ LANGUAGE sql
+AS $function$ select 'Hello, world!'::text $function$;
+
+COMMENT ON FUNCTION test_proc_1() IS NULL;
+
+ALTER FUNCTION test_proc_1() OWNER TO root;
+REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
 
 (1 row)

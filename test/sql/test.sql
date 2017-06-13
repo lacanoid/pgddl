@@ -3,7 +3,7 @@
 
 SET client_min_messages = warning;
 
-select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regprocedure);
+select kind, sql_identifier from pg_ddl_identify('pg_ddl_identify(oid)'::regprocedure);
 
 create function trig() returns trigger as 
 $$begin return old; end $$
@@ -22,7 +22,7 @@ CREATE TABLE test_class_r (
 );
 COMMENT ON TABLE test_class_r IS 'Comment1';
 grant all on test_class_r to public;
-select kind, sql_identifier from pg_ddl_oid_info('test_class_r'::regclass);
+select kind, sql_identifier from pg_ddl_identify('test_class_r'::regclass);
 
 create trigger aaaa before 
 update on test_class_r
@@ -60,8 +60,8 @@ create unique index test_class_mi ON test_class_m (a);
 
 SELECT pg_ddl_script('test_class_m'::regclass);
 
-select kind, sql_identifier from pg_ddl_oid_info('pg_ddl_oid_info(oid)'::regprocedure);
-SELECT pg_ddl_script('pg_ddl_oid_info(oid)'::regprocedure);
+select kind, sql_identifier from pg_ddl_identify('pg_ddl_identify(oid)'::regprocedure);
+SELECT pg_ddl_script('pg_ddl_identify(oid)'::regprocedure);
 
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
 $$ select 3.14, 'now'::text $$ language sql cost 123 rows 19
@@ -93,3 +93,12 @@ alter  view test_class_v_opt2 set (security_barrier='true');
 select pg_ddl_script('test_class_v_opt1'::regclass);
 select pg_ddl_script('test_class_v_opt2'::regclass);
 
+select pg_ddl_script('test_class_v_opt2'::regclass::oid);
+select pg_ddl_script('test_class_v_opt2');
+
+create or replace function test_proc_1() returns text as
+$$ select 'Hello, world!'::text $$ language sql;
+
+select pg_ddl_script('test_proc_1'::regproc);
+select pg_ddl_script('test_proc_1'::regproc::oid);
+select pg_ddl_script('test_proc_1()');

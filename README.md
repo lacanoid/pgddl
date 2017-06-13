@@ -85,6 +85,16 @@ and `regrole`. You will probably want to cast object name or oid to the appropri
 - `pg_ddl_script(regrole) returns text`
 
     Extracts SQL DDL definition for a role `regrole`.
+    
+There are two convenience functions to help you dump object without casting:
+
+- `pg_ddl_script(oid) returns text`
+
+    Extracts SQL DDL source for object ID, `oid`..
+
+- `pg_ddl_script(text) returns text`
+
+    Extracts SQL DDL source for a sql identifier`.
 
 For example:
 
@@ -110,7 +120,7 @@ and are possibly subject to change in future versions of the extension.
 They are generally not intended to be used by the end user. 
 Nevertheless, some of them are:
 
-- `pg_ddl_oid_info(oid) returns table(oid oid, name name, namespace name, kind text, owner name, sql_kind text, sql_identifier text)`
+- `pg_ddl_identify(oid) returns table(oid oid, classid regclass, name name, namespace name, kind text, owner name, sql_kind text, sql_identifier text)`
 
     Identify an object by object ID, `oid`. This function is used a lot in others.
 

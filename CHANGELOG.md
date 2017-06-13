@@ -1,3 +1,9 @@
+Version 0.7
+-----------
+- pg_ddl_oid_info() renamed to pg_ddl_identify() and improved with new types
+- pg_ddl_get_dependants() function
+- pg_ddl_script() now works for oid and text
+
 Version 0.6
 -----------
 - support for dumping regroles

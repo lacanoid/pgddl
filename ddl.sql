@@ -1,5 +1,6 @@
 --
 --  DDL extraction functions
+--  version 0.7 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -11,14 +12,17 @@ SET client_min_messages = warning;
 --  Helpers for digesting system catalogs
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddl_oid_info(
+CREATE OR REPLACE FUNCTION pg_ddl_identify(
   IN oid,  
-  OUT oid oid, OUT name name,  OUT namespace name,  
-  OUT kind text, OUT owner name, OUT sql_kind text, OUT sql_identifier text)
+  OUT oid oid, OUT classid regclass, 
+  OUT name name,  OUT namespace name,  
+  OUT kind text, OUT owner name, OUT sql_kind text, 
+  OUT sql_identifier text)
  RETURNS record
  LANGUAGE sql
 AS $function$
   SELECT c.oid,
+         'pg_class'::regclass,
          c.relname AS name,
          n.nspname AS namespace,
          coalesce(cc.column2,c.relkind::text) AS kind,
@@ -26,7 +30,7 @@ AS $function$
          coalesce(cc.column2,c.relkind::text) AS sql_kind,
          cast($1::regclass AS text) AS sql_identifier
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-    left join (
+    LEFT join (
          values ('r','TABLE'),
                 ('v','VIEW'),
                 ('i','INDEX'),
@@ -40,6 +44,7 @@ AS $function$
    WHERE c.oid = $1
    UNION 
   SELECT p.oid,
+         'pg_proc'::regclass,
          p.proname AS name,
          n.nspname AS namespace,
          'FUNCTION' AS kind,
@@ -50,6 +55,7 @@ AS $function$
    WHERE p.oid = $1
    UNION 
   SELECT t.oid,
+         'pg_type'::regclass,
          t.typname AS name,
          n.nspname AS namespace,
          coalesce(tt.column2,t.typtype::text) AS kind,
@@ -57,7 +63,7 @@ AS $function$
          coalesce(tt.column3,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
-    left join (
+    LEFT join (
          values ('b','BASE','TYPE'),
                 ('c','COMPOSITE','TYPE'),
                 ('d','DOMAIN','DOMAIN'),
@@ -68,6 +74,7 @@ AS $function$
    WHERE t.oid = $1
    UNION
   SELECT r.oid,
+         'pg_authid'::regclass,
          r.rolname as name,
          null as namespace,
          case when rolcanlogin then 'USER' else 'GROUP' end as kind,
@@ -76,6 +83,53 @@ AS $function$
          quote_ident(r.rolname) as sql_identifier
     FROM pg_authid r
    WHERE r.oid = $1
+   UNION
+  SELECT con.oid,
+         'pg_constraint'::regclass,
+         con.conname as name,
+         c.relname as namespace,
+         coalesce(tt.column2,con.contype) as kind,
+         null as owner,
+         'CONSTRAINT' as sql_kind,
+         quote_ident(con.conname)||' ON '||cast(c.oid::regclass as text) as sql_identifier
+    FROM pg_constraint con join pg_class c on (con.conrelid=c.oid)
+    LEFT join (
+         values ('f','FOREIGN KEY'),
+                ('c','CHECK'),
+                ('x','EXCLUDE'),
+                ('u','UNIQUE'),
+                ('p','PRIMARY KEY'),
+                ('t','TRIGGER')
+         ) as tt on tt.column1 = con.contype
+   WHERE con.oid = $1
+   UNION
+  SELECT t.oid,
+         'pg_trigger'::regclass,
+         t.tgname as name,
+         c.relname as namespace,
+	     CASE t.tgtype::integer & 2
+            WHEN 2 THEN 'BEFORE'::text
+            WHEN 0 THEN 'AFTER'::text
+            ELSE NULL::text
+         END AS kind, 
+         null as owner,
+         'TRIGGER' as sql_kind,
+         quote_ident(t.tgname)||' ON '||cast(c.oid::regclass as text) as sql_identifier
+    FROM pg_trigger t join pg_class c on (t.tgrelid=c.oid)
+   WHERE t.oid = $1
+   UNION
+  SELECT ad.oid,
+         'pg_attrdef'::regclass,
+         a.attname as name,
+         c.relname as namespace,
+         'DEFAULT' as kind,
+         null as owner,
+         'DEFAULT' as sql_kind,
+         cast(c.oid::regclass as text)||'.'||quote_ident(a.attname) as sql_identifier
+    FROM pg_attrdef ad 
+    JOIN pg_class c ON (ad.adrelid=c.oid)
+    JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
+   WHERE ad.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -187,7 +241,9 @@ AS $function$
             WHEN r.ev_type = '3'::"char" THEN 'INSERT'::text
             WHEN r.ev_type = '4'::"char" THEN 'DELETE'::text
             ELSE 'UNKNOWN'::text
-        END AS rule_event, r.is_instead, pg_get_ruledef(r.oid, true) AS rule_definition, 
+        END AS rule_event, 
+        r.is_instead, 
+        pg_get_ruledef(r.oid, true) AS rule_definition, 
         c.oid::regclass AS regclass
    FROM pg_rewrite r
    JOIN pg_class c ON c.oid = r.ev_class
@@ -355,7 +411,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_comment(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
- with obj as (select * from pg_ddl_oid_info($1))
+ with obj as (select * from pg_ddl_identify($1))
  select
   'COMMENT ON ' || obj.sql_kind
    || ' '  || sql_identifier ||
@@ -369,7 +425,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_create_table(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
-  with obj as (select * from pg_ddl_oid_info($1))
+  with obj as (select * from pg_ddl_identify($1))
   select 
     'CREATE '||
   case relpersistence
@@ -433,7 +489,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_create_sequence(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
- with obj as (select * from pg_ddl_oid_info($1))
+ with obj as (select * from pg_ddl_identify($1))
  select 
  'CREATE SEQUENCE '||(oid::regclass::text) || E';\n'
  ||'ALTER SEQUENCE '||(oid::regclass::text) 
@@ -598,7 +654,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_create_class(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
- with obj as (select * from pg_ddl_oid_info($1)),
+ with obj as (select * from pg_ddl_identify($1)),
 
  comments as (
    select 'COMMENT ON COLUMN ' || text($1) || '.' || quote_ident(name) ||
@@ -716,7 +772,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_alter_owner(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
- with obj as (select * from pg_ddl_oid_info($1))
+ with obj as (select * from pg_ddl_identify($1))
  select
    case
      when obj.kind = 'INDEX' then ''
@@ -732,7 +788,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_create_function(regproc)
  RETURNS text
  LANGUAGE sql
 AS $function$ 
- with obj as (select * from pg_ddl_oid_info($1))
+ with obj as (select * from pg_ddl_identify($1))
  select
   pg_ddl_banner(sql_identifier,'FUNCTION',namespace,owner) ||
   trim(trailing E'\n' from pg_get_functiondef($1)) || E';\n\n' ||
@@ -808,7 +864,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_grants_on_class(regclass)
  RETURNS text
  LANGUAGE sql
  AS $function$
- with obj as (select * from pg_ddl_oid_info($1))
+ with obj as (select * from pg_ddl_identify($1))
  select
    coalesce(
     string_agg ('GRANT '||privilege_type|| 
@@ -836,7 +892,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_grants_on_proc(regproc)
  RETURNS text
  LANGUAGE sql
  AS $function$
- with obj as (select * from pg_ddl_oid_info($1))
+ with obj as (select * from pg_ddl_identify($1))
  select
    'REVOKE ALL ON FUNCTION '||text($1::regprocedure)||' FROM PUBLIC;'||E'\n'||
    coalesce(
@@ -884,6 +940,65 @@ select coalesce(string_agg(ddl1,'')||E'\n','')
 $function$  strict;
 
 ---------------------------------------------------
+--  Dependancy handling
+---------------------------------------------------
+
+create or replace function pg_ddl_get_dependants(
+ in oid, 
+ out depth int, out classid regclass, out objid oid, out objsubid integer, 
+ out refclassid regclass, out refobjid oid, out refobjsubid integer, 
+ out deptype "char"
+)
+returns setof record as $$
+with recursive 
+  tree(depth,classid,objid,objsubid,refclassid,refobjid,refobjsubid,deptype) 
+as (
+select 1,
+       case when r.oid is not null 
+            then 'pg_class'::regclass 
+            else d.classid::regclass 
+       end as classid,
+       coalesce(r.ev_class,d.objid) as objid,
+       d.objsubid,
+       d.refclassid,
+       d.refobjid,
+       d.refobjsubid,
+       d.deptype
+  from pg_depend d
+  left join pg_rewrite r on 
+       (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
+ where d.refobjid = $1 and r.ev_class is distinct from d.refobjid
+ union all
+select depth+1,
+       case when r.oid is not null 
+            then 'pg_class'::regclass 
+            else d.classid::regclass 
+       end as classid,
+       coalesce(r.ev_class,d.objid) as objid,
+       d.objsubid,
+       d.refclassid,
+       d.refobjid,
+       d.refobjsubid,
+       d.deptype
+  from tree t
+  join pg_depend d on (d.refobjid=t.objid) 
+  left join pg_rewrite r on 
+       (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
+ where r.ev_class is distinct from d.refobjid
+)
+select distinct 
+       depth,
+       classid,
+       objid,
+       objsubid,
+       refclassid,
+       refobjid,
+       refobjsubid,
+       deptype
+  from tree
+$$ language sql;
+
+---------------------------------------------------
 --  Main script generating functions
 ---------------------------------------------------
 
@@ -891,7 +1006,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_script(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$ select null::text $function$;
--- will be defined later
+-- will be redefined later
 
 ---------------------------------------------------
 
@@ -915,7 +1030,6 @@ AS $function$
     from pg_class c
     left join pg_type t on (c.oid=t.typrelid)
    where c.oid = $1 and c.relkind = 'c'
-
 $function$  strict;
 
 COMMENT ON FUNCTION pg_ddl_script(regclass) 
@@ -992,3 +1106,44 @@ $function$  strict;
 
 COMMENT ON FUNCTION pg_ddl_script(regtype) 
      IS 'Get SQL definition for user defined data type';
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddl_script(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+  with obj as (select * from pg_ddl_identify($1))
+  select case obj.classid
+	when 'pg_class'::regclass 
+	then pg_ddl_script(oid::regclass)
+	when 'pg_proc'::regclass 
+	then pg_ddl_script(oid::regprocedure)
+	when 'pg_type'::regclass 
+	then pg_ddl_script(oid::regtype)
+	when 'pg_authid'::regclass 
+	then pg_ddl_script(oid::regrole)
+	else  '-- UNSUPPORTED OBJECT: ' ||oid||' '||kind||E'\n'
+ 	 end as ddl
+    from obj
+$function$  strict;
+
+COMMENT ON FUNCTION pg_ddl_script(oid) 
+     IS 'Get SQL definition for object id';
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddl_script(sql_identifier text)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+  select case
+    when strpos($1,'(')>0 
+    then pg_ddl_script(cast($1 as regprocedure))
+    else pg_ddl_script(cast($1 as regtype))
+     end
+$function$  strict;
+
+COMMENT ON FUNCTION pg_ddl_script(text) 
+     IS 'Get SQL definition for identifier';
+
