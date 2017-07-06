@@ -87,6 +87,21 @@ AS $function$
     FROM pg_authid r
    WHERE r.oid = $1
    UNION
+  SELECT n.oid,
+         'pg_namespace'::regclass,
+         n.nspname as name,
+         current_database() as namespace,
+         case 
+           when n.nspname like 'pg_%' then 'SYSTEM' 
+           when n.nspname = r.rolname then 'AUTHORIZATION'
+           else 'NAMESPACE'
+         end as kind,
+         pg_get_userbyid(n.nspowner) AS owner,
+         'SCHEMA' as sql_kind,
+         quote_ident(n.nspname) as sql_identifier
+    FROM pg_namespace n join pg_authid r on r.oid = n.nspowner
+   WHERE n.oid = $1
+   UNION
   SELECT con.oid,
          'pg_constraint'::regclass,
          con.conname as name,
@@ -155,6 +170,17 @@ AS $function$
          cast(cfg.oid::regconfig as text) as sql_identifier
     FROM pg_ts_config cfg JOIN pg_namespace n ON n.oid=cfg.cfgnamespace
    WHERE cfg.oid = $1
+   UNION
+  SELECT dict.oid,
+         'pg_ts_dict'::regclass,
+         dict.dictname as name,
+         n.nspname as namespace,
+         'TEXT SEARCH DICTIONARY' as kind,
+         pg_get_userbyid(dict.dictowner) as owner,
+         'TEXT SEARCH DICTIONARY' as sql_kind,
+         cast(dict.oid::regdictionary as text) as sql_identifier
+    FROM pg_ts_dict dict JOIN pg_namespace n ON n.oid=dict.dictnamespace
+   WHERE dict.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -811,6 +837,15 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION pg_ddl_create_trigger(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+ select pg_get_triggerdef($1,true)
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION pg_ddl_create_indexes(regclass)
  RETURNS text
  LANGUAGE sql
@@ -1223,6 +1258,8 @@ AS $function$
 	then pg_ddl_script(oid::regrole)
 	when 'pg_constraint'::regclass 
 	then pg_ddl_create_constraint(oid)
+	when 'pg_trigger'::regclass 
+	then pg_ddl_create_trigger(oid)
 	when 'pg_attrdef'::regclass 
 	then pg_ddl_create_default(oid)
 	else  '-- UNSUPPORTED OBJECT: ' ||oid||' '||kind||E'\n'
