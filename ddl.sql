@@ -804,11 +804,18 @@ CREATE OR REPLACE FUNCTION pg_ddl_create_constraint(oid)
  LANGUAGE sql
 AS $function$
  select format(
-   E'ALTER TABLE %s ADD CONSTRAINT %I\n  %s',
-   cast(r.oid::regclass as text),
+   E'ALTER %s %s ADD CONSTRAINT %I\n  %s',
+   case
+     when t.oid is not null then 'DOMAIN'
+     else 'TABLE'
+   end,
+   coalesce(cast(t.oid::regtype as text),
+            cast(r.oid::regclass as text)),
    c.conname, 
    pg_get_constraintdef(c.oid,true)) 
-   from pg_constraint c join pg_class r on (c.conrelid = r.oid)
+   from pg_constraint c 
+   left join pg_class r on (c.conrelid = r.oid)
+   left join pg_type t on (c.contypid = t.oid)
   where c.oid = $1 
 $function$  strict;
 
