@@ -267,186 +267,30 @@ select kind, sql_identifier from pg_ddl_identify('pg_ddl_identify(oid)'::regproc
 kind|sql_identifier
 FUNCTION|pg_ddl_identify(oid)
 (1 row)
-SELECT pg_ddl_script('pg_ddl_identify(oid)'::regprocedure);
+SELECT pg_ddl_script('pg_ddl_comment(oid)'::regprocedure);
 pg_ddl_script
 --
--- Type: FUNCTION; Name: pg_ddl_identify(oid); Owner: root
+-- Type: FUNCTION; Name: pg_ddl_comment(oid); Owner: root
 --
 
-CREATE OR REPLACE FUNCTION public.pg_ddl_identify(oid, OUT oid oid, OUT classid regclass, OUT name name, OUT namespace name, OUT kind text, OUT owner name, OUT sql_kind text, OUT sql_identifier text)
- RETURNS record
+CREATE OR REPLACE FUNCTION public.pg_ddl_comment(oid)
+ RETURNS text
  LANGUAGE sql
  STRICT
 AS $function$
-  SELECT c.oid,
-         'pg_class'::regclass,
-         c.relname AS name,
-         n.nspname AS namespace,
-         coalesce(cc.column2,c.relkind::text) AS kind,
-         pg_get_userbyid(c.relowner) AS owner,
-         coalesce(cc.column2,c.relkind::text) AS sql_kind,
-         cast($1::regclass AS text) AS sql_identifier
-    FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-    LEFT join (
-         values ('r','TABLE'),
-                ('v','VIEW'),
-                ('i','INDEX'),
-                ('S','SEQUENCE'),
-                ('s','SPECIAL'),
-                ('m','MATERIALIZED VIEW'),
-                ('c','TYPE'),
-                ('t','TOAST'),
-                ('f','FOREIGN TABLE')
-    ) as cc on cc.column1 = c.relkind
-   WHERE c.oid = $1
-   UNION 
-  SELECT p.oid,
-         'pg_proc'::regclass,
-         p.proname AS name,
-         n.nspname AS namespace,
-         'FUNCTION' AS kind,
-         pg_get_userbyid(p.proowner) AS owner,
-         case
-           when p.proisagg then 'AGGREGATE'
-           else 'FUNCTION' 
-         end AS sql_kind,
-         cast($1::regprocedure AS text) AS sql_identifier
-    FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-   WHERE p.oid = $1
-   UNION 
-  SELECT t.oid,
-         'pg_type'::regclass,
-         t.typname AS name,
-         n.nspname AS namespace,
-         coalesce(tt.column2,t.typtype::text) AS kind,
-         pg_get_userbyid(t.typowner) AS owner,
-         coalesce(tt.column3,t.typtype::text) AS sql_kind,
-         format_type($1,null) AS sql_identifier
-    FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
-    LEFT join (
-         values ('b','BASE','TYPE'),
-                ('c','COMPOSITE','TYPE'),
-                ('d','DOMAIN','DOMAIN'),
-                ('e','ENUM','TYPE'),
-                ('p','PSEUDO','TYPE'),
-                ('r','RANGE','TYPE')
-    ) as tt on tt.column1 = t.typtype
-   WHERE t.oid = $1
-   UNION
-  SELECT r.oid,
-         'pg_authid'::regclass,
-         r.rolname as name,
-         null as namespace,
-         case when rolcanlogin then 'USER' else 'GROUP' end as kind,
-         null as owner,
-         'ROLE' as sql_kind,
-         quote_ident(r.rolname) as sql_identifier
-    FROM pg_authid r
-   WHERE r.oid = $1
-   UNION
-  SELECT n.oid,
-         'pg_namespace'::regclass,
-         n.nspname as name,
-         current_database() as namespace,
-         case 
-           when n.nspname like 'pg_%' then 'SYSTEM' 
-           when n.nspname = r.rolname then 'AUTHORIZATION'
-           else 'NAMESPACE'
-         end as kind,
-         pg_get_userbyid(n.nspowner) AS owner,
-         'SCHEMA' as sql_kind,
-         quote_ident(n.nspname) as sql_identifier
-    FROM pg_namespace n join pg_authid r on r.oid = n.nspowner
-   WHERE n.oid = $1
-   UNION
-  SELECT con.oid,
-         'pg_constraint'::regclass,
-         con.conname as name,
-         c.relname as namespace,
-         coalesce(tt.column2,con.contype) as kind,
-         null as owner,
-         'CONSTRAINT' as sql_kind,
-         quote_ident(con.conname)||coalesce(' ON '||cast(c.oid::regclass as text),'') as sql_identifier
-    FROM pg_constraint con 
-    left join pg_class c on (con.conrelid=c.oid)
-    LEFT join (
-         values ('f','FOREIGN KEY'),
-                ('c','CHECK'),
-                ('x','EXCLUDE'),
-                ('u','UNIQUE'),
-                ('p','PRIMARY KEY'),
-                ('t','TRIGGER')
-         ) as tt on tt.column1 = con.contype
-   WHERE con.oid = $1
-   UNION
-  SELECT t.oid,
-         'pg_trigger'::regclass,
-         t.tgname as name,
-         c.relname as namespace,
-	     CASE t.tgtype::integer & 2
-            WHEN 2 THEN 'BEFORE'::text
-            WHEN 0 THEN 'AFTER'::text
-            ELSE NULL::text
-         END AS kind, 
-         null as owner,
-         'TRIGGER' as sql_kind,
-         format('%I ON %s',t.tgname,cast(c.oid::regclass as text)) as sql_identifier
-    FROM pg_trigger t join pg_class c on (t.tgrelid=c.oid)
-   WHERE t.oid = $1
-   UNION
-  SELECT ad.oid,
-         'pg_attrdef'::regclass,
-         a.attname as name,
-         c.relname as namespace,
-         'DEFAULT' as kind,
-         null as owner,
-         'DEFAULT' as sql_kind,
-         format('%s.%I',cast(c.oid::regclass as text),a.attname) as sql_identifier
-    FROM pg_attrdef ad 
-    JOIN pg_class c ON (ad.adrelid=c.oid)
-    JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
-   WHERE ad.oid = $1
-   UNION
-  SELECT op.oid,
-         'pg_operator'::regclass,
-         op.oprname as name,
-         n.nspname as namespace,
-         'OPERATOR' as kind,
-         pg_get_userbyid(op.oprowner) as owner,
-         'OPERATOR' as sql_kind,
-         cast(op.oid::regoperator as text) as sql_identifier
-    FROM pg_operator op JOIN pg_namespace n ON n.oid=op.oprnamespace
-   WHERE op.oid = $1
-   UNION
-  SELECT cfg.oid,
-         'pg_ts_config'::regclass,
-         cfg.cfgname as name,
-         n.nspname as namespace,
-         'TEXT SEARCH CONFIGURATION' as kind,
-         pg_get_userbyid(cfg.cfgowner) as owner,
-         'TEXT SEARCH CONFIGURATION' as sql_kind,
-         cast(cfg.oid::regconfig as text) as sql_identifier
-    FROM pg_ts_config cfg JOIN pg_namespace n ON n.oid=cfg.cfgnamespace
-   WHERE cfg.oid = $1
-   UNION
-  SELECT dict.oid,
-         'pg_ts_dict'::regclass,
-         dict.dictname as name,
-         n.nspname as namespace,
-         'TEXT SEARCH DICTIONARY' as kind,
-         pg_get_userbyid(dict.dictowner) as owner,
-         'TEXT SEARCH DICTIONARY' as sql_kind,
-         cast(dict.oid::regdictionary as text) as sql_identifier
-    FROM pg_ts_dict dict JOIN pg_namespace n ON n.oid=dict.dictnamespace
-   WHERE dict.oid = $1
+ with obj as (select * from pg_ddl_identify($1))
+ select format(
+          E'COMMENT ON %s %s IS %L;\n',
+          obj.sql_kind, sql_identifier, obj_description(oid))
+   from obj
 $function$;
 
-COMMENT ON FUNCTION pg_ddl_identify(oid) IS NULL;
+COMMENT ON FUNCTION pg_ddl_comment(oid) IS NULL;
 
-ALTER FUNCTION pg_ddl_identify(oid) OWNER TO root;
-REVOKE ALL ON FUNCTION pg_ddl_identify(oid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION pg_ddl_identify(oid) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION pg_ddl_identify(oid) TO root WITH GRANT OPTION;
+ALTER FUNCTION pg_ddl_comment(oid) OWNER TO root;
+REVOKE ALL ON FUNCTION pg_ddl_comment(oid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pg_ddl_comment(oid) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION pg_ddl_comment(oid) TO root WITH GRANT OPTION;
 
 (1 row)
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 

@@ -61,7 +61,7 @@ create unique index test_class_mi ON test_class_m (a);
 SELECT pg_ddl_script('test_class_m'::regclass);
 
 select kind, sql_identifier from pg_ddl_identify('pg_ddl_identify(oid)'::regprocedure);
-SELECT pg_ddl_script('pg_ddl_identify(oid)'::regprocedure);
+SELECT pg_ddl_script('pg_ddl_comment(oid)'::regprocedure);
 
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
 $$ select 3.14, 'now'::text $$ language sql cost 123 rows 19

@@ -109,7 +109,8 @@ AS $function$
          coalesce(tt.column2,con.contype) as kind,
          null as owner,
          'CONSTRAINT' as sql_kind,
-         quote_ident(con.conname)||coalesce(' ON '||cast(c.oid::regclass as text),'') as sql_identifier
+         quote_ident(con.conname)
+         ||coalesce(' ON '||cast(c.oid::regclass as text),'') as sql_identifier
     FROM pg_constraint con 
     left join pg_class c on (con.conrelid=c.oid)
     LEFT join (
@@ -149,6 +150,17 @@ AS $function$
     JOIN pg_class c ON (ad.adrelid=c.oid)
     JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
    WHERE ad.oid = $1
+   UNION
+  SELECT evt.oid,
+         'pg_event_trigger'::regclass,
+         evt.evtname as name,
+         null as namespace,
+         evt.evtevent as kind,
+         pg_get_userbyid(evt.evtowner) as owner,
+         'EVENT TRIGGER' as sql_kind,
+         quote_ident(evt.evtname) as sql_identifier
+    FROM pg_event_trigger evt
+   WHERE evt.oid = $1
    UNION
   SELECT op.oid,
          'pg_operator'::regclass,
@@ -467,12 +479,11 @@ CREATE OR REPLACE FUNCTION pg_ddl_comment(oid)
  LANGUAGE sql
 AS $function$
  with obj as (select * from pg_ddl_identify($1))
- select
-  'COMMENT ON ' || obj.sql_kind
-   || ' '  || sql_identifier ||
-  ' IS ' || quote_nullable(obj_description(oid)) || E';\n'
+ select format(
+          E'COMMENT ON %s %s IS %L;\n',
+          obj.sql_kind, sql_identifier, obj_description(oid))
    from obj
-$function$;
+$function$ strict;
 
 ---------------------------------------------------
 
@@ -1277,8 +1288,14 @@ AS $function$
 	then pg_ddl_create_trigger(oid)
 	when 'pg_attrdef'::regclass 
 	then pg_ddl_create_default(oid)
-	else  '-- UNSUPPORTED OBJECT: ' ||oid||' '||kind||E'\n'
- 	 end as ddl
+	else
+	  case
+		when kind is not null
+		then format(E'-- UNSUPPORTED OBJECT: %s %s\n',text($1),kind)
+		else format(E'-- UNIDENTIFIED OBJECT: %s\n',text($1))
+	   end
+ 	 end 
+ 	 as ddl
     from obj
 $function$  strict;
 
