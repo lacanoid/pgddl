@@ -50,7 +50,7 @@ SELECT pg_ddl_script('test_class_r2'::regclass);
 CREATE VIEW test_class_v AS
 SELECT * FROM test_class_r 
   WITH CHECK OPTION;
-
+grant select on test_class_v to public;
 SELECT pg_ddl_script('test_class_v'::regclass);
 SELECT pg_ddl_script('test_class_v'::regtype);
 

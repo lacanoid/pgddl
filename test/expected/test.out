@@ -182,6 +182,7 @@ ALTER TABLE test_class_r2 OWNER TO root;
 CREATE VIEW test_class_v AS
 SELECT * FROM test_class_r 
   WITH CHECK OPTION;
+grant select on test_class_v to public;
 SELECT pg_ddl_script('test_class_v'::regclass);
 pg_ddl_script
 --
@@ -205,6 +206,7 @@ COMMENT ON VIEW test_class_v IS NULL;
 ALTER VIEW test_class_v SET (check_option='cascaded');
 
 ALTER VIEW test_class_v OWNER TO root;
+GRANT SELECT ON test_class_v TO PUBLIC;
 
 (1 row)
 SELECT pg_ddl_script('test_class_v'::regtype);
@@ -230,6 +232,7 @@ COMMENT ON VIEW test_class_v IS NULL;
 ALTER VIEW test_class_v SET (check_option='cascaded');
 
 ALTER VIEW test_class_v OWNER TO root;
+GRANT SELECT ON test_class_v TO PUBLIC;
 
 (1 row)
 CREATE MATERIALIZED VIEW test_class_m AS
@@ -387,7 +390,7 @@ AS $function$
          END AS kind, 
          null as owner,
          'TRIGGER' as sql_kind,
-         quote_ident(t.tgname)||' ON '||cast(c.oid::regclass as text) as sql_identifier
+         format('%I ON %s',t.tgname,cast(c.oid::regclass as text)) as sql_identifier
     FROM pg_trigger t join pg_class c on (t.tgrelid=c.oid)
    WHERE t.oid = $1
    UNION
@@ -398,7 +401,7 @@ AS $function$
          'DEFAULT' as kind,
          null as owner,
          'DEFAULT' as sql_kind,
-         cast(c.oid::regclass as text)||'.'||quote_ident(a.attname) as sql_identifier
+         format('%s.%I',cast(c.oid::regclass as text),a.attname) as sql_identifier
     FROM pg_attrdef ad 
     JOIN pg_class c ON (ad.adrelid=c.oid)
     JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)

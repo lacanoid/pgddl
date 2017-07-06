@@ -133,7 +133,7 @@ AS $function$
          END AS kind, 
          null as owner,
          'TRIGGER' as sql_kind,
-         quote_ident(t.tgname)||' ON '||cast(c.oid::regclass as text) as sql_identifier
+         format('%I ON %s',t.tgname,cast(c.oid::regclass as text)) as sql_identifier
     FROM pg_trigger t join pg_class c on (t.tgrelid=c.oid)
    WHERE t.oid = $1
    UNION
@@ -144,7 +144,7 @@ AS $function$
          'DEFAULT' as kind,
          null as owner,
          'DEFAULT' as sql_kind,
-         cast(c.oid::regclass as text)||'.'||quote_ident(a.attname) as sql_identifier
+         format('%s.%I',cast(c.oid::regclass as text),a.attname) as sql_identifier
     FROM pg_attrdef ad 
     JOIN pg_class c ON (ad.adrelid=c.oid)
     JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
@@ -211,18 +211,21 @@ AS $function$
         a.attnum AS ord, 
         s.nspname AS namespace, 
         c.relname AS class_name, 
-        text(c.oid::regclass) || '.' || quote_ident(a.attname) AS sql_identifier,
+        format('%s.%I',text(c.oid::regclass),a.attname) AS sql_identifier,
         c.oid, 
-        quote_ident(a.attname::text) || ' ' || format_type(t.oid, a.atttypmod) || 
-        CASE
-            WHEN length(col.collcollate) > 0 
-            THEN ' COLLATE ' || quote_ident(col.collcollate::text)
-            ELSE ''
-        END ||
-        CASE
-            WHEN a.attnotnull THEN ' NOT NULL'::text
-            ELSE ''::text
-        END AS definition
+        format('%I %s%s%s',
+        	a.attname::text,
+        	format_type(t.oid, a.atttypmod),
+	        CASE
+    	      WHEN length(col.collcollate) > 0 
+        	  THEN ' COLLATE ' || quote_ident(col.collcollate::text)
+              ELSE ''
+        	END,
+        	CASE
+              WHEN a.attnotnull THEN ' NOT NULL'::text
+              ELSE ''::text
+        	END) 
+        AS definition
    FROM pg_class c
    JOIN pg_namespace s ON s.oid = c.relnamespace
    JOIN pg_attribute a ON c.oid = a.attrelid
@@ -766,10 +769,10 @@ CREATE OR REPLACE FUNCTION pg_ddl_create_default(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
-  select 
-         'ALTER TABLE '|| cast(c.oid::regclass as text) || 
-         ' ALTER '|| quote_ident(a.attname)|| 
-         ' SET DEFAULT '|| def.adsrc || E';\n\n' 
+  select format(E'ALTER TABLE %s ALTER %I SET DEFAULT %s;\n\n',
+         	cast(c.oid::regclass as text),
+         	a.attname, 
+         	def.adsrc)
     from pg_attrdef def 
     join pg_class c on c.oid = def.adrelid
     join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum
@@ -783,7 +786,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_create_constraints(regclass)
  LANGUAGE sql
 AS $function$
  with cs as (
-  SELECT
+  select
    'ALTER TABLE ' || text(regclass(regclass)) ||  
    ' ADD CONSTRAINT ' || quote_ident(constraint_name) || 
    E'\n  ' || constraint_definition as sql
@@ -800,10 +803,11 @@ CREATE OR REPLACE FUNCTION pg_ddl_create_constraint(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
- select 
-   'ALTER TABLE ' || cast(r.oid::regclass as text) ||  
-   ' ADD CONSTRAINT ' || quote_ident(c.conname) || 
-   E'\n  ' || pg_get_constraintdef(c.oid,true) 
+ select format(
+   E'ALTER TABLE %s ADD CONSTRAINT %I\n  %s',
+   cast(r.oid::regclass as text),
+   c.conname, 
+   pg_get_constraintdef(c.oid,true)) 
    from pg_constraint c join pg_class r on (c.conrelid = r.oid)
   where c.oid = $1 
 $function$  strict;
@@ -1006,19 +1010,21 @@ CREATE OR REPLACE FUNCTION pg_ddl_grants_on_proc(regproc)
  AS $function$
  with obj as (select * from pg_ddl_identify($1))
  select
-   'REVOKE ALL ON FUNCTION '||text($1::regprocedure)||' FROM PUBLIC;'||E'\n'||
+   format(E'REVOKE ALL ON FUNCTION %s FROM PUBLIC;\n',
+          text($1::regprocedure)) ||
    coalesce(
-    string_agg ('GRANT '||privilege_type|| 
-                ' ON FUNCTION '||text($1::regprocedure)||' TO '|| 
-                CASE grantee  
-                 WHEN 'PUBLIC' THEN 'PUBLIC' 
-                 ELSE quote_ident(grantee) 
-                END || 
-                CASE is_grantable  
-                 WHEN 'YES' THEN ' WITH GRANT OPTION' 
-                 ELSE '' 
-                END || 
-                E';\n', ''),
+    string_agg (format(
+    	E'GRANT %s ON FUNCTION %s TO %s%s;\n',
+    	privilege_type, 
+        text($1::regprocedure), 
+        CASE grantee  
+          WHEN 'PUBLIC' THEN 'PUBLIC' 
+          ELSE quote_ident(grantee) 
+        END,
+		CASE is_grantable  
+          WHEN 'YES' THEN ' WITH GRANT OPTION' 
+		  ELSE '' 
+        END), ''),
     '')
  FROM information_schema.routine_privileges g 
  join obj on (true)
