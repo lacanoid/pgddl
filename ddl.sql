@@ -979,7 +979,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_grants_on_class(regclass)
  select
    coalesce(
     string_agg(format(
-    	E'GRANT %s ON %I TO %s%s;\n',
+    	E'GRANT %s ON %s TO %s%s;\n',
         privilege_type, 
         cast($1 as text),
         case grantee  
