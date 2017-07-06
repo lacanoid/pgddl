@@ -33,7 +33,7 @@ create index idx2 on test_class_r using gin (v);
 SELECT pg_ddl_script('test_class_r'::regclass);
 pg_ddl_script
 --
--- Name: test_class_r; Type: TABLE; Schema: public; Owner: root
+-- Type: TABLE; Name: test_class_r; Owner: root
 --
 
 CREATE TABLE test_class_r (
@@ -79,7 +79,7 @@ GRANT TRIGGER ON test_class_r TO PUBLIC;
 SELECT pg_ddl_script('test_class_r'::regtype);
 pg_ddl_script
 --
--- Name: test_class_r; Type: TABLE; Schema: public; Owner: root
+-- Type: TABLE; Name: test_class_r; Owner: root
 --
 
 CREATE TABLE test_class_r (
@@ -125,7 +125,7 @@ GRANT TRIGGER ON test_class_r TO PUBLIC;
 SELECT pg_ddl_script('idx1'::regclass);
 pg_ddl_script
 --
--- Name: idx1; Type: INDEX; Schema: public; Owner: root
+-- Type: INDEX; Name: idx1; Owner: root
 --
 
 CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
@@ -137,7 +137,7 @@ COMMENT ON INDEX idx1 IS NULL;
 SELECT pg_ddl_script('idx2'::regclass);
 pg_ddl_script
 --
--- Name: idx2; Type: INDEX; Schema: public; Owner: root
+-- Type: INDEX; Name: idx2; Owner: root
 --
 
 CREATE INDEX idx2 ON test_class_r USING gin (v);
@@ -158,7 +158,7 @@ alter table test_class_r2 set with oids;
 SELECT pg_ddl_script('test_class_r2'::regclass);
 pg_ddl_script
 --
--- Name: test_class_r2; Type: TABLE; Schema: public; Owner: root
+-- Type: TABLE; Name: test_class_r2; Owner: root
 --
 
 CREATE UNLOGGED TABLE test_class_r2 (
@@ -185,7 +185,7 @@ SELECT * FROM test_class_r
 SELECT pg_ddl_script('test_class_v'::regclass);
 pg_ddl_script
 --
--- Name: test_class_v; Type: VIEW; Schema: public; Owner: root
+-- Type: VIEW; Name: test_class_v; Owner: root
 --
 
 CREATE OR REPLACE VIEW test_class_v AS
@@ -210,7 +210,7 @@ ALTER VIEW test_class_v OWNER TO root;
 SELECT pg_ddl_script('test_class_v'::regtype);
 pg_ddl_script
 --
--- Name: test_class_v; Type: VIEW; Schema: public; Owner: root
+-- Type: VIEW; Name: test_class_v; Owner: root
 --
 
 CREATE OR REPLACE VIEW test_class_v AS
@@ -238,7 +238,7 @@ create unique index test_class_mi ON test_class_m (a);
 SELECT pg_ddl_script('test_class_m'::regclass);
 pg_ddl_script
 --
--- Name: test_class_m; Type: MATERIALIZED VIEW; Schema: public; Owner: root
+-- Type: MATERIALIZED VIEW; Name: test_class_m; Owner: root
 --
 
 CREATE MATERIALIZED VIEW test_class_m AS
@@ -267,7 +267,7 @@ FUNCTION|pg_ddl_identify(oid)
 SELECT pg_ddl_script('pg_ddl_identify(oid)'::regprocedure);
 pg_ddl_script
 --
--- Name: pg_ddl_identify(oid); Type: FUNCTION; Schema: public; Owner: root
+-- Type: FUNCTION; Name: pg_ddl_identify(oid); Owner: root
 --
 
 CREATE OR REPLACE FUNCTION public.pg_ddl_identify(oid, OUT oid oid, OUT classid regclass, OUT name name, OUT namespace name, OUT kind text, OUT owner name, OUT sql_kind text, OUT sql_identifier text)
@@ -303,7 +303,10 @@ AS $function$
          n.nspname AS namespace,
          'FUNCTION' AS kind,
          pg_get_userbyid(p.proowner) AS owner,
-         'FUNCTION' AS sql_kind,
+         case
+           when p.proisagg then 'AGGREGATE'
+           else 'FUNCTION' 
+         end AS sql_kind,
          cast($1::regprocedure AS text) AS sql_identifier
     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
    WHERE p.oid = $1
@@ -384,6 +387,28 @@ AS $function$
     JOIN pg_class c ON (ad.adrelid=c.oid)
     JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
    WHERE ad.oid = $1
+   UNION
+  SELECT op.oid,
+         'pg_operator'::regclass,
+         op.oprname as name,
+         n.nspname as namespace,
+         'OPERATOR' as kind,
+         pg_get_userbyid(op.oprowner) as owner,
+         'OPERATOR' as sql_kind,
+         cast(op.oid::regoperator as text) as sql_identifier
+    FROM pg_operator op JOIN pg_namespace n ON n.oid=op.oprnamespace
+   WHERE op.oid = $1
+   UNION
+  SELECT cfg.oid,
+         'pg_ts_config'::regclass,
+         cfg.cfgname as name,
+         n.nspname as namespace,
+         'TEXT SEARCH CONFIGURATION' as kind,
+         pg_get_userbyid(cfg.cfgowner) as owner,
+         'TEXT SEARCH CONFIGURATION' as sql_kind,
+         cast(cfg.oid::regconfig as text) as sql_identifier
+    FROM pg_ts_config cfg JOIN pg_namespace n ON n.oid=cfg.cfgnamespace
+   WHERE cfg.oid = $1
 $function$;
 
 COMMENT ON FUNCTION pg_ddl_identify(oid) IS NULL;
@@ -406,7 +431,7 @@ c|d
 SELECT pg_ddl_script('funfun'::regproc);
 pg_ddl_script
 --
--- Name: funfun(integer,text); Type: FUNCTION; Schema: public; Owner: root
+-- Type: FUNCTION; Name: funfun(integer,text); Owner: root
 --
 
 CREATE OR REPLACE FUNCTION public.funfun(a integer, b text DEFAULT NULL::text, OUT c numeric, OUT d text)
@@ -429,7 +454,7 @@ comment on sequence test_type_S is 'interleave';
 select pg_ddl_script('test_type_S'::regclass);
 pg_ddl_script
 --
--- Name: test_type_s; Type: SEQUENCE; Schema: public; Owner: root
+-- Type: SEQUENCE; Name: test_type_s; Owner: root
 --
 
 CREATE SEQUENCE test_type_s;
@@ -454,7 +479,7 @@ create table test_collation (
 select pg_ddl_script('test_collation'::regclass);
 pg_ddl_script
 --
--- Name: test_collation; Type: TABLE; Schema: public; Owner: root
+-- Type: TABLE; Name: test_collation; Owner: root
 --
 
 CREATE TABLE test_collation (
@@ -479,7 +504,7 @@ alter  view test_class_v_opt2 set (security_barrier='true');
 select pg_ddl_script('test_class_v_opt1'::regclass);
 pg_ddl_script
 --
--- Name: test_class_v_opt1; Type: VIEW; Schema: public; Owner: root
+-- Type: VIEW; Name: test_class_v_opt1; Owner: root
 --
 
 CREATE OR REPLACE VIEW test_class_v_opt1 AS
@@ -505,7 +530,7 @@ ALTER VIEW test_class_v_opt1 OWNER TO root;
 select pg_ddl_script('test_class_v_opt2'::regclass);
 pg_ddl_script
 --
--- Name: test_class_v_opt2; Type: VIEW; Schema: public; Owner: root
+-- Type: VIEW; Name: test_class_v_opt2; Owner: root
 --
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
@@ -531,7 +556,7 @@ ALTER VIEW test_class_v_opt2 OWNER TO root;
 select pg_ddl_script('test_class_v_opt2'::regclass::oid);
 pg_ddl_script
 --
--- Name: test_class_v_opt2; Type: VIEW; Schema: public; Owner: root
+-- Type: VIEW; Name: test_class_v_opt2; Owner: root
 --
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
@@ -557,7 +582,7 @@ ALTER VIEW test_class_v_opt2 OWNER TO root;
 select pg_ddl_script('test_class_v_opt2');
 pg_ddl_script
 --
--- Name: test_class_v_opt2; Type: VIEW; Schema: public; Owner: root
+-- Type: VIEW; Name: test_class_v_opt2; Owner: root
 --
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
@@ -585,7 +610,7 @@ $$ select 'Hello, world!'::text $$ language sql;
 select pg_ddl_script('test_proc_1'::regproc);
 pg_ddl_script
 --
--- Name: test_proc_1(); Type: FUNCTION; Schema: public; Owner: root
+-- Type: FUNCTION; Name: test_proc_1(); Owner: root
 --
 
 CREATE OR REPLACE FUNCTION public.test_proc_1()
@@ -604,7 +629,7 @@ GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
 select pg_ddl_script('test_proc_1'::regproc::oid);
 pg_ddl_script
 --
--- Name: test_proc_1(); Type: FUNCTION; Schema: public; Owner: root
+-- Type: FUNCTION; Name: test_proc_1(); Owner: root
 --
 
 CREATE OR REPLACE FUNCTION public.test_proc_1()
@@ -623,7 +648,7 @@ GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
 select pg_ddl_script('test_proc_1()');
 pg_ddl_script
 --
--- Name: test_proc_1(); Type: FUNCTION; Schema: public; Owner: root
+-- Type: FUNCTION; Name: test_proc_1(); Owner: root
 --
 
 CREATE OR REPLACE FUNCTION public.test_proc_1()
@@ -637,5 +662,53 @@ ALTER FUNCTION test_proc_1() OWNER TO root;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
+
+(1 row)
+CREATE AGGREGATE test_proc_agg_1(text) (
+    SFUNC = textcat,
+    STYPE = text
+);
+select pg_ddl_script('test_proc_agg_1'::regproc);
+pg_ddl_script
+--
+-- Type: AGGREGATE; Name: test_proc_agg_1(text); Owner: root
+--
+
+CREATE AGGREGATE test_proc_agg_1(text) (
+  SFUNC = textcat,
+  STYPE = text
+);
+
+COMMENT ON AGGREGATE test_proc_agg_1(text) IS NULL;
+
+ALTER AGGREGATE test_proc_agg_1(text) OWNER TO root;
+REVOKE ALL ON FUNCTION test_proc_agg_1(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO root WITH GRANT OPTION;
+
+(1 row)
+CREATE AGGREGATE test_proc_agg_2(anyelement) (
+    SFUNC = array_append,
+    STYPE = anyarray,
+    INITCOND = '{}'
+);
+select pg_ddl_script('test_proc_agg_2'::regproc);
+pg_ddl_script
+--
+-- Type: AGGREGATE; Name: test_proc_agg_2(anyelement); Owner: root
+--
+
+CREATE AGGREGATE test_proc_agg_2(anyelement) (
+  SFUNC = array_append,
+  STYPE = anyarray,
+  INITCOND = '{}'
+);
+
+COMMENT ON AGGREGATE test_proc_agg_2(anyelement) IS NULL;
+
+ALTER AGGREGATE test_proc_agg_2(anyelement) OWNER TO root;
+REVOKE ALL ON FUNCTION test_proc_agg_2(anyelement) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO root WITH GRANT OPTION;
 
 (1 row)

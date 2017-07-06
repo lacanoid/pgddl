@@ -102,3 +102,19 @@ $$ select 'Hello, world!'::text $$ language sql;
 select pg_ddl_script('test_proc_1'::regproc);
 select pg_ddl_script('test_proc_1'::regproc::oid);
 select pg_ddl_script('test_proc_1()');
+
+CREATE AGGREGATE test_proc_agg_1(text) (
+    SFUNC = textcat,
+    STYPE = text
+);
+
+select pg_ddl_script('test_proc_agg_1'::regproc);
+
+CREATE AGGREGATE test_proc_agg_2(anyelement) (
+    SFUNC = array_append,
+    STYPE = anyarray,
+    INITCOND = '{}'
+);
+
+select pg_ddl_script('test_proc_agg_2'::regproc);
+

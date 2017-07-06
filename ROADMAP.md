@@ -24,7 +24,6 @@ Tasks
 -- tablespaces
 -- serial (alter sequence set owner column)
 -- column permissions
--- aggregates
 
 - improve simple tests
 - make some tests to test if what we make actually runs

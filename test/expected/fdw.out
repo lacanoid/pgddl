@@ -26,25 +26,25 @@ SELECT * FROM test_class_f;
 (2 rows)
 
 SELECT pg_ddl_script('test_class_f'::regclass);
-                              pg_ddl_script                              
--------------------------------------------------------------------------
- --                                                                     +
- -- Name: test_class_f; Type: FOREIGN TABLE; Schema: public; Owner: root+
- --                                                                     +
-                                                                        +
- CREATE FOREIGN TABLE test_class_f (                                    +
-     line text                                                          +
- )                                                                      +
- SERVER serv                                                            +
- OPTIONS (                                                              +
-     filename 'pgddltest.tmp',                                          +
-     format 'text'                                                      +
- );                                                                     +
-                                                                        +
- COMMENT ON FOREIGN TABLE test_class_f IS 'A Foreign table';            +
- COMMENT ON COLUMN test_class_f.line IS 'A Line of text';               +
-                                                                        +
- ALTER FOREIGN TABLE test_class_f OWNER TO root;                        +
+                        pg_ddl_script                        
+-------------------------------------------------------------
+ --                                                         +
+ -- Type: FOREIGN TABLE; Name: test_class_f; Owner: root    +
+ --                                                         +
+                                                            +
+ CREATE FOREIGN TABLE test_class_f (                        +
+     line text                                              +
+ )                                                          +
+ SERVER serv                                                +
+ OPTIONS (                                                  +
+     filename 'pgddltest.tmp',                              +
+     format 'text'                                          +
+ );                                                         +
+                                                            +
+ COMMENT ON FOREIGN TABLE test_class_f IS 'A Foreign table';+
+ COMMENT ON COLUMN test_class_f.line IS 'A Line of text';   +
+                                                            +
+ ALTER FOREIGN TABLE test_class_f OWNER TO root;            +
  
 (1 row)
 

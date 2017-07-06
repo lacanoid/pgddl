@@ -35,7 +35,7 @@ comment on column test_type_c.i is 'my class class column i';
 select pg_ddl_script('test_type_c'::regtype);
 pg_ddl_script
 --
--- Name: test_type_c; Type: TYPE; Schema: public; Owner: root
+-- Type: TYPE; Name: test_type_c; Owner: root
 --
 
 CREATE TYPE test_type_c AS (
@@ -53,7 +53,7 @@ ALTER TYPE test_type_c OWNER TO root;
 select pg_ddl_script('test_type_c'::regclass);
 pg_ddl_script
 --
--- Name: test_type_c; Type: TYPE; Schema: public; Owner: root
+-- Type: TYPE; Name: test_type_c; Owner: root
 --
 
 CREATE TYPE test_type_c AS (

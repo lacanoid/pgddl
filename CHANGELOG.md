@@ -1,8 +1,14 @@
-Version 0.7
+Version 0.7alpha
 -----------
 - pg_ddl_oid_info() renamed to pg_ddl_identify() and improved with new types
-- pg_ddl_get_dependants() function
+- added pg_ddl_get_dependants() internal function
 - pg_ddl_script() now works for oid and text
+- slight banner change
+TODO:
++ aggregates
++ constraints
++ triggers
++ defaults
 
 Version 0.6
 -----------

@@ -49,7 +49,10 @@ AS $function$
          n.nspname AS namespace,
          'FUNCTION' AS kind,
          pg_get_userbyid(p.proowner) AS owner,
-         'FUNCTION' AS sql_kind,
+         case
+           when p.proisagg then 'AGGREGATE'
+           else 'FUNCTION' 
+         end AS sql_kind,
          cast($1::regprocedure AS text) AS sql_identifier
     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
    WHERE p.oid = $1
@@ -130,6 +133,28 @@ AS $function$
     JOIN pg_class c ON (ad.adrelid=c.oid)
     JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
    WHERE ad.oid = $1
+   UNION
+  SELECT op.oid,
+         'pg_operator'::regclass,
+         op.oprname as name,
+         n.nspname as namespace,
+         'OPERATOR' as kind,
+         pg_get_userbyid(op.oprowner) as owner,
+         'OPERATOR' as sql_kind,
+         cast(op.oid::regoperator as text) as sql_identifier
+    FROM pg_operator op JOIN pg_namespace n ON n.oid=op.oprnamespace
+   WHERE op.oid = $1
+   UNION
+  SELECT cfg.oid,
+         'pg_ts_config'::regclass,
+         cfg.cfgname as name,
+         n.nspname as namespace,
+         'TEXT SEARCH CONFIGURATION' as kind,
+         pg_get_userbyid(cfg.cfgowner) as owner,
+         'TEXT SEARCH CONFIGURATION' as sql_kind,
+         cast(cfg.oid::regconfig as text) as sql_identifier
+    FROM pg_ts_config cfg JOIN pg_namespace n ON n.oid=cfg.cfgnamespace
+   WHERE cfg.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -399,7 +424,7 @@ CREATE OR REPLACE FUNCTION pg_ddl_banner(name text, kind text, namespace text, o
 AS $function$
   SELECT 
 '--
--- Name: '||$1||'; Type: '||$2||'; Schema: '||$3||'; Owner: '||$4||'
+-- Type: '||$2||'; Name: '||$1||'; Owner: '||$4||'
 --
 
 '
@@ -710,6 +735,22 @@ $function$ strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION pg_ddl_create_default(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+  select 
+         'ALTER TABLE '|| cast(c.oid::regclass as text) || 
+         ' ALTER '|| quote_ident(a.attname)|| 
+         ' SET DEFAULT '|| def.adsrc || E';\n\n' 
+    from pg_attrdef def 
+    join pg_class c on c.oid = def.adrelid
+    join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum
+   where def.oid = $1
+$function$ strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION pg_ddl_create_constraints(regclass)
  RETURNS text
  LANGUAGE sql
@@ -724,6 +765,20 @@ AS $function$
  )
  select coalesce(string_agg(sql,E';\n') || E';\n\n','')
    from cs
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddl_create_constraint(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+ select 
+   'ALTER TABLE ' || cast(r.oid::regclass as text) ||  
+   ' ADD CONSTRAINT ' || quote_ident(c.conname) || 
+   E'\n  ' || pg_get_constraintdef(c.oid,true) 
+   from pg_constraint c join pg_class r on (c.conrelid = r.oid)
+  where c.oid = $1 
 $function$  strict;
 
 ---------------------------------------------------
@@ -784,15 +839,35 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION pg_ddl_create_aggregate(regproc)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+  with obj as (select * from pg_ddl_identify($1))
+select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n ' 
+       || E' SFUNC = '  || cast(a.aggtransfn::regproc as text)  
+       || E',\n  STYPE = ' || format_type(a.aggtranstype,null) 
+       || coalesce(E',\n  INITCOND = ' || quote_literal(a.agginitval),'') 
+       || coalesce(E',\n  FINALFUNC = ' || nullif(cast(a.aggfinalfn::regproc as text),'-'),'') 
+       || E'\n);\n'
+  from pg_aggregate a join obj on (true)
+ where a.aggfnoid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION pg_ddl_create_function(regproc)
  RETURNS text
  LANGUAGE sql
 AS $function$ 
  with obj as (select * from pg_ddl_identify($1))
  select
-  pg_ddl_banner(sql_identifier,'FUNCTION',namespace,owner) ||
-  trim(trailing E'\n' from pg_get_functiondef($1)) || E';\n\n' ||
-  pg_ddl_comment($1) || E'\n'
+  pg_ddl_banner(sql_identifier,obj.sql_kind,namespace,owner) ||
+  case obj.sql_kind
+    when 'AGGREGATE' then pg_ddl_create_aggregate($1)
+    else trim(trailing E'\n' from pg_get_functiondef($1)) || E';\n'
+   end || E'\n' 
+    || pg_ddl_comment($1) || E'\n'
    from obj
 $function$  strict;
 
@@ -943,7 +1018,7 @@ $function$  strict;
 --  Dependancy handling
 ---------------------------------------------------
 
-create or replace function pg_ddl_get_dependants(
+create or replace function pg_ddl_get_dependants_recursive(
  in oid, 
  out depth int, out classid regclass, out objid oid, out objsubid integer, 
  out refclassid regclass, out refobjid oid, out refobjsubid integer, 
@@ -951,7 +1026,7 @@ create or replace function pg_ddl_get_dependants(
 )
 returns setof record as $$
 with recursive 
-  tree(depth,classid,objid,objsubid,refclassid,refobjid,refobjsubid,deptype) 
+  tree(depth,classid,objid,objsubid,refclassid,refobjid,refobjsubid,deptype,edges) 
 as (
 select 1,
        case when r.oid is not null 
@@ -963,7 +1038,8 @@ select 1,
        d.refclassid,
        d.refobjid,
        d.refobjsubid,
-       d.deptype
+       d.deptype,
+       to_jsonb(array[array[d.refobjid::int,d.objid::int]])
   from pg_depend d
   left join pg_rewrite r on 
        (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
@@ -979,12 +1055,15 @@ select depth+1,
        d.refclassid,
        d.refobjid,
        d.refobjsubid,
-       d.deptype
+       d.deptype,
+       t.edges ||
+       to_jsonb(array[array[d.refobjid::int,d.objid::int]])
   from tree t
   join pg_depend d on (d.refobjid=t.objid) 
   left join pg_rewrite r on 
        (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
  where r.ev_class is distinct from d.refobjid
+   and not ( t.edges @> to_jsonb(array[array[d.refobjid::int,d.objid::int]]) )
 )
 select distinct 
        depth,
@@ -996,6 +1075,25 @@ select distinct
        refobjsubid,
        deptype
   from tree
+$$ language sql;
+
+---------------------------------------------------
+
+create or replace function pg_ddl_get_dependants(
+ in oid, 
+ out depth int, out classid regclass, out objid oid
+)
+returns setof record as $$
+with 
+q as (
+  select distinct depth,classid,objid
+    from pg_ddl_get_dependants_recursive($1)
+   where deptype = 'n'
+)
+select depth,classid,objid 
+  from q 
+ where (objid,depth) in (select objid,max(depth) from q group by objid)
+ order by depth,objid
 $$ language sql;
 
 ---------------------------------------------------
@@ -1123,6 +1221,10 @@ AS $function$
 	then pg_ddl_script(oid::regtype)
 	when 'pg_authid'::regclass 
 	then pg_ddl_script(oid::regrole)
+	when 'pg_constraint'::regclass 
+	then pg_ddl_create_constraint(oid)
+	when 'pg_attrdef'::regclass 
+	then pg_ddl_create_default(oid)
 	else  '-- UNSUPPORTED OBJECT: ' ||oid||' '||kind||E'\n'
  	 end as ddl
     from obj
