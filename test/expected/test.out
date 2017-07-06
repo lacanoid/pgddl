@@ -550,7 +550,8 @@ pg_ddl_script
 
 CREATE AGGREGATE test_proc_agg_1(text) (
   SFUNC = textcat,
-  STYPE = text
+  STYPE = text,
+  PARALLEL = UNSAFE
 );
 
 COMMENT ON AGGREGATE test_proc_agg_1(text) IS NULL;
@@ -575,7 +576,8 @@ pg_ddl_script
 CREATE AGGREGATE test_proc_agg_2(anyelement) (
   SFUNC = array_append,
   STYPE = anyarray,
-  INITCOND = '{}'
+  INITCOND = '{}',
+  PARALLEL = UNSAFE
 );
 
 COMMENT ON AGGREGATE test_proc_agg_2(anyelement) IS NULL;

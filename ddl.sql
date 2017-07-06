@@ -905,10 +905,38 @@ AS $function$
 select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n ' 
        || E' SFUNC = '  || cast(a.aggtransfn::regproc as text)  
        || E',\n  STYPE = ' || format_type(a.aggtranstype,null) 
-       || coalesce(E',\n  INITCOND = ' || quote_literal(a.agginitval),'') 
+       || case when a.aggtransspace>0 then E',\n  SSPACE = '||a.aggtransspace else '' end
        || coalesce(E',\n  FINALFUNC = ' || nullif(cast(a.aggfinalfn::regproc as text),'-'),'') 
+       || case when a.aggfinalextra then E',\n  FINALFUNC_EXTRA' else '' end
+       || coalesce(E',\n  COMBINEFUNC = ' || nullif(cast(a.aggcombinefn::regproc as text),'-'),'') 
+       || coalesce(E',\n  SERIALFUNC = ' || nullif(cast(a.aggserialfn::regproc as text),'-'),'') 
+       || coalesce(E',\n  DESERIALFUNC = ' || nullif(cast(a.aggdeserialfn::regproc as text),'-'),'') 
+       || coalesce(E',\n  INITCOND = ' || quote_literal(a.agginitval),'') 
+       || coalesce(E',\n  MSFUNC = ' || nullif(cast(a.aggmtransfn::regproc as text),'-'),'') 
+       || coalesce(E',\n  MINVFUNC = ' || nullif(cast(a.aggminvtransfn::regproc as text),'-'),'') 
+       || case when a.aggmtranstype>0 then E',\n  MSTYPE = '||format_type(a.aggmtranstype,null) else '' end
+       || case when a.aggmtransspace>0 then E',\n  MSSPACE = '||a.aggmtransspace else '' end
+       || coalesce(E',\n  MFINALFUNC = ' || nullif(cast(a.aggmfinalfn::regproc as text),'-'),'') 
+       || case when a.aggmfinalextra then E',\n  MFINALFUNC_EXTRA' else '' end
+       || coalesce(E',\n  MINITCOND = ' || quote_literal(a.aggminitval),'') 
+       || case 
+            when a.aggsortop>0 
+            then E',\n  SORTOP = '||cast(a.aggsortop::regoperator as text)
+            else ''
+          end
+       || E',\n  PARALLEL = '
+       || case p.proparallel
+            when 's' then 'SAFE'
+            when 'r' then 'RESTRICTED'
+            when 'u' then 'UNSAFE'
+            else quote_literal(p.proparallel)
+          end
+       || case a.aggkind
+            when 'h' then E',\n  HYPOTHETICAL'
+            else ''
+          end
        || E'\n);\n'
-  from pg_aggregate a join obj on (true)
+  from pg_aggregate a join obj on (true) join pg_proc p on p.oid = a.aggfnoid
  where a.aggfnoid = $1
 $function$  strict;
 
