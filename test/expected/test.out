@@ -363,8 +363,9 @@ AS $function$
          coalesce(tt.column2,con.contype) as kind,
          null as owner,
          'CONSTRAINT' as sql_kind,
-         quote_ident(con.conname)||' ON '||cast(c.oid::regclass as text) as sql_identifier
-    FROM pg_constraint con join pg_class c on (con.conrelid=c.oid)
+         quote_ident(con.conname)||coalesce(' ON '||cast(c.oid::regclass as text),'') as sql_identifier
+    FROM pg_constraint con 
+    left join pg_class c on (con.conrelid=c.oid)
     LEFT join (
          values ('f','FOREIGN KEY'),
                 ('c','CHECK'),

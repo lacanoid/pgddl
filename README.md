@@ -25,8 +25,15 @@ Advantages over using other tools like `psql` or `pgdump` include:
   are part of a constraint with ADD CONSTRAINT and such.
 - No shell access or shell commands with hairy options required (for running pg_dump), just use SELECT!
 
+Some disadvantages:
+
+- Not all Postgres objects are supported. It provides support for the basic user-level objects. 
+- It is not well tested at all. While it contains a number of regression tests, these can be
+  hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
+- It is kind of slow-ish for complicated stuff stuff
+
 It is currently rather incomplete, but still useful. 
-It provides support for the basic user-level objects. 
+
 Tested on PostgreSQL 9.6. Might work with earlier versions.
 
 Plans on how to make this support newer fetures AND older servers are being considered.
@@ -76,15 +83,15 @@ and `regrole`. You will probably want to cast object name or oid to the appropri
 - `pg_ddl_script(regproc) returns text`
 - `pg_ddl_script(regprocedure) returns text`
 
-    Extracts SQL DDL source of a function `regproc`.
+    Extracts SQL DDL source of function `regproc`.
 
 - `pg_ddl_script(regtype) returns text`
 
-    Extracts SQL DDL source for a type `regtype`.
+    Extracts SQL DDL source for type `regtype`.
 
 - `pg_ddl_script(regrole) returns text`
 
-    Extracts SQL DDL definition for a role `regrole`.
+    Extracts SQL DDL definition for role (user or group) `regrole`.
     
 There are two convenience functions to help you dump object without casting:
 

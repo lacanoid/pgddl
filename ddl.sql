@@ -109,8 +109,9 @@ AS $function$
          coalesce(tt.column2,con.contype) as kind,
          null as owner,
          'CONSTRAINT' as sql_kind,
-         quote_ident(con.conname)||' ON '||cast(c.oid::regclass as text) as sql_identifier
-    FROM pg_constraint con join pg_class c on (con.conrelid=c.oid)
+         quote_ident(con.conname)||coalesce(' ON '||cast(c.oid::regclass as text),'') as sql_identifier
+    FROM pg_constraint con 
+    left join pg_class c on (con.conrelid=c.oid)
     LEFT join (
          values ('f','FOREIGN KEY'),
                 ('c','CHECK'),
@@ -977,17 +978,18 @@ CREATE OR REPLACE FUNCTION pg_ddl_grants_on_class(regclass)
  with obj as (select * from pg_ddl_identify($1))
  select
    coalesce(
-    string_agg ('GRANT '||privilege_type|| 
-                ' ON '||text($1)||' TO '|| 
-                CASE grantee  
-                 WHEN 'PUBLIC' THEN 'PUBLIC' 
-                 ELSE quote_ident(grantee) 
-                END || 
-                CASE is_grantable  
-                 WHEN 'YES' THEN ' WITH GRANT OPTION' 
-                 ELSE '' 
-                END || 
-                E';\n', ''),
+    string_agg(format(
+    	E'GRANT %s ON %I TO %s%s;\n',
+        privilege_type, 
+        cast($1 as text),
+        case grantee  
+          when 'PUBLIC' then 'PUBLIC' 
+          else quote_ident(grantee) 
+        end, 
+		case is_grantable  
+          when 'YES' then ' WITH GRANT OPTION' 
+          else '' 
+        end), ''),
     '')
  FROM information_schema.table_privileges g 
  join obj on (true)
@@ -1032,13 +1034,13 @@ CREATE OR REPLACE FUNCTION pg_ddl_grants_on_role(regrole)
  AS $function$
 with 
 q as (
- select 'GRANT '||quote_ident(cast(roleid::regrole as text))||
-        ' TO '||quote_ident(cast(member::regrole as text))||
-        case
-          when admin_option then ' WITH ADMIN OPTION'
-          else ''
-        end||
-        E';\n'
+ select format(E'GRANT %I TO %I%s;\n',
+               cast(roleid::regrole as text),
+               cast(member::regrole as text),
+               case
+                 when admin_option then ' WITH ADMIN OPTION'
+                 else ''
+                end)
         as ddl1
    from pg_auth_members where (member = $1 or roleid = $1)
   order by roleid = $1,
