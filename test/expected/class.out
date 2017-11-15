@@ -83,7 +83,8 @@ GRANT TRIGGER ON test_class_r TO PUBLIC;
 -- SECTION CREATE DEPENDANTS
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
-  CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone)ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
+  CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
+ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 
 
 (1 row)

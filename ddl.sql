@@ -814,7 +814,7 @@ CREATE OR REPLACE FUNCTION pg_ddlx_create_constraint(oid)
  LANGUAGE sql
 AS $function$
  select format(
-   E'ALTER %s %s ADD CONSTRAINT %I\n  %s',
+   E'ALTER %s %s ADD CONSTRAINT %I\n  %s;\n',
    case
      when t.oid is not null then 'DOMAIN'
      else 'TABLE'

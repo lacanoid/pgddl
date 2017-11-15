@@ -4,10 +4,11 @@ Version 0.8alpha
 ----------------
 - API rename pg_ddl -> pg_ddlx (think DDL eXtractor)
 - add pg_ddlx_create(oid) and pg_ddlx_drop(oid) functions
+- pg_ddlx_script() now also includes dependant objects
 + support for regoper,regoperator
 + support for regconfig (text search configurations)
 + fix trigger types (not all cases are supported)
-- another slight banner change
+- slight banner change
 
 Version 0.7
 -----------
