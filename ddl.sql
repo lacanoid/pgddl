@@ -1424,7 +1424,7 @@ select row_number() over() as n,
 )
 select pg_ddlx_create($1) as ddl_create,
        pg_ddlx_drop($1) as ddl_drop,
-       string_agg(pg_ddlx_create,'' order by n) as ddl_create_deps,
+       string_agg(pg_ddlx_create,E'\n' order by n) as ddl_create_deps,
        string_agg(pg_ddlx_drop,'' order by n desc) as ddl_drop_deps
   from ddl
 $function$ strict;
