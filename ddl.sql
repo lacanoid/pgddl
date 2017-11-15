@@ -1,6 +1,6 @@
 --
 --  DDL extraction functions
---  version 0.7 lacanoid@ljudmila.org
+--  version 0.8 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -1020,6 +1020,8 @@ $function$  strict
 set datestyle = iso;
 
 ---------------------------------------------------
+--  Grants
+---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION pg_ddl_grants_on_class(regclass) 
  RETURNS text
@@ -1279,11 +1281,11 @@ AS $function$
     where t.oid = $1 and t.typtype = 'c' and c.relkind <> 'c'
     union
    select case t.typtype
-            when 'e' then pg_ddl_create_type_enum(t.oid)
-            when 'd' then pg_ddl_create_type_domain(t.oid)
-            when 'b' then pg_ddl_create_type_base(t.oid)
-            when 'r' then pg_ddl_create_type_range(t.oid)
-		    else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
+          when 'e' then pg_ddl_create_type_enum(t.oid)
+          when 'd' then pg_ddl_create_type_domain(t.oid)
+          when 'b' then pg_ddl_create_type_base(t.oid)
+          when 'r' then pg_ddl_create_type_range(t.oid)
+		  else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
 		  end 
           || pg_ddl_comment(t.oid)
           || pg_ddl_alter_owner(t.oid) 
@@ -1329,7 +1331,23 @@ $function$  strict;
 
 COMMENT ON FUNCTION pg_ddl_script(oid) 
      IS 'Get SQL definition for object id';
+     
+---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION pg_ddl_drop(oid) 
+ RETURNS text
+ LANGUAGE sql
+ AS $function$
+ with obj as (select * from pg_ddl_identify($1))
+ select   format(
+          E'DROP %s %s;\n',
+          obj.sql_kind, sql_identifier)
+   from obj
+$function$  strict;
+
+COMMENT ON FUNCTION pg_ddl_drop(oid) 
+     IS 'Get SQL DROP statement for object id';
+     
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION pg_ddl_script(sql_identifier text)
