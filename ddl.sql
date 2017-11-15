@@ -1380,7 +1380,7 @@ AS $function$
 select format(
          E'%s%s-- %s\n%s%s',
          E'-- SECTION DROP DEPENDANTS\n/*\n'||ddl_drop_deps||E'*/\n\n',
-         E'-- SECTION MAIN\n',
+         E'-- SECTION MAIN\n\n',
          ddl_drop,
          ddl_create,
          E'\n-- SECTION CREATE DEPENDANTS\n\n'||ddl_create_deps
