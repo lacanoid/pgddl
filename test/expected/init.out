@@ -52,7 +52,8 @@ CREATE EXTENSION ddl;
  function pg_ddlx_grants_on_proc(regproc)
  function pg_ddlx_grants_on_role(regrole)
  function pg_ddlx_identify(oid)
+ function pg_ddlx_parts(oid)
  function pg_ddlx_script(oid)
  function pg_ddlx_script(text)
-(44 rows)
+(45 rows)
 

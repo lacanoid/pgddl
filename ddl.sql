@@ -1345,6 +1345,30 @@ COMMENT ON FUNCTION pg_ddlx_drop(oid)
      
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION pg_catalog.pg_ddlx_parts(
+ IN oid,
+ OUT ddl_create text, OUT ddl_drop text,
+ OUT ddl_pre text, OUT ddl_post text)
+ RETURNS record
+ LANGUAGE sql
+AS $function$
+with 
+ddl as (
+select row_number() over() as n,
+       pg_ddlx_drop(objid),
+       pg_ddlx_create(objid),
+       objid
+  from pg_ddlx_get_dependants($1)
+)
+select pg_ddlx_create($1) as ddl_create,
+       pg_ddlx_drop($1) as ddl_drop,
+       string_agg(pg_ddlx_drop,'' order by n desc) as ddl_pre,
+       string_agg(pg_ddlx_create,'' order by n) as ddl_post
+  from ddl
+$function$;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION pg_ddlx_script(oid)
  RETURNS text
  LANGUAGE sql
@@ -1353,7 +1377,7 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION pg_ddlx_script(oid) 
-     IS 'Get SQL DDL script for object id';
+     IS 'Get SQL DDL script for object id and dependant objects';
 
 ---------------------------------------------------
 
