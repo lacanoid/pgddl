@@ -37,6 +37,7 @@ pg_ddlx_script
 DROP DEFAULT test_class_r.a;
 DROP CONSTRAINT test_class_r_c_check ON test_class_r;
 */
+
 -- SECTION MAIN
 -- DROP TABLE test_class_r;
 
@@ -80,6 +81,7 @@ GRANT DELETE ON test_class_r TO PUBLIC;
 GRANT TRUNCATE ON test_class_r TO PUBLIC;
 GRANT REFERENCES ON test_class_r TO PUBLIC;
 GRANT TRIGGER ON test_class_r TO PUBLIC;
+
 -- SECTION CREATE DEPENDANTS
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
@@ -176,6 +178,7 @@ pg_ddlx_script
 /*
 DROP DEFAULT test_class_r2.i;
 */
+
 -- SECTION MAIN
 -- DROP TABLE test_class_r2;
 
@@ -197,6 +200,7 @@ ALTER TABLE test_class_r2 ADD CONSTRAINT blah
   FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE test_class_r2 OWNER TO root;
+
 -- SECTION CREATE DEPENDANTS
 
 ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
@@ -386,6 +390,7 @@ pg_ddlx_script
 /*
 DROP DEFAULT test_collation.id;
 */
+
 -- SECTION MAIN
 -- DROP TABLE test_collation;
 
@@ -403,6 +408,7 @@ COMMENT ON TABLE test_collation IS NULL;
 ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
 
 ALTER TABLE test_collation OWNER TO root;
+
 -- SECTION CREATE DEPENDANTS
 
 ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);

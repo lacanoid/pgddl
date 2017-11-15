@@ -1379,11 +1379,11 @@ CREATE OR REPLACE FUNCTION pg_ddlx_script(oid)
 AS $function$
 select format(
          E'%s%s-- %s\n%s%s',
-         E'-- SECTION DROP DEPENDANTS\n/*\n'||ddl_drop_deps||E'*/\n',
+         E'-- SECTION DROP DEPENDANTS\n/*\n'||ddl_drop_deps||E'*/\n\n',
          E'-- SECTION MAIN\n',
          ddl_drop,
          ddl_create,
-         E'-- SECTION CREATE DEPENDANTS\n\n'||ddl_create_deps
+         E'\n-- SECTION CREATE DEPENDANTS\n\n'||ddl_create_deps
        )
   from pg_ddlx_parts($1)
 $function$ strict;
