@@ -23,18 +23,18 @@ Advantages over using other tools like `psql` or `pgdump` include:
 - Created scripts are somewhat more intended to be run and copy/pasted manually by the DBA
   into other databases/scripts. This means prefering ALTER to CREATE, creating indexes which
   are part of a constraint with ADD CONSTRAINT and such.
-- No shell access or shell commands with hairy options required (for running pg_dump), just use SELECT!
+- No shell access or shell commands with hairy options required (for running pg_dump), just use SELECT nd hairy SQL!
 
 Some disadvantages:
 
-- Not all Postgres objects are supported. It provides support for the basic user-level objects. 
+- Not all Postgres objects are supported. It provides support for the basic user-level objects.
 - It is not well tested at all. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
-- It is kind of slow-ish for complicated stuff stuff
+- It is kind of slow-ish for complicated stuff
 
-It is currently rather incomplete, but still useful. 
+It is currently incomplete, but still useful. 
 
-Tested on PostgreSQL 9.6. Might work with earlier versions.
+Curently tested on PostgreSQL 9.6. Might work with other versions.
 
 Plans on how to make this support newer fetures AND older servers are being considered.
  

@@ -19,25 +19,35 @@ This will hopefully help to keep relevant SQL code for these thing in one place.
 Tasks
 -----
 
+- split API into 3 functions:
+-- pg_ddl_create(oid)
+-- pg_ddl_drop(oid)
+-- pp_ddl_script(oid) -- this includes dependencies
+
+
+- support for other postgres objects
+-- regconfig
+-- regdictionary
+-- regoper,regoperator
+
 - support for other missing stuff:
 -- storage parameters
 -- tablespaces
 -- serial (alter sequence set owner column)
 -- column permissions
+-- partitions
 
 - improve simple tests
-- make some tests to test if what we make actually runs
+- make some tests to test if what we output actually runs
 - make some tests which compare to output of pg_dump for any sql file:
   test load file -> pg_dump compared to load file -> ddl_dump -> reload -> pg_dump
-- dump also comments on constraints, indexes, triggers, etc...
 - find out the minimum version of Postgres this works on
+- dump also comments on constraints, indexes, triggers, etc...
 
 - support for dumping whole schemas
 - recursive dumper which handles dependancies
-- support for other postgres objects
--- regconfig
--- regdictionary
--- regoper,regoperator
+
+-- rename to pg_ddlx?
 
 
 Options
@@ -54,6 +64,8 @@ Some options as to what and how to dump stuff might be required:
       ddldep   boolean, -- output objects which depend on this object too
       ddldata  boolean  -- add statements preserve / copy table data
     );
+
+These might be passed as optional arg to extractor functions
 
 
 Other DDL dumping tools

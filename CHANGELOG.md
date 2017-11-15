@@ -1,3 +1,11 @@
+Version 0.8
+-----------
++ dump operators
++ text search configurations
++ fix trigger types (not all are supported)
++ add pg_ddl_create(oid) and pg_ddl_drop(oid) functions
++ rename pg_ddl -> pg_ddlx (DDL eXtractor)
+
 Version 0.7
 -----------
 - pg_ddl_oid_info() renamed to pg_ddl_identify() and improved with new types
