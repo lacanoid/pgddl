@@ -1,10 +1,12 @@
-Version 0.8
------------
++ = todo, - = done.
+
+Version 0.8alpha
+----------------
 + dump operators
-+ text search configurations
++ dump text search configurations
 + fix trigger types (not all are supported)
-+ add pg_ddl_create(oid) and pg_ddl_drop(oid) functions
-+ rename pg_ddl -> pg_ddlx (DDL eXtractor)
+- add pg_ddl_create(oid) and pg_ddl_drop(oid) functions
++ rename pg_ddl -> pg_ddlx (think DDL eXtractor)
 
 Version 0.7
 -----------

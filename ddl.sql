@@ -1191,7 +1191,7 @@ $$ language sql;
 --  Main script generating functions
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddl_script(regtype)
+CREATE OR REPLACE FUNCTION pg_ddl_create(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$ select null::text $function$;
@@ -1199,7 +1199,7 @@ AS $function$ select null::text $function$;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddl_script(regclass)
+CREATE OR REPLACE FUNCTION pg_ddl_create(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -1215,19 +1215,19 @@ AS $function$
     from pg_class c
    where c.oid = $1 and c.relkind <> 'c'
    union 
-  select pg_ddl_script(t.oid::regtype)
+  select pg_ddl_create(t.oid::regtype)
     from pg_class c
     left join pg_type t on (c.oid=t.typrelid)
    where c.oid = $1 and c.relkind = 'c'
 $function$  strict;
 
-COMMENT ON FUNCTION pg_ddl_script(regclass) 
+COMMENT ON FUNCTION pg_ddl_create(regclass) 
      IS 'Get SQL definition for a table, view, sequence or index';
 
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddl_script(regprocedure)
+CREATE OR REPLACE FUNCTION pg_ddl_create(regprocedure)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -1237,20 +1237,20 @@ AS $function$
      || pg_ddl_grants_on_proc($1)
 $function$  strict;
 
-COMMENT ON FUNCTION pg_ddl_script(regprocedure) 
+COMMENT ON FUNCTION pg_ddl_create(regprocedure) 
      IS 'Get SQL definition for a function/procedure';
 
-CREATE OR REPLACE FUNCTION pg_ddl_script(regproc)
+CREATE OR REPLACE FUNCTION pg_ddl_create(regproc)
  RETURNS text
  LANGUAGE sql
-AS $$ select pg_ddl_script($1::regprocedure) $$;
+AS $$ select pg_ddl_create($1::regprocedure) $$;
 
-COMMENT ON FUNCTION pg_ddl_script(regproc) 
+COMMENT ON FUNCTION pg_ddl_create(regproc) 
      IS 'Get SQL definition for a function/procedure';
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddl_script(regrole)
+CREATE OR REPLACE FUNCTION pg_ddl_create(regrole)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -1259,12 +1259,12 @@ AS $function$
      || pg_ddl_grants_on_role($1)
 $function$  strict;
 
-COMMENT ON FUNCTION pg_ddl_script(regrole) 
+COMMENT ON FUNCTION pg_ddl_create(regrole) 
      IS 'Get SQL definition for a role';
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddl_script(regtype)
+CREATE OR REPLACE FUNCTION pg_ddl_create(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -1275,7 +1275,7 @@ AS $function$
      join pg_class c on (c.oid=t.typrelid)
     where t.oid = $1 and t.typtype = 'c' and c.relkind = 'c'
     union
-   select pg_ddl_script(c.oid::regclass) -- table, etc
+   select pg_ddl_create(c.oid::regclass) -- table, etc
      from pg_type t
      join pg_class c on (c.oid=t.typrelid)
     where t.oid = $1 and t.typtype = 'c' and c.relkind <> 'c'
@@ -1293,25 +1293,25 @@ AS $function$
     where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;
 
-COMMENT ON FUNCTION pg_ddl_script(regtype) 
+COMMENT ON FUNCTION pg_ddl_create(regtype) 
      IS 'Get SQL definition for user defined data type';
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddl_script(oid)
+CREATE OR REPLACE FUNCTION pg_ddl_create(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
   with obj as (select * from pg_ddl_identify($1))
   select case obj.classid
 	when 'pg_class'::regclass 
-	then pg_ddl_script(oid::regclass)
+	then pg_ddl_create(oid::regclass)
 	when 'pg_proc'::regclass 
-	then pg_ddl_script(oid::regprocedure)
+	then pg_ddl_create(oid::regprocedure)
 	when 'pg_type'::regclass 
-	then pg_ddl_script(oid::regtype)
+	then pg_ddl_create(oid::regtype)
 	when 'pg_authid'::regclass 
-	then pg_ddl_script(oid::regrole)
+	then pg_ddl_create(oid::regrole)
 	when 'pg_constraint'::regclass 
 	then pg_ddl_create_constraint(oid)
 	when 'pg_trigger'::regclass 
@@ -1329,7 +1329,7 @@ AS $function$
     from obj
 $function$  strict;
 
-COMMENT ON FUNCTION pg_ddl_script(oid) 
+COMMENT ON FUNCTION pg_ddl_create(oid) 
      IS 'Get SQL definition for object id';
      
 ---------------------------------------------------
@@ -1350,17 +1350,29 @@ COMMENT ON FUNCTION pg_ddl_drop(oid)
      
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION pg_ddl_script(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+  select pg_ddl_create($1)
+$function$  strict;
+
+COMMENT ON FUNCTION pg_ddl_script(oid) 
+     IS 'Get SQL DDL script for object id';
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION pg_ddl_script(sql_identifier text)
  RETURNS text
  LANGUAGE sql
 AS $function$
   select case
     when strpos($1,'(')>0 
-    then pg_ddl_script(cast($1 as regprocedure))
-    else pg_ddl_script(cast($1 as regtype))
+    then pg_ddl_create(cast($1 as regprocedure))
+    else pg_ddl_create(cast($1 as regtype))
      end
 $function$  strict;
 
 COMMENT ON FUNCTION pg_ddl_script(text) 
-     IS 'Get SQL definition for identifier';
+     IS 'Get SQL DDL script for identifier';
 

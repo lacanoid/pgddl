@@ -3,7 +3,7 @@ CREATE EXTENSION ddl;
            List of installed extensions
  Name | Version | Schema |       Description       
 ------+---------+--------+-------------------------
- ddl  | 0.7     | public | DDL extractor functions
+ ddl  | 0.8     | public | DDL extractor functions
 (1 row)
 
 \dx+ ddl
@@ -22,6 +22,12 @@ CREATE EXTENSION ddl;
  function pg_ddl_create_function(regproc)
  function pg_ddl_create_indexes(regclass)
  function pg_ddl_create_index(regclass)
+ function pg_ddl_create(oid)
+ function pg_ddl_create(regclass)
+ function pg_ddl_create(regproc)
+ function pg_ddl_create(regprocedure)
+ function pg_ddl_create(regrole)
+ function pg_ddl_create(regtype)
  function pg_ddl_create_role(regrole)
  function pg_ddl_create_rules(regclass)
  function pg_ddl_create_sequence(regclass)
@@ -33,6 +39,7 @@ CREATE EXTENSION ddl;
  function pg_ddl_create_type_enum(regtype)
  function pg_ddl_create_type_range(regtype)
  function pg_ddl_create_view(regclass)
+ function pg_ddl_drop(oid)
  function pg_ddl_get_columns(regclass)
  function pg_ddl_get_constraints(regclass)
  function pg_ddl_get_dependants(oid)
@@ -46,11 +53,6 @@ CREATE EXTENSION ddl;
  function pg_ddl_grants_on_role(regrole)
  function pg_ddl_identify(oid)
  function pg_ddl_script(oid)
- function pg_ddl_script(regclass)
- function pg_ddl_script(regproc)
- function pg_ddl_script(regprocedure)
- function pg_ddl_script(regrole)
- function pg_ddl_script(regtype)
  function pg_ddl_script(text)
-(42 rows)
+(44 rows)
 
