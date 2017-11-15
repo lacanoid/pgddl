@@ -3,7 +3,7 @@ DDL extractor functions  for PostgreSQL
 
 This is an SQL-only extension for PostgreSQL that provides uniform functions for generating 
 SQL DDL scripts for objects stored in a database. It contains a lot of foo to convert
-Postgres system catalogs to nicely formatted SQL snippets.
+Postgres system catalogs to nicely formatted SQL snippets. 
 
 Some other SQL databases support commands like SHOW CREATE TABLE or provide 
 other fascilities for the purpose. 
@@ -24,6 +24,7 @@ Advantages over using other tools like `psql` or `pgdump` include:
   into other databases/scripts. This means prefering ALTER to CREATE, creating indexes which
   are part of a constraint with ADD CONSTRAINT and such.
 - No shell access or shell commands with hairy options required (for running pg_dump), just use SELECT nd hairy SQL!
+- It is entrely made out of plain SQL functions.
 
 Some disadvantages:
 
@@ -68,38 +69,38 @@ This of course requires superuser privileges.
 Using
 -----
 
-This module provides one main end user function `pg_ddl_script` that 
+This module provides one main end user function `pg_ddlx_script` that 
 you can use to obtain SQL DDL source for a particular database object.
 
 Currently supported object types are `regclass`,`regtype`,`regproc`,`regprocedure` 
 and `regrole`. You will probably want to cast object name or oid to the appropriate type.
 
-- `pg_ddl_script(regclass) returns text`
+- `pg_ddlx_script(regclass) returns text`
 
     Extracts SQL DDL source of a class (table or view) `regclass`.
     This also includes all associated comments, ownership, constraints, 
     indexes, triggers, rules, grants, etc...
 
-- `pg_ddl_script(regproc) returns text`
-- `pg_ddl_script(regprocedure) returns text`
+- `pg_ddlx_script(regproc) returns text`
+- `pg_ddlx_script(regprocedure) returns text`
 
     Extracts SQL DDL source of function `regproc`.
 
-- `pg_ddl_script(regtype) returns text`
+- `pg_ddlx_script(regtype) returns text`
 
     Extracts SQL DDL source for type `regtype`.
 
-- `pg_ddl_script(regrole) returns text`
+- `pg_ddlx_script(regrole) returns text`
 
     Extracts SQL DDL definition for role (user or group) `regrole`.
     
 There are two convenience functions to help you dump object without casting:
 
-- `pg_ddl_script(oid) returns text`
+- `pg_ddlx_script(oid) returns text`
 
     Extracts SQL DDL source for object ID, `oid`..
 
-- `pg_ddl_script(text) returns text`
+- `pg_ddlx_script(text) returns text`
 
     Extracts SQL DDL source for a sql identifier`.
 
@@ -111,39 +112,39 @@ CREATE TABLE users (
     name text
 );
 
-SELECT pg_ddl_script('users'::regclass);
+SELECT pg_ddlx_script('users'::regclass);
 
 CREATE TYPE my_enum AS ENUM ('foo','bar');
 
-SELECT pg_ddl_script('my_enum'::regtype);
+SELECT pg_ddlx_script('my_enum'::regtype);
 
-SELECT pg_ddl_script(current_role::regrole);
+SELECT pg_ddlx_script(current_role::regrole);
 
 ```
 
 A number of other functions are provided to extract more specific objects.
-Their names all begin with `pg_ddl_`. They are used internally by the extension 
+Their names all begin with `pg_ddlx_`. They are used internally by the extension 
 and are possibly subject to change in future versions of the extension. 
 They are generally not intended to be used by the end user. 
 Nevertheless, some of them are:
 
-- `pg_ddl_identify(oid) returns table(oid oid, classid regclass, name name, namespace name, kind text, owner name, sql_kind text, sql_identifier text)`
+- `pg_ddlx_identify(oid) returns table(oid oid, classid regclass, name name, namespace name, kind text, owner name, sql_kind text, sql_identifier text)`
 
     Identify an object by object ID, `oid`. This function is used a lot in others.
 
-- `pg_ddl_create_table(regclass) returns text`
+- `pg_ddlx_create_table(regclass) returns text`
 
     Extracts SQL DDL source of a table.
 
-- `pg_ddl_create_view(regclass) returns text`
+- `pg_ddlx_create_view(regclass) returns text`
 
     Extracts SQL DDL source of a view.
 
-- `pg_ddl_create_class(regclass) returns text`
+- `pg_ddlx_create_class(regclass) returns text`
 
     Extracts SQL DDL source of a table or a view.
 
-- `pg_ddl_create_function(regprocedure) returns text`
+- `pg_ddlx_create_function(regprocedure) returns text`
 
     Extracts SQL DDL source of a function.
 

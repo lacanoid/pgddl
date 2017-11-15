@@ -1,9 +1,9 @@
 \pset null _null_
 \pset format unaligned
 SET client_min_messages = warning;
-select kind, sql_identifier from pg_ddl_identify('pg_ddl_identify(oid)'::regprocedure);
+select kind, sql_identifier from pg_ddlx_identify('pg_ddlx_identify(oid)'::regprocedure);
 kind|sql_identifier
-FUNCTION|pg_ddl_identify(oid)
+FUNCTION|pg_ddlx_identify(oid)
 (1 row)
 create function trig() returns trigger as 
 $$begin return old; end $$
@@ -21,7 +21,7 @@ CREATE TABLE test_class_r (
 );
 COMMENT ON TABLE test_class_r IS 'Comment1';
 grant all on test_class_r to public;
-select kind, sql_identifier from pg_ddl_identify('test_class_r'::regclass);
+select kind, sql_identifier from pg_ddlx_identify('test_class_r'::regclass);
 kind|sql_identifier
 TABLE|test_class_r
 (1 row)
@@ -30,8 +30,8 @@ update on test_class_r
    for each row when (old.* is distinct from new.*) execute procedure trig('AAAA');
 create unique index idx1 on test_class_r (lower(b)) where b is not null;
 create index idx2 on test_class_r using gin (v);
-SELECT pg_ddl_script('test_class_r'::regclass);
-pg_ddl_script
+SELECT pg_ddlx_script('test_class_r'::regclass);
+pg_ddlx_script
 --
 -- Type: TABLE; Name: test_class_r; Owner: root
 --
@@ -76,8 +76,8 @@ GRANT REFERENCES ON test_class_r TO PUBLIC;
 GRANT TRIGGER ON test_class_r TO PUBLIC;
 
 (1 row)
-SELECT pg_ddl_script('test_class_r'::regtype);
-pg_ddl_script
+SELECT pg_ddlx_script('test_class_r'::regtype);
+pg_ddlx_script
 --
 -- Type: TABLE; Name: test_class_r; Owner: root
 --
@@ -122,8 +122,8 @@ GRANT REFERENCES ON test_class_r TO PUBLIC;
 GRANT TRIGGER ON test_class_r TO PUBLIC;
 
 (1 row)
-SELECT pg_ddl_script('idx1'::regclass);
-pg_ddl_script
+SELECT pg_ddlx_script('idx1'::regclass);
+pg_ddlx_script
 --
 -- Type: INDEX; Name: idx1; Owner: root
 --
@@ -134,8 +134,8 @@ COMMENT ON INDEX idx1 IS NULL;
 
 
 (1 row)
-SELECT pg_ddl_script('idx2'::regclass);
-pg_ddl_script
+SELECT pg_ddlx_script('idx2'::regclass);
+pg_ddlx_script
 --
 -- Type: INDEX; Name: idx2; Owner: root
 --
@@ -155,8 +155,8 @@ CREATE UNLOGGED TABLE test_class_r2 (
   constraint "blah" foreign key (a) references test_class_r(a) deferrable initially deferred
 );
 alter table test_class_r2 set with oids;
-SELECT pg_ddl_script('test_class_r2'::regclass);
-pg_ddl_script
+SELECT pg_ddlx_script('test_class_r2'::regclass);
+pg_ddlx_script
 --
 -- Type: TABLE; Name: test_class_r2; Owner: root
 --
@@ -183,8 +183,8 @@ CREATE VIEW test_class_v AS
 SELECT * FROM test_class_r 
   WITH CHECK OPTION;
 grant select on test_class_v to public;
-SELECT pg_ddl_script('test_class_v'::regclass);
-pg_ddl_script
+SELECT pg_ddlx_script('test_class_v'::regclass);
+pg_ddlx_script
 --
 -- Type: VIEW; Name: test_class_v; Owner: root
 --
@@ -209,8 +209,8 @@ ALTER VIEW test_class_v OWNER TO root;
 GRANT SELECT ON test_class_v TO PUBLIC;
 
 (1 row)
-SELECT pg_ddl_script('test_class_v'::regtype);
-pg_ddl_script
+SELECT pg_ddlx_script('test_class_v'::regtype);
+pg_ddlx_script
 --
 -- Type: VIEW; Name: test_class_v; Owner: root
 --
@@ -238,8 +238,8 @@ GRANT SELECT ON test_class_v TO PUBLIC;
 CREATE MATERIALIZED VIEW test_class_m AS
 SELECT * FROM test_class_r;
 create unique index test_class_mi ON test_class_m (a);
-SELECT pg_ddl_script('test_class_m'::regclass);
-pg_ddl_script
+SELECT pg_ddlx_script('test_class_m'::regclass);
+pg_ddlx_script
 --
 -- Type: MATERIALIZED VIEW; Name: test_class_m; Owner: root
 --
@@ -263,34 +263,34 @@ CREATE UNIQUE INDEX test_class_mi ON test_class_m USING btree (a);
 ALTER MATERIALIZED VIEW test_class_m OWNER TO root;
 
 (1 row)
-select kind, sql_identifier from pg_ddl_identify('pg_ddl_identify(oid)'::regprocedure);
+select kind, sql_identifier from pg_ddlx_identify('pg_ddlx_identify(oid)'::regprocedure);
 kind|sql_identifier
-FUNCTION|pg_ddl_identify(oid)
+FUNCTION|pg_ddlx_identify(oid)
 (1 row)
-SELECT pg_ddl_script('pg_ddl_comment(oid)'::regprocedure);
-pg_ddl_script
+SELECT pg_ddlx_script('pg_ddlx_comment(oid)'::regprocedure);
+pg_ddlx_script
 --
--- Type: FUNCTION; Name: pg_ddl_comment(oid); Owner: root
+-- Type: FUNCTION; Name: pg_ddlx_comment(oid); Owner: root
 --
 
-CREATE OR REPLACE FUNCTION public.pg_ddl_comment(oid)
+CREATE OR REPLACE FUNCTION public.pg_ddlx_comment(oid)
  RETURNS text
  LANGUAGE sql
  STRICT
 AS $function$
- with obj as (select * from pg_ddl_identify($1))
+ with obj as (select * from pg_ddlx_identify($1))
  select format(
           E'COMMENT ON %s %s IS %L;\n',
           obj.sql_kind, sql_identifier, obj_description(oid))
    from obj
 $function$;
 
-COMMENT ON FUNCTION pg_ddl_comment(oid) IS NULL;
+COMMENT ON FUNCTION pg_ddlx_comment(oid) IS NULL;
 
-ALTER FUNCTION pg_ddl_comment(oid) OWNER TO root;
-REVOKE ALL ON FUNCTION pg_ddl_comment(oid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION pg_ddl_comment(oid) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION pg_ddl_comment(oid) TO root WITH GRANT OPTION;
+ALTER FUNCTION pg_ddlx_comment(oid) OWNER TO root;
+REVOKE ALL ON FUNCTION pg_ddlx_comment(oid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pg_ddlx_comment(oid) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION pg_ddlx_comment(oid) TO root WITH GRANT OPTION;
 
 (1 row)
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
@@ -302,8 +302,8 @@ select * from funfun(1);
 c|d
 3.14|now
 (1 row)
-SELECT pg_ddl_script('funfun'::regproc);
-pg_ddl_script
+SELECT pg_ddlx_script('funfun'::regproc);
+pg_ddlx_script
 --
 -- Type: FUNCTION; Name: funfun(integer,text); Owner: root
 --
@@ -325,8 +325,8 @@ GRANT EXECUTE ON FUNCTION funfun(integer,text) TO root WITH GRANT OPTION;
 (1 row)
 create sequence test_type_S increment 4 start 2;
 comment on sequence test_type_S is 'interleave';
-select pg_ddl_script('test_type_S'::regclass);
-pg_ddl_script
+select pg_ddlx_script('test_type_S'::regclass);
+pg_ddlx_script
 --
 -- Type: SEQUENCE; Name: test_type_s; Owner: root
 --
@@ -350,8 +350,8 @@ create table test_collation (
 	en text collate "en_US",
 	t text
 );
-select pg_ddl_script('test_collation'::regclass);
-pg_ddl_script
+select pg_ddlx_script('test_collation'::regclass);
+pg_ddlx_script
 --
 -- Type: TABLE; Name: test_collation; Owner: root
 --
@@ -375,8 +375,8 @@ as select * from test_class_v order by 1;
 create view test_class_v_opt2 
 as select * from test_class_v order by 1;
 alter  view test_class_v_opt2 set (security_barrier='true');
-select pg_ddl_script('test_class_v_opt1'::regclass);
-pg_ddl_script
+select pg_ddlx_script('test_class_v_opt1'::regclass);
+pg_ddlx_script
 --
 -- Type: VIEW; Name: test_class_v_opt1; Owner: root
 --
@@ -401,8 +401,8 @@ ALTER VIEW test_class_v_opt1 SET (security_barrier='true');
 ALTER VIEW test_class_v_opt1 OWNER TO root;
 
 (1 row)
-select pg_ddl_script('test_class_v_opt2'::regclass);
-pg_ddl_script
+select pg_ddlx_script('test_class_v_opt2'::regclass);
+pg_ddlx_script
 --
 -- Type: VIEW; Name: test_class_v_opt2; Owner: root
 --
@@ -427,8 +427,8 @@ ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 ALTER VIEW test_class_v_opt2 OWNER TO root;
 
 (1 row)
-select pg_ddl_script('test_class_v_opt2'::regclass::oid);
-pg_ddl_script
+select pg_ddlx_script('test_class_v_opt2'::regclass::oid);
+pg_ddlx_script
 --
 -- Type: VIEW; Name: test_class_v_opt2; Owner: root
 --
@@ -453,8 +453,8 @@ ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 ALTER VIEW test_class_v_opt2 OWNER TO root;
 
 (1 row)
-select pg_ddl_script('test_class_v_opt2');
-pg_ddl_script
+select pg_ddlx_script('test_class_v_opt2');
+pg_ddlx_script
 --
 -- Type: VIEW; Name: test_class_v_opt2; Owner: root
 --
@@ -481,8 +481,8 @@ ALTER VIEW test_class_v_opt2 OWNER TO root;
 (1 row)
 create or replace function test_proc_1() returns text as
 $$ select 'Hello, world!'::text $$ language sql;
-select pg_ddl_script('test_proc_1'::regproc);
-pg_ddl_script
+select pg_ddlx_script('test_proc_1'::regproc);
+pg_ddlx_script
 --
 -- Type: FUNCTION; Name: test_proc_1(); Owner: root
 --
@@ -500,8 +500,8 @@ GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
 
 (1 row)
-select pg_ddl_script('test_proc_1'::regproc::oid);
-pg_ddl_script
+select pg_ddlx_script('test_proc_1'::regproc::oid);
+pg_ddlx_script
 --
 -- Type: FUNCTION; Name: test_proc_1(); Owner: root
 --
@@ -519,8 +519,8 @@ GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
 
 (1 row)
-select pg_ddl_script('test_proc_1()');
-pg_ddl_script
+select pg_ddlx_script('test_proc_1()');
+pg_ddlx_script
 --
 -- Type: FUNCTION; Name: test_proc_1(); Owner: root
 --
@@ -542,8 +542,8 @@ CREATE AGGREGATE test_proc_agg_1(text) (
     SFUNC = textcat,
     STYPE = text
 );
-select pg_ddl_script('test_proc_agg_1'::regproc);
-pg_ddl_script
+select pg_ddlx_script('test_proc_agg_1'::regproc);
+pg_ddlx_script
 --
 -- Type: AGGREGATE; Name: test_proc_agg_1(text); Owner: root
 --
@@ -567,8 +567,8 @@ CREATE AGGREGATE test_proc_agg_2(anyelement) (
     STYPE = anyarray,
     INITCOND = '{}'
 );
-select pg_ddl_script('test_proc_agg_2'::regproc);
-pg_ddl_script
+select pg_ddlx_script('test_proc_agg_2'::regproc);
+pg_ddlx_script
 --
 -- Type: AGGREGATE; Name: test_proc_agg_2(anyelement); Owner: root
 --

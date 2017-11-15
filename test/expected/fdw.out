@@ -25,8 +25,8 @@ SELECT * FROM test_class_f;
  This is some text
 (2 rows)
 
-SELECT pg_ddl_script('test_class_f'::regclass);
-                        pg_ddl_script                        
+SELECT pg_ddlx_script('test_class_f'::regclass);
+                       pg_ddlx_script                        
 -------------------------------------------------------------
  --                                                         +
  -- Type: FOREIGN TABLE; Name: test_class_f; Owner: root    +

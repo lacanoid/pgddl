@@ -2,11 +2,11 @@
 
 Version 0.8alpha
 ----------------
-+ dump operators
-+ dump text search configurations
-+ fix trigger types (not all are supported)
+- rename pg_ddl -> pg_ddlx (think DDL eXtractor)
 - add pg_ddl_create(oid) and pg_ddl_drop(oid) functions
-+ rename pg_ddl -> pg_ddlx (think DDL eXtractor)
++ support for regoper,regoperator
++ support for regconfig (text search configurations)
++ fix trigger types (not all are supported)
 
 Version 0.7
 -----------
@@ -20,7 +20,7 @@ Version 0.7
 
 Version 0.6
 -----------
-- support for dumping regroles
+- support for regroles
 - support for collations on domains
 - support for range types
 
