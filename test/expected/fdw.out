@@ -28,6 +28,8 @@ SELECT * FROM test_class_f;
 SELECT pg_ddlx_script('test_class_f'::regclass);
                        pg_ddlx_script                        
 -------------------------------------------------------------
+ -- SECTION MAIN                                            +
+ -- DROP FOREIGN TABLE test_class_f;                        +
                                                             +
  -- Type: FOREIGN TABLE ; Name: test_class_f; Owner: root   +
                                                             +

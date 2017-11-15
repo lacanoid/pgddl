@@ -466,8 +466,8 @@ CREATE OR REPLACE FUNCTION pg_ddlx_banner(
  RETURNS text
  LANGUAGE sql
 AS $function$
-  SELECT format(E'%s\n-- Type: %s ; Name: %s; Owner: %s\n\n',
-                E'--\n-- ' || extra,
+  SELECT format(E'%s-- Type: %s ; Name: %s; Owner: %s\n\n',
+                E'--\n-- ' || extra || E'\n',
                 $2,$1,$4)
 $function$;
 
@@ -1352,7 +1352,7 @@ COMMENT ON FUNCTION pg_ddlx_drop(oid)
 CREATE OR REPLACE FUNCTION pg_catalog.pg_ddlx_parts(
  IN oid,
  OUT ddl_create text, OUT ddl_drop text,
- OUT ddl_pre text, OUT ddl_post text)
+ OUT ddl_create_deps text, OUT ddl_drop_deps text)
  RETURNS record
  LANGUAGE sql
 AS $function$
@@ -1366,10 +1366,10 @@ select row_number() over() as n,
 )
 select pg_ddlx_create($1) as ddl_create,
        pg_ddlx_drop($1) as ddl_drop,
-       string_agg(pg_ddlx_drop,'' order by n desc) as ddl_pre,
-       string_agg(pg_ddlx_create,'' order by n) as ddl_post
+       string_agg(pg_ddlx_create,'' order by n) as ddl_create_deps,
+       string_agg(pg_ddlx_drop,'' order by n desc) as ddl_drop_deps
   from ddl
-$function$;
+$function$ strict;
 
 ---------------------------------------------------
 
@@ -1377,8 +1377,16 @@ CREATE OR REPLACE FUNCTION pg_ddlx_script(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
-  select pg_ddlx_create($1)
-$function$  strict;
+select format(
+         E'%s%s-- %s\n%s%s',
+         E'-- SECTION DROP DEPENDANTS\n/*\n'||ddl_drop_deps||E'*/\n',
+         E'-- SECTION MAIN\n',
+         ddl_drop,
+         ddl_create,
+         E'-- SECTION CREATE DEPENDANTS\n\n'||ddl_create_deps
+       )
+  from pg_ddlx_parts($1)
+$function$ strict;
 
 COMMENT ON FUNCTION pg_ddlx_script(oid) 
      IS 'Get SQL DDL script for object id and dependant objects';

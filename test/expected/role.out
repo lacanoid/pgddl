@@ -14,6 +14,9 @@ grant pgddl_test_user2 to pgddl_test_user;
 grant pgddl_test_user3 to pgddl_test_user with admin option;
 select pg_ddlx_script('pgddl_test_user'::regrole);
 pg_ddlx_script
+-- SECTION MAIN
+-- DROP ROLE pgddl_test_user;
+
 CREATE GROUP pgddl_test_user;
 ALTER ROLE pgddl_test_user WITH
   NOLOGIN
@@ -37,6 +40,9 @@ GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 (1 row)
 select pg_ddlx_script('pgddl_test_user3'::regrole);
 pg_ddlx_script
+-- SECTION MAIN
+-- DROP ROLE pgddl_test_user3;
+
 CREATE GROUP pgddl_test_user3;
 ALTER ROLE pgddl_test_user3 WITH
   NOLOGIN
@@ -54,6 +60,9 @@ GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 (1 row)
 select pg_ddlx_script('pgddl_test_user2'::regrole);
 pg_ddlx_script
+-- SECTION MAIN
+-- DROP ROLE pgddl_test_user2;
+
 CREATE USER pgddl_test_user2;
 ALTER ROLE pgddl_test_user2 WITH
   LOGIN
