@@ -34,9 +34,7 @@ comment on type test_type_c is 'my class type';
 comment on column test_type_c.i is 'my class class column i';
 select pg_ddlx_script('test_type_c'::regtype);
 pg_ddlx_script
---
--- Type: TYPE; Name: test_type_c; Owner: root
---
+-- Type: TYPE ; Name: test_type_c; Owner: root
 
 CREATE TYPE test_type_c AS (
     i integer,
@@ -52,9 +50,7 @@ ALTER TYPE test_type_c OWNER TO root;
 (1 row)
 select pg_ddlx_script('test_type_c'::regclass);
 pg_ddlx_script
---
--- Type: TYPE; Name: test_type_c; Owner: root
---
+-- Type: TYPE ; Name: test_type_c; Owner: root
 
 CREATE TYPE test_type_c AS (
     i integer,

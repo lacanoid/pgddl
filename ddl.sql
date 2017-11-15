@@ -464,12 +464,7 @@ CREATE OR REPLACE FUNCTION pg_ddlx_banner(name text, kind text, namespace text, 
  RETURNS text
  LANGUAGE sql
 AS $function$
-  SELECT 
-'--
--- Type: '||$2||'; Name: '||$1||'; Owner: '||$4||'
---
-
-'
+  SELECT format(E'-- Type: %s ; Name: %s; Owner: %s\n\n',$2,$1,$4)
 $function$  strict;
 
 ---------------------------------------------------
