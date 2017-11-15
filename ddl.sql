@@ -1391,8 +1391,8 @@ CREATE OR REPLACE FUNCTION pg_ddlx_script(sql_identifier text)
 AS $function$
   select case
     when strpos($1,'(')>0 
-    then pg_ddlx_create(cast($1 as regprocedure))
-    else pg_ddlx_create(cast($1 as regtype))
+    then pg_ddlx_script(cast($1 as regprocedure))
+    else pg_ddlx_script(cast($1 as regtype))
      end
 $function$  strict;
 
