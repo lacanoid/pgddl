@@ -39,7 +39,10 @@ CREATE EXTENSION ddl;
  function pg_ddlx_create_type_enum(regtype)
  function pg_ddlx_create_type_range(regtype)
  function pg_ddlx_create_view(regclass)
+ function pg_ddlx_drop_constraint(oid)
+ function pg_ddlx_drop_default(oid)
  function pg_ddlx_drop(oid)
+ function pg_ddlx_drop_trigger(oid)
  function pg_ddlx_get_columns(regclass)
  function pg_ddlx_get_constraints(regclass)
  function pg_ddlx_get_dependants(oid)
@@ -55,5 +58,5 @@ CREATE EXTENSION ddl;
  function pg_ddlx_parts(oid)
  function pg_ddlx_script(oid)
  function pg_ddlx_script(text)
-(45 rows)
+(48 rows)
 

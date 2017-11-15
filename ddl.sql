@@ -791,6 +791,22 @@ $function$ strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION pg_ddlx_drop_default(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+  select format(E'ALTER TABLE %s ALTER %I DROP DEFAULT;\n',
+         	cast(c.oid::regclass as text),
+         	a.attname, 
+         	def.adsrc)
+    from pg_attrdef def 
+    join pg_class c on c.oid = def.adrelid
+    join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum
+   where def.oid = $1
+$function$ strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION pg_ddlx_create_constraints(regclass)
  RETURNS text
  LANGUAGE sql
@@ -823,6 +839,27 @@ AS $function$
             cast(r.oid::regclass as text)),
    c.conname, 
    pg_get_constraintdef(c.oid,true)) 
+   from pg_constraint c 
+   left join pg_class r on (c.conrelid = r.oid)
+   left join pg_type t on (c.contypid = t.oid)
+  where c.oid = $1 
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddlx_drop_constraint(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+ select format(
+   E'ALTER %s %s DROP CONSTRAINT %I;\n',
+   case
+     when t.oid is not null then 'DOMAIN'
+     else 'TABLE'
+   end,
+   coalesce(cast(t.oid::regtype as text),
+            cast(r.oid::regclass as text)),
+   c.conname) 
    from pg_constraint c 
    left join pg_class r on (c.conrelid = r.oid)
    left join pg_type t on (c.contypid = t.oid)
@@ -864,6 +901,19 @@ CREATE OR REPLACE FUNCTION pg_ddlx_create_trigger(oid)
  LANGUAGE sql
 AS $function$
  select pg_get_triggerdef($1,true)
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddlx_drop_trigger(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+ select format(
+          E'DROP TRIGGER %I ON %s;\n',
+          t.tgname,cast(c.oid::regclass as text))
+   from pg_trigger t join pg_class c on (t.tgrelid=c.oid)
+  where t.oid = $1 
 $function$  strict;
 
 ---------------------------------------------------
@@ -1338,9 +1388,17 @@ CREATE OR REPLACE FUNCTION pg_ddlx_drop(oid)
  LANGUAGE sql
  AS $function$
  with obj as (select * from pg_ddlx_identify($1))
- select   format(
+ select case obj.classid
+   when 'pg_constraint'::regclass 
+   then pg_ddlx_drop_constraint(oid)
+   when 'pg_trigger'::regclass 
+   then pg_ddlx_drop_trigger(oid)
+   when 'pg_attrdef'::regclass 
+   then pg_ddlx_drop_default(oid)
+   else format(
           E'DROP %s %s;\n',
           obj.sql_kind, sql_identifier)
+    end
    from obj
 $function$  strict;
 

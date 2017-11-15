@@ -34,8 +34,8 @@ SELECT pg_ddlx_script('test_class_r'::regclass);
 pg_ddlx_script
 -- SECTION DROP DEPENDANTS
 /*
-DROP DEFAULT test_class_r.a;
-DROP CONSTRAINT test_class_r_c_check ON test_class_r;
+ALTER TABLE test_class_r ALTER a DROP DEFAULT;
+ALTER TABLE test_class_r DROP CONSTRAINT test_class_r_c_check;
 */
 
 -- SECTION MAIN
@@ -180,7 +180,7 @@ SELECT pg_ddlx_script('test_class_r2'::regclass);
 pg_ddlx_script
 -- SECTION DROP DEPENDANTS
 /*
-DROP DEFAULT test_class_r2.i;
+ALTER TABLE test_class_r2 ALTER i DROP DEFAULT;
 */
 
 -- SECTION MAIN
@@ -399,7 +399,7 @@ select pg_ddlx_script('test_collation'::regclass);
 pg_ddlx_script
 -- SECTION DROP DEPENDANTS
 /*
-DROP DEFAULT test_collation.id;
+ALTER TABLE test_collation ALTER id DROP DEFAULT;
 */
 
 -- SECTION MAIN
