@@ -460,12 +460,16 @@ $function$;
 --  DDL generator functions for individial object types
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddlx_banner(name text, kind text, namespace text, owner text)
+CREATE OR REPLACE FUNCTION pg_ddlx_banner(
+   name text, kind text, namespace text, owner text, extra text default null
+ )
  RETURNS text
  LANGUAGE sql
 AS $function$
-  SELECT format(E'-- Type: %s ; Name: %s; Owner: %s\n\n',$2,$1,$4)
-$function$  strict;
+  SELECT format(E'%s\n-- Type: %s ; Name: %s; Owner: %s\n\n',
+                E'--\n-- ' || extra,
+                $2,$1,$4)
+$function$;
 
 ---------------------------------------------------
 

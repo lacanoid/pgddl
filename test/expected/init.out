@@ -7,12 +7,12 @@ CREATE EXTENSION ddl;
 (1 row)
 
 \dx+ ddl
-           Objects in extension "ddl"
-               Object Description                
--------------------------------------------------
+            Objects in extension "ddl"
+                Object Description                 
+---------------------------------------------------
  function pg_ddlx_alter_owner(oid)
  function pg_ddlx_alter_table_defaults(regclass)
- function pg_ddlx_banner(text,text,text,text)
+ function pg_ddlx_banner(text,text,text,text,text)
  function pg_ddlx_comment(oid)
  function pg_ddlx_create_aggregate(regproc)
  function pg_ddlx_create_class(regclass)
