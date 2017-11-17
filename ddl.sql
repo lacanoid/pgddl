@@ -757,6 +757,8 @@ $function$ strict;
 
 ---------------------------------------------------
 
+
+
 CREATE OR REPLACE FUNCTION pg_ddlx_alter_table_defaults(regclass)
  RETURNS text
  LANGUAGE sql
@@ -1276,7 +1278,7 @@ COMMENT ON FUNCTION pg_ddlx_create(regclass)
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddlx_create(regprocedure)
+CREATE OR REPLACE FUNCTION pg_ddlx_create(regproc)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -1286,16 +1288,74 @@ AS $function$
      || pg_ddlx_grants_on_proc($1)
 $function$  strict;
 
+COMMENT ON FUNCTION pg_ddlx_create(regproc) 
+     IS 'Get SQL definition for a function/procedure';
+
+CREATE OR REPLACE FUNCTION pg_ddlx_create(regprocedure)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+   select pg_ddlx_create($1::regproc)
+$function$  strict;
+
 COMMENT ON FUNCTION pg_ddlx_create(regprocedure) 
      IS 'Get SQL definition for a function/procedure';
 
-CREATE OR REPLACE FUNCTION pg_ddlx_create(regproc)
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddlx_create(regoper)
  RETURNS text
  LANGUAGE sql
-AS $$ select pg_ddlx_create($1::regprocedure) $$;
+AS $function$
+select format(
+         E'CREATE OPERATOR %s (\n%s%s%s%s%s%s%s%s%s\n);\n\n',
+         cast(o.oid::regoper as text),
+         E'  PROCEDURE = '  || cast(o.oprcode::regproc as text),
+         case when o.oprleft <> 0 then E',\n  LEFTARG = ' || format_type(o.oprleft,null) end,
+         case when o.oprright <> 0 then E',\n  RIGHTARG = ' || format_type(o.oprright,null) end,
+         case when o.oprcom <> 0 
+              then E',\n  COMMUTATOR = OPERATOR('||cast(o.oprcom::regoper as text)||')' end,
+         case when o.oprnegate <> 0 
+              then E',\n  NEGATOR = OPERATOR('||cast(o.oprnegate::regoper as text)||')' end,
+         case when o.oprrest <> 0 then E',\n  RESTRICT = ' || cast(o.oprrest::regproc as text) end,
+         case when o.oprjoin <> 0 then E',\n  JOIN = ' || cast(o.oprjoin::regproc as text) end,
+         case when o.oprcanhash then E',\n  HASHES' end,
+         case when o.oprcanmerge then E',\n  MERGES' end
+		)
+	 ||	pg_ddlx_comment($1)
+     || pg_ddlx_alter_owner($1) 
+  from pg_operator o
+ where oid = $1
+$function$  strict;
 
-COMMENT ON FUNCTION pg_ddlx_create(regproc) 
-     IS 'Get SQL definition for a function/procedure';
+COMMENT ON FUNCTION pg_ddlx_create(regoper) 
+     IS 'Get SQL definition for an operator';
+
+CREATE OR REPLACE FUNCTION pg_ddlx_create(regoperator)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+   select pg_ddlx_create($1::regoper)
+$function$  strict;
+
+COMMENT ON FUNCTION pg_ddlx_create(regoperator) 
+     IS 'Get SQL definition for an operator';
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddlx_create(regnamespace)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+select format(E'CREATE SCHEMA %s;\n',cast($1 as text))
+	   || pg_ddlx_comment($1)
+       || pg_ddlx_alter_owner($1) 
+  from pg_namespace n
+ where oid = $1
+$function$  strict;
+
+COMMENT ON FUNCTION pg_ddlx_create(regnamespace) 
+     IS 'Get SQL definition for a schema';
 
 ---------------------------------------------------
 
@@ -1356,11 +1416,15 @@ AS $function$
 	when 'pg_class'::regclass 
 	then pg_ddlx_create(oid::regclass)
 	when 'pg_proc'::regclass 
-	then pg_ddlx_create(oid::regprocedure)
+	then pg_ddlx_create(oid::regproc)
 	when 'pg_type'::regclass 
 	then pg_ddlx_create(oid::regtype)
+	when 'pg_operator'::regclass 
+	then pg_ddlx_create(oid::regoper)
 	when 'pg_authid'::regclass 
 	then pg_ddlx_create(oid::regrole)
+	when 'pg_namespace'::regclass 
+	then pg_ddlx_create(oid::regnamespace)
 	when 'pg_constraint'::regclass 
 	then pg_ddlx_create_constraint(oid)
 	when 'pg_trigger'::regclass 
@@ -1370,8 +1434,8 @@ AS $function$
 	else
 	  case
 		when kind is not null
-		then format(E'-- UNSUPPORTED OBJECT: %s %s\n',text($1),kind)
-		else format(E'-- UNIDENTIFIED OBJECT: %s\n',text($1))
+		then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),kind)
+		else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))
 	   end
  	 end 
  	 as ddl
@@ -1395,10 +1459,14 @@ CREATE OR REPLACE FUNCTION pg_ddlx_drop(oid)
    then pg_ddlx_drop_trigger(oid)
    when 'pg_attrdef'::regclass 
    then pg_ddlx_drop_default(oid)
-   else format(
-          E'DROP %s %s;\n',
-          obj.sql_kind, sql_identifier)
-    end
+   else
+	 case
+	   when kind is not null
+	   then format(E'DROP %s %s;\n',obj.sql_kind, obj.sql_identifier)
+	   else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
+	  end
+ 	end 
+ 	as ddl
    from obj
 $function$  strict;
 

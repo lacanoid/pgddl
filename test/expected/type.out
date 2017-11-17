@@ -231,3 +231,43 @@ COMMENT ON TYPE daterange IS 'range of dates';
 ALTER TYPE daterange OWNER TO postgres;
 
 (1 row)
+select pg_ddlx_script('=(integer,integer)'::regoperator);
+pg_ddlx_script
+-- SECTION MAIN
+
+-- DROP OPERATOR =(integer,integer);
+
+CREATE OPERATOR pg_catalog.= (
+  PROCEDURE = int4eq,
+  LEFTARG = integer,
+  RIGHTARG = integer,
+  COMMUTATOR = OPERATOR(pg_catalog.=),
+  NEGATOR = OPERATOR(pg_catalog.<>),
+  RESTRICT = eqsel,
+  JOIN = eqjoinsel,
+  HASHES,
+  MERGES
+);
+
+
+(1 row)
+select pg_ddlx_script('=(text,text)'::regoperator);
+pg_ddlx_script
+-- SECTION MAIN
+
+-- DROP OPERATOR =(text,text);
+
+CREATE OPERATOR pg_catalog.= (
+  PROCEDURE = texteq,
+  LEFTARG = text,
+  RIGHTARG = text,
+  COMMUTATOR = OPERATOR(pg_catalog.=),
+  NEGATOR = OPERATOR(pg_catalog.<>),
+  RESTRICT = eqsel,
+  JOIN = eqjoinsel,
+  HASHES,
+  MERGES
+);
+
+
+(1 row)

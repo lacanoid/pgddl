@@ -69,40 +69,61 @@ This of course requires superuser privileges.
 Using
 -----
 
-This module provides one main end user function `pg_ddlx_script` that 
-you can use to obtain SQL DDL source for a particular database object.
+This module provides three main end user functions:
 
-Currently supported object types are `regclass`,`regtype`,`regproc`,`regprocedure` 
-and `regrole`. You will probably want to cast object name or oid to the appropriate type.
+- `pg_ddlx_create(oid)` - builds create statements
+- `pg_ddlx_drop(oid)` - builds drop statements
+- `pg_ddlx_script(oid)` - builds entrie scripts
 
-- `pg_ddlx_script(regclass) returns text`
+Currently supported object types are `regclass`,`regtype`,`regproc`,`regprocedure`,
+`regoper`,`regoperator` and `regrole`. 
+You will probably want to cast object name or oid to the appropriate type.
+
+- `pg_ddlx_create(regclass) returns text`
 
     Extracts SQL DDL source of a class (table or view) `regclass`.
     This also includes all associated comments, ownership, constraints, 
     indexes, triggers, rules, grants, etc...
 
-- `pg_ddlx_script(regproc) returns text`
-- `pg_ddlx_script(regprocedure) returns text`
+- `pg_ddlx_create(regproc) returns text`
+- `pg_ddlx_create(regprocedure) returns text`
 
     Extracts SQL DDL source of function `regproc`.
 
-- `pg_ddlx_script(regtype) returns text`
+- `pg_ddlx_create(regtype) returns text`
 
     Extracts SQL DDL source for type `regtype`.
 
-- `pg_ddlx_script(regrole) returns text`
+- `pg_ddlx_create(regrole) returns text`
 
     Extracts SQL DDL definition for role (user or group) `regrole`.
     
-There are two convenience functions to help you dump object without casting:
+- `pg_ddlx_create(regoper) returns text`
+- `pg_ddlx_create(regoperator) returns text`
 
-- `pg_ddlx_script(oid) returns text`
+    Extracts SQL DDL source of operator `regpoper`.
+
+There is also a convenience function to use `oid` directly, without casting:
+
+- `pg_ddlx_create(oid) returns text`
 
     Extracts SQL DDL source for object ID, `oid`..
 
+- `pg_ddlx_drop(oid) returns text`
+
+    Generates SQL DDL DROP statement for object ID, `oid`..
+
+There is also a higher level function to build entire scripts. Scripts include dependant objects.
+At the begining of a script, there are commented DROP statements for all dependant objects, so you can see them easily.
+At the end of a script, there are CREATE statements to rebuild the dependant objects.
+
+- `pg_ddlx_script(oid) returns text`
+
+    Generates SQL DDL script for object ID, `oid`..
+
 - `pg_ddlx_script(text) returns text`
 
-    Extracts SQL DDL source for a sql identifier`.
+    Generates SQL DDL script for sql identifier`.
 
 For example:
 
@@ -148,4 +169,4 @@ Nevertheless, some of them are:
 
     Extracts SQL DDL source of a function.
 
-See file `ddl.sql` for details.
+See files `ddl.sql` and `test/expected/init.out` for details.

@@ -29,4 +29,5 @@ select pg_ddlx_script('xml'::regtype);
 select pg_ddlx_script('daterange'::regtype);
 
 
-
+select pg_ddlx_script('=(integer,integer)'::regoperator);
+select pg_ddlx_script('=(text,text)'::regoperator);

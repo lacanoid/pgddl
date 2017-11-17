@@ -26,6 +26,7 @@ Tasks
 
 
 - support for other postgres objects
+-- regnamespace
 -- regconfig
 -- regdictionary
 -- regoper,regoperator
