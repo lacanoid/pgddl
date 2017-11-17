@@ -1,15 +1,9 @@
 CREATE EXTENSION ddl;
+\pset tuples_only
 \dx ddl
-           List of installed extensions
- Name | Version | Schema |       Description       
-------+---------+--------+-------------------------
  ddl  | 0.8     | public | DDL extractor functions
-(1 row)
 
 \dx+ ddl
-            Objects in extension "ddl"
-                Object Description                 
----------------------------------------------------
  function pg_ddlx_alter_owner(oid)
  function pg_ddlx_alter_table_defaults(regclass)
  function pg_ddlx_banner(text,text,text,text,text)
@@ -54,12 +48,11 @@ CREATE EXTENSION ddl;
  function pg_ddlx_get_indexes(regclass)
  function pg_ddlx_get_rules(regclass)
  function pg_ddlx_get_triggers(regclass)
- function pg_ddlx_grants_on_class(regclass)
- function pg_ddlx_grants_on_proc(regproc)
- function pg_ddlx_grants_on_role(regrole)
+ function pg_ddlx_grants(regclass)
+ function pg_ddlx_grants(regproc)
+ function pg_ddlx_grants(regrole)
  function pg_ddlx_identify(oid)
  function pg_ddlx_parts(oid)
  function pg_ddlx_script(oid)
  function pg_ddlx_script(text)
-(51 rows)
 

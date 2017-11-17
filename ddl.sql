@@ -151,17 +151,6 @@ AS $function$
     JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
    WHERE ad.oid = $1
    UNION
-  SELECT evt.oid,
-         'pg_event_trigger'::regclass,
-         evt.evtname as name,
-         null as namespace,
-         evt.evtevent as kind,
-         pg_get_userbyid(evt.evtowner) as owner,
-         'EVENT TRIGGER' as sql_kind,
-         quote_ident(evt.evtname) as sql_identifier
-    FROM pg_event_trigger evt
-   WHERE evt.oid = $1
-   UNION
   SELECT op.oid,
          'pg_operator'::regclass,
          op.oprname as name,
@@ -194,6 +183,17 @@ AS $function$
          cast(dict.oid::regdictionary as text) as sql_identifier
     FROM pg_ts_dict dict JOIN pg_namespace n ON n.oid=dict.dictnamespace
    WHERE dict.oid = $1
+   UNION
+  SELECT evt.oid,
+         'pg_event_trigger'::regclass,
+         evt.evtname as name,
+         null as namespace,
+         evt.evtevent as kind,
+         pg_get_userbyid(evt.evtowner) as owner,
+         'EVENT TRIGGER' as sql_kind,
+         quote_ident(evt.evtname) as sql_identifier
+    FROM pg_event_trigger evt
+   WHERE evt.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -362,7 +362,7 @@ AS $function$
         p.oid::regprocedure AS regprocedure, 
         s.nspname::text AS event_object_schema,
         c.relname::text AS event_object_table, 
-        (quote_ident(t.tgname::text) || ' ON ') || c.oid::regclass::text AS trigger_key
+        (quote_ident(t.tgname::text) || ' ON ') || c.oid::regclass::text AS sql_identifier
    FROM pg_trigger t
    LEFT JOIN pg_class c ON c.oid = t.tgrelid
    LEFT JOIN pg_namespace s ON s.oid = c.relnamespace
@@ -496,8 +496,7 @@ AS $function$
     when 't' then 'TEMPORARY '
     else ''
   end
-  || obj.kind || ' ' 
-  || obj.sql_identifier
+  || obj.kind || ' ' || obj.sql_identifier
   || case obj.kind when 'TYPE' then ' AS' else '' end 
   ||
   E' (\n'||
@@ -1072,7 +1071,7 @@ set datestyle = iso;
 --  Grants
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddlx_grants_on_class(regclass) 
+CREATE OR REPLACE FUNCTION pg_ddlx_grants(regclass) 
  RETURNS text
  LANGUAGE sql
  AS $function$
@@ -1101,7 +1100,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddlx_grants_on_proc(regproc) 
+CREATE OR REPLACE FUNCTION pg_ddlx_grants(regproc) 
  RETURNS text
  LANGUAGE sql
  AS $function$
@@ -1131,7 +1130,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddlx_grants_on_role(regrole) 
+CREATE OR REPLACE FUNCTION pg_ddlx_grants(regrole) 
  RETURNS text
  LANGUAGE sql
  AS $function$
@@ -1260,7 +1259,7 @@ AS $function$
      || pg_ddlx_create_triggers($1) 
      || pg_ddlx_create_rules($1) 
      || pg_ddlx_alter_owner($1) 
-     || pg_ddlx_grants_on_class($1)
+     || pg_ddlx_grants($1)
     from pg_class c
    where c.oid = $1 and c.relkind <> 'c'
    union 
@@ -1283,7 +1282,7 @@ AS $function$
    select 
      pg_ddlx_create_function($1) 
      || pg_ddlx_alter_owner($1) 
-     || pg_ddlx_grants_on_proc($1)
+     || pg_ddlx_grants($1)
 $function$  strict;
 
 COMMENT ON FUNCTION pg_ddlx_create(regproc) 
@@ -1363,7 +1362,7 @@ CREATE OR REPLACE FUNCTION pg_ddlx_create(regrole)
 AS $function$
    select 
      pg_ddlx_create_role($1) 
-     || pg_ddlx_grants_on_role($1)
+     || pg_ddlx_grants($1)
 $function$  strict;
 
 COMMENT ON FUNCTION pg_ddlx_create(regrole) 
@@ -1523,8 +1522,8 @@ CREATE OR REPLACE FUNCTION pg_ddlx_script(sql_identifier text)
 AS $function$
   select case
     when strpos($1,'(')>0 
-    then pg_ddlx_script(cast($1 as regprocedure))
-    else pg_ddlx_script(cast($1 as regtype))
+    then pg_ddlx_script(cast($1 as regprocedure)::oid)
+    else pg_ddlx_script(cast($1 as regtype)::oid)
      end
 $function$  strict;
 

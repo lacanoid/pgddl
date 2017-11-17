@@ -4,7 +4,7 @@ Intro
 This started as a quick hack some years ago, when I broke my PostgreSQL database 
 (must have been version 7.3 or so) so that pg_dump wouldn't dump it anymore.
 Plus it couldn't handle dumping say only functions from certain schema. 
-I have since then learned how to fix my database and pg_dump got options like -n.
+I have since then learned how to fix my database and pg_dump got options like --schema.
 
 But the idea of a database being able to dump itself more autonomously persisted.
 After all, if LISP can do it, why not Postgres with its' awesome SQL power? 
@@ -19,37 +19,27 @@ This will hopefully help to keep relevant SQL code for these thing in one place.
 Tasks
 -----
 
-- split API into 3 functions:
--- pg_ddl_create(oid)
--- pg_ddl_drop(oid)
--- pp_ddl_script(oid) -- this includes dependencies
-
-
 - support for other postgres objects
 -- regnamespace
 -- regconfig
 -- regdictionary
--- regoper,regoperator
+-- fdws, servers, user mappings
 
 - support for other missing stuff:
 -- storage parameters
 -- tablespaces
 -- serial (alter sequence set owner column)
--- column permissions
+-- column grants
+-- schema grants
 -- partitions
 
-- improve simple tests
-- make some tests to test if what we output actually runs
+- compiler from one source to specific pg version
+
+- improve and add to simple tests
+- make some tests to test if what we output actually runs, test execute them
 - make some tests which compare to output of pg_dump for any sql file:
   test load file -> pg_dump compared to load file -> ddl_dump -> reload -> pg_dump
-- find out the minimum version of Postgres this works on
 - dump also comments on constraints, indexes, triggers, etc...
-
-- support for dumping whole schemas
-- recursive dumper which handles dependancies
-
--- rename to pg_ddlx?
-
 
 Options
 -------
@@ -59,6 +49,7 @@ Some options as to what and how to dump stuff might be required:
     CREATE TYPE pg_ddl_options AS (
       ddldrop  boolean, -- generate DROP statements
       ddlalter boolean, -- prefer ALTER to CREATE
+      ddldcl   boolean, -- include DCL (GRANTS)
       ddlcor   boolean, -- CREATE OR REPLACE 
       ddline   boolean, -- IF NOT EXISTS
       ddlie    boolean, -- IF EXISTS
