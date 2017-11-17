@@ -82,8 +82,12 @@ This module provides three main end user functions:
 - `pg_ddlx_script(oid)` - builds SQL DDL scripts of entire dependancy trees
 
 Currently supported object types are 
-`regclass`,`regtype`,`regproc`,`regprocedure`,`regoper`,`regoperator` and `regrole`. 
+`regtype`,`regclass`,`regproc(edure)`,`regoper(ator)` and `regrole`. 
 You will probably want to cast object name or oid to the appropriate type.
+
+- `pg_ddlx_create(regtype) returns text`
+
+    Generates SQL DDL source for type `regtype`.
 
 - `pg_ddlx_create(regclass) returns text`
 
@@ -96,18 +100,15 @@ You will probably want to cast object name or oid to the appropriate type.
 
     Generates SQL DDL source of function `regproc`.
 
-- `pg_ddlx_create(regtype) returns text`
+- `pg_ddlx_create(regoper) returns text`
+- `pg_ddlx_create(regoperator) returns text`
 
-    Generates SQL DDL source for type `regtype`.
+    Generates SQL DDL source of operator `regpoper`.
 
 - `pg_ddlx_create(regrole) returns text`
 
     Generates SQL DDL definition for role (user or group) `regrole`.
     
-- `pg_ddlx_create(regoper) returns text`
-- `pg_ddlx_create(regoperator) returns text`
-
-    Generates SQL DDL source of operator `regpoper`.
 
 There is also a convenience function to use `oid` directly, without casting:
 
@@ -122,10 +123,6 @@ There is also a convenience function to use `oid` directly, without casting:
 There is also a higher level function to build entire DDL scripts. 
 Scripts include dependant objects and can get quite large.
 
-At the begining of a script, there are commented DROP statements for all dependant objects, so you can see them easily.
-
-At the end of a script, there are CREATE statements to rebuild dropped dependant objects.
-
 - `pg_ddlx_script(oid) returns text`
 
     Generates SQL DDL script for object ID, `oid` and all it's dependants
@@ -133,6 +130,14 @@ At the end of a script, there are CREATE statements to rebuild dropped dependant
 - `pg_ddlx_script(text) returns text`
 
     Generates SQL DDL script for object identified by sql identifier`.
+
+At the begining of a script, there are commented DROP statements for all dependant objects, 
+so you can see them easily.
+
+At the end of a script, there are CREATE statements to rebuild dropped dependant objects.
+
+Note that dropping dependant tables will erase all data stored there, so use with care!
+Scripts might be more useful for rebuilding layers of functions and views and such.
 
 For example:
 
