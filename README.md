@@ -2,8 +2,9 @@ DDL extractor functions  for PostgreSQL
 =======================================
 
 This is an SQL-only extension for PostgreSQL that provides uniform functions for generating 
-SQL DDL scripts for objects stored in a database. It contains a lot of foo to convert
-Postgres system catalogs to nicely formatted SQL snippets. 
+SQL Data Definition Language (DDL) scripts for objects stored in a database. 
+It contains a bunch of SQL functions  to convert PostgreSQL system catalogs 
+to nicely formatted snippets of SQL DDL. 
 
 Some other SQL databases support commands like SHOW CREATE TABLE or provide 
 other fascilities for the purpose. 
@@ -20,24 +21,29 @@ Advantages over using other tools like `psql` or `pgdump` include:
 
 - You can use it extract DDL with any client which support running plain SQL queries
 - With SQL you can select things to dump by using usual SQL semantics (WHERE, etc)
+- Special function for creating scripts, which drop and recreate entire dependancy trees.
+  This is useful for example, when one wishes to rename some columns in a view with dependants.
+  This works particularly great with transactional DDL of Postgres.
 - Created scripts are somewhat more intended to be run and copy/pasted manually by the DBA
-  into other databases/scripts. This means prefering ALTER to CREATE, creating indexes which
-  are part of a constraint with ADD CONSTRAINT and such.
-- No shell access or shell commands with hairy options required (for running pg_dump), just use SELECT nd hairy SQL!
-- It is entrely made out of plain SQL functions.
+  into other databases/scripts. This means using idempotent DDL where possible (preferring ALTER to CREATE), 
+  creating indexes which are part of a constraint with ADD CONSTRAINT and so on.
+- No shell access or shell commands with hairy options required (for running pg_dump), just use SELECT and hairy SQL!
+- It is entrely made out of plain SQL functions. It is kind of a reference for system catalogs.
 
 Some disadvantages:
 
-- Not all Postgres objects are supported. It provides support for the basic user-level objects.
+- Not all Postgres objects and all options are supported. 
+  The package provides support for basic user-level objects one needs on everyday basis.
+  Initially, support for all `reg*` objects and SQL standard compliant stuff is planned,
+  with more fringe stuff coming later.
 - It is not well tested at all. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
-- It is kind of slow-ish for complicated stuff
+  Do not run generated scripts on production databases without testing them!
+- It is kind of slow-ish for complicated dependancy trees
 
-It is currently incomplete, but still useful. 
+That said, it has still proven useful in a number of situations.
 
 Curently tested on PostgreSQL 9.6. Might work with other versions.
-
-Plans on how to make this support newer fetures AND older servers are being considered.
  
 
 Installation
@@ -71,12 +77,12 @@ Using
 
 This module provides three main end user functions:
 
-- `pg_ddlx_create(oid)` - builds create statements
-- `pg_ddlx_drop(oid)` - builds drop statements
-- `pg_ddlx_script(oid)` - builds entrie scripts
+- `pg_ddlx_create(oid)` - builds SQL DDL create statements
+- `pg_ddlx_drop(oid)` - builds SQL DDL drop statements
+- `pg_ddlx_script(oid)` - builds SQL DDL scripts of entire dependancy trees
 
-Currently supported object types are `regclass`,`regtype`,`regproc`,`regprocedure`,
-`regoper`,`regoperator` and `regrole`. 
+Currently supported object types are 
+`regclass`,`regtype`,`regproc`,`regprocedure`,`regoper`,`regoperator` and `regrole`. 
 You will probably want to cast object name or oid to the appropriate type.
 
 - `pg_ddlx_create(regclass) returns text`
@@ -149,24 +155,12 @@ and are possibly subject to change in future versions of the extension.
 They are generally not intended to be used by the end user. 
 Nevertheless, some of them are:
 
-- `pg_ddlx_identify(oid) returns table(oid oid, classid regclass, name name, namespace name, kind text, owner name, sql_kind text, sql_identifier text)`
+- `pg_ddlx_identify(oid) returns record`
 
     Identify an object by object ID, `oid`. This function is used a lot in others.
 
-- `pg_ddlx_create_table(regclass) returns text`
+- `pg_ddlx_get_columns(regclass) returns setof record`
 
-    Extracts SQL DDL source of a table.
+    Get columns of a class.
 
-- `pg_ddlx_create_view(regclass) returns text`
-
-    Extracts SQL DDL source of a view.
-
-- `pg_ddlx_create_class(regclass) returns text`
-
-    Extracts SQL DDL source of a table or a view.
-
-- `pg_ddlx_create_function(regprocedure) returns text`
-
-    Extracts SQL DDL source of a function.
-
-See files `ddl.sql` and `test/expected/init.out` for details.
+See files `ddl.sql` and `test/expected/init.out` for additional details.
