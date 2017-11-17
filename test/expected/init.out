@@ -3,56 +3,57 @@ CREATE EXTENSION ddl;
 \dx ddl
  ddl  | 0.8     | public | DDL extractor functions
 
-\dx+ ddl
- function pg_ddlx_alter_owner(oid)
- function pg_ddlx_alter_table_defaults(regclass)
- function pg_ddlx_banner(text,text,text,text,text)
- function pg_ddlx_comment(oid)
- function pg_ddlx_create_aggregate(regproc)
- function pg_ddlx_create_class(regclass)
- function pg_ddlx_create_constraint(oid)
- function pg_ddlx_create_constraints(regclass)
- function pg_ddlx_create_default(oid)
- function pg_ddlx_create_function(regproc)
- function pg_ddlx_create_indexes(regclass)
- function pg_ddlx_create_index(regclass)
- function pg_ddlx_create(oid)
- function pg_ddlx_create(regclass)
- function pg_ddlx_create(regnamespace)
- function pg_ddlx_create(regoper)
- function pg_ddlx_create(regoperator)
- function pg_ddlx_create(regproc)
- function pg_ddlx_create(regprocedure)
- function pg_ddlx_create(regrole)
- function pg_ddlx_create(regtype)
- function pg_ddlx_create_role(regrole)
- function pg_ddlx_create_rules(regclass)
- function pg_ddlx_create_sequence(regclass)
- function pg_ddlx_create_table(regclass)
- function pg_ddlx_create_trigger(oid)
- function pg_ddlx_create_triggers(regclass)
- function pg_ddlx_create_type_base(regtype)
- function pg_ddlx_create_type_domain(regtype)
- function pg_ddlx_create_type_enum(regtype)
- function pg_ddlx_create_type_range(regtype)
- function pg_ddlx_create_view(regclass)
- function pg_ddlx_drop_constraint(oid)
- function pg_ddlx_drop_default(oid)
- function pg_ddlx_drop(oid)
- function pg_ddlx_drop_trigger(oid)
- function pg_ddlx_get_columns(regclass)
- function pg_ddlx_get_constraints(regclass)
- function pg_ddlx_get_dependants(oid)
- function pg_ddlx_get_dependants_recursive(oid)
- function pg_ddlx_get_functions(regproc)
- function pg_ddlx_get_indexes(regclass)
- function pg_ddlx_get_rules(regclass)
- function pg_ddlx_get_triggers(regclass)
- function pg_ddlx_grants(regclass)
- function pg_ddlx_grants(regproc)
- function pg_ddlx_grants(regrole)
- function pg_ddlx_identify(oid)
- function pg_ddlx_parts(oid)
- function pg_ddlx_script(oid)
- function pg_ddlx_script(text)
+select oid::regprocedure,obj_description(oid) from pg_proc p where proname like 'pg_ddlx_%'
+order by obj_description(oid) is null, oid::regprocedure::text;
+ pg_ddlx_create(oid)                      | Get SQL definition for generic object id
+ pg_ddlx_create(regclass)                 | Get SQL definition for a table, view, sequence or index
+ pg_ddlx_create(regnamespace)             | Get SQL definition for a schema
+ pg_ddlx_create(regoper)                  | Get SQL definition for an operator
+ pg_ddlx_create(regoperator)              | Get SQL definition for an operator
+ pg_ddlx_create(regproc)                  | Get SQL definition for a function/procedure
+ pg_ddlx_create(regprocedure)             | Get SQL definition for a function/procedure
+ pg_ddlx_create(regrole)                  | Get SQL definition for a role
+ pg_ddlx_create(regtype)                  | Get SQL definition for user defined data type
+ pg_ddlx_drop(oid)                        | Get SQL DROP statement for object id
+ pg_ddlx_script(oid)                      | Get SQL DDL script for object id and dependant objects
+ pg_ddlx_script(text)                     | Get SQL DDL script for identifier
+ pg_ddlx_alter_owner(oid)                 | 
+ pg_ddlx_alter_table_defaults(regclass)   | 
+ pg_ddlx_banner(text,text,text,text,text) | 
+ pg_ddlx_comment(oid)                     | 
+ pg_ddlx_create_aggregate(regproc)        | 
+ pg_ddlx_create_class(regclass)           | 
+ pg_ddlx_create_constraint(oid)           | 
+ pg_ddlx_create_constraints(regclass)     | 
+ pg_ddlx_create_default(oid)              | 
+ pg_ddlx_create_function(regproc)         | 
+ pg_ddlx_create_indexes(regclass)         | 
+ pg_ddlx_create_index(regclass)           | 
+ pg_ddlx_create_role(regrole)             | 
+ pg_ddlx_create_rules(regclass)           | 
+ pg_ddlx_create_sequence(regclass)        | 
+ pg_ddlx_create_table(regclass)           | 
+ pg_ddlx_create_trigger(oid)              | 
+ pg_ddlx_create_triggers(regclass)        | 
+ pg_ddlx_create_type_base(regtype)        | 
+ pg_ddlx_create_type_domain(regtype)      | 
+ pg_ddlx_create_type_enum(regtype)        | 
+ pg_ddlx_create_type_range(regtype)       | 
+ pg_ddlx_create_view(regclass)            | 
+ pg_ddlx_drop_constraint(oid)             | 
+ pg_ddlx_drop_default(oid)                | 
+ pg_ddlx_drop_trigger(oid)                | 
+ pg_ddlx_get_columns(regclass)            | 
+ pg_ddlx_get_constraints(regclass)        | 
+ pg_ddlx_get_dependants(oid)              | 
+ pg_ddlx_get_dependants_recursive(oid)    | 
+ pg_ddlx_get_functions(regproc)           | 
+ pg_ddlx_get_indexes(regclass)            | 
+ pg_ddlx_get_rules(regclass)              | 
+ pg_ddlx_get_triggers(regclass)           | 
+ pg_ddlx_grants(regclass)                 | 
+ pg_ddlx_grants(regproc)                  | 
+ pg_ddlx_grants(regrole)                  | 
+ pg_ddlx_identify(oid)                    | 
+ pg_ddlx_parts(oid)                       | 
 

@@ -573,42 +573,42 @@ CREATE OR REPLACE FUNCTION pg_ddlx_create_type_base(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$
-select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n ' 
-       || E' INPUT = '  || cast(t.typinput::regproc as text)  
-       || E',\n  OUTPUT = ' || cast(t.typoutput::regproc as text)  
-       || coalesce(E',\n  SEND = ' || nullif(cast(t.typsend::regproc as text),'-'),'') 
-       || coalesce(E',\n  RECEIVE = ' || nullif(cast(t.typreceive::regproc as text),'-'),'')
-       || coalesce(E',\n  TYPMOD_IN = ' || nullif(cast(t.typmodin::regproc as text),'-'),'')
-       || coalesce(E',\n  TYPMOD_OUT = ' || nullif(cast(t.typmodout::regproc as text),'-'),'')
-       || coalesce(E',\n  ANALYZE = ' || nullif(cast(t.typanalyze::regproc as text),'-'),'')
-       || E',\n  INTERNALLENGTH = ' 
-       || case when  t.typlen < 0 then 'VARIABLE' else cast(t.typlen as text) end
-       || case when t.typbyval then E',\n  PASSEDBYVALUE' else '' end
-       || E',\n  ALIGNMENT = ' || 
-		case t.typalign
+select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
+       array_to_string(array[ 
+         'INPUT = '  || cast(t.typinput::regproc as text),  
+         'OUTPUT = ' || cast(t.typoutput::regproc as text),
+         'SEND = ' || nullif(cast(t.typsend::regproc as text),'-'), 
+         'RECEIVE = ' || nullif(cast(t.typreceive::regproc as text),'-'),
+         'TYPMOD_IN = ' || nullif(cast(t.typmodin::regproc as text),'-'),
+         'TYPMOD_OUT = ' || nullif(cast(t.typmodout::regproc as text),'-'),
+         'ANALYZE = ' || nullif(cast(t.typanalyze::regproc as text),'-'),
+         'INTERNALLENGTH = ' || 
+            case when  t.typlen < 0 then 'VARIABLE' else cast(t.typlen as text) end,
+         case when t.typbyval then 'PASSEDBYVALUE' end,
+         'ALIGNMENT = ' || 
+		    case t.typalign
 			when 'c' then 'char'
 			when 's' then 'int2'
 			when 'i' then 'int4'
 			when 'd' then 'double'
-		end 
-       || E',\n  STORAGE = ' || 
-		case t.typstorage
+		    end, 
+         'STORAGE = ' || 
+		    case t.typstorage
 			when 'p' then 'plain'
 			when 'e' then 'external'
 			when 'm' then 'main'
 			when 'x' then 'extended'
-		end 
-       || E',\n  CATEGORY = ' || quote_nullable(t.typcategory)  
-       || case when t.typispreferred then E',\n  PREFERRED = true' else '' end
-       || case 
-          when t.typdefault is not null 
-          then E',\n  DEFAULT = ' || quote_nullable(t.typdefault)
-          else '' end
-       || case when t.typelem <> 0 then E',\n  ELEMENT = ' || format_type(t.typelem,null)
-          else '' end
-       || E',\n  DELIMITER = ' || quote_nullable(t.typdelim)  
-       || E',\n  COLLATABLE = ' || 
-          case when t.typcollation <> 0 then 'true' else 'false' end
+		    end, 
+         'CATEGORY = ' || quote_nullable(t.typcategory),
+         case when t.typispreferred then E'PREFERRED = true' end,
+         case 
+           when t.typdefault is not null 
+           then E'DEFAULT = ' || quote_nullable(t.typdefault)
+         end,
+         case when t.typelem <> 0 then E'ELEMENT = ' || format_type(t.typelem,null) end,
+         'DELIMITER = ' || quote_nullable(t.typdelim),
+         'COLLATABLE = ' ||  case when t.typcollation <> 0 then 'true' else 'false' end
+         ], E',\n  ')
        || E'\n);\n\n'
   from pg_type t
  where oid = $1
@@ -1440,7 +1440,7 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION pg_ddlx_create(oid) 
-     IS 'Get SQL definition for object id';
+     IS 'Get SQL definition for generic object id';
      
 ---------------------------------------------------
 
