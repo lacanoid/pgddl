@@ -4,7 +4,7 @@ DDL extractor functions  for PostgreSQL
 This is an SQL-only extension for PostgreSQL that provides uniform functions for generating 
 SQL Data Definition Language (DDL) scripts for objects stored in a database. 
 It contains a bunch of SQL functions  to convert PostgreSQL system catalogs 
-to nicely formatted snippets of SQL DDL. 
+to nicely formatted snippets of SQL DDL, such as CREATE TABLE.
 
 Some other SQL databases support commands like SHOW CREATE TABLE or provide 
 other fascilities for the purpose. 
@@ -13,8 +13,8 @@ PostgreSQL currently doesn't provide overall in-server DDL extracting functions,
 but rather just a separate `pg_dump` program. It is an external tool to the server 
 and therefore requires shell access or local installation to be of use.
 
-PostgreSQL however already provides a number of helper functions which greatly help with
-reconstructing DDL and are of course used by this extension.
+PostgreSQL however already provides a number of helper functions which already greatly help 
+with reconstructing DDL and are of course used by this extension.
 It also has sophisticated query capabilities which make this project possible.
 
 Advantages over using other tools like `psql` or `pgdump` include:
@@ -87,49 +87,52 @@ You will probably want to cast object name or oid to the appropriate type.
 
 - `pg_ddlx_create(regclass) returns text`
 
-    Extracts SQL DDL source of a class (table or view) `regclass`.
+    Generates SQL DDL source of a class (table or view) `regclass`.
     This also includes all associated comments, ownership, constraints, 
     indexes, triggers, rules, grants, etc...
 
 - `pg_ddlx_create(regproc) returns text`
 - `pg_ddlx_create(regprocedure) returns text`
 
-    Extracts SQL DDL source of function `regproc`.
+    Generates SQL DDL source of function `regproc`.
 
 - `pg_ddlx_create(regtype) returns text`
 
-    Extracts SQL DDL source for type `regtype`.
+    Generates SQL DDL source for type `regtype`.
 
 - `pg_ddlx_create(regrole) returns text`
 
-    Extracts SQL DDL definition for role (user or group) `regrole`.
+    Generates SQL DDL definition for role (user or group) `regrole`.
     
 - `pg_ddlx_create(regoper) returns text`
 - `pg_ddlx_create(regoperator) returns text`
 
-    Extracts SQL DDL source of operator `regpoper`.
+    Generates SQL DDL source of operator `regpoper`.
 
 There is also a convenience function to use `oid` directly, without casting:
 
 - `pg_ddlx_create(oid) returns text`
 
-    Extracts SQL DDL source for object ID, `oid`..
+    Generates SQL DDL source for object ID, `oid`.
 
 - `pg_ddlx_drop(oid) returns text`
 
-    Generates SQL DDL DROP statement for object ID, `oid`..
+    Generates SQL DDL DROP statement for object ID, `oid`.
 
-There is also a higher level function to build entire scripts. Scripts include dependant objects.
+There is also a higher level function to build entire DDL scripts. 
+Scripts include dependant objects and can get quite large.
+
 At the begining of a script, there are commented DROP statements for all dependant objects, so you can see them easily.
-At the end of a script, there are CREATE statements to rebuild the dependant objects.
+
+At the end of a script, there are CREATE statements to rebuild dropped dependant objects.
 
 - `pg_ddlx_script(oid) returns text`
 
-    Generates SQL DDL script for object ID, `oid`..
+    Generates SQL DDL script for object ID, `oid` and all it's dependants
 
 - `pg_ddlx_script(text) returns text`
 
-    Generates SQL DDL script for sql identifier`.
+    Generates SQL DDL script for object identified by sql identifier`.
 
 For example:
 

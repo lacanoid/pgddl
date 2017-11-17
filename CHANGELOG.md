@@ -6,9 +6,9 @@ Version 0.8alpha
 - add pg_ddlx_create(oid) and pg_ddlx_drop(oid) functions to API
 - pg_ddlx_script() now also includes dependant objects
 - support for regoper,regoperator
-- support for regnamespace (grants missing!)
+- support for regnamespace (grants still missing!)
 + support for regconfig (text search configurations)
-+ fix trigger types (not all cases are supported)
+- fix pg_ddlx_get_triggers() (TRUNCATE and INSTEAD supported)
 - slight banner changes
 
 Version 0.7

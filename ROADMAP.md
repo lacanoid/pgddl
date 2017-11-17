@@ -61,13 +61,14 @@ Some options as to what and how to dump stuff might be required:
       ddlalter boolean, -- prefer ALTER to CREATE
       ddlcor   boolean, -- CREATE OR REPLACE 
       ddline   boolean, -- IF NOT EXISTS
+      ddlie    boolean, -- IF EXISTS
       ddlwrap  boolean, -- wrap in BEGIN / END
       ddldep   boolean, -- output objects which depend on this object too
       ddldata  boolean  -- add statements preserve / copy table data
     );
 
 These might be passed as optional arg to extractor functions
-
+Perhaps as a text array?
 
 Other DDL dumping tools
 -----------------------

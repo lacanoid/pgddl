@@ -24,7 +24,9 @@ CREATE EXTENSION ddl;
  function pg_ddlx_create_index(regclass)
  function pg_ddlx_create(oid)
  function pg_ddlx_create(regclass)
+ function pg_ddlx_create(regnamespace)
  function pg_ddlx_create(regoper)
+ function pg_ddlx_create(regoperator)
  function pg_ddlx_create(regproc)
  function pg_ddlx_create(regprocedure)
  function pg_ddlx_create(regrole)
@@ -59,5 +61,5 @@ CREATE EXTENSION ddl;
  function pg_ddlx_parts(oid)
  function pg_ddlx_script(oid)
  function pg_ddlx_script(text)
-(49 rows)
+(51 rows)
 

@@ -326,33 +326,31 @@ CREATE OR REPLACE FUNCTION pg_ddlx_get_triggers(
   regclass default null,
   OUT is_constraint text, OUT trigger_name text, OUT action_order text, 
   OUT event_manipulation text, OUT event_object_sql_identifier text, 
-  OUT action_statement text, OUT action_orientation text, 
+  OUT action_statement text, OUT action_orientation text,
   OUT trigger_definition text, OUT regclass regclass, OUT regprocedure regprocedure, 
-  OUT event_object_schema text, OUT event_object_table text, OUT trigger_key text)
+  OUT event_object_schema text, OUT event_object_table text, OUT sql_identifier text)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
  SELECT 
         CASE t.tgisinternal
             WHEN true THEN 'CONSTRAINT'::text
-            WHEN false THEN NULL::text
             ELSE NULL::text
         END AS is_constraint, t.tgname::text AS trigger_name, 
-        CASE t.tgtype::integer & 2
-            WHEN 2 THEN 'BEFORE'::text
-            WHEN 0 THEN 'AFTER'::text
-            ELSE NULL::text
+        CASE (t.tgtype::integer & 64) <> 0
+            WHEN true THEN 'INSTEAD'::text
+            ELSE CASE t.tgtype::integer & 2
+              WHEN 2 THEN 'BEFORE'::text
+              WHEN 0 THEN 'AFTER'::text
+              ELSE NULL::text
+            END
         END AS action_order, 
-        CASE (t.tgtype::integer / 4) & 7
-            WHEN 1 THEN 'INSERT'::text
-            WHEN 2 THEN 'DELETE'::text
-            WHEN 3 THEN 'INSERT OR DELETE'::text
-            WHEN 4 THEN 'UPDATE'::text
-            WHEN 5 THEN 'INSERT OR UPDATE'::text
-            WHEN 6 THEN 'UPDATE OR DELETE'::text
-            WHEN 7 THEN 'INSERT OR UPDATE OR DELETE'::text
-            ELSE NULL::text
-        END AS event_manipulation, 
+        array_to_string(array[
+          case when (t.tgtype::integer &  4) <> 0 then 'INSERT'   end,
+          case when (t.tgtype::integer &  8) <> 0 then 'DELETE'   end,
+          case when (t.tgtype::integer & 16) <> 0 then 'UPDATE'   end,
+          case when (t.tgtype::integer & 32) <> 0 then 'TRUNCATE' end
+        ],' OR ') AS event_manipulation,
         c.oid::regclass::text AS event_object_sql_identifier, 
         p.oid::regprocedure::text AS action_statement, 
         CASE t.tgtype::integer & 1

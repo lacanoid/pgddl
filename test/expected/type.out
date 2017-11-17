@@ -249,6 +249,8 @@ CREATE OPERATOR pg_catalog.= (
   MERGES
 );
 
+COMMENT ON OPERATOR =(integer,integer) IS 'equal';
+ALTER OPERATOR =(integer,integer) OWNER TO postgres;
 
 (1 row)
 select pg_ddlx_script('=(text,text)'::regoperator);
@@ -269,5 +271,7 @@ CREATE OPERATOR pg_catalog.= (
   MERGES
 );
 
+COMMENT ON OPERATOR =(text,text) IS 'equal';
+ALTER OPERATOR =(text,text) OWNER TO postgres;
 
 (1 row)
