@@ -5,6 +5,7 @@ create type test_type_e as enum ('foo','bar','baz','qux');
 comment on type test_type_e is 'my enum';
 select pg_ddlx_script('test_type_e'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE test_type_e;
@@ -18,12 +19,14 @@ CREATE TYPE test_type_e AS ENUM (
 
 COMMENT ON TYPE test_type_e IS 'my enum';
 ALTER TYPE test_type_e OWNER TO root;
+END;
 
 (1 row)
 create domain test_type_d numeric(10,2) check(value is not null) check(value>6) default 7;
 comment on type test_type_d is 'my domain';
 select pg_ddlx_script('test_type_d'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP DOMAIN test_type_d;
@@ -35,6 +38,7 @@ CREATE DOMAIN test_type_d AS numeric(10,2)
 
 COMMENT ON DOMAIN test_type_d IS 'my domain';
 ALTER DOMAIN test_type_d OWNER TO root;
+END;
 
 (1 row)
 create type test_type_c as (i integer, t text, d test_type_d);
@@ -42,6 +46,7 @@ comment on type test_type_c is 'my class type';
 comment on column test_type_c.i is 'my class class column i';
 select pg_ddlx_script('test_type_c'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE test_type_c;
@@ -58,10 +63,12 @@ COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
 
 COMMENT ON TYPE test_type_c IS 'my class type';
 ALTER TYPE test_type_c OWNER TO root;
+END;
 
 (1 row)
 select pg_ddlx_script('test_type_c'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE test_type_c;
@@ -78,11 +85,13 @@ COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
 
 COMMENT ON TYPE test_type_c IS 'my class type';
 ALTER TYPE test_type_c OWNER TO root;
+END;
 
 (1 row)
 create domain test_collation_d text collate "en_US" default '***';
 select pg_ddlx_script('test_collation_d'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP DOMAIN test_collation_d;
@@ -93,10 +102,12 @@ CREATE DOMAIN test_collation_d AS text
 
 COMMENT ON DOMAIN test_collation_d IS NULL;
 ALTER DOMAIN test_collation_d OWNER TO root;
+END;
 
 (1 row)
 select pg_ddlx_script('int'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE integer;
@@ -117,10 +128,12 @@ CREATE TYPE integer (
 
 COMMENT ON TYPE integer IS '-2 billion to 2 billion integer, 4-byte storage';
 ALTER TYPE integer OWNER TO postgres;
+END;
 
 (1 row)
 select pg_ddlx_script('int[]'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE integer[];
@@ -142,10 +155,12 @@ CREATE TYPE integer[] (
 
 COMMENT ON TYPE integer[] IS NULL;
 ALTER TYPE integer[] OWNER TO postgres;
+END;
 
 (1 row)
 select pg_ddlx_script('uuid'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE uuid;
@@ -165,10 +180,12 @@ CREATE TYPE uuid (
 
 COMMENT ON TYPE uuid IS 'UUID datatype';
 ALTER TYPE uuid OWNER TO postgres;
+END;
 
 (1 row)
 select pg_ddlx_script('text'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE text;
@@ -189,10 +206,12 @@ CREATE TYPE text (
 
 COMMENT ON TYPE text IS 'variable-length string, no limit specified';
 ALTER TYPE text OWNER TO postgres;
+END;
 
 (1 row)
 select pg_ddlx_script('xml'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE xml;
@@ -212,10 +231,12 @@ CREATE TYPE xml (
 
 COMMENT ON TYPE xml IS 'XML content';
 ALTER TYPE xml OWNER TO postgres;
+END;
 
 (1 row)
 select pg_ddlx_script('daterange'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE daterange;
@@ -229,10 +250,12 @@ CREATE TYPE daterange AS RANGE (
 
 COMMENT ON TYPE daterange IS 'range of dates';
 ALTER TYPE daterange OWNER TO postgres;
+END;
 
 (1 row)
 select pg_ddlx_script('=(integer,integer)'::regoperator);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP OPERATOR =(integer,integer);
@@ -251,10 +274,12 @@ CREATE OPERATOR pg_catalog.= (
 
 COMMENT ON OPERATOR =(integer,integer) IS 'equal';
 ALTER OPERATOR =(integer,integer) OWNER TO postgres;
+END;
 
 (1 row)
 select pg_ddlx_script('=(text,text)'::regoperator);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP OPERATOR =(text,text);
@@ -273,5 +298,6 @@ CREATE OPERATOR pg_catalog.= (
 
 COMMENT ON OPERATOR =(text,text) IS 'equal';
 ALTER OPERATOR =(text,text) OWNER TO postgres;
+END;
 
 (1 row)

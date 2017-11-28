@@ -32,6 +32,7 @@ create unique index idx1 on test_class_r (lower(b)) where b is not null;
 create index idx2 on test_class_r using gin (v);
 SELECT pg_ddlx_script('test_class_r'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION DROP DEPENDANTS
 /*
 ALTER TABLE test_class_r ALTER a DROP DEFAULT;
@@ -90,10 +91,12 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
 
 ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 
+END;
 
 (1 row)
 SELECT pg_ddlx_script('test_class_r'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE test_class_r;
@@ -138,10 +141,12 @@ GRANT DELETE ON test_class_r TO PUBLIC;
 GRANT TRUNCATE ON test_class_r TO PUBLIC;
 GRANT REFERENCES ON test_class_r TO PUBLIC;
 GRANT TRIGGER ON test_class_r TO PUBLIC;
+END;
 
 (1 row)
 SELECT pg_ddlx_script('idx1'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP INDEX idx1;
@@ -152,10 +157,12 @@ CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT 
 
 COMMENT ON INDEX idx1 IS NULL;
 
+END;
 
 (1 row)
 SELECT pg_ddlx_script('idx2'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP INDEX idx2;
@@ -166,6 +173,7 @@ CREATE INDEX idx2 ON test_class_r USING gin (v);
 
 COMMENT ON INDEX idx2 IS NULL;
 
+END;
 
 (1 row)
 CREATE UNLOGGED TABLE test_class_r2 (
@@ -179,6 +187,7 @@ CREATE UNLOGGED TABLE test_class_r2 (
 alter table test_class_r2 set with oids;
 SELECT pg_ddlx_script('test_class_r2'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION DROP DEPENDANTS
 /*
 ALTER TABLE test_class_r2 ALTER i DROP DEFAULT;
@@ -211,6 +220,7 @@ ALTER TABLE test_class_r2 OWNER TO root;
 
 ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
 
+END;
 
 (1 row)
 CREATE VIEW test_class_v AS
@@ -219,6 +229,7 @@ SELECT * FROM test_class_r
 grant select on test_class_v to public;
 SELECT pg_ddlx_script('test_class_v'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP VIEW test_class_v;
@@ -243,10 +254,12 @@ ALTER VIEW test_class_v SET (check_option='cascaded');
 
 ALTER VIEW test_class_v OWNER TO root;
 GRANT SELECT ON test_class_v TO PUBLIC;
+END;
 
 (1 row)
 SELECT pg_ddlx_script('test_class_v'::regtype);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE test_class_v;
@@ -271,6 +284,7 @@ ALTER VIEW test_class_v SET (check_option='cascaded');
 
 ALTER VIEW test_class_v OWNER TO root;
 GRANT SELECT ON test_class_v TO PUBLIC;
+END;
 
 (1 row)
 CREATE MATERIALIZED VIEW test_class_m AS
@@ -278,6 +292,7 @@ SELECT * FROM test_class_r;
 create unique index test_class_mi ON test_class_m (a);
 SELECT pg_ddlx_script('test_class_m'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP MATERIALIZED VIEW test_class_m;
@@ -301,6 +316,7 @@ COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;
 CREATE UNIQUE INDEX test_class_mi ON test_class_m USING btree (a);
 
 ALTER MATERIALIZED VIEW test_class_m OWNER TO root;
+END;
 
 (1 row)
 select kind, sql_identifier from pg_ddlx_identify('pg_ddlx_identify(oid)'::regprocedure);
@@ -309,6 +325,7 @@ FUNCTION|pg_ddlx_identify(oid)
 (1 row)
 SELECT pg_ddlx_script('pg_ddlx_comment(oid)'::regprocedure);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP FUNCTION pg_ddlx_comment(oid);
@@ -333,6 +350,7 @@ ALTER FUNCTION pg_ddlx_comment(oid) OWNER TO root;
 REVOKE ALL ON FUNCTION pg_ddlx_comment(oid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION pg_ddlx_comment(oid) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION pg_ddlx_comment(oid) TO root WITH GRANT OPTION;
+END;
 
 (1 row)
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
@@ -346,6 +364,7 @@ c|d
 (1 row)
 SELECT pg_ddlx_script('funfun'::regproc);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP FUNCTION funfun(integer,text);
@@ -365,12 +384,14 @@ ALTER FUNCTION funfun(integer,text) OWNER TO root;
 REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO root WITH GRANT OPTION;
+END;
 
 (1 row)
 create sequence test_type_S increment 4 start 2;
 comment on sequence test_type_S is 'interleave';
 select pg_ddlx_script('test_type_S'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP SEQUENCE test_type_s;
@@ -388,6 +409,7 @@ ALTER SEQUENCE test_type_s
 COMMENT ON SEQUENCE test_type_s IS 'interleave';
 
 ALTER SEQUENCE test_type_s OWNER TO root;
+END;
 
 (1 row)
 create table test_collation (
@@ -398,6 +420,7 @@ create table test_collation (
 );
 select pg_ddlx_script('test_collation'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION DROP DEPENDANTS
 /*
 ALTER TABLE test_collation ALTER id DROP DEFAULT;
@@ -426,6 +449,7 @@ ALTER TABLE test_collation OWNER TO root;
 
 ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
 
+END;
 
 (1 row)
 create view test_class_v_opt1 with (security_barrier) 
@@ -435,6 +459,7 @@ as select * from test_class_v order by 1;
 alter  view test_class_v_opt2 set (security_barrier='true');
 select pg_ddlx_script('test_class_v_opt1'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP VIEW test_class_v_opt1;
@@ -459,10 +484,12 @@ COMMENT ON VIEW test_class_v_opt1 IS NULL;
 ALTER VIEW test_class_v_opt1 SET (security_barrier='true');
 
 ALTER VIEW test_class_v_opt1 OWNER TO root;
+END;
 
 (1 row)
 select pg_ddlx_script('test_class_v_opt2'::regclass);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP VIEW test_class_v_opt2;
@@ -487,10 +514,12 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 ALTER VIEW test_class_v_opt2 OWNER TO root;
+END;
 
 (1 row)
 select pg_ddlx_script('test_class_v_opt2'::regclass::oid);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP VIEW test_class_v_opt2;
@@ -515,10 +544,12 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 ALTER VIEW test_class_v_opt2 OWNER TO root;
+END;
 
 (1 row)
 select pg_ddlx_script('test_class_v_opt2');
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP TYPE test_class_v_opt2;
@@ -543,12 +574,14 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 ALTER VIEW test_class_v_opt2 OWNER TO root;
+END;
 
 (1 row)
 create or replace function test_proc_1() returns text as
 $$ select 'Hello, world!'::text $$ language sql;
 select pg_ddlx_script('test_proc_1'::regproc);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP FUNCTION test_proc_1();
@@ -566,10 +599,12 @@ ALTER FUNCTION test_proc_1() OWNER TO root;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
+END;
 
 (1 row)
 select pg_ddlx_script('test_proc_1'::regproc::oid);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP FUNCTION test_proc_1();
@@ -587,10 +622,12 @@ ALTER FUNCTION test_proc_1() OWNER TO root;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
+END;
 
 (1 row)
 select pg_ddlx_script('test_proc_1()');
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP FUNCTION test_proc_1();
@@ -608,6 +645,7 @@ ALTER FUNCTION test_proc_1() OWNER TO root;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
+END;
 
 (1 row)
 CREATE AGGREGATE test_proc_agg_1(text) (
@@ -616,6 +654,7 @@ CREATE AGGREGATE test_proc_agg_1(text) (
 );
 select pg_ddlx_script('test_proc_agg_1'::regproc);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP AGGREGATE test_proc_agg_1(text);
@@ -634,6 +673,7 @@ ALTER AGGREGATE test_proc_agg_1(text) OWNER TO root;
 REVOKE ALL ON FUNCTION test_proc_agg_1(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO root WITH GRANT OPTION;
+END;
 
 (1 row)
 CREATE AGGREGATE test_proc_agg_2(anyelement) (
@@ -643,6 +683,7 @@ CREATE AGGREGATE test_proc_agg_2(anyelement) (
 );
 select pg_ddlx_script('test_proc_agg_2'::regproc);
 pg_ddlx_script
+BEGIN;
 -- SECTION MAIN
 
 -- DROP AGGREGATE test_proc_agg_2(anyelement);
@@ -662,5 +703,6 @@ ALTER AGGREGATE test_proc_agg_2(anyelement) OWNER TO root;
 REVOKE ALL ON FUNCTION test_proc_agg_2(anyelement) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO root WITH GRANT OPTION;
+END;
 
 (1 row)

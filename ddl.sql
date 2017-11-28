@@ -1500,14 +1500,16 @@ CREATE OR REPLACE FUNCTION pg_ddlx_script(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
-select format(
+select E'BEGIN;\n'||
+       format(
          E'%s%s-- %s\n%s%s',
          E'-- SECTION DROP DEPENDANTS\n/*\n'||ddl_drop_deps||E'*/\n\n',
          E'-- SECTION MAIN\n\n',
          ddl_drop,
          ddl_create,
          E'\n-- SECTION CREATE DEPENDANTS\n\n'||ddl_create_deps
-       )
+       )||
+       E'END;\n'
   from pg_ddlx_parts($1)
 $function$ strict;
 

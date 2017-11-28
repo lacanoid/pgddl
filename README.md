@@ -25,8 +25,10 @@ Advantages over using other tools like `psql` or `pgdump` include:
   This is useful for example, when one wishes to rename some columns in a view with dependants.
   This works particularly great with transactional DDL of Postgres.
 - Created scripts are somewhat more intended to be run and copy/pasted manually by the DBA
-  into other databases/scripts. This means using idempotent DDL where possible (preferring ALTER to CREATE), 
-  creating indexes which are part of a constraint with ADD CONSTRAINT and so on.
+  into other databases/scripts. This involves 
+   pretty printing,
+   using idempotent DDL where possible (preferring ALTER to CREATE), 
+   creating indexes which are part of a constraint with ADD CONSTRAINT and so on.
 - No shell access or shell commands with hairy options required (for running pg_dump), just use SELECT and hairy SQL!
 - It is entrely made out of plain SQL functions. It is kind of a reference for system catalogs.
 
@@ -35,7 +37,7 @@ Some disadvantages:
 - Not all Postgres objects and all options are supported. 
   The package provides support for basic user-level objects one needs on everyday basis.
   Initially, support for all `reg*` objects and SQL standard compliant stuff is planned,
-  with more fringe stuff coming later.
+  with more stuff coming later.
 - It is not well tested at all. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
   Do not run generated scripts on production databases without testing them!
@@ -43,7 +45,7 @@ Some disadvantages:
 
 That said, it has still proven useful in a number of situations.
 
-Curently tested on PostgreSQL 9.6. Might work with other versions.
+Curently developed and tested on PostgreSQL 9.6. Might work with other versions.
  
 
 Installation
@@ -75,7 +77,7 @@ This of course requires superuser privileges.
 Using
 -----
 
-This module provides three main end user functions:
+The API provides three public user functions:
 
 - `pg_ddlx_create(oid)` - builds SQL DDL create statements
 - `pg_ddlx_drop(oid)` - builds SQL DDL drop statements
@@ -129,7 +131,7 @@ Scripts include dependant objects and can get quite large.
 
 - `pg_ddlx_script(text) returns text`
 
-    Generates SQL DDL script for object identified by sql identifier`.
+    Generates SQL DDL script for object identified by sql identifier.
 
 At the begining of a script, there are commented DROP statements for all dependant objects, 
 so you can see them easily.
@@ -172,3 +174,6 @@ Nevertheless, some of them are:
     Get columns of a class.
 
 See files `ddl.sql` and `test/expected/init.out` for additional details.
+
+See file `docs/function_usage.svg` for a picture of how this is put together.
+

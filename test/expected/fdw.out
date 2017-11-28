@@ -28,6 +28,7 @@ SELECT * FROM test_class_f;
 SELECT pg_ddlx_script('test_class_f'::regclass);
                        pg_ddlx_script                        
 -------------------------------------------------------------
+ BEGIN;                                                     +
  -- SECTION MAIN                                            +
                                                             +
  -- DROP FOREIGN TABLE test_class_f;                        +
@@ -47,6 +48,7 @@ SELECT pg_ddlx_script('test_class_f'::regclass);
  COMMENT ON COLUMN test_class_f.line IS 'A Line of text';   +
                                                             +
  ALTER FOREIGN TABLE test_class_f OWNER TO root;            +
+ END;                                                       +
  
 (1 row)
 

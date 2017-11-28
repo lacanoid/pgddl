@@ -20,11 +20,11 @@ create role pgddl_test_user3 valid until 'infinity';
 grant pgddl_test_user2 to pgddl_test_user;
 grant pgddl_test_user3 to pgddl_test_user with admin option;
 
-select pg_ddlx_script('pgddl_test_user'::regrole);
+select pg_ddlx_create('pgddl_test_user'::regrole);
 
-select pg_ddlx_script('pgddl_test_user3'::regrole);
+select pg_ddlx_create('pgddl_test_user3'::regrole);
 
-select pg_ddlx_script('pgddl_test_user2'::regrole);
+select pg_ddlx_create('pgddl_test_user2'::regrole);
 
 abort;
 
