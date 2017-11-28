@@ -19,26 +19,26 @@ This will hopefully help to keep relevant SQL code for these thing in one place.
 Tasks
 -----
 
-- support for other postgres objects:
--- regnamespace
--- regconfig, regdictionary
--- event triggers
--- text search parser, template
--- fdw, server, user mapping
--- transform, cast, rule, collation
--- extension, language
--- access method, conversion, tablespace
--- database, policy
--- v10: publication, subscription, statistics
+Support for other postgres objects:
+- regnamespace
+- regconfig, regdictionary
+- event triggers
+- text search parser, template
+- fdw, server, user mapping
+- transform, cast, rule, collation
+- extension, language
+- access method, conversion, tablespace
+- database, policy
+- v10: publication, subscription, statistics
 
-- support for other missing options:
--- storage parameters
--- tablespaces
--- serial (alter sequence set owner column)
--- column grants
--- schema grants
--- comments everywhere
--- v10: partitions
+Support for other missing options:
+- storage parameters
+- tablespaces
+- serial (alter sequence set owner column)
+- column grants
+- schema grants
+- comments everywhere
+- v10: partitions
 
 - compiler from one source to specific pg version
 
