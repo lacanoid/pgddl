@@ -19,19 +19,26 @@ This will hopefully help to keep relevant SQL code for these thing in one place.
 Tasks
 -----
 
-- support for other postgres objects
+- support for other postgres objects:
 -- regnamespace
--- regconfig
--- regdictionary
--- fdws, servers, user mappings
+-- regconfig, regdictionary
+-- event triggers
+-- text search parser, template
+-- fdw, server, user mapping
+-- transform, cast, rule, collation
+-- extension, language
+-- access method, conversion, tablespace
+-- database, policy
+-- v10: publication, subscription, statistics
 
-- support for other missing stuff:
+- support for other missing options:
 -- storage parameters
 -- tablespaces
 -- serial (alter sequence set owner column)
 -- column grants
 -- schema grants
--- partitions
+-- comments everywhere
+-- v10: partitions
 
 - compiler from one source to specific pg version
 
@@ -58,8 +65,10 @@ Some options as to what and how to dump stuff might be required:
       ddldata  boolean  -- add statements preserve / copy table data
     );
 
-These might be passed as optional arg to extractor functions
-Perhaps as a text array?
+These might be passed as optional second arg to extractor functions
+Perhaps as a text array? JSON?
+
+Perhaps there are other ways to implement some of this?
 
 Other DDL dumping tools
 -----------------------
