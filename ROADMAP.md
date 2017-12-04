@@ -39,6 +39,7 @@ Support for other missing options:
 - column grants
 - schema grants
 - comments everywhere
+- clustering
 - v10: partitions
 
 - compiler from one source to specific pg version
