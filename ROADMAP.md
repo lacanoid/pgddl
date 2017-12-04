@@ -28,6 +28,7 @@ Support for other postgres objects:
 - transform, cast, rule, collation
 - extension, language
 - access method, conversion, tablespace
+- operator class, operator family
 - database, policy
 - v10: publication, subscription, statistics
 
