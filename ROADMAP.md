@@ -22,12 +22,12 @@ Tasks
 Support for other postgres objects:
 - regnamespace
 - regconfig, regdictionary
-- event triggers
 - text search parser, template
-- fdw, server, user mapping
-- transform, cast, rule, collation
-- extension, language
-- access method, conversion, tablespace
+- event triggers
+- SQL: cast, collation, transform
+- SQL: fdw, server, user mapping
+- extension, language, conversion
+- rule, access method, tablespace
 - operator class, operator family
 - database, policy
 - v10: publication, subscription, statistics
@@ -42,13 +42,12 @@ Support for other missing options:
 - clustering
 - v10: partitions
 
+Other:
 - compiler from one source to specific pg version
-
 - improve and add to simple tests
 - make some tests to test if what we output actually runs, test execute them
 - make some tests which compare to output of pg_dump for any sql file:
   test load file -> pg_dump compared to load file -> ddl_dump -> reload -> pg_dump
-- dump also comments on constraints, indexes, triggers, etc...
 
 Options
 -------
