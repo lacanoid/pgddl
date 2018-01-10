@@ -13,6 +13,7 @@ Information is all there in the system catalogs, one just needs to decypher it.
 This tool uses information schema and standard SQL as much as possible, 
 but for any actual practical use decoding of PostgreSQL system catalogs is required. 
 Querying pg_catalog can turn out to be quite complicated for a somewhat casual SQL user.
+This project attempts to collect many SQL snippets made over the years into a coherent extension.
 
 This will hopefully help to keep relevant SQL code for these thing in one place.
 
