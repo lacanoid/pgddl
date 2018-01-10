@@ -36,6 +36,7 @@ Support for other missing options:
 - storage parameters
 - tablespaces
 - serial (alter sequence set owner column)
+- column options
 - column grants
 - schema grants
 - comments everywhere
