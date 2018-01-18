@@ -128,11 +128,15 @@ Scripts include dependant objects and can get quite large.
 
 - `pg_ddlx_script(oid) returns text`
 
-    Generates SQL DDL script for object ID, `oid` and all it's dependants
+    Generates SQL DDL script for object ID, `oid` and all it's dependants.
 
 - `pg_ddlx_script(text) returns text`
 
-    Generates SQL DDL script for object identified by sql identifier.
+    Generates SQL DDL script for object identified by textual sql identifier
+    and all it's dependants.
+    
+    This works only for types, including classes such as tables and views and
+    for functions. For a function, argument types need to be specified.
 
 At the begining of a script, there are commented-out DROP statements for all dependant objects, 
 so you can see them easily.
