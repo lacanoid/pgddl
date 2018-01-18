@@ -37,7 +37,7 @@ Some disadvantages:
 - Not all Postgres objects and all options are supported yet. 
   The package provides support for basic user-level objects such as types, classes and functions.
   Initially, support for all `reg*` objects and SQL standard compliant stuff is planned first,
-  with more fringe stuff coming later. See file `ROADMAP.md`
+  with more fringe stuff coming later. See [ROADMAP](ROADMAP.md)
 - It is not well tested at all. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
   Do not run generated scripts on production databases without testing them!
@@ -178,7 +178,7 @@ Nevertheless, some of them are:
 
     Get columns of a class.
 
-See files `ddl.sql` and `test/expected/init.out` for additional details.
+See file [ddl.sql](ddl.sql) and [full list of functions](test/expected/init.out) for additional details.
 
-See file `docs/function_usage.svg` for a picture of how this is put together.
+See file [function_usage.svg](docs/function_usage.svg) for a picture of how this is put together.
 
