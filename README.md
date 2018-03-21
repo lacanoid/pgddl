@@ -7,7 +7,7 @@ It contains a bunch of SQL functions  to convert PostgreSQL system catalogs
 to nicely formatted snippets of SQL DDL, such as CREATE TABLE.
 
 Some other SQL databases support commands like SHOW CREATE TABLE or provide 
-other fascilities for the purpose. 
+other facilities for the purpose. 
 
 PostgreSQL currently doesn't provide overall in-server DDL extracting functions,
 but rather just a separate `pg_dump` program. It is an external tool to the server 
