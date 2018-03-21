@@ -205,6 +205,17 @@ AS $function$
          quote_ident(fdw.fdwname) as sql_identifier
     FROM pg_foreign_data_wrapper fdw
    WHERE fdw.oid = $1
+   UNION
+  SELECT srv.oid,
+         'pg_foreign_server'::regclass,
+         srv.srvname as name,
+         null as namespace,
+         'SERVER' as kind,
+         pg_get_userbyid(srv.srvowner) as owner,
+         'SERVER' as sql_kind,
+         quote_ident(srv.srvname) as sql_identifier
+    FROM pg_foreign_server srv
+   WHERE srv.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -1129,6 +1140,30 @@ AS $function$
 $function$  strict;
 
 ---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddlx_create_server(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ with obj as (select * from pg_foreign_server where oid = $1)
+ select
+    'CREATE SERVER ' || quote_ident(obj.srvname) ||
+    coalesce(E'\n  TYPE ' || quote_literal(obj.srvtype),'') ||
+    coalesce(E'\n  VERSION ' || quote_literal(obj.srvversion),'') ||
+    E'\n  FOREIGN DATA WRAPPER ' || 
+      (select quote_ident(fdwname)
+         from pg_foreign_data_wrapper
+        where oid = obj.srvfdw) ||
+    coalesce(E'\n  OPTIONS (\n'||
+      (select string_agg(
+              '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
+              E',\n')
+         from pg_options_to_table(obj.srvoptions))||E'\n)'
+    ,'') || E';\n' 
+   from obj;
+$function$  strict;
+
+---------------------------------------------------
 --  Grants
 ---------------------------------------------------
 
@@ -1493,6 +1528,8 @@ AS $function$
 	then pg_ddlx_create_event_trigger(oid)
 	when 'pg_foreign_data_wrapper'::regclass 
 	then pg_ddlx_create_foreign_data_wrapper(oid)
+	when 'pg_foreign_server'::regclass 
+	then pg_ddlx_create_server(oid)
 	else
 	  case
 		when kind is not null

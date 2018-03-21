@@ -42,7 +42,7 @@ Support for other missing options:
 - column grants
 - schema grants
 - comments everywhere
-- ownership of all objects
+- ownership of all objects (missing fdw, server)
 - enabled/disabled triggers
 - clustering
 - v10: partitions

@@ -4,6 +4,7 @@ Version 0.9alpha
 ----------------
 - support for event triggers
 - support for foreign data wrappers
+- support for foreign servers
 
 Version 0.8
 -----------
@@ -11,7 +12,7 @@ Version 0.8
 - add pg_ddlx_create(oid) and pg_ddlx_drop(oid) functions to API
 - pg_ddlx_script() now also includes dependant objects
   and wraps the whole thing in with BEGIN/END
-- support for regoper,regoperator
+- support for regoper, regoperator
 - support for regnamespace (grants are missing!)
 - fix pg_ddlx_get_triggers() (TRUNCATE and INSTEAD supported)
 - more slight banner changes

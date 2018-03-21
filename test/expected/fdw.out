@@ -68,3 +68,18 @@ SELECT pg_ddlx_drop((select oid from pg_foreign_data_wrapper where fdwname='file
  
 (1 row)
 
+SELECT pg_ddlx_create((select oid from pg_foreign_server where srvname='serv'));
+          pg_ddlx_create          
+----------------------------------
+ CREATE SERVER serv              +
+   FOREIGN DATA WRAPPER file_fdw;+
+ 
+(1 row)
+
+SELECT pg_ddlx_drop((select oid from pg_foreign_server where srvname='serv'));
+   pg_ddlx_drop    
+-------------------
+ DROP SERVER serv;+
+ 
+(1 row)
+

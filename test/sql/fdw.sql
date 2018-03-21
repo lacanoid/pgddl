@@ -27,3 +27,7 @@ SELECT pg_ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='fi
 
 SELECT pg_ddlx_drop((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
 
+SELECT pg_ddlx_create((select oid from pg_foreign_server where srvname='serv'));
+
+SELECT pg_ddlx_drop((select oid from pg_foreign_server where srvname='serv'));
+
