@@ -22,3 +22,8 @@ GRANT ALL ON test_class_f TO PUBLIC;
 SELECT * FROM test_class_f;
 
 SELECT pg_ddlx_script('test_class_f'::regclass);
+
+SELECT pg_ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
+
+SELECT pg_ddlx_drop((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
+

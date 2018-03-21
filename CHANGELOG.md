@@ -3,6 +3,7 @@
 Version 0.9alpha
 ----------------
 - support for event triggers
+- support for foreign data wrappers
 
 Version 0.8
 -----------

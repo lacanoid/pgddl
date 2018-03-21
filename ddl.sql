@@ -194,6 +194,17 @@ AS $function$
          quote_ident(evt.evtname) as sql_identifier
     FROM pg_event_trigger evt
    WHERE evt.oid = $1
+   UNION
+  SELECT fdw.oid,
+         'pg_foreign_data_wrapper'::regclass,
+         fdw.fdwname as name,
+         null as namespace,
+         'FOREIGN DATA WRAPPER' as kind,
+         pg_get_userbyid(fdw.fdwowner) as owner,
+         'FOREIGN DATA WRAPPER' as sql_kind,
+         quote_ident(fdw.fdwname) as sql_identifier
+    FROM pg_foreign_data_wrapper fdw
+   WHERE fdw.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -1080,11 +1091,40 @@ AS $function$
     case 
     when obj.evttags is not null
     then '  WHEN tag IN ' || 
-      (select '('||string_agg(quote_nullable(u),', ')||')' from unnest(obj.evttags) as u) 
+      (select '(' || string_agg(quote_nullable(u),', ') || ')' 
+         from unnest(obj.evttags) as u) 
         || E'\n'
     else ''
     end ||
     '  EXECUTE PROCEDURE ' || cast(obj.evtfoid as regprocedure) || E';\n'
+   from obj;
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddlx_create_foreign_data_wrapper(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ with obj as (select * from pg_foreign_data_wrapper where oid = $1)
+ select
+    'CREATE FOREIGN DATA WRAPPER ' || quote_ident(obj.fdwname) || E'\n' ||
+    case 
+    when obj.fdwhandler is not null
+    then '  HANDLER ' || cast(obj.fdwhandler as regproc)
+    else '  NO HANDLER'
+    end || E'\n' ||
+    case 
+    when obj.fdwvalidator is not null
+    then '  VALIDATOR ' || cast(obj.fdwvalidator as regproc)
+    else '  NO VALIDATOR'
+    end ||
+    coalesce(E'\n  OPTIONS (\n'||
+      (select string_agg(
+              '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
+              E',\n')
+         from pg_options_to_table(obj.fdwoptions))||E'\n)'
+    ,'') || E';\n' 
    from obj;
 $function$  strict;
 
@@ -1451,6 +1491,8 @@ AS $function$
 	then pg_ddlx_create_default(oid)
 	when 'pg_event_trigger'::regclass 
 	then pg_ddlx_create_event_trigger(oid)
+	when 'pg_foreign_data_wrapper'::regclass 
+	then pg_ddlx_create_foreign_data_wrapper(oid)
 	else
 	  case
 		when kind is not null
