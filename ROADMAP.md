@@ -23,6 +23,7 @@ Support for other postgres objects:
 - regnamespace
 - regconfig, regdictionary
 - event triggers
+- operator class
 - text search parser, template
 - fdw, server, user mapping
 - transform, cast, rule, collation
