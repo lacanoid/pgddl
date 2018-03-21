@@ -1,5 +1,9 @@
 + = todo, - = done.
 
+Version 0.9alpha
+----------------
+- support for event triggers
+
 Version 0.8
 -----------
 - API rename pg_ddl -> pg_ddlx (think DDL eXtractor)

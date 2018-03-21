@@ -32,6 +32,7 @@ Support for other postgres objects:
 - operator class, operator family
 - database, policy
 - v10: publication, subscription, statistics
+- v11: procedure, variable
 
 Support for other missing options:
 - storage parameters
@@ -41,6 +42,7 @@ Support for other missing options:
 - column grants
 - schema grants
 - comments everywhere
+- enabled/disabled triggers
 - clustering
 - v10: partitions
 

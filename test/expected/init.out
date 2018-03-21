@@ -1,7 +1,7 @@
 CREATE EXTENSION ddl;
 \pset tuples_only
 \dx ddl
- ddl  | 0.8     | public | DDL extractor functions
+ ddl  | 0.9     | public | DDL extractor functions
 
 select oid::regprocedure,obj_description(oid) from pg_proc p where proname like 'pg_ddlx_%'
 order by obj_description(oid) is null, oid::regprocedure::text;
@@ -26,6 +26,7 @@ order by obj_description(oid) is null, oid::regprocedure::text;
  pg_ddlx_create_constraint(oid)           | 
  pg_ddlx_create_constraints(regclass)     | 
  pg_ddlx_create_default(oid)              | 
+ pg_ddlx_create_event_trigger(oid)        | 
  pg_ddlx_create_function(regproc)         | 
  pg_ddlx_create_indexes(regclass)         | 
  pg_ddlx_create_index(regclass)           | 

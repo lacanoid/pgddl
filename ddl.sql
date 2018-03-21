@@ -1068,6 +1068,27 @@ $function$  strict
 set datestyle = iso;
 
 ---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddlx_create_event_trigger(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ with obj as (select * from pg_event_trigger where oid = $1)
+ select
+    'CREATE EVENT TRIGGER ' || quote_ident(obj.evtname) ||
+    ' ON ' || obj.evtname || E'\n' ||
+    case 
+    when obj.evttags is not null
+    then '  WHEN tag IN ' || 
+      (select '('||string_agg(quote_nullable(u),', ')||')' from unnest(obj.evttags) as u) 
+        || E'\n'
+    else ''
+    end ||
+    '  EXECUTE PROCEDURE ' || cast(obj.evtfoid as regprocedure) || E';\n'
+   from obj;
+$function$  strict;
+
+---------------------------------------------------
 --  Grants
 ---------------------------------------------------
 
@@ -1428,10 +1449,12 @@ AS $function$
 	then pg_ddlx_create_trigger(oid)
 	when 'pg_attrdef'::regclass 
 	then pg_ddlx_create_default(oid)
+	when 'pg_event_trigger'::regclass 
+	then pg_ddlx_create_event_trigger(oid)
 	else
 	  case
 		when kind is not null
-		then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),kind)
+		then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
 		else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))
 	   end
  	 end 
@@ -1472,7 +1495,7 @@ COMMENT ON FUNCTION pg_ddlx_drop(oid)
      
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_catalog.pg_ddlx_parts(
+CREATE OR REPLACE FUNCTION pg_ddlx_parts(
  IN oid,
  OUT ddl_create text, OUT ddl_drop text,
  OUT ddl_create_deps text, OUT ddl_drop_deps text)

@@ -2,7 +2,7 @@
    "name": "pgddl",
    "abstract": "DDL Extractor Functions",
    "description": "A set of SQL only functions for recreatimng DDL for object in a database",
-   "version": "0.8",
+   "version": "0.9",
    "maintainer": [
       "Ziga Kranjec <ziga@ljudmila.org>"
    ],
@@ -16,7 +16,7 @@
             "PostgreSQL": "9.5.0"
          },
          "recommends": {
-            "PostgreSQL": "9.5.0"
+            "PostgreSQL": "9.6.0"
          }
       }
    },
@@ -24,7 +24,7 @@
      "pgddl": {
        "file": "ddl.sql",
        "docfile": "README.md",
-       "version": "0.8",
+       "version": "0.9",
        "abstract": "DDL Extractor Functions"
      }
    },
