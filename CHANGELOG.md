@@ -5,6 +5,10 @@ Version 0.9alpha
 - support for event triggers
 - support for foreign data wrappers
 - support for foreign servers
+- support for foreign user mappings
++ support for text search configurations (regconfig)
++ support for text search dictionaries (regdictionary)
+
 
 Version 0.8
 -----------

@@ -42,6 +42,7 @@ order by obj_description(oid) is null, oid::regprocedure::text;
  pg_ddlx_create_type_domain(regtype)      | 
  pg_ddlx_create_type_enum(regtype)        | 
  pg_ddlx_create_type_range(regtype)       | 
+ pg_ddlx_create_user_mapping(oid)         | 
  pg_ddlx_create_view(regclass)            | 
  pg_ddlx_drop_constraint(oid)             | 
  pg_ddlx_drop_default(oid)                | 

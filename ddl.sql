@@ -216,6 +216,18 @@ AS $function$
          quote_ident(srv.srvname) as sql_identifier
     FROM pg_foreign_server srv
    WHERE srv.oid = $1
+   UNION
+  SELECT ums.umid,
+         'pg_user_mapping'::regclass,
+         null as name,
+         null as namespace,
+         'USER MAPPING' as kind,
+         null as owner,
+         'USER MAPPING' as sql_kind,
+         'FOR '||quote_ident(ums.usename)||
+         ' SERVER '||quote_ident(ums.srvname) as sql_identifier
+    FROM pg_user_mappings ums
+   WHERE ums.umid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -1122,15 +1134,15 @@ AS $function$
     'CREATE FOREIGN DATA WRAPPER ' || quote_ident(obj.fdwname) || E'\n' ||
     case 
     when obj.fdwhandler is not null
-    then '  HANDLER ' || cast(obj.fdwhandler as regproc)
-    else '  NO HANDLER'
+    then 'HANDLER ' || cast(obj.fdwhandler as regproc)
+    else 'NO HANDLER'
     end || E'\n' ||
     case 
     when obj.fdwvalidator is not null
-    then '  VALIDATOR ' || cast(obj.fdwvalidator as regproc)
-    else '  NO VALIDATOR'
+    then 'VALIDATOR ' || cast(obj.fdwvalidator as regproc)
+    else 'NO VALIDATOR'
     end ||
-    coalesce(E'\n  OPTIONS (\n'||
+    coalesce(E'\nOPTIONS (\n'||
       (select string_agg(
               '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
               E',\n')
@@ -1148,19 +1160,38 @@ AS $function$
  with obj as (select * from pg_foreign_server where oid = $1)
  select
     'CREATE SERVER ' || quote_ident(obj.srvname) ||
-    coalesce(E'\n  TYPE ' || quote_literal(obj.srvtype),'') ||
-    coalesce(E'\n  VERSION ' || quote_literal(obj.srvversion),'') ||
-    E'\n  FOREIGN DATA WRAPPER ' || 
+    coalesce(E'\nTYPE ' || quote_literal(obj.srvtype),'') ||
+    coalesce(E'\nVERSION ' || quote_literal(obj.srvversion),'') ||
+    E'\nFOREIGN DATA WRAPPER ' || 
       (select quote_ident(fdwname)
          from pg_foreign_data_wrapper
         where oid = obj.srvfdw) ||
-    coalesce(E'\n  OPTIONS (\n'||
+    coalesce(E'\nOPTIONS (\n'||
       (select string_agg(
               '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
               E',\n')
          from pg_options_to_table(obj.srvoptions))||E'\n)'
     ,'') || E';\n' 
    from obj;
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddlx_create_user_mapping(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ with obj as (select * from pg_ddlx_identify($1))
+ select
+    'CREATE USER MAPPING ' || obj.sql_identifier ||
+    coalesce(E'\nOPTIONS (\n'||
+      (select string_agg(
+              '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
+              E',\n')
+         from pg_options_to_table(um.umoptions))||E'\n)'
+    ,'') || E';\n' 
+   from obj
+   join pg_user_mapping um ON um.oid = obj.oid;
 $function$  strict;
 
 ---------------------------------------------------
@@ -1530,6 +1561,8 @@ AS $function$
 	then pg_ddlx_create_foreign_data_wrapper(oid)
 	when 'pg_foreign_server'::regclass 
 	then pg_ddlx_create_server(oid)
+	when 'pg_user_mapping'::regclass 
+	then pg_ddlx_create_user_mapping(oid)
 	else
 	  case
 		when kind is not null
