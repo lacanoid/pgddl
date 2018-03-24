@@ -7,6 +7,8 @@ select oid::regprocedure,obj_description(oid) from pg_proc p where proname like 
 order by obj_description(oid) is null, oid::regprocedure::text;
  pg_ddlx_create(oid)                      | Get SQL definition for generic object id
  pg_ddlx_create(regclass)                 | Get SQL definition for a table, view, sequence or index
+ pg_ddlx_create(regconfig)                | Get SQL definition for a text search configuration
+ pg_ddlx_create(regdictionary)            | Get SQL definition for a text search dictionary
  pg_ddlx_create(regnamespace)             | Get SQL definition for a schema
  pg_ddlx_create(regoper)                  | Get SQL definition for an operator
  pg_ddlx_create(regoperator)              | Get SQL definition for an operator

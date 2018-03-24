@@ -35,3 +35,55 @@ select oid from pg_event_trigger
 
  
 drop event trigger ddlx_test_event_trigger;
+select pg_ddlx_create('english'::regconfig);
+                                    pg_ddlx_create                                     
+---------------------------------------------------------------------------------------
+ CREATE TEXT SEARCH CONFIGURATION english ( PARSER = pg_catalog."default" );          +
+ COMMENT ON TEXT SEARCH CONFIGURATION english IS 'configuration for english language';+
+ ALTER TEXT SEARCH CONFIGURATION english OWNER TO postgres;                           +
+ 
+(1 row)
+
+select pg_ddlx_drop('english'::regconfig);
+              pg_ddlx_drop               
+-----------------------------------------
+ DROP TEXT SEARCH CONFIGURATION english;+
+ 
+(1 row)
+
+select pg_ddlx_create('english_stem'::regdictionary);
+                                       pg_ddlx_create                                       
+--------------------------------------------------------------------------------------------
+ CREATE TEXT SEARCH DICTIONARY english_stem                                                +
+   ( TEMPLATE = pg_catalog.snowball, language = 'english', stopwords = 'english' );        +
+ COMMENT ON TEXT SEARCH DICTIONARY english_stem IS 'snowball stemmer for english language';+
+ ALTER TEXT SEARCH DICTIONARY english_stem OWNER TO postgres;                              +
+ 
+(1 row)
+
+select pg_ddlx_drop('english_stem'::regdictionary);
+               pg_ddlx_drop                
+-------------------------------------------
+ DROP TEXT SEARCH DICTIONARY english_stem;+
+ 
+(1 row)
+
+select pg_ddlx_create('simple'::regconfig);
+                               pg_ddlx_create                               
+----------------------------------------------------------------------------
+ CREATE TEXT SEARCH CONFIGURATION simple ( PARSER = pg_catalog."default" );+
+ COMMENT ON TEXT SEARCH CONFIGURATION simple IS 'simple configuration';    +
+ ALTER TEXT SEARCH CONFIGURATION simple OWNER TO postgres;                 +
+ 
+(1 row)
+
+select pg_ddlx_create('simple'::regdictionary);
+                                              pg_ddlx_create                                              
+----------------------------------------------------------------------------------------------------------
+ CREATE TEXT SEARCH DICTIONARY simple                                                                    +
+   ( TEMPLATE = pg_catalog.simple );                                                                     +
+ COMMENT ON TEXT SEARCH DICTIONARY simple IS 'simple dictionary: just lower case and check for stopword';+
+ ALTER TEXT SEARCH DICTIONARY simple OWNER TO postgres;                                                  +
+ 
+(1 row)
+

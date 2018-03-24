@@ -1,5 +1,7 @@
 \pset null _null_
 
+SET ROLE postgres;
+
 SET client_min_messages = warning;
 
 CREATE EXTENSION file_fdw;

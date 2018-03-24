@@ -25,3 +25,13 @@ select oid from pg_event_trigger
  where evtname = 'ddlx_test_event_trigger'));
  
 drop event trigger ddlx_test_event_trigger;
+
+select pg_ddlx_create('english'::regconfig);
+select pg_ddlx_drop('english'::regconfig);
+
+select pg_ddlx_create('english_stem'::regdictionary);
+select pg_ddlx_drop('english_stem'::regdictionary);
+
+select pg_ddlx_create('simple'::regconfig);
+select pg_ddlx_create('simple'::regdictionary);
+

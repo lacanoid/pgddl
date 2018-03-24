@@ -184,6 +184,28 @@ AS $function$
     FROM pg_ts_dict dict JOIN pg_namespace n ON n.oid=dict.dictnamespace
    WHERE dict.oid = $1
    UNION
+  SELECT prs.oid,
+         'pg_ts_parser'::regclass,
+         prs.prsname as name,
+         n.nspname as namespace,
+         'TEXT SEARCH PARSER' as kind,
+         null as owner,
+         'TEXT SEARCH PARSER' as sql_kind,
+         format('%I.%I',n.nspname,prs.prsname) as sql_identifier
+    FROM pg_ts_parser prs JOIN pg_namespace n ON n.oid=prs.prsnamespace
+   WHERE prs.oid = $1
+   UNION
+  SELECT tmpl.oid,
+         'pg_ts_template'::regclass,
+         tmpl.tmplname as name,
+         n.nspname as namespace,
+         'TEXT SEARCH TEMPLATE' as kind,
+         null as owner,
+         'TEXT SEARCH TEMPLATE' as sql_kind,
+         format('%I.%I',n.nspname,tmpl.tmplname) as sql_identifier
+    FROM pg_ts_template tmpl JOIN pg_namespace n ON n.oid=tmpl.tmplnamespace
+   WHERE tmpl.oid = $1
+   UNION
   SELECT evt.oid,
          'pg_event_trigger'::regclass,
          evt.evtname as name,
@@ -1148,6 +1170,8 @@ AS $function$
               E',\n')
          from pg_options_to_table(obj.fdwoptions))||E'\n)'
     ,'') || E';\n' 
+    || pg_ddlx_comment($1)
+    || pg_ddlx_alter_owner($1) 
    from obj;
 $function$  strict;
 
@@ -1172,6 +1196,8 @@ AS $function$
               E',\n')
          from pg_options_to_table(obj.srvoptions))||E'\n)'
     ,'') || E';\n' 
+    || pg_ddlx_comment($1)
+    || pg_ddlx_alter_owner($1) 
    from obj;
 $function$  strict;
 
@@ -1467,6 +1493,53 @@ COMMENT ON FUNCTION pg_ddlx_create(regoperator)
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION pg_ddlx_create(regconfig)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with cfg as (select * from pg_ts_config where oid = $1),
+     prs as (select * from pg_ddlx_identify(
+              (select p.oid 
+                 from pg_ts_parser p
+                 join cfg on p.oid = cfg.cfgparser
+             )))
+select format(E'CREATE TEXT SEARCH CONFIGURATION %s ( PARSER = %s );\n',
+              cast($1 as text),
+              prs.sql_identifier)
+	   || pg_ddlx_comment($1)
+       || pg_ddlx_alter_owner($1) 
+  from prs;
+$function$  strict;
+
+COMMENT ON FUNCTION pg_ddlx_create(regconfig) 
+     IS 'Get SQL definition for a text search configuration';
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION pg_ddlx_create(regdictionary)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with dict as (select * from pg_ts_dict where oid = $1),
+     tmpl as (select * from pg_ddlx_identify(
+              (select t.oid 
+                 from pg_ts_template t
+                 join dict on t.oid = dict.dicttemplate
+             )))
+select format(E'CREATE TEXT SEARCH DICTIONARY %s\n  ( TEMPLATE = %s%s );\n',
+       cast($1 as text),
+       tmpl.sql_identifier,
+       ', '||dict.dictinitoption)
+	   || pg_ddlx_comment($1)
+       || pg_ddlx_alter_owner($1) 
+  from dict,tmpl;
+$function$  strict;
+
+COMMENT ON FUNCTION pg_ddlx_create(regdictionary) 
+     IS 'Get SQL definition for a text search dictionary';
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION pg_ddlx_create(regnamespace)
  RETURNS text
  LANGUAGE sql
@@ -1549,6 +1622,10 @@ AS $function$
 	then pg_ddlx_create(oid::regrole)
 	when 'pg_namespace'::regclass 
 	then pg_ddlx_create(oid::regnamespace)
+	when 'pg_ts_config'::regclass 
+	then pg_ddlx_create(oid::regconfig)
+	when 'pg_ts_dict'::regclass 
+	then pg_ddlx_create(oid::regdictionary)
 	when 'pg_constraint'::regclass 
 	then pg_ddlx_create_constraint(oid)
 	when 'pg_trigger'::regclass 
