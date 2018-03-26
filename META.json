@@ -1,7 +1,7 @@
 {
    "name": "pgddl",
    "abstract": "DDL Extractor Functions",
-   "description": "A set of SQL only functions for recreatimng DDL for object in a database",
+   "description": "A set of SQL only functions for recreating DDL for objects in a database",
    "version": "0.9",
    "maintainer": [
       "Ziga Kranjec <ziga@ljudmila.org>"
