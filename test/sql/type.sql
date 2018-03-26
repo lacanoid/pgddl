@@ -18,7 +18,7 @@ comment on column test_type_c.i is 'my class class column i';
 select pg_ddlx_script('test_type_c'::regtype);
 select pg_ddlx_script('test_type_c'::regclass);
 
-create domain test_collation_d text collate "en_US" default '***';
+create domain test_collation_d text collate "C" default '***';
 select pg_ddlx_script('test_collation_d'::regtype);
 
 select pg_ddlx_script('int'::regtype);

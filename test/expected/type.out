@@ -89,7 +89,7 @@ ALTER TYPE test_type_c OWNER TO postgres;
 END;
 
 (1 row)
-create domain test_collation_d text collate "en_US" default '***';
+create domain test_collation_d text collate "C" default '***';
 select pg_ddlx_script('test_collation_d'::regtype);
 pg_ddlx_script
 BEGIN;
@@ -98,7 +98,7 @@ BEGIN;
 -- DROP DOMAIN test_collation_d;
 
 CREATE DOMAIN test_collation_d AS text
-  COLLATE "en_US.utf8"
+  COLLATE "C"
   DEFAULT '***'::text;
 
 COMMENT ON DOMAIN test_collation_d IS NULL;
