@@ -2,6 +2,7 @@
 \pset format unaligned
 
 SET client_min_messages = warning;
+SET ROLE postgres;
 
 create type test_type_e as enum ('foo','bar','baz','qux');
 comment on type test_type_e is 'my enum';

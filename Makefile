@@ -6,7 +6,7 @@ extension_version = 0.9
 EXTENSION = ddl
 DATA_built = ddl--$(extension_version).sql
 
-REGRESS = init role type class fdw script misc
+REGRESS = init role type class fdw misc script 
 REGRESS_OPTS = --inputdir=test
 
 PGXS := $(shell $(PG_CONFIG) --pgxs)

@@ -13,7 +13,7 @@ DROP VIEW test_class_v_opt1;
 
 -- DROP VIEW test_class_v;
 
--- Type: VIEW ; Name: test_class_v; Owner: root
+-- Type: VIEW ; Name: test_class_v; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v AS
  SELECT test_class_r.a,
@@ -31,12 +31,12 @@ COMMENT ON VIEW test_class_v IS NULL;
 
 ALTER VIEW test_class_v SET (check_option='cascaded');
 
-ALTER VIEW test_class_v OWNER TO root;
+ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 
 -- SECTION CREATE DEPENDANTS
 
--- Type: VIEW ; Name: test_class_v_opt1; Owner: root
+-- Type: VIEW ; Name: test_class_v_opt1; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt1 AS
  SELECT test_class_v.a,
@@ -55,9 +55,9 @@ COMMENT ON VIEW test_class_v_opt1 IS NULL;
 
 ALTER VIEW test_class_v_opt1 SET (security_barrier='true');
 
-ALTER VIEW test_class_v_opt1 OWNER TO root;
+ALTER VIEW test_class_v_opt1 OWNER TO postgres;
 
--- Type: VIEW ; Name: test_class_v_opt2; Owner: root
+-- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
  SELECT test_class_v.a,
@@ -76,7 +76,7 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
-ALTER VIEW test_class_v_opt2 OWNER TO root;
+ALTER VIEW test_class_v_opt2 OWNER TO postgres;
 END;
 
 (1 row)

@@ -2,6 +2,7 @@
 \pset format unaligned
 
 SET client_min_messages = warning;
+SET ROLE postgres;
 
 select kind, sql_identifier from pg_ddlx_identify('pg_ddlx_identify(oid)'::regprocedure);
 
@@ -61,7 +62,6 @@ create unique index test_class_mi ON test_class_m (a);
 SELECT pg_ddlx_script('test_class_m'::regclass);
 
 select kind, sql_identifier from pg_ddlx_identify('pg_ddlx_identify(oid)'::regprocedure);
-SELECT pg_ddlx_script('pg_ddlx_comment(oid)'::regprocedure);
 
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
 $$ select 3.14, 'now'::text $$ language sql cost 123 rows 19
@@ -71,6 +71,7 @@ comment on function funfun(int,text) is 'Use more comments!';
 
 select * from funfun(1);
 SELECT pg_ddlx_script('funfun'::regproc);
+SELECT pg_ddlx_script('funfun(int,text)'::regprocedure);
 
 create sequence test_type_S increment 4 start 2;
 comment on sequence test_type_S is 'interleave';

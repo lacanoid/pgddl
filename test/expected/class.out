@@ -1,6 +1,7 @@
 \pset null _null_
 \pset format unaligned
 SET client_min_messages = warning;
+SET ROLE postgres;
 select kind, sql_identifier from pg_ddlx_identify('pg_ddlx_identify(oid)'::regprocedure);
 kind|sql_identifier
 FUNCTION|pg_ddlx_identify(oid)
@@ -43,7 +44,7 @@ ALTER TABLE test_class_r DROP CONSTRAINT test_class_r_c_check;
 
 -- DROP TABLE test_class_r;
 
--- Type: TABLE ; Name: test_class_r; Owner: root
+-- Type: TABLE ; Name: test_class_r; Owner: postgres
 
 CREATE TABLE test_class_r (
     a integer NOT NULL,
@@ -75,7 +76,7 @@ CREATE INDEX idx2 ON test_class_r USING gin (v);
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 
-ALTER TABLE test_class_r OWNER TO root;
+ALTER TABLE test_class_r OWNER TO postgres;
 GRANT INSERT ON test_class_r TO PUBLIC;
 GRANT SELECT ON test_class_r TO PUBLIC;
 GRANT UPDATE ON test_class_r TO PUBLIC;
@@ -101,7 +102,7 @@ BEGIN;
 
 -- DROP TYPE test_class_r;
 
--- Type: TABLE ; Name: test_class_r; Owner: root
+-- Type: TABLE ; Name: test_class_r; Owner: postgres
 
 CREATE TABLE test_class_r (
     a integer NOT NULL,
@@ -133,7 +134,7 @@ CREATE INDEX idx2 ON test_class_r USING gin (v);
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 
-ALTER TABLE test_class_r OWNER TO root;
+ALTER TABLE test_class_r OWNER TO postgres;
 GRANT INSERT ON test_class_r TO PUBLIC;
 GRANT SELECT ON test_class_r TO PUBLIC;
 GRANT UPDATE ON test_class_r TO PUBLIC;
@@ -151,7 +152,7 @@ BEGIN;
 
 -- DROP INDEX idx1;
 
--- Type: INDEX ; Name: idx1; Owner: root
+-- Type: INDEX ; Name: idx1; Owner: postgres
 
 CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 
@@ -167,7 +168,7 @@ BEGIN;
 
 -- DROP INDEX idx2;
 
--- Type: INDEX ; Name: idx2; Owner: root
+-- Type: INDEX ; Name: idx2; Owner: postgres
 
 CREATE INDEX idx2 ON test_class_r USING gin (v);
 
@@ -197,7 +198,7 @@ ALTER TABLE test_class_r2 ALTER i DROP DEFAULT;
 
 -- DROP TABLE test_class_r2;
 
--- Type: TABLE ; Name: test_class_r2; Owner: root
+-- Type: TABLE ; Name: test_class_r2; Owner: postgres
 
 CREATE UNLOGGED TABLE test_class_r2 (
     i integer NOT NULL,
@@ -214,7 +215,7 @@ ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::reg
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah
   FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED;
 
-ALTER TABLE test_class_r2 OWNER TO root;
+ALTER TABLE test_class_r2 OWNER TO postgres;
 
 -- SECTION CREATE DEPENDANTS
 
@@ -234,7 +235,7 @@ BEGIN;
 
 -- DROP VIEW test_class_v;
 
--- Type: VIEW ; Name: test_class_v; Owner: root
+-- Type: VIEW ; Name: test_class_v; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v AS
  SELECT test_class_r.a,
@@ -252,7 +253,7 @@ COMMENT ON VIEW test_class_v IS NULL;
 
 ALTER VIEW test_class_v SET (check_option='cascaded');
 
-ALTER VIEW test_class_v OWNER TO root;
+ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 END;
 
@@ -264,7 +265,7 @@ BEGIN;
 
 -- DROP TYPE test_class_v;
 
--- Type: VIEW ; Name: test_class_v; Owner: root
+-- Type: VIEW ; Name: test_class_v; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v AS
  SELECT test_class_r.a,
@@ -282,7 +283,7 @@ COMMENT ON VIEW test_class_v IS NULL;
 
 ALTER VIEW test_class_v SET (check_option='cascaded');
 
-ALTER VIEW test_class_v OWNER TO root;
+ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 END;
 
@@ -297,7 +298,7 @@ BEGIN;
 
 -- DROP MATERIALIZED VIEW test_class_m;
 
--- Type: MATERIALIZED VIEW ; Name: test_class_m; Owner: root
+-- Type: MATERIALIZED VIEW ; Name: test_class_m; Owner: postgres
 
 CREATE MATERIALIZED VIEW test_class_m AS
  SELECT test_class_r.a,
@@ -315,43 +316,13 @@ COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;
 
 CREATE UNIQUE INDEX test_class_mi ON test_class_m USING btree (a);
 
-ALTER MATERIALIZED VIEW test_class_m OWNER TO root;
+ALTER MATERIALIZED VIEW test_class_m OWNER TO postgres;
 END;
 
 (1 row)
 select kind, sql_identifier from pg_ddlx_identify('pg_ddlx_identify(oid)'::regprocedure);
 kind|sql_identifier
 FUNCTION|pg_ddlx_identify(oid)
-(1 row)
-SELECT pg_ddlx_script('pg_ddlx_comment(oid)'::regprocedure);
-pg_ddlx_script
-BEGIN;
--- SECTION MAIN
-
--- DROP FUNCTION pg_ddlx_comment(oid);
-
--- Type: FUNCTION ; Name: pg_ddlx_comment(oid); Owner: root
-
-CREATE OR REPLACE FUNCTION public.pg_ddlx_comment(oid)
- RETURNS text
- LANGUAGE sql
- STRICT
-AS $function$
- with obj as (select * from pg_ddlx_identify($1))
- select format(
-          E'COMMENT ON %s %s IS %L;\n',
-          obj.sql_kind, sql_identifier, obj_description(oid))
-   from obj
-$function$;
-
-COMMENT ON FUNCTION pg_ddlx_comment(oid) IS NULL;
-
-ALTER FUNCTION pg_ddlx_comment(oid) OWNER TO root;
-REVOKE ALL ON FUNCTION pg_ddlx_comment(oid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION pg_ddlx_comment(oid) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION pg_ddlx_comment(oid) TO root WITH GRANT OPTION;
-END;
-
 (1 row)
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
 $$ select 3.14, 'now'::text $$ language sql cost 123 rows 19
@@ -369,7 +340,7 @@ BEGIN;
 
 -- DROP FUNCTION funfun(integer,text);
 
--- Type: FUNCTION ; Name: funfun(integer,text); Owner: root
+-- Type: FUNCTION ; Name: funfun(integer,text); Owner: postgres
 
 CREATE OR REPLACE FUNCTION public.funfun(a integer, b text DEFAULT NULL::text, OUT c numeric, OUT d text)
  RETURNS SETOF record
@@ -380,10 +351,35 @@ AS $function$ select 3.14, 'now'::text $function$;
 
 COMMENT ON FUNCTION funfun(integer,text) IS 'Use more comments!';
 
-ALTER FUNCTION funfun(integer,text) OWNER TO root;
+ALTER FUNCTION funfun(integer,text) OWNER TO postgres;
 REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION funfun(integer,text) TO root WITH GRANT OPTION;
+GRANT EXECUTE ON FUNCTION funfun(integer,text) TO postgres WITH GRANT OPTION;
+END;
+
+(1 row)
+SELECT pg_ddlx_script('funfun(int,text)'::regprocedure);
+pg_ddlx_script
+BEGIN;
+-- SECTION MAIN
+
+-- DROP FUNCTION funfun(integer,text);
+
+-- Type: FUNCTION ; Name: funfun(integer,text); Owner: postgres
+
+CREATE OR REPLACE FUNCTION public.funfun(a integer, b text DEFAULT NULL::text, OUT c numeric, OUT d text)
+ RETURNS SETOF record
+ LANGUAGE sql
+ COST 123 ROWS 19
+ SET xmloption TO 'content'
+AS $function$ select 3.14, 'now'::text $function$;
+
+COMMENT ON FUNCTION funfun(integer,text) IS 'Use more comments!';
+
+ALTER FUNCTION funfun(integer,text) OWNER TO postgres;
+REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION funfun(integer,text) TO postgres WITH GRANT OPTION;
 END;
 
 (1 row)
@@ -396,7 +392,7 @@ BEGIN;
 
 -- DROP SEQUENCE test_type_s;
 
--- Type: SEQUENCE ; Name: test_type_s; Owner: root
+-- Type: SEQUENCE ; Name: test_type_s; Owner: postgres
 
 CREATE SEQUENCE test_type_s;
 ALTER SEQUENCE test_type_s
@@ -408,7 +404,7 @@ ALTER SEQUENCE test_type_s
 
 COMMENT ON SEQUENCE test_type_s IS 'interleave';
 
-ALTER SEQUENCE test_type_s OWNER TO root;
+ALTER SEQUENCE test_type_s OWNER TO postgres;
 END;
 
 (1 row)
@@ -430,7 +426,7 @@ ALTER TABLE test_collation ALTER id DROP DEFAULT;
 
 -- DROP TABLE test_collation;
 
--- Type: TABLE ; Name: test_collation; Owner: root
+-- Type: TABLE ; Name: test_collation; Owner: postgres
 
 CREATE TABLE test_collation (
     id integer NOT NULL,
@@ -443,7 +439,7 @@ COMMENT ON TABLE test_collation IS NULL;
 
 ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
 
-ALTER TABLE test_collation OWNER TO root;
+ALTER TABLE test_collation OWNER TO postgres;
 
 -- SECTION CREATE DEPENDANTS
 
@@ -464,7 +460,7 @@ BEGIN;
 
 -- DROP VIEW test_class_v_opt1;
 
--- Type: VIEW ; Name: test_class_v_opt1; Owner: root
+-- Type: VIEW ; Name: test_class_v_opt1; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt1 AS
  SELECT test_class_v.a,
@@ -483,7 +479,7 @@ COMMENT ON VIEW test_class_v_opt1 IS NULL;
 
 ALTER VIEW test_class_v_opt1 SET (security_barrier='true');
 
-ALTER VIEW test_class_v_opt1 OWNER TO root;
+ALTER VIEW test_class_v_opt1 OWNER TO postgres;
 END;
 
 (1 row)
@@ -494,7 +490,7 @@ BEGIN;
 
 -- DROP VIEW test_class_v_opt2;
 
--- Type: VIEW ; Name: test_class_v_opt2; Owner: root
+-- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
  SELECT test_class_v.a,
@@ -513,7 +509,7 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
-ALTER VIEW test_class_v_opt2 OWNER TO root;
+ALTER VIEW test_class_v_opt2 OWNER TO postgres;
 END;
 
 (1 row)
@@ -524,7 +520,7 @@ BEGIN;
 
 -- DROP VIEW test_class_v_opt2;
 
--- Type: VIEW ; Name: test_class_v_opt2; Owner: root
+-- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
  SELECT test_class_v.a,
@@ -543,7 +539,7 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
-ALTER VIEW test_class_v_opt2 OWNER TO root;
+ALTER VIEW test_class_v_opt2 OWNER TO postgres;
 END;
 
 (1 row)
@@ -554,7 +550,7 @@ BEGIN;
 
 -- DROP TYPE test_class_v_opt2;
 
--- Type: VIEW ; Name: test_class_v_opt2; Owner: root
+-- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
  SELECT test_class_v.a,
@@ -573,7 +569,7 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
-ALTER VIEW test_class_v_opt2 OWNER TO root;
+ALTER VIEW test_class_v_opt2 OWNER TO postgres;
 END;
 
 (1 row)
@@ -586,7 +582,7 @@ BEGIN;
 
 -- DROP FUNCTION test_proc_1();
 
--- Type: FUNCTION ; Name: test_proc_1(); Owner: root
+-- Type: FUNCTION ; Name: test_proc_1(); Owner: postgres
 
 CREATE OR REPLACE FUNCTION public.test_proc_1()
  RETURNS text
@@ -595,10 +591,10 @@ AS $function$ select 'Hello, world!'::text $function$;
 
 COMMENT ON FUNCTION test_proc_1() IS NULL;
 
-ALTER FUNCTION test_proc_1() OWNER TO root;
+ALTER FUNCTION test_proc_1() OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
+GRANT EXECUTE ON FUNCTION test_proc_1() TO postgres WITH GRANT OPTION;
 END;
 
 (1 row)
@@ -609,7 +605,7 @@ BEGIN;
 
 -- DROP FUNCTION test_proc_1();
 
--- Type: FUNCTION ; Name: test_proc_1(); Owner: root
+-- Type: FUNCTION ; Name: test_proc_1(); Owner: postgres
 
 CREATE OR REPLACE FUNCTION public.test_proc_1()
  RETURNS text
@@ -618,10 +614,10 @@ AS $function$ select 'Hello, world!'::text $function$;
 
 COMMENT ON FUNCTION test_proc_1() IS NULL;
 
-ALTER FUNCTION test_proc_1() OWNER TO root;
+ALTER FUNCTION test_proc_1() OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
+GRANT EXECUTE ON FUNCTION test_proc_1() TO postgres WITH GRANT OPTION;
 END;
 
 (1 row)
@@ -632,7 +628,7 @@ BEGIN;
 
 -- DROP FUNCTION test_proc_1();
 
--- Type: FUNCTION ; Name: test_proc_1(); Owner: root
+-- Type: FUNCTION ; Name: test_proc_1(); Owner: postgres
 
 CREATE OR REPLACE FUNCTION public.test_proc_1()
  RETURNS text
@@ -641,10 +637,10 @@ AS $function$ select 'Hello, world!'::text $function$;
 
 COMMENT ON FUNCTION test_proc_1() IS NULL;
 
-ALTER FUNCTION test_proc_1() OWNER TO root;
+ALTER FUNCTION test_proc_1() OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_1() TO root WITH GRANT OPTION;
+GRANT EXECUTE ON FUNCTION test_proc_1() TO postgres WITH GRANT OPTION;
 END;
 
 (1 row)
@@ -659,7 +655,7 @@ BEGIN;
 
 -- DROP AGGREGATE test_proc_agg_1(text);
 
--- Type: AGGREGATE ; Name: test_proc_agg_1(text); Owner: root
+-- Type: AGGREGATE ; Name: test_proc_agg_1(text); Owner: postgres
 
 CREATE AGGREGATE test_proc_agg_1(text) (
   SFUNC = textcat,
@@ -669,10 +665,10 @@ CREATE AGGREGATE test_proc_agg_1(text) (
 
 COMMENT ON AGGREGATE test_proc_agg_1(text) IS NULL;
 
-ALTER AGGREGATE test_proc_agg_1(text) OWNER TO root;
+ALTER AGGREGATE test_proc_agg_1(text) OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_agg_1(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO root WITH GRANT OPTION;
+GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO postgres WITH GRANT OPTION;
 END;
 
 (1 row)
@@ -688,7 +684,7 @@ BEGIN;
 
 -- DROP AGGREGATE test_proc_agg_2(anyelement);
 
--- Type: AGGREGATE ; Name: test_proc_agg_2(anyelement); Owner: root
+-- Type: AGGREGATE ; Name: test_proc_agg_2(anyelement); Owner: postgres
 
 CREATE AGGREGATE test_proc_agg_2(anyelement) (
   SFUNC = array_append,
@@ -699,10 +695,10 @@ CREATE AGGREGATE test_proc_agg_2(anyelement) (
 
 COMMENT ON AGGREGATE test_proc_agg_2(anyelement) IS NULL;
 
-ALTER AGGREGATE test_proc_agg_2(anyelement) OWNER TO root;
+ALTER AGGREGATE test_proc_agg_2(anyelement) OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_agg_2(anyelement) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO root WITH GRANT OPTION;
+GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO postgres WITH GRANT OPTION;
 END;
 
 (1 row)

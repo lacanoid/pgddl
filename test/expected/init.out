@@ -4,7 +4,7 @@ CREATE EXTENSION ddl;
  ddl  | 0.9     | public | DDL extractor functions
 
 select oid::regprocedure,obj_description(oid) from pg_proc p where proname like 'pg_ddlx_%'
-order by obj_description(oid) is null, oid::regprocedure::text;
+order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "C";
  pg_ddlx_create(oid)                      | Get SQL definition for generic object id
  pg_ddlx_create(regclass)                 | Get SQL definition for a table, view, sequence or index
  pg_ddlx_create(regconfig)                | Get SQL definition for a text search configuration
@@ -31,8 +31,8 @@ order by obj_description(oid) is null, oid::regprocedure::text;
  pg_ddlx_create_event_trigger(oid)        | 
  pg_ddlx_create_foreign_data_wrapper(oid) | 
  pg_ddlx_create_function(regproc)         | 
- pg_ddlx_create_indexes(regclass)         | 
  pg_ddlx_create_index(regclass)           | 
+ pg_ddlx_create_indexes(regclass)         | 
  pg_ddlx_create_role(regrole)             | 
  pg_ddlx_create_rules(regclass)           | 
  pg_ddlx_create_sequence(regclass)        | 

@@ -8,6 +8,7 @@ Version 0.9alpha
 - support for foreign user mappings
 - support for text search configurations (regconfig)
 - support for text search dictionaries (regdictionary)
+- improved regression tests
 
 Version 0.8
 -----------
