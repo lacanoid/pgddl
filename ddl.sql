@@ -1142,6 +1142,8 @@ AS $function$
     else ''
     end ||
     '  EXECUTE PROCEDURE ' || cast(obj.evtfoid as regprocedure) || E';\n'
+    || pg_ddlx_comment($1)
+    || pg_ddlx_alter_owner($1) 
    from obj;
 $function$  strict;
 
