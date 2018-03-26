@@ -80,7 +80,6 @@ select pg_ddlx_script('test_type_S'::regclass);
 create table test_collation (
 	id serial,
 	c text collate "C" not null,
-	en text collate "en_US",
 	t text
 );
 select pg_ddlx_script('test_collation'::regclass);

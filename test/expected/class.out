@@ -411,7 +411,6 @@ END;
 create table test_collation (
 	id serial,
 	c text collate "C" not null,
-	en text collate "en_US",
 	t text
 );
 select pg_ddlx_script('test_collation'::regclass);
@@ -431,7 +430,6 @@ ALTER TABLE test_collation ALTER id DROP DEFAULT;
 CREATE TABLE test_collation (
     id integer NOT NULL,
     c text COLLATE "C" NOT NULL,
-    en text COLLATE "en_US.utf8",
     t text
 );
 
