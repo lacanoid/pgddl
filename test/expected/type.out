@@ -106,18 +106,49 @@ ALTER DOMAIN test_collation_d OWNER TO postgres;
 END;
 
 (1 row)
-select pg_ddlx_script('int'::regtype);
-pg_ddlx_script
-BEGIN;
--- SECTION MAIN
-
--- DROP TYPE integer;
-
-CREATE TYPE integer (
-  INPUT = int4in,
-  OUTPUT = int4out,
-  SEND = int4send,
-  RECEIVE = int4recv,
+create type int_t;
+CREATE OR REPLACE FUNCTION int_t4in(cstring)
+ RETURNS int_t
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$int4in$function$;
+CREATE OR REPLACE FUNCTION int_t4out(int_t)
+ RETURNS cstring
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$int4out$function$;
+CREATE OR REPLACE FUNCTION int_t4send(int_t)
+ RETURNS bytea
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$int4send$function$;
+CREATE OR REPLACE FUNCTION int_t4recv(internal)
+ RETURNS int_t
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$int4recv$function$;
+CREATE TYPE int_t (
+  INPUT = int_t4in,
+  OUTPUT = int_t4out,
+  SEND = int_t4send,
+  RECEIVE = int_t4recv,
+  INTERNALLENGTH = 4,
+  PASSEDBYVALUE,
+  ALIGNMENT = int4,
+  STORAGE = plain,
+  CATEGORY = 'N',
+  DELIMITER = ',',
+  COLLATABLE = false
+);
+COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)';
+ALTER TYPE int_t OWNER TO postgres;
+select pg_ddlx_create('int_t'::regtype);
+pg_ddlx_create
+CREATE TYPE int_t (
+  INPUT = int_t4in,
+  OUTPUT = int_t4out,
+  SEND = int_t4send,
+  RECEIVE = int_t4recv,
   INTERNALLENGTH = 4,
   PASSEDBYVALUE,
   ALIGNMENT = int4,
@@ -127,19 +158,13 @@ CREATE TYPE integer (
   COLLATABLE = false
 );
 
-COMMENT ON TYPE integer IS '-2 billion to 2 billion integer, 4-byte storage';
-ALTER TYPE integer OWNER TO postgres;
-END;
+COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)';
+ALTER TYPE int_t OWNER TO postgres;
 
 (1 row)
-select pg_ddlx_script('int[]'::regtype);
-pg_ddlx_script
-BEGIN;
--- SECTION MAIN
-
--- DROP TYPE integer[];
-
-CREATE TYPE integer[] (
+select pg_ddlx_create('int_t[]'::regtype);
+pg_ddlx_create
+CREATE TYPE int_t[] (
   INPUT = array_in,
   OUTPUT = array_out,
   SEND = array_send,
@@ -149,156 +174,18 @@ CREATE TYPE integer[] (
   ALIGNMENT = int4,
   STORAGE = extended,
   CATEGORY = 'A',
-  ELEMENT = integer,
+  ELEMENT = int_t,
   DELIMITER = ',',
   COLLATABLE = false
 );
 
-COMMENT ON TYPE integer[] IS NULL;
-ALTER TYPE integer[] OWNER TO postgres;
-END;
+COMMENT ON TYPE int_t[] IS NULL;
+ALTER TYPE int_t[] OWNER TO postgres;
 
 (1 row)
-select pg_ddlx_script('uuid'::regtype);
-pg_ddlx_script
-BEGIN;
--- SECTION MAIN
-
--- DROP TYPE uuid;
-
-CREATE TYPE uuid (
-  INPUT = uuid_in,
-  OUTPUT = uuid_out,
-  SEND = uuid_send,
-  RECEIVE = uuid_recv,
-  INTERNALLENGTH = 16,
-  ALIGNMENT = char,
-  STORAGE = plain,
-  CATEGORY = 'U',
-  DELIMITER = ',',
-  COLLATABLE = false
-);
-
-COMMENT ON TYPE uuid IS 'UUID datatype';
-ALTER TYPE uuid OWNER TO postgres;
-END;
-
-(1 row)
-select pg_ddlx_script('text'::regtype);
-pg_ddlx_script
-BEGIN;
--- SECTION MAIN
-
--- DROP TYPE text;
-
-CREATE TYPE text (
-  INPUT = textin,
-  OUTPUT = textout,
-  SEND = textsend,
-  RECEIVE = textrecv,
-  INTERNALLENGTH = VARIABLE,
-  ALIGNMENT = int4,
-  STORAGE = extended,
-  CATEGORY = 'S',
-  PREFERRED = true,
-  DELIMITER = ',',
-  COLLATABLE = true
-);
-
-COMMENT ON TYPE text IS 'variable-length string, no limit specified';
-ALTER TYPE text OWNER TO postgres;
-END;
-
-(1 row)
-select pg_ddlx_script('xml'::regtype);
-pg_ddlx_script
-BEGIN;
--- SECTION MAIN
-
--- DROP TYPE xml;
-
-CREATE TYPE xml (
-  INPUT = xml_in,
-  OUTPUT = xml_out,
-  SEND = xml_send,
-  RECEIVE = xml_recv,
-  INTERNALLENGTH = VARIABLE,
-  ALIGNMENT = int4,
-  STORAGE = extended,
-  CATEGORY = 'U',
-  DELIMITER = ',',
-  COLLATABLE = false
-);
-
-COMMENT ON TYPE xml IS 'XML content';
-ALTER TYPE xml OWNER TO postgres;
-END;
-
-(1 row)
+/*
 select pg_ddlx_script('daterange'::regtype);
-pg_ddlx_script
-BEGIN;
--- SECTION MAIN
 
--- DROP TYPE daterange;
-
-CREATE TYPE daterange AS RANGE (
-  SUBTYPE = date,
-  SUBTYPE_OPCLASS = date_ops,
-  CANONICAL = daterange_canonical,
-  SUBTYPE_DIFF = daterange_subdiff
-);
-
-COMMENT ON TYPE daterange IS 'range of dates';
-ALTER TYPE daterange OWNER TO postgres;
-END;
-
-(1 row)
 select pg_ddlx_script('=(integer,integer)'::regoperator);
-pg_ddlx_script
-BEGIN;
--- SECTION MAIN
-
--- DROP OPERATOR =(integer,integer);
-
-CREATE OPERATOR pg_catalog.= (
-  PROCEDURE = int4eq,
-  LEFTARG = integer,
-  RIGHTARG = integer,
-  COMMUTATOR = OPERATOR(pg_catalog.=),
-  NEGATOR = OPERATOR(pg_catalog.<>),
-  RESTRICT = eqsel,
-  JOIN = eqjoinsel,
-  HASHES,
-  MERGES
-);
-
-COMMENT ON OPERATOR =(integer,integer) IS 'equal';
-ALTER OPERATOR =(integer,integer) OWNER TO postgres;
-END;
-
-(1 row)
 select pg_ddlx_script('=(text,text)'::regoperator);
-pg_ddlx_script
-BEGIN;
--- SECTION MAIN
-
--- DROP OPERATOR =(text,text);
-
-CREATE OPERATOR pg_catalog.= (
-  PROCEDURE = texteq,
-  LEFTARG = text,
-  RIGHTARG = text,
-  COMMUTATOR = OPERATOR(pg_catalog.=),
-  NEGATOR = OPERATOR(pg_catalog.<>),
-  RESTRICT = eqsel,
-  JOIN = eqjoinsel,
-  HASHES,
-  MERGES
-);
-
-COMMENT ON OPERATOR =(text,text) IS 'equal';
-ALTER OPERATOR =(text,text) OWNER TO postgres;
-END;
-
-(1 row)
+*/

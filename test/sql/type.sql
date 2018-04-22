@@ -21,14 +21,55 @@ select pg_ddlx_script('test_type_c'::regclass);
 create domain test_collation_d text collate "C" default '***';
 select pg_ddlx_script('test_collation_d'::regtype);
 
-select pg_ddlx_script('int'::regtype);
-select pg_ddlx_script('int[]'::regtype);
-select pg_ddlx_script('uuid'::regtype);
-select pg_ddlx_script('text'::regtype);
-select pg_ddlx_script('xml'::regtype);
+create type int_t;
 
+CREATE OR REPLACE FUNCTION int_t4in(cstring)
+ RETURNS int_t
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$int4in$function$;
+
+CREATE OR REPLACE FUNCTION int_t4out(int_t)
+ RETURNS cstring
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$int4out$function$;
+
+CREATE OR REPLACE FUNCTION int_t4send(int_t)
+ RETURNS bytea
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$int4send$function$;
+
+CREATE OR REPLACE FUNCTION int_t4recv(internal)
+ RETURNS int_t
+ LANGUAGE internal
+ IMMUTABLE PARALLEL SAFE STRICT
+AS $function$int4recv$function$;
+
+CREATE TYPE int_t (
+  INPUT = int_t4in,
+  OUTPUT = int_t4out,
+  SEND = int_t4send,
+  RECEIVE = int_t4recv,
+  INTERNALLENGTH = 4,
+  PASSEDBYVALUE,
+  ALIGNMENT = int4,
+  STORAGE = plain,
+  CATEGORY = 'N',
+  DELIMITER = ',',
+  COLLATABLE = false
+);
+
+COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)';
+ALTER TYPE int_t OWNER TO postgres;
+
+select pg_ddlx_create('int_t'::regtype);
+select pg_ddlx_create('int_t[]'::regtype);
+
+/*
 select pg_ddlx_script('daterange'::regtype);
-
 
 select pg_ddlx_script('=(integer,integer)'::regoperator);
 select pg_ddlx_script('=(text,text)'::regoperator);
+*/
