@@ -85,7 +85,8 @@ The API provides three public user functions:
 - `pg_ddlx_script(oid)` - builds SQL DDL scripts of entire dependancy trees
 
 Currently supported object types are 
-`regtype`,`regclass`,`regproc(edure)`,`regoper(ator)` and `regrole`. 
+`regtype`, `regclass`, `regproc(edure)`, `regoper(ator)`, `regrole`,
+`regconfig` and `regdictionary`.
 You will probably want to cast object name or oid to the appropriate type.
 
 - `pg_ddlx_create(regtype) returns text`
@@ -110,7 +111,15 @@ You will probably want to cast object name or oid to the appropriate type.
 
 - `pg_ddlx_create(regrole) returns text`
 
-    Generates SQL DDL definition for role (user or group) `regrole`.
+    Generates SQL DDL source for role (user or group) `regrole`.
+    
+- `pg_ddlx_create(regconfig) returns text`
+
+    Generates SQL DDL source for text search configuration `regconfig`.
+    
+- `pg_ddlx_create(regdictionary) returns text`
+
+    Generates SQL DDL source for text search dictionary `regdictionary`.
     
 
 There is also a convenience function to use `oid` directly, without casting:

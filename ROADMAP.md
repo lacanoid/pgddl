@@ -49,6 +49,7 @@ Support for other missing options:
 
 Other:
 - compiler from one source to specific pg version
+- handle dependancies for type better (use shell types)
 - improve and add to simple tests
 - make some tests to test if what we output actually runs, test execute them
 - make some tests which compare to output of pg_dump for any sql file:
