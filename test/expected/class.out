@@ -71,8 +71,8 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
   CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
 
-CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
-CREATE INDEX idx2 ON test_class_r USING gin (v);
+CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
+CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 
@@ -129,8 +129,8 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
   CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
 
-CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
-CREATE INDEX idx2 ON test_class_r USING gin (v);
+CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
+CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 
@@ -154,7 +154,7 @@ BEGIN;
 
 -- Type: INDEX ; Name: idx1; Owner: postgres
 
-CREATE UNIQUE INDEX idx1 ON test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
+CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 
 COMMENT ON INDEX idx1 IS NULL;
 
@@ -170,7 +170,7 @@ BEGIN;
 
 -- Type: INDEX ; Name: idx2; Owner: postgres
 
-CREATE INDEX idx2 ON test_class_r USING gin (v);
+CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 
 COMMENT ON INDEX idx2 IS NULL;
 
@@ -314,7 +314,7 @@ CREATE MATERIALIZED VIEW test_class_m AS
 
 COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;
 
-CREATE UNIQUE INDEX test_class_mi ON test_class_m USING btree (a);
+CREATE UNIQUE INDEX test_class_mi ON public.test_class_m USING btree (a);
 
 ALTER MATERIALIZED VIEW test_class_m OWNER TO postgres;
 END;
