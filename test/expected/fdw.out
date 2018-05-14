@@ -49,6 +49,13 @@ SELECT pg_ddlx_script('test_class_f'::regclass);
  COMMENT ON COLUMN test_class_f.line IS 'A Line of text';    +
                                                              +
  ALTER FOREIGN TABLE test_class_f OWNER TO postgres;         +
+ GRANT INSERT ON test_class_f TO PUBLIC;                     +
+ GRANT SELECT ON test_class_f TO PUBLIC;                     +
+ GRANT UPDATE ON test_class_f TO PUBLIC;                     +
+ GRANT DELETE ON test_class_f TO PUBLIC;                     +
+ GRANT TRUNCATE ON test_class_f TO PUBLIC;                   +
+ GRANT REFERENCES ON test_class_f TO PUBLIC;                 +
+ GRANT TRIGGER ON test_class_f TO PUBLIC;                    +
  END;                                                        +
  
 (1 row)
