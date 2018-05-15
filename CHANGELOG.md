@@ -10,6 +10,8 @@ Version 0.9alpha
 - support for text search dictionaries (regdictionary)
 - improved regression tests
 - permission fixes for non superusers
+- renamed extension to ddlx
+- 
 
 Version 0.8
 -----------

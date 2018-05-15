@@ -3,8 +3,8 @@ PKG_CONFIG = pkg-config
 
 extension_version = 0.9
 
-EXTENSION = ddl
-DATA_built = ddl--$(extension_version).sql
+EXTENSION = ddlx
+DATA_built = ddlx--$(extension_version).sql
 
 REGRESS = init role type class fdw misc script 
 REGRESS_OPTS = --inputdir=test
@@ -12,5 +12,5 @@ REGRESS_OPTS = --inputdir=test
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
 
-ddl--$(extension_version).sql: ddl.sql
+ddlx--$(extension_version).sql: ddlx.sql
 	cat $^ >$@
