@@ -65,13 +65,13 @@ or selecting a specific PostgreSQL installation:
 
 And finally inside the database:
 
-    CREATE EXTENSION ddl;
+    CREATE EXTENSION ddlx;
 
 It you use multiple schemas, you will need to have variable `search_path` 
 set appropriately for the extension to work. To make it work with any value of
 `search_path`, you can install the extension in the `pg_catalog` schema:
 
-    CREATE EXTENSION ddl SCHEMA pg_catalog;
+    CREATE EXTENSION ddlx SCHEMA pg_catalog;
 
 This of course requires superuser privileges.
 
@@ -183,7 +183,7 @@ Nevertheless, some of them are:
 
     Identify an object by object ID, `oid`. This function is used a lot in others.
 
-- `pg_ddlx_get_columns(regclass) returns setof record`
+- `pg_ddlx_describe(regclass) returns setof record`
 
     Get columns of a class.
 

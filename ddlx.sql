@@ -254,7 +254,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_ddlx_get_columns(
+CREATE OR REPLACE FUNCTION pg_ddlx_describe(
   IN regclass,  
   OUT name name,  OUT type text,  OUT size integer,  OUT not_null boolean,  
   OUT "default" text, OUT comment text,  OUT primary_key name,  
@@ -558,7 +558,7 @@ AS $function$
   E' (\n'||
     coalesce(''||(
       SELECT coalesce(string_agg('    '||definition,E',\n'),'')
-        FROM pg_ddlx_get_columns($1) WHERE is_local
+        FROM pg_ddlx_describe($1) WHERE is_local
     )||E'\n','')||')'
   ||
   (SELECT 
@@ -777,7 +777,7 @@ AS $function$
  comments as (
    select 'COMMENT ON COLUMN ' || text($1) || '.' || quote_ident(name) ||
           ' IS ' || quote_nullable(comment) || ';' as cc
-     from pg_ddlx_get_columns($1) 
+     from pg_ddlx_describe($1) 
     where comment IS NOT NULL 
  ),
 
@@ -824,7 +824,7 @@ AS $function$
           ' SET DEFAULT '||"default", 
         E';\n') || E';\n\n', 
     '')
-   from pg_ddlx_get_columns($1)
+   from pg_ddlx_describe($1)
   where "default" is not null
 $function$ strict;
 
