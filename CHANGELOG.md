@@ -9,6 +9,7 @@ Version 0.9alpha
 - support for text search configurations (regconfig)
 - support for text search dictionaries (regdictionary)
 - improved regression tests
+- permission fixes for non superusers
 
 Version 0.8
 -----------

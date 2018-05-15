@@ -77,14 +77,14 @@ AS $function$
    WHERE t.oid = $1
    UNION
   SELECT r.oid,
-         'pg_authid'::regclass,
+         'pg_roles'::regclass,
          r.rolname as name,
          null as namespace,
          case when rolcanlogin then 'USER' else 'GROUP' end as kind,
          null as owner,
          'ROLE' as sql_kind,
          quote_ident(r.rolname) as sql_identifier
-    FROM pg_authid r
+    FROM pg_roles r
    WHERE r.oid = $1
    UNION
   SELECT n.oid,
@@ -99,7 +99,7 @@ AS $function$
          pg_get_userbyid(n.nspowner) AS owner,
          'SCHEMA' as sql_kind,
          quote_ident(n.nspname) as sql_identifier
-    FROM pg_namespace n join pg_authid r on r.oid = n.nspowner
+    FROM pg_namespace n join pg_roles r on r.oid = n.nspowner
    WHERE n.oid = $1
    UNION
   SELECT con.oid,
@@ -1620,7 +1620,7 @@ AS $function$
 	then pg_ddlx_create(oid::regtype)
 	when 'pg_operator'::regclass 
 	then pg_ddlx_create(oid::regoper)
-	when 'pg_authid'::regclass 
+	when 'pg_roles'::regclass 
 	then pg_ddlx_create(oid::regrole)
 	when 'pg_namespace'::regclass 
 	then pg_ddlx_create(oid::regnamespace)
