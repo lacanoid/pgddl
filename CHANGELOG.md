@@ -11,7 +11,8 @@ Version 0.9alpha
 - improved regression tests
 - permission fixes for non superusers
 - renamed extension to ddlx
-- 
+- renamed pg_ddlx_get_columns function to pg_ddlx_describe
+- removed pg_ prefix from function names, now it's just ddlx_
 
 Version 0.8
 -----------

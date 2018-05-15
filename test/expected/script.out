@@ -1,7 +1,7 @@
 \pset null _null_
 \pset format unaligned
-SELECT pg_ddlx_script('test_class_v'::regclass);
-pg_ddlx_script
+SELECT ddlx_script('test_class_v'::regclass);
+ddlx_script
 BEGIN;
 -- SECTION DROP DEPENDANTS
 /*

@@ -23,15 +23,15 @@ GRANT ALL ON test_class_f TO PUBLIC;
 
 SELECT * FROM test_class_f;
 
-SELECT pg_ddlx_script('test_class_f'::regclass);
+SELECT ddlx_script('test_class_f'::regclass);
 
-SELECT pg_ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
+SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
 
-SELECT pg_ddlx_drop((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
+SELECT ddlx_drop((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
 
-SELECT pg_ddlx_create((select oid from pg_foreign_server where srvname='serv'));
+SELECT ddlx_create((select oid from pg_foreign_server where srvname='serv'));
 
-SELECT pg_ddlx_drop((select oid from pg_foreign_server where srvname='serv'));
+SELECT ddlx_drop((select oid from pg_foreign_server where srvname='serv'));
 
 CREATE EXTENSION postgres_fdw;
 
@@ -43,8 +43,8 @@ CREATE USER MAPPING FOR PUBLIC
 SERVER serv2 
 OPTIONS (user 'foo');
 
-SELECT pg_ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='postgres_fdw'));
-SELECT pg_ddlx_create((select oid from pg_foreign_server where srvname='serv2'));
+SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='postgres_fdw'));
+SELECT ddlx_create((select oid from pg_foreign_server where srvname='serv2'));
 
-SELECT pg_ddlx_create((select umid from pg_user_mappings where srvname='serv2' and usename='public'));
-SELECT pg_ddlx_drop((select umid from pg_user_mappings where srvname='serv2' and usename='public'));
+SELECT ddlx_create((select umid from pg_user_mappings where srvname='serv2' and usename='public'));
+SELECT ddlx_drop((select umid from pg_user_mappings where srvname='serv2' and usename='public'));

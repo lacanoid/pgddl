@@ -80,66 +80,66 @@ Using
 
 The API provides three public user functions:
 
-- `pg_ddlx_create(oid)` - builds SQL DDL create statements
-- `pg_ddlx_drop(oid)` - builds SQL DDL drop statements
-- `pg_ddlx_script(oid)` - builds SQL DDL scripts of entire dependancy trees
+- `ddlx_create(oid)` - builds SQL DDL create statements
+- `ddlx_drop(oid)` - builds SQL DDL drop statements
+- `ddlx_script(oid)` - builds SQL DDL scripts of entire dependancy trees
 
 Currently supported object types are 
 `regtype`, `regclass`, `regproc(edure)`, `regoper(ator)`, `regrole`,
 `regconfig` and `regdictionary`.
 You will probably want to cast object name or oid to the appropriate type.
 
-- `pg_ddlx_create(regtype) returns text`
+- `ddlx_create(regtype) returns text`
 
     Generates SQL DDL source for type `regtype`.
 
-- `pg_ddlx_create(regclass) returns text`
+- `ddlx_create(regclass) returns text`
 
     Generates SQL DDL source of a class (table or view) `regclass`.
     This also includes all associated comments, ownership, constraints, 
     indexes, triggers, rules, grants, etc...
 
-- `pg_ddlx_create(regproc) returns text`
-- `pg_ddlx_create(regprocedure) returns text`
+- `ddlx_create(regproc) returns text`
+- `ddlx_create(regprocedure) returns text`
 
     Generates SQL DDL source of function `regproc`.
 
-- `pg_ddlx_create(regoper) returns text`
-- `pg_ddlx_create(regoperator) returns text`
+- `ddlx_create(regoper) returns text`
+- `ddlx_create(regoperator) returns text`
 
     Generates SQL DDL source of operator `regpoper`.
 
-- `pg_ddlx_create(regrole) returns text`
+- `ddlx_create(regrole) returns text`
 
     Generates SQL DDL source for role (user or group) `regrole`.
     
-- `pg_ddlx_create(regconfig) returns text`
+- `ddlx_create(regconfig) returns text`
 
     Generates SQL DDL source for text search configuration `regconfig`.
     
-- `pg_ddlx_create(regdictionary) returns text`
+- `ddlx_create(regdictionary) returns text`
 
     Generates SQL DDL source for text search dictionary `regdictionary`.
     
 
 There is also a convenience function to use `oid` directly, without casting:
 
-- `pg_ddlx_create(oid) returns text`
+- `ddlx_create(oid) returns text`
 
     Generates SQL DDL source for object ID, `oid`.
 
-- `pg_ddlx_drop(oid) returns text`
+- `ddlx_drop(oid) returns text`
 
     Generates SQL DDL DROP statement for object ID, `oid`.
 
 There is also a higher level function to build entire DDL scripts. 
 Scripts include dependant objects and can get quite large.
 
-- `pg_ddlx_script(oid) returns text`
+- `ddlx_script(oid) returns text`
 
     Generates SQL DDL script for object ID, `oid` and all it's dependants.
 
-- `pg_ddlx_script(text) returns text`
+- `ddlx_script(text) returns text`
 
     Generates SQL DDL script for object identified by textual sql identifier
     and all it's dependants.
@@ -163,27 +163,27 @@ CREATE TABLE users (
     name text
 );
 
-SELECT pg_ddlx_script('users'::regclass);
+SELECT ddlx_script('users'::regclass);
 
 CREATE TYPE my_enum AS ENUM ('foo','bar');
 
-SELECT pg_ddlx_script('my_enum'::regtype);
+SELECT ddlx_script('my_enum'::regtype);
 
-SELECT pg_ddlx_script(current_role::regrole);
+SELECT ddlx_script(current_role::regrole);
 
 ```
 
 A number of other functions are provided to extract more specific objects.
-Their names all begin with `pg_ddlx_`. They are used internally by the extension 
+Their names all begin with `ddlx_`. They are used internally by the extension 
 and are possibly subject to change in future versions of the extension. 
 They are generally not intended to be used by the end user. 
 Nevertheless, some of them are:
 
-- `pg_ddlx_identify(oid) returns record`
+- `ddlx_identify(oid) returns record`
 
     Identify an object by object ID, `oid`. This function is used a lot in others.
 
-- `pg_ddlx_describe(regclass) returns setof record`
+- `ddlx_describe(regclass) returns setof record`
 
     Get columns of a class.
 

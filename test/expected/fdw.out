@@ -26,8 +26,8 @@ SELECT * FROM test_class_f;
  This is some text
 (2 rows)
 
-SELECT pg_ddlx_script('test_class_f'::regclass);
-                        pg_ddlx_script                        
+SELECT ddlx_script('test_class_f'::regclass);
+                         ddlx_script                          
 --------------------------------------------------------------
  BEGIN;                                                      +
  -- SECTION MAIN                                             +
@@ -60,8 +60,8 @@ SELECT pg_ddlx_script('test_class_f'::regclass);
  
 (1 row)
 
-SELECT pg_ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
-                     pg_ddlx_create                     
+SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
+                      ddlx_create                       
 --------------------------------------------------------
  CREATE FOREIGN DATA WRAPPER file_fdw                  +
  HANDLER file_fdw_handler                              +
@@ -71,15 +71,15 @@ SELECT pg_ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='fi
  
 (1 row)
 
-SELECT pg_ddlx_drop((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
-            pg_ddlx_drop             
+SELECT ddlx_drop((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
+              ddlx_drop              
 -------------------------------------
  DROP FOREIGN DATA WRAPPER file_fdw;+
  
 (1 row)
 
-SELECT pg_ddlx_create((select oid from pg_foreign_server where srvname='serv'));
-            pg_ddlx_create            
+SELECT ddlx_create((select oid from pg_foreign_server where srvname='serv'));
+             ddlx_create              
 --------------------------------------
  CREATE SERVER serv                  +
  FOREIGN DATA WRAPPER file_fdw;      +
@@ -88,8 +88,8 @@ SELECT pg_ddlx_create((select oid from pg_foreign_server where srvname='serv'));
  
 (1 row)
 
-SELECT pg_ddlx_drop((select oid from pg_foreign_server where srvname='serv'));
-   pg_ddlx_drop    
+SELECT ddlx_drop((select oid from pg_foreign_server where srvname='serv'));
+     ddlx_drop     
 -------------------
  DROP SERVER serv;+
  
@@ -102,8 +102,8 @@ OPTIONS (host 'localhost');
 CREATE USER MAPPING FOR PUBLIC 
 SERVER serv2 
 OPTIONS (user 'foo');
-SELECT pg_ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='postgres_fdw'));
-                       pg_ddlx_create                       
+SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='postgres_fdw'));
+                        ddlx_create                         
 ------------------------------------------------------------
  CREATE FOREIGN DATA WRAPPER postgres_fdw                  +
  HANDLER postgres_fdw_handler                              +
@@ -113,8 +113,8 @@ SELECT pg_ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='po
  
 (1 row)
 
-SELECT pg_ddlx_create((select oid from pg_foreign_server where srvname='serv2'));
-            pg_ddlx_create             
+SELECT ddlx_create((select oid from pg_foreign_server where srvname='serv2'));
+              ddlx_create              
 ---------------------------------------
  CREATE SERVER serv2                  +
  FOREIGN DATA WRAPPER postgres_fdw    +
@@ -126,8 +126,8 @@ SELECT pg_ddlx_create((select oid from pg_foreign_server where srvname='serv2'))
  
 (1 row)
 
-SELECT pg_ddlx_create((select umid from pg_user_mappings where srvname='serv2' and usename='public'));
-               pg_ddlx_create                
+SELECT ddlx_create((select umid from pg_user_mappings where srvname='serv2' and usename='public'));
+                 ddlx_create                 
 ---------------------------------------------
  CREATE USER MAPPING FOR public SERVER serv2+
  OPTIONS (                                  +
@@ -136,8 +136,8 @@ SELECT pg_ddlx_create((select umid from pg_user_mappings where srvname='serv2' a
  
 (1 row)
 
-SELECT pg_ddlx_drop((select umid from pg_user_mappings where srvname='serv2' and usename='public'));
-                pg_ddlx_drop                
+SELECT ddlx_drop((select umid from pg_user_mappings where srvname='serv2' and usename='public'));
+                 ddlx_drop                  
 --------------------------------------------
  DROP USER MAPPING FOR public SERVER serv2;+
  

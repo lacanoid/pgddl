@@ -4,8 +4,8 @@ SET client_min_messages = warning;
 SET ROLE postgres;
 create type test_type_e as enum ('foo','bar','baz','qux');
 comment on type test_type_e is 'my enum';
-select pg_ddlx_script('test_type_e'::regtype);
-pg_ddlx_script
+select ddlx_script('test_type_e'::regtype);
+ddlx_script
 BEGIN;
 -- SECTION MAIN
 
@@ -25,8 +25,8 @@ END;
 (1 row)
 create domain test_type_d numeric(10,2) check(value is not null) check(value>6) default 7;
 comment on type test_type_d is 'my domain';
-select pg_ddlx_script('test_type_d'::regtype);
-pg_ddlx_script
+select ddlx_script('test_type_d'::regtype);
+ddlx_script
 BEGIN;
 -- SECTION MAIN
 
@@ -45,8 +45,8 @@ END;
 create type test_type_c as (i integer, t text, d test_type_d);
 comment on type test_type_c is 'my class type';
 comment on column test_type_c.i is 'my class class column i';
-select pg_ddlx_script('test_type_c'::regtype);
-pg_ddlx_script
+select ddlx_script('test_type_c'::regtype);
+ddlx_script
 BEGIN;
 -- SECTION MAIN
 
@@ -67,8 +67,8 @@ ALTER TYPE test_type_c OWNER TO postgres;
 END;
 
 (1 row)
-select pg_ddlx_script('test_type_c'::regclass);
-pg_ddlx_script
+select ddlx_script('test_type_c'::regclass);
+ddlx_script
 BEGIN;
 -- SECTION MAIN
 
@@ -90,8 +90,8 @@ END;
 
 (1 row)
 create domain test_collation_d text collate "C" default '***';
-select pg_ddlx_script('test_collation_d'::regtype);
-pg_ddlx_script
+select ddlx_script('test_collation_d'::regtype);
+ddlx_script
 BEGIN;
 -- SECTION MAIN
 
@@ -142,8 +142,8 @@ CREATE TYPE int_t (
 );
 COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)';
 ALTER TYPE int_t OWNER TO postgres;
-select pg_ddlx_create('int_t'::regtype);
-pg_ddlx_create
+select ddlx_create('int_t'::regtype);
+ddlx_create
 CREATE TYPE int_t (
   INPUT = int_t4in,
   OUTPUT = int_t4out,
@@ -162,8 +162,8 @@ COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)
 ALTER TYPE int_t OWNER TO postgres;
 
 (1 row)
-select pg_ddlx_create('int_t[]'::regtype);
-pg_ddlx_create
+select ddlx_create('int_t[]'::regtype);
+ddlx_create
 CREATE TYPE int_t[] (
   INPUT = array_in,
   OUTPUT = array_out,
@@ -184,8 +184,8 @@ ALTER TYPE int_t[] OWNER TO postgres;
 
 (1 row)
 /*
-select pg_ddlx_script('daterange'::regtype);
+select ddlx_script('daterange'::regtype);
 
-select pg_ddlx_script('=(integer,integer)'::regoperator);
-select pg_ddlx_script('=(text,text)'::regoperator);
+select ddlx_script('=(integer,integer)'::regoperator);
+select ddlx_script('=(text,text)'::regoperator);
 */
