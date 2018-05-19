@@ -13,6 +13,7 @@ Version 0.9alpha
 - renamed extension to ddlx
 - renamed pg_ddlx_get_columns function to pg_ddlx_describe
 - removed pg_ prefix from function names, now it's just ddlx_
+- bug fixes
 
 Version 0.8
 -----------

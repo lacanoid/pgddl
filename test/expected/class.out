@@ -100,7 +100,7 @@ ddlx_script
 BEGIN;
 -- SECTION MAIN
 
--- DROP TYPE test_class_r;
+-- DROP TABLE test_class_r;
 
 -- Type: TABLE ; Name: test_class_r; Owner: postgres
 
@@ -263,7 +263,7 @@ ddlx_script
 BEGIN;
 -- SECTION MAIN
 
--- DROP TYPE test_class_v;
+-- DROP VIEW test_class_v;
 
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
@@ -546,7 +546,7 @@ ddlx_script
 BEGIN;
 -- SECTION MAIN
 
--- DROP TYPE test_class_v_opt2;
+-- DROP VIEW test_class_v_opt2;
 
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 

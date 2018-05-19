@@ -21,17 +21,9 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
  RETURNS record
  LANGUAGE sql
 AS $function$
-  SELECT c.oid,
-         'pg_class'::regclass,
-         c.relname AS name,
-         n.nspname AS namespace,
-         coalesce(cc.column2,c.relkind::text) AS kind,
-         pg_get_userbyid(c.relowner) AS owner,
-         coalesce(cc.column2,c.relkind::text) AS sql_kind,
-         cast($1::regclass AS text) AS sql_identifier
-    FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-    LEFT join (
-         values ('r','TABLE'),
+  WITH 
+  rel_kind(k,v) AS (
+         VALUES ('r','TABLE'),
                 ('v','VIEW'),
                 ('i','INDEX'),
                 ('S','SEQUENCE'),
@@ -40,7 +32,25 @@ AS $function$
                 ('c','TYPE'),
                 ('t','TOAST'),
                 ('f','FOREIGN TABLE')
-    ) as cc on cc.column1 = c.relkind
+  ),
+  typ_type(k,v,v2) AS (
+         VALUES ('b','BASE','TYPE'),
+                ('c','COMPOSITE','TYPE'),
+                ('d','DOMAIN','DOMAIN'),
+                ('e','ENUM','TYPE'),
+                ('p','PSEUDO','TYPE'),
+                ('r','RANGE','TYPE')
+  )
+  SELECT c.oid,
+         'pg_class'::regclass,
+         c.relname AS name,
+         n.nspname AS namespace,
+         coalesce(cc.v,c.relkind::text) AS kind,
+         pg_get_userbyid(c.relowner) AS owner,
+         coalesce(cc.v,c.relkind::text) AS sql_kind,
+         cast($1::regclass AS text) AS sql_identifier
+    FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    LEFT JOIN rel_kind AS cc on cc.k = c.relkind
    WHERE c.oid = $1
    UNION 
   SELECT p.oid,
@@ -61,19 +71,14 @@ AS $function$
          'pg_type'::regclass,
          t.typname AS name,
          n.nspname AS namespace,
-         coalesce(tt.column2,t.typtype::text) AS kind,
+         coalesce(tt.v,t.typtype::text) AS kind,
          pg_get_userbyid(t.typowner) AS owner,
-         coalesce(tt.column3,t.typtype::text) AS sql_kind,
+         coalesce(cc.v,tt.v2,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
-    LEFT join (
-         values ('b','BASE','TYPE'),
-                ('c','COMPOSITE','TYPE'),
-                ('d','DOMAIN','DOMAIN'),
-                ('e','ENUM','TYPE'),
-                ('p','PSEUDO','TYPE'),
-                ('r','RANGE','TYPE')
-    ) as tt on tt.column1 = t.typtype
+    LEFT JOIN typ_type AS tt ON tt.k = t.typtype
+    LEFT JOIN pg_class AS c ON c.oid = t.typrelid
+    LEFT JOIN rel_kind AS cc ON cc.k = c.relkind
    WHERE t.oid = $1
    UNION
   SELECT r.oid,
@@ -112,7 +117,7 @@ AS $function$
          quote_ident(con.conname)
          ||coalesce(' ON '||cast(c.oid::regclass as text),'') as sql_identifier
     FROM pg_constraint con 
-    left join pg_class c on (con.conrelid=c.oid)
+    left JOIN pg_class c ON (con.conrelid=c.oid)
     LEFT join (
          values ('f','FOREIGN KEY'),
                 ('c','CHECK'),
