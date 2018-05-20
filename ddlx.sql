@@ -1776,7 +1776,7 @@ select E'BEGIN;\n\n'||
          ddl_create,
          E'\n-- DEPENDANTS\n\n'||ddl_create_deps
        )||
-       E'END;\n'
+       E'\nEND;\n'
   from ddlx_parts($1)
 $function$ strict;
 

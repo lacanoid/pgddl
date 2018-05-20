@@ -90,6 +90,7 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
 
 ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 
+
 END;
 
 (1 row)
@@ -141,6 +142,7 @@ GRANT DELETE ON test_class_r TO PUBLIC;
 GRANT TRUNCATE ON test_class_r TO PUBLIC;
 GRANT REFERENCES ON test_class_r TO PUBLIC;
 GRANT TRIGGER ON test_class_r TO PUBLIC;
+
 END;
 
 (1 row)
@@ -158,6 +160,7 @@ CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b 
 
 COMMENT ON INDEX idx1 IS NULL;
 
+
 END;
 
 (1 row)
@@ -174,6 +177,7 @@ DROP INDEX idx2;
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 
 COMMENT ON INDEX idx2 IS NULL;
+
 
 END;
 
@@ -220,6 +224,7 @@ ALTER TABLE test_class_r2 OWNER TO postgres;
 
 ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
 
+
 END;
 
 (1 row)
@@ -255,6 +260,7 @@ ALTER VIEW test_class_v SET (check_option='cascaded');
 
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
+
 END;
 
 (1 row)
@@ -286,6 +292,7 @@ ALTER VIEW test_class_v SET (check_option='cascaded');
 
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
+
 END;
 
 (1 row)
@@ -319,6 +326,7 @@ COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;
 CREATE UNIQUE INDEX test_class_mi ON public.test_class_m USING btree (a);
 
 ALTER MATERIALIZED VIEW test_class_m OWNER TO postgres;
+
 END;
 
 (1 row)
@@ -358,6 +366,7 @@ ALTER FUNCTION funfun(integer,text) OWNER TO postgres;
 REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO postgres WITH GRANT OPTION;
+
 END;
 
 (1 row)
@@ -384,6 +393,7 @@ ALTER FUNCTION funfun(integer,text) OWNER TO postgres;
 REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO postgres WITH GRANT OPTION;
+
 END;
 
 (1 row)
@@ -410,6 +420,7 @@ ALTER SEQUENCE test_type_s
 COMMENT ON SEQUENCE test_type_s IS 'interleave';
 
 ALTER SEQUENCE test_type_s OWNER TO postgres;
+
 END;
 
 (1 row)
@@ -445,6 +456,7 @@ ALTER TABLE test_collation OWNER TO postgres;
 -- DEPENDANTS
 
 ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
+
 
 END;
 
@@ -482,6 +494,7 @@ COMMENT ON VIEW test_class_v_opt1 IS NULL;
 ALTER VIEW test_class_v_opt1 SET (security_barrier='true');
 
 ALTER VIEW test_class_v_opt1 OWNER TO postgres;
+
 END;
 
 (1 row)
@@ -513,6 +526,7 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 ALTER VIEW test_class_v_opt2 OWNER TO postgres;
+
 END;
 
 (1 row)
@@ -544,6 +558,7 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 ALTER VIEW test_class_v_opt2 OWNER TO postgres;
+
 END;
 
 (1 row)
@@ -575,6 +590,7 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 ALTER VIEW test_class_v_opt2 OWNER TO postgres;
+
 END;
 
 (1 row)
@@ -601,6 +617,7 @@ ALTER FUNCTION test_proc_1() OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO postgres WITH GRANT OPTION;
+
 END;
 
 (1 row)
@@ -625,6 +642,7 @@ ALTER FUNCTION test_proc_1() OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO postgres WITH GRANT OPTION;
+
 END;
 
 (1 row)
@@ -649,6 +667,7 @@ ALTER FUNCTION test_proc_1() OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO postgres WITH GRANT OPTION;
+
 END;
 
 (1 row)
@@ -678,6 +697,7 @@ ALTER AGGREGATE test_proc_agg_1(text) OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_agg_1(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO postgres WITH GRANT OPTION;
+
 END;
 
 (1 row)
@@ -709,6 +729,7 @@ ALTER AGGREGATE test_proc_agg_2(anyelement) OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_agg_2(anyelement) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO postgres WITH GRANT OPTION;
+
 END;
 
 (1 row)

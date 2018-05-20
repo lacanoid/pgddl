@@ -57,6 +57,7 @@ SELECT ddlx_script('test_class_f'::regclass);
  GRANT TRUNCATE ON test_class_f TO PUBLIC;                   +
  GRANT REFERENCES ON test_class_f TO PUBLIC;                 +
  GRANT TRIGGER ON test_class_f TO PUBLIC;                    +
+                                                             +
  END;                                                        +
  
 (1 row)

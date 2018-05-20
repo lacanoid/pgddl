@@ -21,6 +21,7 @@ CREATE TYPE test_type_e AS ENUM (
 
 COMMENT ON TYPE test_type_e IS 'my enum';
 ALTER TYPE test_type_e OWNER TO postgres;
+
 END;
 
 (1 row)
@@ -41,6 +42,7 @@ CREATE DOMAIN test_type_d AS numeric(10,2)
 
 COMMENT ON DOMAIN test_type_d IS 'my domain';
 ALTER DOMAIN test_type_d OWNER TO postgres;
+
 END;
 
 (1 row)
@@ -67,6 +69,7 @@ COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
 
 COMMENT ON TYPE test_type_c IS 'my class type';
 ALTER TYPE test_type_c OWNER TO postgres;
+
 END;
 
 (1 row)
@@ -90,6 +93,7 @@ COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
 
 COMMENT ON TYPE test_type_c IS 'my class type';
 ALTER TYPE test_type_c OWNER TO postgres;
+
 END;
 
 (1 row)
@@ -108,6 +112,7 @@ CREATE DOMAIN test_collation_d AS text
 
 COMMENT ON DOMAIN test_collation_d IS NULL;
 ALTER DOMAIN test_collation_d OWNER TO postgres;
+
 END;
 
 (1 row)

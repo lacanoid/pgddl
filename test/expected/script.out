@@ -75,6 +75,7 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 ALTER VIEW test_class_v_opt2 OWNER TO postgres;
+
 END;
 
 (1 row)
