@@ -30,9 +30,10 @@ SELECT ddlx_script('test_class_f'::regclass);
                          ddlx_script                          
 --------------------------------------------------------------
  BEGIN;                                                      +
- -- SECTION MAIN                                             +
                                                              +
- -- DROP FOREIGN TABLE test_class_f;                         +
+ /*                                                          +
+ DROP FOREIGN TABLE test_class_f;                            +
+ */                                                          +
                                                              +
  -- Type: FOREIGN TABLE ; Name: test_class_f; Owner: postgres+
                                                              +

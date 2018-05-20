@@ -3,15 +3,13 @@
 SELECT ddlx_script('test_class_v'::regclass);
 ddlx_script
 BEGIN;
--- SECTION DROP DEPENDANTS
+
 /*
 DROP VIEW test_class_v_opt2;
 DROP VIEW test_class_v_opt1;
+
+DROP VIEW test_class_v;
 */
-
--- SECTION MAIN
-
--- DROP VIEW test_class_v;
 
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
@@ -34,7 +32,7 @@ ALTER VIEW test_class_v SET (check_option='cascaded');
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 
--- SECTION CREATE DEPENDANTS
+-- DEPENDANTS
 
 -- Type: VIEW ; Name: test_class_v_opt1; Owner: postgres
 

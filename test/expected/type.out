@@ -7,9 +7,10 @@ comment on type test_type_e is 'my enum';
 select ddlx_script('test_type_e'::regtype);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP TYPE test_type_e;
+/*
+DROP TYPE test_type_e;
+*/
 
 CREATE TYPE test_type_e AS ENUM (
  'foo'
@@ -28,9 +29,10 @@ comment on type test_type_d is 'my domain';
 select ddlx_script('test_type_d'::regtype);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP DOMAIN test_type_d;
+/*
+DROP DOMAIN test_type_d;
+*/
 
 CREATE DOMAIN test_type_d AS numeric(10,2)
  CHECK ((VALUE IS NOT NULL))
@@ -48,9 +50,10 @@ comment on column test_type_c.i is 'my class class column i';
 select ddlx_script('test_type_c'::regtype);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP TYPE test_type_c;
+/*
+DROP TYPE test_type_c;
+*/
 
 -- Type: TYPE ; Name: test_type_c; Owner: postgres
 
@@ -70,9 +73,10 @@ END;
 select ddlx_script('test_type_c'::regclass);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP TYPE test_type_c;
+/*
+DROP TYPE test_type_c;
+*/
 
 -- Type: TYPE ; Name: test_type_c; Owner: postgres
 
@@ -93,9 +97,10 @@ create domain test_collation_d text collate "C" default '***';
 select ddlx_script('test_collation_d'::regtype);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP DOMAIN test_collation_d;
+/*
+DROP DOMAIN test_collation_d;
+*/
 
 CREATE DOMAIN test_collation_d AS text
   COLLATE "C"

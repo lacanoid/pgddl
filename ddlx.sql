@@ -1,5 +1,5 @@
 --
---  DDL extraction functions
+--  DDL eXtraction functions
 --  version 0.9 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
@@ -1768,14 +1768,13 @@ CREATE OR REPLACE FUNCTION ddlx_script(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
-select E'BEGIN;\n'||
+select E'BEGIN;\n\n'||
        format(
-         E'%s%s-- %s\n%s%s',
-         E'-- SECTION DROP DEPENDANTS\n/*\n'||ddl_drop_deps||E'*/\n\n',
-         E'-- SECTION MAIN\n\n',
+         E'/*\n%s%s*/\n\n%s%s',
+         ddl_drop_deps||E'\n',
          ddl_drop,
          ddl_create,
-         E'\n-- SECTION CREATE DEPENDANTS\n\n'||ddl_create_deps
+         E'\n-- DEPENDANTS\n\n'||ddl_create_deps
        )||
        E'END;\n'
   from ddlx_parts($1)

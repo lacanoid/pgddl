@@ -34,15 +34,13 @@ create index idx2 on test_class_r using gin (v);
 SELECT ddlx_script('test_class_r'::regclass);
 ddlx_script
 BEGIN;
--- SECTION DROP DEPENDANTS
+
 /*
 ALTER TABLE test_class_r ALTER a DROP DEFAULT;
 ALTER TABLE test_class_r DROP CONSTRAINT test_class_r_c_check;
+
+DROP TABLE test_class_r;
 */
-
--- SECTION MAIN
-
--- DROP TABLE test_class_r;
 
 -- Type: TABLE ; Name: test_class_r; Owner: postgres
 
@@ -85,7 +83,7 @@ GRANT TRUNCATE ON test_class_r TO PUBLIC;
 GRANT REFERENCES ON test_class_r TO PUBLIC;
 GRANT TRIGGER ON test_class_r TO PUBLIC;
 
--- SECTION CREATE DEPENDANTS
+-- DEPENDANTS
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
   CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
@@ -98,9 +96,10 @@ END;
 SELECT ddlx_script('test_class_r'::regtype);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP TABLE test_class_r;
+/*
+DROP TABLE test_class_r;
+*/
 
 -- Type: TABLE ; Name: test_class_r; Owner: postgres
 
@@ -148,9 +147,10 @@ END;
 SELECT ddlx_script('idx1'::regclass);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP INDEX idx1;
+/*
+DROP INDEX idx1;
+*/
 
 -- Type: INDEX ; Name: idx1; Owner: postgres
 
@@ -164,9 +164,10 @@ END;
 SELECT ddlx_script('idx2'::regclass);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP INDEX idx2;
+/*
+DROP INDEX idx2;
+*/
 
 -- Type: INDEX ; Name: idx2; Owner: postgres
 
@@ -189,14 +190,12 @@ alter table test_class_r2 set with oids;
 SELECT ddlx_script('test_class_r2'::regclass);
 ddlx_script
 BEGIN;
--- SECTION DROP DEPENDANTS
+
 /*
 ALTER TABLE test_class_r2 ALTER i DROP DEFAULT;
+
+DROP TABLE test_class_r2;
 */
-
--- SECTION MAIN
-
--- DROP TABLE test_class_r2;
 
 -- Type: TABLE ; Name: test_class_r2; Owner: postgres
 
@@ -217,7 +216,7 @@ ALTER TABLE test_class_r2 ADD CONSTRAINT blah
 
 ALTER TABLE test_class_r2 OWNER TO postgres;
 
--- SECTION CREATE DEPENDANTS
+-- DEPENDANTS
 
 ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
 
@@ -231,9 +230,10 @@ grant select on test_class_v to public;
 SELECT ddlx_script('test_class_v'::regclass);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP VIEW test_class_v;
+/*
+DROP VIEW test_class_v;
+*/
 
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
@@ -261,9 +261,10 @@ END;
 SELECT ddlx_script('test_class_v'::regtype);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP VIEW test_class_v;
+/*
+DROP VIEW test_class_v;
+*/
 
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
@@ -294,9 +295,10 @@ create unique index test_class_mi ON test_class_m (a);
 SELECT ddlx_script('test_class_m'::regclass);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP MATERIALIZED VIEW test_class_m;
+/*
+DROP MATERIALIZED VIEW test_class_m;
+*/
 
 -- Type: MATERIALIZED VIEW ; Name: test_class_m; Owner: postgres
 
@@ -336,9 +338,10 @@ c|d
 SELECT ddlx_script('funfun'::regproc);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP FUNCTION funfun(integer,text);
+/*
+DROP FUNCTION funfun(integer,text);
+*/
 
 -- Type: FUNCTION ; Name: funfun(integer,text); Owner: postgres
 
@@ -361,9 +364,10 @@ END;
 SELECT ddlx_script('funfun(int,text)'::regprocedure);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP FUNCTION funfun(integer,text);
+/*
+DROP FUNCTION funfun(integer,text);
+*/
 
 -- Type: FUNCTION ; Name: funfun(integer,text); Owner: postgres
 
@@ -388,9 +392,10 @@ comment on sequence test_type_S is 'interleave';
 select ddlx_script('test_type_S'::regclass);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP SEQUENCE test_type_s;
+/*
+DROP SEQUENCE test_type_s;
+*/
 
 -- Type: SEQUENCE ; Name: test_type_s; Owner: postgres
 
@@ -416,14 +421,12 @@ create table test_collation (
 select ddlx_script('test_collation'::regclass);
 ddlx_script
 BEGIN;
--- SECTION DROP DEPENDANTS
+
 /*
 ALTER TABLE test_collation ALTER id DROP DEFAULT;
+
+DROP TABLE test_collation;
 */
-
--- SECTION MAIN
-
--- DROP TABLE test_collation;
 
 -- Type: TABLE ; Name: test_collation; Owner: postgres
 
@@ -439,7 +442,7 @@ ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq':
 
 ALTER TABLE test_collation OWNER TO postgres;
 
--- SECTION CREATE DEPENDANTS
+-- DEPENDANTS
 
 ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
 
@@ -454,9 +457,10 @@ alter  view test_class_v_opt2 set (security_barrier='true');
 select ddlx_script('test_class_v_opt1'::regclass);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP VIEW test_class_v_opt1;
+/*
+DROP VIEW test_class_v_opt1;
+*/
 
 -- Type: VIEW ; Name: test_class_v_opt1; Owner: postgres
 
@@ -484,9 +488,10 @@ END;
 select ddlx_script('test_class_v_opt2'::regclass);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP VIEW test_class_v_opt2;
+/*
+DROP VIEW test_class_v_opt2;
+*/
 
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
@@ -514,9 +519,10 @@ END;
 select ddlx_script('test_class_v_opt2'::regclass::oid);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP VIEW test_class_v_opt2;
+/*
+DROP VIEW test_class_v_opt2;
+*/
 
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
@@ -544,9 +550,10 @@ END;
 select ddlx_script('test_class_v_opt2');
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP VIEW test_class_v_opt2;
+/*
+DROP VIEW test_class_v_opt2;
+*/
 
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
@@ -576,9 +583,10 @@ $$ select 'Hello, world!'::text $$ language sql;
 select ddlx_script('test_proc_1'::regproc);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP FUNCTION test_proc_1();
+/*
+DROP FUNCTION test_proc_1();
+*/
 
 -- Type: FUNCTION ; Name: test_proc_1(); Owner: postgres
 
@@ -599,9 +607,10 @@ END;
 select ddlx_script('test_proc_1'::regproc::oid);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP FUNCTION test_proc_1();
+/*
+DROP FUNCTION test_proc_1();
+*/
 
 -- Type: FUNCTION ; Name: test_proc_1(); Owner: postgres
 
@@ -622,9 +631,10 @@ END;
 select ddlx_script('test_proc_1()');
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP FUNCTION test_proc_1();
+/*
+DROP FUNCTION test_proc_1();
+*/
 
 -- Type: FUNCTION ; Name: test_proc_1(); Owner: postgres
 
@@ -649,9 +659,10 @@ CREATE AGGREGATE test_proc_agg_1(text) (
 select ddlx_script('test_proc_agg_1'::regproc);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP AGGREGATE test_proc_agg_1(text);
+/*
+DROP AGGREGATE test_proc_agg_1(text);
+*/
 
 -- Type: AGGREGATE ; Name: test_proc_agg_1(text); Owner: postgres
 
@@ -678,9 +689,10 @@ CREATE AGGREGATE test_proc_agg_2(anyelement) (
 select ddlx_script('test_proc_agg_2'::regproc);
 ddlx_script
 BEGIN;
--- SECTION MAIN
 
--- DROP AGGREGATE test_proc_agg_2(anyelement);
+/*
+DROP AGGREGATE test_proc_agg_2(anyelement);
+*/
 
 -- Type: AGGREGATE ; Name: test_proc_agg_2(anyelement); Owner: postgres
 
