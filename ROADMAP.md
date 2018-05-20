@@ -22,14 +22,12 @@ Tasks
 
 Support for other postgres objects:
 - regnamespace
-- regconfig, regdictionary
-- text search parser, template
-- event triggers
+- text search template
 - SQL: cast, collation, transform
-- SQL: fdw, server, user mapping
-- extension, language, conversion
-- rule, access method, tablespace
 - operator class, operator family
+- extension
+- language, conversion
+- rule, access method, tablespace
 - database, policy
 - v10: publication, subscription, statistics
 - v11: procedure, variable

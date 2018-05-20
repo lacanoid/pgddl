@@ -1547,6 +1547,30 @@ COMMENT ON FUNCTION ddlx_create(regdictionary)
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_text_search_parser(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'CREATE TEXT SEARCH PARSER %s (\n  %s\n);\n',obj.sql_identifier,
+         array_to_string(array[
+           'START = '    || nullif(cast(p.prsstart::regproc as text),'-'), 
+           'GETTOKEN = ' || nullif(cast(p.prstoken::regproc as text),'-'), 
+           'END = '      || nullif(cast(p.prsend::regproc as text),'-'), 
+           'LEXTYPES = ' || nullif(cast(p.prslextype::regproc as text),'-'), 
+           'HEADLINE = ' || nullif(cast(p.prsheadline::regproc as text),'-')
+           ],E',\n  ')
+        )
+        || ddlx_comment($1)
+  from pg_ts_parser as p, obj
+ where p.oid = $1
+$function$  strict;
+
+COMMENT ON FUNCTION ddlx_create_text_search_parser(oid) 
+     IS 'Get SQL definition for a text search parser';
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
  RETURNS text
  LANGUAGE sql
@@ -1633,6 +1657,8 @@ AS $function$
 	then ddlx_create(oid::regconfig)
 	when 'pg_ts_dict'::regclass 
 	then ddlx_create(oid::regdictionary)
+	when 'pg_ts_parser'::regclass 
+	then ddlx_create_text_search_parser(oid)
 	when 'pg_constraint'::regclass 
 	then ddlx_create_constraint(oid)
 	when 'pg_trigger'::regclass 

@@ -16,6 +16,7 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_create(regprocedure)             | Get SQL definition for a function/procedure
  ddlx_create(regrole)                  | Get SQL definition for a role
  ddlx_create(regtype)                  | Get SQL definition for user defined data type
+ ddlx_create_text_search_parser(oid)   | Get SQL definition for a text search parser
  ddlx_drop(oid)                        | Get SQL DROP statement for object id
  ddlx_script(oid)                      | Get SQL DDL script for object id and dependant objects
  ddlx_script(text)                     | Get SQL DDL script for identifier
