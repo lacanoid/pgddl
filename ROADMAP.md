@@ -22,12 +22,11 @@ Tasks
 
 Support for other postgres objects:
 - regnamespace
-- text search template
 - SQL: cast, collation, transform
 - operator class, operator family
+- rule, access method, tablespace
 - extension
 - language, conversion
-- rule, access method, tablespace
 - database, policy
 - v10: publication, subscription, statistics
 - v11: procedure, variable
@@ -36,7 +35,7 @@ Support for other missing options:
 - storage parameters
 - tablespaces
 - serial (alter sequence set owner column)
-- column options
+- column options (foreign tables!)
 - column grants
 - schema grants
 - comments everywhere

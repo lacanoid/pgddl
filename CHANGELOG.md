@@ -8,7 +8,7 @@ Version 0.9alpha
 - support for foreign user mappings
 - support for text search configurations (regconfig)
 - support for text search dictionaries (regdictionary)
-- support for text search parsers
+- support for text search parsers and templates
 - improved regression tests
 - permission fixes for non superusers
 - renamed extension to ddlx

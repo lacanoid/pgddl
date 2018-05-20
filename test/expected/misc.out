@@ -92,3 +92,24 @@ COMMENT ON TEXT SEARCH DICTIONARY simple1 IS 'simple dictionary: just lower case
 ALTER TEXT SEARCH DICTIONARY simple1 OWNER TO postgres;
 
 (1 row)
+select ddlx_create((select oid from pg_ts_parser where prsname='default'));
+ddlx_create
+CREATE TEXT SEARCH PARSER pg_catalog."default" (
+  START = prsd_start,
+  GETTOKEN = prsd_nexttoken,
+  END = prsd_end,
+  LEXTYPES = prsd_lextype,
+  HEADLINE = prsd_headline
+);
+COMMENT ON TEXT SEARCH PARSER pg_catalog."default" IS 'default word parser';
+
+(1 row)
+select ddlx_create((select oid from pg_ts_template where tmplname='simple'));
+ddlx_create
+CREATE TEXT SEARCH TEMPLATE pg_catalog.simple (
+  INIT = dsimple_init,
+  LEXIZE = dsimple_lexize
+);
+COMMENT ON TEXT SEARCH TEMPLATE pg_catalog.simple IS 'simple dictionary: just lower case and check for stopword';
+
+(1 row)

@@ -59,3 +59,6 @@ ALTER TEXT SEARCH DICTIONARY simple1 OWNER TO postgres;
 
 select ddlx_create('simple1'::regdictionary);
 
+select ddlx_create((select oid from pg_ts_parser where prsname='default'));
+
+select ddlx_create((select oid from pg_ts_template where tmplname='simple'));

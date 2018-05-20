@@ -1571,6 +1571,27 @@ COMMENT ON FUNCTION ddlx_create_text_search_parser(oid)
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_text_search_template(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'CREATE TEXT SEARCH TEMPLATE %s (\n  %s\n);\n',obj.sql_identifier,
+         array_to_string(array[
+           'INIT = '   || nullif(cast(t.tmplinit::regproc as text),'-'), 
+           'LEXIZE = ' || nullif(cast(t.tmpllexize::regproc as text),'-') 
+           ],E',\n  ')
+        )
+        || ddlx_comment($1)
+  from pg_ts_template as t, obj
+ where t.oid = $1
+$function$  strict;
+
+COMMENT ON FUNCTION ddlx_create_text_search_template(oid) 
+     IS 'Get SQL definition for a text search template';
+
+	---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
  RETURNS text
  LANGUAGE sql
@@ -1659,6 +1680,8 @@ AS $function$
 	then ddlx_create(oid::regdictionary)
 	when 'pg_ts_parser'::regclass 
 	then ddlx_create_text_search_parser(oid)
+	when 'pg_ts_template'::regclass 
+	then ddlx_create_text_search_template(oid)
 	when 'pg_constraint'::regclass 
 	then ddlx_create_constraint(oid)
 	when 'pg_trigger'::regclass 
