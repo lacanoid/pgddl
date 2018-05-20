@@ -1430,7 +1430,7 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regclass) 
-     IS 'Get SQL definition for a table, view, sequence or index';
+     IS 'Get SQL CREATE statement for a table, view, sequence or index';
 
 
 ---------------------------------------------------
@@ -1446,7 +1446,7 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regproc) 
-     IS 'Get SQL definition for a function/procedure';
+     IS 'Get SQL CREATE statement for a routine';
 
 CREATE OR REPLACE FUNCTION ddlx_create(regprocedure)
  RETURNS text
@@ -1456,7 +1456,7 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regprocedure) 
-     IS 'Get SQL definition for a function/procedure';
+     IS 'Get SQL CREATE statement for a routine';
 
 ---------------------------------------------------
 
@@ -1486,7 +1486,7 @@ select format(
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regoper) 
-     IS 'Get SQL definition for an operator';
+     IS 'Get SQL CREATE statement for an operator';
 
 CREATE OR REPLACE FUNCTION ddlx_create(regoperator)
  RETURNS text
@@ -1496,7 +1496,7 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regoperator) 
-     IS 'Get SQL definition for an operator';
+     IS 'Get SQL CREATE statement for an operator';
 
 ---------------------------------------------------
 
@@ -1519,7 +1519,7 @@ select format(E'CREATE TEXT SEARCH CONFIGURATION %s ( PARSER = %s );\n',
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regconfig) 
-     IS 'Get SQL definition for a text search configuration';
+     IS 'Get SQL CREATE statement for a text search configuration';
 
 ---------------------------------------------------
 
@@ -1543,7 +1543,7 @@ select format(E'CREATE TEXT SEARCH DICTIONARY %s\n  ( TEMPLATE = %s%s );\n',
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regdictionary) 
-     IS 'Get SQL definition for a text search dictionary';
+     IS 'Get SQL CREATE statement for a text search dictionary';
 
 ---------------------------------------------------
 
@@ -1566,9 +1566,6 @@ select format(E'CREATE TEXT SEARCH PARSER %s (\n  %s\n);\n',obj.sql_identifier,
  where p.oid = $1
 $function$  strict;
 
-COMMENT ON FUNCTION ddlx_create_text_search_parser(oid) 
-     IS 'Get SQL definition for a text search parser';
-
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_template(oid)
@@ -1587,10 +1584,7 @@ select format(E'CREATE TEXT SEARCH TEMPLATE %s (\n  %s\n);\n',obj.sql_identifier
  where t.oid = $1
 $function$  strict;
 
-COMMENT ON FUNCTION ddlx_create_text_search_template(oid) 
-     IS 'Get SQL definition for a text search template';
-
-	---------------------------------------------------
+---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
  RETURNS text
@@ -1604,7 +1598,7 @@ select format(E'CREATE SCHEMA %s;\n',cast($1 as text))
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regnamespace) 
-     IS 'Get SQL definition for a schema';
+     IS 'Get SQL CREATE statement for a schema';
 
 ---------------------------------------------------
 
@@ -1618,7 +1612,7 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regrole) 
-     IS 'Get SQL definition for a role';
+     IS 'Get SQL CREATE statement for a role';
 
 ---------------------------------------------------
 
@@ -1652,7 +1646,7 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regtype) 
-     IS 'Get SQL definition for user defined data type';
+     IS 'Get SQL CREATE statement for a user defined data type';
 
 ---------------------------------------------------
 
@@ -1708,7 +1702,7 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(oid) 
-     IS 'Get SQL definition for generic object id';
+     IS 'Get SQL CREATE statement for a generic object by object id';
      
 ---------------------------------------------------
 
@@ -1736,7 +1730,7 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid)
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_drop(oid) 
-     IS 'Get SQL DROP statement for object id';
+     IS 'Get SQL DROP statement for an object by object id';
      
 ---------------------------------------------------
 
@@ -1781,7 +1775,7 @@ select E'BEGIN;\n\n'||
 $function$ strict;
 
 COMMENT ON FUNCTION ddlx_script(oid) 
-     IS 'Get SQL DDL script for object id and dependant objects';
+     IS 'Get SQL DDL script for an object and dependants by object id';
 
 ---------------------------------------------------
 
@@ -1797,5 +1791,5 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_script(text) 
-     IS 'Get SQL DDL script for identifier';
+     IS 'Get SQL DDL script for an object and dependants by object name';
 

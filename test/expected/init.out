@@ -5,22 +5,20 @@ CREATE EXTENSION ddlx;
 
 select oid::regprocedure,obj_description(oid) from pg_proc p where proname like 'ddlx_%'
 order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "C";
- ddlx_create(oid)                      | Get SQL definition for generic object id
- ddlx_create(regclass)                 | Get SQL definition for a table, view, sequence or index
- ddlx_create(regconfig)                | Get SQL definition for a text search configuration
- ddlx_create(regdictionary)            | Get SQL definition for a text search dictionary
- ddlx_create(regnamespace)             | Get SQL definition for a schema
- ddlx_create(regoper)                  | Get SQL definition for an operator
- ddlx_create(regoperator)              | Get SQL definition for an operator
- ddlx_create(regproc)                  | Get SQL definition for a function/procedure
- ddlx_create(regprocedure)             | Get SQL definition for a function/procedure
- ddlx_create(regrole)                  | Get SQL definition for a role
- ddlx_create(regtype)                  | Get SQL definition for user defined data type
- ddlx_create_text_search_parser(oid)   | Get SQL definition for a text search parser
- ddlx_create_text_search_template(oid) | Get SQL definition for a text search template
- ddlx_drop(oid)                        | Get SQL DROP statement for object id
- ddlx_script(oid)                      | Get SQL DDL script for object id and dependant objects
- ddlx_script(text)                     | Get SQL DDL script for identifier
+ ddlx_create(oid)                      | Get SQL CREATE statement for a generic object by object id
+ ddlx_create(regclass)                 | Get SQL CREATE statement for a table, view, sequence or index
+ ddlx_create(regconfig)                | Get SQL CREATE statement for a text search configuration
+ ddlx_create(regdictionary)            | Get SQL CREATE statement for a text search dictionary
+ ddlx_create(regnamespace)             | Get SQL CREATE statement for a schema
+ ddlx_create(regoper)                  | Get SQL CREATE statement for an operator
+ ddlx_create(regoperator)              | Get SQL CREATE statement for an operator
+ ddlx_create(regproc)                  | Get SQL CREATE statement for a routine
+ ddlx_create(regprocedure)             | Get SQL CREATE statement for a routine
+ ddlx_create(regrole)                  | Get SQL CREATE statement for a role
+ ddlx_create(regtype)                  | Get SQL CREATE statement for a user defined data type
+ ddlx_drop(oid)                        | Get SQL DROP statement for an object by object id
+ ddlx_script(oid)                      | Get SQL DDL script for an object and dependants by object id
+ ddlx_script(text)                     | Get SQL DDL script for an object and dependants by object name
  ddlx_alter_owner(oid)                 | 
  ddlx_alter_table_defaults(regclass)   | 
  ddlx_banner(text,text,text,text,text) | 
@@ -40,6 +38,8 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_create_sequence(regclass)        | 
  ddlx_create_server(oid)               | 
  ddlx_create_table(regclass)           | 
+ ddlx_create_text_search_parser(oid)   | 
+ ddlx_create_text_search_template(oid) | 
  ddlx_create_trigger(oid)              | 
  ddlx_create_triggers(regclass)        | 
  ddlx_create_type_base(regtype)        | 

@@ -1,7 +1,7 @@
 digraph pg_ddl {
 rankdir = LR
 "ddlx_alter_owner(oid)" -> "ddlx_identify(oid)";
-"ddlx_alter_table_defaults(regclass)" -> "ddlx_get_columns(regclass)";
+"ddlx_alter_table_defaults(regclass)" -> "ddlx_describe(regclass)";
 "ddlx_comment(oid)" -> "ddlx_identify(oid)";
 "ddlx_create_aggregate(regproc)" -> "ddlx_identify(oid)";
 "ddlx_create_class(regclass)" -> "ddlx_banner(text,text,text,text,text)";
@@ -10,7 +10,7 @@ rankdir = LR
 "ddlx_create_class(regclass)" -> "ddlx_create_sequence(regclass)";
 "ddlx_create_class(regclass)" -> "ddlx_create_table(regclass)";
 "ddlx_create_class(regclass)" -> "ddlx_create_view(regclass)";
-"ddlx_create_class(regclass)" -> "ddlx_get_columns(regclass)";
+"ddlx_create_class(regclass)" -> "ddlx_describe(regclass)";
 "ddlx_create_class(regclass)" -> "ddlx_identify(oid)";
 "ddlx_create_constraints(regclass)" -> "ddlx_get_constraints(regclass)";
 "ddlx_create_function(regproc)" -> "ddlx_banner(text,text,text,text,text)";
@@ -60,7 +60,7 @@ rankdir = LR
 "ddlx_create(regtype)" -> "ddlx_create_type_range(regtype)";
 "ddlx_create_rules(regclass)" -> "ddlx_get_rules(regclass)";
 "ddlx_create_sequence(regclass)" -> "ddlx_identify(oid)";
-"ddlx_create_table(regclass)" -> "ddlx_get_columns(regclass)";
+"ddlx_create_table(regclass)" -> "ddlx_describe(regclass)";
 "ddlx_create_table(regclass)" -> "ddlx_identify(oid)";
 "ddlx_create_triggers(regclass)" -> "ddlx_get_triggers(regclass)";
 "ddlx_drop(oid)" -> "ddlx_drop_constraint(oid)";
