@@ -1,7 +1,7 @@
 ! = todo
 
-Version 0.9alpha
-----------------
+Version 0.9
+-----------
 - support for event triggers
 - support for foreign data wrappers
 - support for foreign servers
