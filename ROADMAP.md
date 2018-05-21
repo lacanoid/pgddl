@@ -22,11 +22,11 @@ Tasks
 
 Support for other postgres objects:
 - regnamespace
-- SQL: cast, collation, transform
+- SQL: collation, conversion
 - operator class, operator family
 - rule, access method, tablespace
 - extension
-- language, conversion
+- language, transform
 - database, policy
 - v10: publication, subscription, statistics
 - v11: procedure, variable

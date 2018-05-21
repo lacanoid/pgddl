@@ -9,6 +9,7 @@ Version 0.9
 - support for text search configurations (regconfig)
 - support for text search dictionaries (regdictionary)
 - support for text search parsers and templates
+- support for casts
 - improved regression tests
 - permission fixes for non superusers
 - renamed extension to ddlx

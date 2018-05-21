@@ -255,6 +255,19 @@ AS $function$
          ' SERVER '||quote_ident(ums.srvname) as sql_identifier
     FROM pg_user_mappings ums
    WHERE ums.umid = $1
+   UNION
+  SELECT ca.oid,
+         'pg_cast'::regclass,
+         null as name,
+         null as namespace,
+         'CAST' as kind,
+         null as owner,
+         'CAST' as sql_kind,
+         format('(%s AS %s)',
+           format_type(ca.castsource,null),format_type(ca.casttarget,null))
+           as sql_identifier
+    FROM pg_cast ca
+   WHERE ca.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -1586,6 +1599,32 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_cast(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'CREATE CAST %s\n  ',obj.sql_identifier)
+        || case
+           when c.castmethod = 'i'
+           then 'WITH INOUT'
+           when c.castfunc>0 
+           then 'WITH FUNCTION '||cast(c.castfunc::regprocedure as text)
+           else 'WITHOUT FUNCTION'
+           end 
+        || case c.castcontext
+           when 'a' then E'\n  AS ASSIGNMENT'
+           when 'i' then E'\n  AS IMPLICIT'
+           else ''
+           end
+        || E';\n'
+        || ddlx_comment($1)
+  from pg_cast as c, obj
+ where c.oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
  RETURNS text
  LANGUAGE sql
@@ -1690,6 +1729,8 @@ AS $function$
 	then ddlx_create_server(oid)
 	when 'pg_user_mapping'::regclass 
 	then ddlx_create_user_mapping(oid)
+	when 'pg_cast'::regclass 
+	then ddlx_create_cast(oid)
 	else
 	  case
 		when kind is not null
