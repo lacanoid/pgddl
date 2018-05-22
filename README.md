@@ -127,7 +127,9 @@ There is also a convenience function to use `oid` directly, without casting:
 
 - `ddlx_create(oid) returns text`
 
-    Generates SQL DDL source for object ID, `oid`.
+    Generates SQL DDL source for object ID, `oid`. 
+	This is the most general-purpose function of the bunch.
+	It also works for objects other than `reg*` types specified above.
 
 - `ddlx_drop(oid) returns text`
 

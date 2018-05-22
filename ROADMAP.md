@@ -22,7 +22,7 @@ Tasks
 
 Support for other postgres objects:
 - regnamespace
-- SQL: collation, conversion
+- SQL: conversion
 - operator class, operator family
 - rule, access method, tablespace
 - extension

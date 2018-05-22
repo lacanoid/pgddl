@@ -268,6 +268,17 @@ AS $function$
            as sql_identifier
     FROM pg_cast ca
    WHERE ca.oid = $1
+   UNION
+  SELECT co.oid,
+         'pg_collation'::regclass,
+         co.collname as name,
+         n.nspname as namespace,
+         'COLLATION' as kind,
+         pg_get_userbyid(co.collowner) as owner,
+         'COLLATION' as sql_kind,
+         format('%I.%I',n.nspname,co.collname) as sql_identifier
+    FROM pg_collation co JOIN pg_namespace n ON n.oid=co.collnamespace
+   WHERE co.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -1625,6 +1636,25 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_collation(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'CREATE COLLATION %s (\n  %s\n);\n',obj.sql_identifier,
+         array_to_string(array[
+           'LC_COLLATE = '|| quote_nullable(collcollate), 
+           'LC_CTYPE = '  || quote_nullable(collctype)
+           ],E',\n  ')
+        )
+        || ddlx_comment($1)
+        || ddlx_alter_owner($1)
+  from pg_collation as c, obj
+ where c.oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
  RETURNS text
  LANGUAGE sql
@@ -1731,6 +1761,8 @@ AS $function$
 	then ddlx_create_user_mapping(oid)
 	when 'pg_cast'::regclass 
 	then ddlx_create_cast(oid)
+	when 'pg_collation'::regclass 
+	then ddlx_create_collation(oid)
 	else
 	  case
 		when kind is not null

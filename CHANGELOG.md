@@ -10,6 +10,7 @@ Version 0.9
 - support for text search dictionaries (regdictionary)
 - support for text search parsers and templates
 - support for casts
+- support for collations
 - improved regression tests
 - permission fixes for non superusers
 - renamed extension to ddlx

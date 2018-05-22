@@ -26,6 +26,7 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_create_aggregate(regproc)        | 
  ddlx_create_cast(oid)                 | 
  ddlx_create_class(regclass)           | 
+ ddlx_create_collation(oid)            | 
  ddlx_create_constraint(oid)           | 
  ddlx_create_constraints(regclass)     | 
  ddlx_create_default(oid)              | 
