@@ -42,6 +42,7 @@ Support for other missing options:
 - ownership of all objects (missing fdw, server)
 - enabled/disabled triggers
 - clustering
+- skeleton type hack
 - v10: partitions
 
 Other:
