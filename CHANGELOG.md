@@ -2,6 +2,8 @@
 
 Version 0.9
 -----------
+- renamed extension to ddlx
+- API rename pg_ddlx -> ddlx (it is enough)
 - support for event triggers
 - support for foreign data wrappers
 - support for foreign servers
@@ -11,13 +13,11 @@ Version 0.9
 - support for text search parsers and templates
 - support for casts
 - support for collations
-- improved regression tests
 - permission fixes for non superusers
-- renamed extension to ddlx
-- renamed pg_ddlx_get_columns function to pg_ddlx_describe
-- removed pg_ prefix from function names, now it's just ddlx_
+- renamed pg_ddlx_get_columns function to ddlx_describe
 - improved script formatting
-- bug fixes
+- improved regression tests
+- bug fixes for ddlx_drop
 
 Version 0.8
 -----------
