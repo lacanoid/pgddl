@@ -1,4 +1,4 @@
-DDL extractor functions  for PostgreSQL
+DDL eXtractor functions  for PostgreSQL
 =======================================
 
 This is an SQL-only extension for PostgreSQL that provides uniform functions for generating 

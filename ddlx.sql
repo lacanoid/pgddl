@@ -196,7 +196,8 @@ AS $function$
          'TEXT SEARCH PARSER' as kind,
          null as owner,
          'TEXT SEARCH PARSER' as sql_kind,
-         format('%I.%I',n.nspname,prs.prsname) as sql_identifier
+         format('%s%I',
+           quote_ident(nullif(n.nspname,current_schema()))||'.',prs.prsname) as sql_identifier
     FROM pg_ts_parser prs JOIN pg_namespace n ON n.oid=prs.prsnamespace
    WHERE prs.oid = $1
    UNION
@@ -207,7 +208,8 @@ AS $function$
          'TEXT SEARCH TEMPLATE' as kind,
          null as owner,
          'TEXT SEARCH TEMPLATE' as sql_kind,
-         format('%I.%I',n.nspname,tmpl.tmplname) as sql_identifier
+         format('%s%I',
+           quote_ident(nullif(n.nspname,current_schema()))||'.',tmpl.tmplname) as sql_identifier
     FROM pg_ts_template tmpl JOIN pg_namespace n ON n.oid=tmpl.tmplnamespace
    WHERE tmpl.oid = $1
    UNION
@@ -276,7 +278,8 @@ AS $function$
          'COLLATION' as kind,
          pg_get_userbyid(co.collowner) as owner,
          'COLLATION' as sql_kind,
-         format('%I.%I',n.nspname,co.collname) as sql_identifier
+         format('%s%I',
+           quote_ident(nullif(n.nspname,current_schema()))||'.',co.collname) as sql_identifier
     FROM pg_collation co JOIN pg_namespace n ON n.oid=co.collnamespace
    WHERE co.oid = $1
 $function$  strict;
@@ -1650,6 +1653,26 @@ select format(E'CREATE COLLATION %s (\n  %s\n);\n',obj.sql_identifier,
         || ddlx_comment($1)
         || ddlx_alter_owner($1)
   from pg_collation as c, obj
+ where c.oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create_conversion(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'CREATE %sCONVERSION %s\n  FOR %L TO %L FROM %s;\n',
+		case when c.condefault then 'DEFAULT ' end,
+		obj.sql_identifier,
+		pg_encoding_to_char(c.conforencoding),
+		pg_encoding_to_char(c.contoencoding),
+		cast(c.conproc::regproc as text)
+	   )
+        || ddlx_comment($1)
+        || ddlx_alter_owner($1)
+  from pg_conversion as c, obj
  where c.oid = $1
 $function$  strict;
 
