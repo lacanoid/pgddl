@@ -58,3 +58,11 @@ COMMENT ON COLLATION pg_catalog."default" IS 'database''s default collation';
 ALTER COLLATION pg_catalog."default" OWNER TO postgres;
 
 (3 rows)
+select ddlx_create(oid) from pg_conversion where conname in ('ascii_to_utf8') order by conname;
+ddlx_create
+CREATE DEFAULT CONVERSION pg_catalog.ascii_to_utf8
+  FOR 'SQL_ASCII' TO 'UTF8' FROM ascii_to_utf8;
+COMMENT ON CONVERSION pg_catalog.ascii_to_utf8 IS 'conversion for SQL_ASCII to UTF8';
+ALTER CONVERSION pg_catalog.ascii_to_utf8 OWNER TO postgres;
+
+(1 row)

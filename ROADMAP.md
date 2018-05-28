@@ -22,7 +22,6 @@ Tasks
 
 Support for other postgres objects:
 - regnamespace
-- SQL: conversion
 - operator class, operator family
 - rule, access method, tablespace
 - extension
@@ -43,7 +42,7 @@ Support for other missing options:
 - enabled/disabled triggers
 - clustering
 - skeleton type hack
-- v10: partitions
+- v10: partitions, generated
 
 Other:
 - compiler from one source to specific pg version

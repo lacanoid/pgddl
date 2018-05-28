@@ -282,6 +282,18 @@ AS $function$
            quote_ident(nullif(n.nspname,current_schema()))||'.',co.collname) as sql_identifier
     FROM pg_collation co JOIN pg_namespace n ON n.oid=co.collnamespace
    WHERE co.oid = $1
+   UNION
+  SELECT co.oid,
+         'pg_conversion'::regclass,
+         co.conname as name,
+         n.nspname as namespace,
+         'CONVERSION' as kind,
+         pg_get_userbyid(co.conowner) as owner,
+         'CONVERSION' as sql_kind,
+         format('%s%I',
+           quote_ident(nullif(n.nspname,current_schema()))||'.',co.conname) as sql_identifier
+    FROM pg_conversion co JOIN pg_namespace n ON n.oid=co.connamespace
+   WHERE co.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -1786,6 +1798,8 @@ AS $function$
 	then ddlx_create_cast(oid)
 	when 'pg_collation'::regclass 
 	then ddlx_create_collation(oid)
+	when 'pg_conversion'::regclass 
+	then ddlx_create_conversion(oid)
 	else
 	  case
 		when kind is not null

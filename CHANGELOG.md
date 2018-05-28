@@ -13,6 +13,7 @@ Version 0.9
 - support for text search parsers and templates
 - support for casts
 - support for collations
+- support for conversions
 - permission fixes for non superusers
 - renamed pg_ddlx_get_columns function to ddlx_describe
 - improved script formatting
