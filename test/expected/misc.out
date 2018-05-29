@@ -34,35 +34,29 @@ CREATE CAST (text AS regclass)
 COMMENT ON CAST (text AS regclass) IS NULL;
 
 (6 rows)
-select ddlx_create(oid) from pg_collation where collname in ('default','C','POSIX') order by collname;
-ddlx_create
-CREATE COLLATION pg_catalog."C" (
-  LC_COLLATE = 'C',
-  LC_CTYPE = 'C'
-);
-COMMENT ON COLLATION pg_catalog."C" IS 'standard C collation';
-ALTER COLLATION pg_catalog."C" OWNER TO postgres;
-
-CREATE COLLATION pg_catalog."POSIX" (
+CREATE COLLATION "POSIX++" (
   LC_COLLATE = 'POSIX',
   LC_CTYPE = 'POSIX'
 );
-COMMENT ON COLLATION pg_catalog."POSIX" IS 'standard POSIX collation';
-ALTER COLLATION pg_catalog."POSIX" OWNER TO postgres;
-
-CREATE COLLATION pg_catalog."default" (
-  LC_COLLATE = '',
-  LC_CTYPE = ''
-);
-COMMENT ON COLLATION pg_catalog."default" IS 'database''s default collation';
-ALTER COLLATION pg_catalog."default" OWNER TO postgres;
-
-(3 rows)
-select ddlx_create(oid) from pg_conversion where conname in ('ascii_to_utf8') order by conname;
+COMMENT ON COLLATION "POSIX++" IS 'standard POSIX++ collation';
+select ddlx_create(oid) from pg_collation where collname in ('POSIX++') order by collname;
 ddlx_create
-CREATE DEFAULT CONVERSION pg_catalog.ascii_to_utf8
+CREATE COLLATION "POSIX++" (
+  LC_COLLATE = 'POSIX',
+  LC_CTYPE = 'POSIX'
+);
+COMMENT ON COLLATION "POSIX++" IS 'standard POSIX++ collation';
+ALTER COLLATION "POSIX++" OWNER TO postgres;
+
+(1 row)
+CREATE DEFAULT CONVERSION "ascii_to_utf8++"
   FOR 'SQL_ASCII' TO 'UTF8' FROM ascii_to_utf8;
-COMMENT ON CONVERSION pg_catalog.ascii_to_utf8 IS 'conversion for SQL_ASCII to UTF8';
-ALTER CONVERSION pg_catalog.ascii_to_utf8 OWNER TO postgres;
+COMMENT ON CONVERSION "ascii_to_utf8++" IS 'conversion++ for SQL_ASCII to UTF8';
+select ddlx_create(oid) from pg_conversion where conname in ('ascii_to_utf8++') order by conname;
+ddlx_create
+CREATE DEFAULT CONVERSION "ascii_to_utf8++"
+  FOR 'SQL_ASCII' TO 'UTF8' FROM ascii_to_utf8;
+COMMENT ON CONVERSION "ascii_to_utf8++" IS 'conversion++ for SQL_ASCII to UTF8';
+ALTER CONVERSION "ascii_to_utf8++" OWNER TO postgres;
 
 (1 row)

@@ -1,5 +1,5 @@
-Intro
------
+Introduction
+------------
 
 This started as a quick hack some years ago, when I broke my PostgreSQL database 
 (must have been version 7.3 or so) so that pg_dump wouldn't dump it anymore.
