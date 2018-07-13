@@ -190,7 +190,7 @@ Nevertheless, some of them are:
 
     Get columns of a class.
 
-See file [ddl.sql](ddl.sql) and [full list of functions](test/expected/init.out) for additional details.
+See file [ddlx.sql](ddlx.sql) and [full list of functions](test/expected/init.out) for additional details.
 Finctions with comments are public API. The rest are intended for internal use, the purpose can
 usually be inferred from the name.
 
