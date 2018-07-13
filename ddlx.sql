@@ -1,6 +1,6 @@
 --
---  DDL eXtraction functions
---  version 0.9 lacanoid@ljudmila.org
+--  DDL eXtractor functions
+--  version 0.10 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -17,7 +17,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
   OUT oid oid, OUT classid regclass, 
   OUT name name,  OUT namespace name,  
   OUT kind text, OUT owner name, OUT sql_kind text, 
-  OUT sql_identifier text)
+  OUT sql_identifier text, OUT acl aclitem[])
  RETURNS record
  LANGUAGE sql
 AS $function$
@@ -48,7 +48,8 @@ AS $function$
          coalesce(cc.v,c.relkind::text) AS kind,
          pg_get_userbyid(c.relowner) AS owner,
          coalesce(cc.v,c.relkind::text) AS sql_kind,
-         cast($1::regclass AS text) AS sql_identifier
+         cast($1::regclass AS text) AS sql_identifier,
+         relacl as acl
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     LEFT JOIN rel_kind AS cc on cc.k = c.relkind
    WHERE c.oid = $1
@@ -63,7 +64,8 @@ AS $function$
            when p.proisagg then 'AGGREGATE'
            else 'FUNCTION' 
          end AS sql_kind,
-         cast($1::regprocedure AS text) AS sql_identifier
+         cast($1::regprocedure AS text) AS sql_identifier,
+         proacl as acl
     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
    WHERE p.oid = $1
    UNION 
@@ -74,7 +76,8 @@ AS $function$
          coalesce(tt.v,t.typtype::text) AS kind,
          pg_get_userbyid(t.typowner) AS owner,
          coalesce(cc.v,tt.v2,t.typtype::text) AS sql_kind,
-         format_type($1,null) AS sql_identifier
+         format_type($1,null) AS sql_identifier,
+         typacl as acl
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
     LEFT JOIN typ_type AS tt ON tt.k = t.typtype
     LEFT JOIN pg_class AS c ON c.oid = t.typrelid
@@ -88,7 +91,8 @@ AS $function$
          case when rolcanlogin then 'USER' else 'GROUP' end as kind,
          null as owner,
          'ROLE' as sql_kind,
-         quote_ident(r.rolname) as sql_identifier
+         quote_ident(r.rolname) as sql_identifier,
+         null as acl
     FROM pg_roles r
    WHERE r.oid = $1
    UNION
@@ -103,7 +107,8 @@ AS $function$
          end as kind,
          pg_get_userbyid(n.nspowner) AS owner,
          'SCHEMA' as sql_kind,
-         quote_ident(n.nspname) as sql_identifier
+         quote_ident(n.nspname) as sql_identifier,
+         nspacl as acl
     FROM pg_namespace n join pg_roles r on r.oid = n.nspowner
    WHERE n.oid = $1
    UNION
@@ -115,7 +120,8 @@ AS $function$
          null as owner,
          'CONSTRAINT' as sql_kind,
          quote_ident(con.conname)
-         ||coalesce(' ON '||cast(c.oid::regclass as text),'') as sql_identifier
+         ||coalesce(' ON '||cast(c.oid::regclass as text),'') as sql_identifier,
+         null as acl
     FROM pg_constraint con 
     left JOIN pg_class c ON (con.conrelid=c.oid)
     LEFT join (
@@ -139,7 +145,8 @@ AS $function$
          END AS kind, 
          null as owner,
          'TRIGGER' as sql_kind,
-         format('%I ON %s',t.tgname,cast(c.oid::regclass as text)) as sql_identifier
+         format('%I ON %s',t.tgname,cast(c.oid::regclass as text)) as sql_identifier,
+         null as acl
     FROM pg_trigger t join pg_class c on (t.tgrelid=c.oid)
    WHERE t.oid = $1
    UNION
@@ -150,7 +157,8 @@ AS $function$
          'DEFAULT' as kind,
          null as owner,
          'DEFAULT' as sql_kind,
-         format('%s.%I',cast(c.oid::regclass as text),a.attname) as sql_identifier
+         format('%s.%I',cast(c.oid::regclass as text),a.attname) as sql_identifier,
+         null as acl
     FROM pg_attrdef ad 
     JOIN pg_class c ON (ad.adrelid=c.oid)
     JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
@@ -163,7 +171,8 @@ AS $function$
          'OPERATOR' as kind,
          pg_get_userbyid(op.oprowner) as owner,
          'OPERATOR' as sql_kind,
-         cast(op.oid::regoperator as text) as sql_identifier
+         cast(op.oid::regoperator as text) as sql_identifier,
+         null as acl
     FROM pg_operator op JOIN pg_namespace n ON n.oid=op.oprnamespace
    WHERE op.oid = $1
    UNION
@@ -174,7 +183,8 @@ AS $function$
          'TEXT SEARCH CONFIGURATION' as kind,
          pg_get_userbyid(cfg.cfgowner) as owner,
          'TEXT SEARCH CONFIGURATION' as sql_kind,
-         cast(cfg.oid::regconfig as text) as sql_identifier
+         cast(cfg.oid::regconfig as text) as sql_identifier,
+         null as acl
     FROM pg_ts_config cfg JOIN pg_namespace n ON n.oid=cfg.cfgnamespace
    WHERE cfg.oid = $1
    UNION
@@ -185,7 +195,8 @@ AS $function$
          'TEXT SEARCH DICTIONARY' as kind,
          pg_get_userbyid(dict.dictowner) as owner,
          'TEXT SEARCH DICTIONARY' as sql_kind,
-         cast(dict.oid::regdictionary as text) as sql_identifier
+         cast(dict.oid::regdictionary as text) as sql_identifier,
+         null as acl
     FROM pg_ts_dict dict JOIN pg_namespace n ON n.oid=dict.dictnamespace
    WHERE dict.oid = $1
    UNION
@@ -197,7 +208,8 @@ AS $function$
          null as owner,
          'TEXT SEARCH PARSER' as sql_kind,
          format('%s%I',
-           quote_ident(nullif(n.nspname,current_schema()))||'.',prs.prsname) as sql_identifier
+           quote_ident(nullif(n.nspname,current_schema()))||'.',prs.prsname) as sql_identifier,
+         null as acl
     FROM pg_ts_parser prs JOIN pg_namespace n ON n.oid=prs.prsnamespace
    WHERE prs.oid = $1
    UNION
@@ -209,7 +221,8 @@ AS $function$
          null as owner,
          'TEXT SEARCH TEMPLATE' as sql_kind,
          format('%s%I',
-           quote_ident(nullif(n.nspname,current_schema()))||'.',tmpl.tmplname) as sql_identifier
+           quote_ident(nullif(n.nspname,current_schema()))||'.',tmpl.tmplname) as sql_identifier,
+         null as acl
     FROM pg_ts_template tmpl JOIN pg_namespace n ON n.oid=tmpl.tmplnamespace
    WHERE tmpl.oid = $1
    UNION
@@ -220,7 +233,8 @@ AS $function$
          evt.evtevent as kind,
          pg_get_userbyid(evt.evtowner) as owner,
          'EVENT TRIGGER' as sql_kind,
-         quote_ident(evt.evtname) as sql_identifier
+         quote_ident(evt.evtname) as sql_identifier,
+         null as acl
     FROM pg_event_trigger evt
    WHERE evt.oid = $1
    UNION
@@ -231,7 +245,8 @@ AS $function$
          'FOREIGN DATA WRAPPER' as kind,
          pg_get_userbyid(fdw.fdwowner) as owner,
          'FOREIGN DATA WRAPPER' as sql_kind,
-         quote_ident(fdw.fdwname) as sql_identifier
+         quote_ident(fdw.fdwname) as sql_identifier,
+         fdwacl as acl
     FROM pg_foreign_data_wrapper fdw
    WHERE fdw.oid = $1
    UNION
@@ -242,7 +257,8 @@ AS $function$
          'SERVER' as kind,
          pg_get_userbyid(srv.srvowner) as owner,
          'SERVER' as sql_kind,
-         quote_ident(srv.srvname) as sql_identifier
+         quote_ident(srv.srvname) as sql_identifier,
+         srvacl as acl
     FROM pg_foreign_server srv
    WHERE srv.oid = $1
    UNION
@@ -254,7 +270,8 @@ AS $function$
          null as owner,
          'USER MAPPING' as sql_kind,
          'FOR '||quote_ident(ums.usename)||
-         ' SERVER '||quote_ident(ums.srvname) as sql_identifier
+         ' SERVER '||quote_ident(ums.srvname) as sql_identifier,
+         null as acl
     FROM pg_user_mappings ums
    WHERE ums.umid = $1
    UNION
@@ -267,7 +284,8 @@ AS $function$
          'CAST' as sql_kind,
          format('(%s AS %s)',
            format_type(ca.castsource,null),format_type(ca.casttarget,null))
-           as sql_identifier
+           as sql_identifier,
+         null as acl
     FROM pg_cast ca
    WHERE ca.oid = $1
    UNION
@@ -279,7 +297,8 @@ AS $function$
          pg_get_userbyid(co.collowner) as owner,
          'COLLATION' as sql_kind,
          format('%s%I',
-           quote_ident(nullif(n.nspname,current_schema()))||'.',co.collname) as sql_identifier
+           quote_ident(nullif(n.nspname,current_schema()))||'.',co.collname) as sql_identifier,
+         null as acl
     FROM pg_collation co JOIN pg_namespace n ON n.oid=co.collnamespace
    WHERE co.oid = $1
    UNION
@@ -291,7 +310,8 @@ AS $function$
          pg_get_userbyid(co.conowner) as owner,
          'CONVERSION' as sql_kind,
          format('%s%I',
-           quote_ident(nullif(n.nspname,current_schema()))||'.',co.conname) as sql_identifier
+           quote_ident(nullif(n.nspname,current_schema()))||'.',co.conname) as sql_identifier,
+         null as acl
     FROM pg_conversion co JOIN pg_namespace n ON n.oid=co.connamespace
    WHERE co.oid = $1
 $function$  strict;
@@ -1844,7 +1864,7 @@ COMMENT ON FUNCTION ddlx_drop(oid)
      
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_parts(
+CREATE OR REPLACE FUNCTION ddlx_script_parts(
  IN oid,
  OUT ddl_create text, OUT ddl_drop text,
  OUT ddl_create_deps text, OUT ddl_drop_deps text)
@@ -1881,7 +1901,7 @@ select E'BEGIN;\n\n'||
          E'\n-- DEPENDANTS\n\n'||ddl_create_deps
        )||
        E'\nEND;\n'
-  from ddlx_parts($1)
+  from ddlx_script_parts($1)
 $function$ strict;
 
 COMMENT ON FUNCTION ddlx_script(oid) 

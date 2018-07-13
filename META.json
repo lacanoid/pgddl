@@ -1,8 +1,8 @@
 {
    "name": "ddlx",
-   "abstract": "DDL Extractor Functions",
+   "abstract": "DDL eXtractor Functions",
    "description": "A set of SQL only functions for recreating DDL for objects in a database",
-   "version": "0.9",
+   "version": "0.10",
    "maintainer": [
       "Ziga Kranjec <ziga@ljudmila.org>"
    ],
@@ -24,8 +24,8 @@
      "pgddl": {
        "file": "ddlx.sql",
        "docfile": "README.md",
-       "version": "0.9",
-       "abstract": "DDL Extractor Functions"
+       "version": "0.10",
+       "abstract": "DDL eXtractor Functions"
      }
    },
    "resources": {

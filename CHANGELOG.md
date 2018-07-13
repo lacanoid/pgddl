@@ -1,5 +1,12 @@
 ! = todo
 
+Version 0.10
+------------
+- added acl to ddlx_identify()
+! fix ddlx_script(text) dependants
+! support for ...
+! compiler for particlar pg version
+
 Version 0.9
 -----------
 - renamed extension to ddlx
