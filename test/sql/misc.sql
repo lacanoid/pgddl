@@ -20,3 +20,5 @@ COMMENT ON CONVERSION "ascii_to_utf8++" IS 'conversion++ for SQL_ASCII to UTF8';
 
 select ddlx_create(oid) from pg_conversion where conname in ('ascii_to_utf8++') order by conname;
 
+select ddlx_grants('test_class_r'::regclass::oid);
+

@@ -60,3 +60,21 @@ COMMENT ON CONVERSION "ascii_to_utf8++" IS 'conversion++ for SQL_ASCII to UTF8';
 ALTER CONVERSION "ascii_to_utf8++" OWNER TO postgres;
 
 (1 row)
+select ddlx_grants('test_class_r'::regclass::oid);
+ddlx_grants
+GRANT INSERT ON TABLE test_class_r TO postgres;
+GRANT SELECT ON TABLE test_class_r TO postgres;
+GRANT UPDATE ON TABLE test_class_r TO postgres;
+GRANT DELETE ON TABLE test_class_r TO postgres;
+GRANT TRUNCATE ON TABLE test_class_r TO postgres;
+GRANT REFERENCES ON TABLE test_class_r TO postgres;
+GRANT TRIGGER ON TABLE test_class_r TO postgres;
+GRANT INSERT ON TABLE test_class_r TO PUBLIC;
+GRANT SELECT ON TABLE test_class_r TO PUBLIC;
+GRANT UPDATE ON TABLE test_class_r TO PUBLIC;
+GRANT DELETE ON TABLE test_class_r TO PUBLIC;
+GRANT TRUNCATE ON TABLE test_class_r TO PUBLIC;
+GRANT REFERENCES ON TABLE test_class_r TO PUBLIC;
+GRANT TRIGGER ON TABLE test_class_r TO PUBLIC;
+
+(1 row)

@@ -1373,6 +1373,33 @@ select coalesce(string_agg(ddl1,'')||E'\n','')
 $function$  strict;
 
 ---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_grants(oid) 
+ RETURNS text
+ LANGUAGE sql
+ AS $function$
+with obj as (select * from ddlx_identify($1)),
+a as (
+ select coalesce(nullif(grantor,0)::regrole::text,'PUBLIC') as grantor,
+        coalesce(nullif(grantee,0)::regrole::text,'PUBLIC') as grantee,
+        privilege_type,
+        case 
+        when is_grantable then ' WITH GRANT OPTION' else ''
+        end as grant_option
+   from obj,aclexplode(obj.acl)
+),
+b as (
+select 'GRANT '||privilege_type
+       ||' ON '||obj.sql_kind||' '||obj.sql_identifier
+       ||' TO '||grantee||grant_option
+       as dcl
+  from obj,a
+)
+select coalesce(string_agg(dcl,E';\n')||E';\n','')
+  from b
+$function$  strict;
+
+---------------------------------------------------
 --  Dependancy handling
 ---------------------------------------------------
 

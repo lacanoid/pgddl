@@ -191,7 +191,7 @@ Nevertheless, some of them are:
     Get columns of a class.
 
 See file [ddlx.sql](ddlx.sql) and [full list of functions](test/expected/init.out) for additional details.
-Finctions with comments are public API. The rest are intended for internal use, the purpose can
+Functions with comments are public API. The rest are intended for internal use, the purpose can
 usually be inferred from the name.
 
 See file [function_usage.svg](docs/function_usage.svg) for a picture of how this is put together.

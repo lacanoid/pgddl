@@ -62,9 +62,10 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_get_indexes(regclass)            | 
  ddlx_get_rules(regclass)              | 
  ddlx_get_triggers(regclass)           | 
+ ddlx_grants(oid)                      | 
  ddlx_grants(regclass)                 | 
  ddlx_grants(regproc)                  | 
  ddlx_grants(regrole)                  | 
  ddlx_identify(oid)                    | 
- ddlx_parts(oid)                       | 
+ ddlx_script_parts(oid)                | 
 
