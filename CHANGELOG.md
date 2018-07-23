@@ -1,7 +1,7 @@
 ! = todo
 
-Version 0.10
-------------
+Version 0.10α
+-------------
 - added acl to ddlx_identify()
 - fix ddlx_script(text) dependants
 - ! support for ...
