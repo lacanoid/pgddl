@@ -9,6 +9,7 @@ Version 0.10α
 - support for operator families
 - ! support for ...
 - ! compiler for particlar pg version
+- more use of format() function for speed and readability
 
 Version 0.9
 -----------

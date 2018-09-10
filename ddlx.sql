@@ -1103,39 +1103,36 @@ CREATE OR REPLACE FUNCTION ddlx_create_aggregate(regproc)
  LANGUAGE sql
 AS $function$ 
   with obj as (select * from ddlx_identify($1))
-select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n ' 
-       || E' SFUNC = '  || cast(a.aggtransfn::regproc as text)  
-       || E',\n  STYPE = ' || format_type(a.aggtranstype,null) 
-       || case when a.aggtransspace>0 then E',\n  SSPACE = '||a.aggtransspace else '' end
-       || coalesce(E',\n  FINALFUNC = ' || nullif(cast(a.aggfinalfn::regproc as text),'-'),'') 
-       || case when a.aggfinalextra then E',\n  FINALFUNC_EXTRA' else '' end
-       || coalesce(E',\n  COMBINEFUNC = ' || nullif(cast(a.aggcombinefn::regproc as text),'-'),'') 
-       || coalesce(E',\n  SERIALFUNC = ' || nullif(cast(a.aggserialfn::regproc as text),'-'),'') 
-       || coalesce(E',\n  DESERIALFUNC = ' || nullif(cast(a.aggdeserialfn::regproc as text),'-'),'') 
-       || coalesce(E',\n  INITCOND = ' || quote_literal(a.agginitval),'') 
-       || coalesce(E',\n  MSFUNC = ' || nullif(cast(a.aggmtransfn::regproc as text),'-'),'') 
-       || coalesce(E',\n  MINVFUNC = ' || nullif(cast(a.aggminvtransfn::regproc as text),'-'),'') 
-       || case when a.aggmtranstype>0 then E',\n  MSTYPE = '||format_type(a.aggmtranstype,null) else '' end
-       || case when a.aggmtransspace>0 then E',\n  MSSPACE = '||a.aggmtransspace else '' end
-       || coalesce(E',\n  MFINALFUNC = ' || nullif(cast(a.aggmfinalfn::regproc as text),'-'),'') 
-       || case when a.aggmfinalextra then E',\n  MFINALFUNC_EXTRA' else '' end
-       || coalesce(E',\n  MINITCOND = ' || quote_literal(a.aggminitval),'') 
-       || case 
-            when a.aggsortop>0 
-            then E',\n  SORTOP = '||cast(a.aggsortop::regoperator as text)
-            else ''
-          end
-       || E',\n  PARALLEL = '
-       || case p.proparallel
+select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' || 
+       	array_to_string(array[
+          'SFUNC = '  || cast(a.aggtransfn::regproc as text),
+          'STYPE = ' || format_type(a.aggtranstype,null),
+          case when a.aggtransspace>0 then 'SSPACE = '||a.aggtransspace end,
+          'FINALFUNC = ' || nullif(cast(a.aggfinalfn::regproc as text),'-'), 
+          case when a.aggfinalextra then 'FINALFUNC_EXTRA' end,
+          'COMBINEFUNC = ' || nullif(cast(a.aggcombinefn::regproc as text),'-'), 
+          'SERIALFUNC = ' || nullif(cast(a.aggserialfn::regproc as text),'-'), 
+          'DESERIALFUNC = ' || nullif(cast(a.aggdeserialfn::regproc as text),'-'), 
+          'INITCOND = ' || quote_literal(a.agginitval), 
+          'MSFUNC = ' || nullif(cast(a.aggmtransfn::regproc as text),'-'), 
+          'MINVFUNC = ' || nullif(cast(a.aggminvtransfn::regproc as text),'-'), 
+          case when a.aggmtranstype>0 
+               then 'MSTYPE = '||format_type(a.aggmtranstype,null) end,
+          case when a.aggmtransspace>0 then 'MSSPACE = '||a.aggmtransspace end,
+          'MFINALFUNC = ' || nullif(cast(a.aggmfinalfn::regproc as text),'-'),
+          case when a.aggmfinalextra then E'MFINALFUNC_EXTRA' end,
+          'MINITCOND = ' || quote_literal(a.aggminitval), 
+          case when a.aggsortop>0 
+               then 'SORTOP = '||cast(a.aggsortop::regoperator as text) end,
+          'PARALLEL = ' || case p.proparallel
             when 's' then 'SAFE'
             when 'r' then 'RESTRICTED'
             when 'u' then 'UNSAFE'
             else quote_literal(p.proparallel)
-          end
-       || case a.aggkind
+          end,
+          case a.aggkind
             when 'h' then E',\n  HYPOTHETICAL'
-            else ''
-          end
+          end],E',\n  ')
        || E'\n);\n'
   from pg_aggregate a join obj on (true) join pg_proc p on p.oid = a.aggfnoid
  where a.aggfnoid = $1
