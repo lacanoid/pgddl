@@ -208,7 +208,8 @@ AS $function$
          null as owner,
          'TEXT SEARCH PARSER' as sql_kind,
          format('%s%I',
-           quote_ident(nullif(n.nspname,current_schema()))||'.',prs.prsname) as sql_identifier,
+           quote_ident(nullif(n.nspname,current_schema()))||'.',prs.prsname) 
+           as sql_identifier,
          null as acl
     FROM pg_ts_parser prs JOIN pg_namespace n ON n.oid=prs.prsnamespace
    WHERE prs.oid = $1
@@ -221,7 +222,8 @@ AS $function$
          null as owner,
          'TEXT SEARCH TEMPLATE' as sql_kind,
          format('%s%I',
-           quote_ident(nullif(n.nspname,current_schema()))||'.',tmpl.tmplname) as sql_identifier,
+           quote_ident(nullif(n.nspname,current_schema()))||'.',tmpl.tmplname) 
+           as sql_identifier,
          null as acl
     FROM pg_ts_template tmpl JOIN pg_namespace n ON n.oid=tmpl.tmplnamespace
    WHERE tmpl.oid = $1
@@ -297,7 +299,8 @@ AS $function$
          pg_get_userbyid(co.collowner) as owner,
          'COLLATION' as sql_kind,
          format('%s%I',
-           quote_ident(nullif(n.nspname,current_schema()))||'.',co.collname) as sql_identifier,
+           quote_ident(nullif(n.nspname,current_schema()))||'.',co.collname) 
+           as sql_identifier,
          null as acl
     FROM pg_collation co JOIN pg_namespace n ON n.oid=co.collnamespace
    WHERE co.oid = $1
@@ -310,10 +313,23 @@ AS $function$
          pg_get_userbyid(co.conowner) as owner,
          'CONVERSION' as sql_kind,
          format('%s%I',
-           quote_ident(nullif(n.nspname,current_schema()))||'.',co.conname) as sql_identifier,
+           quote_ident(nullif(n.nspname,current_schema()))||'.',co.conname) 
+           as sql_identifier,
          null as acl
     FROM pg_conversion co JOIN pg_namespace n ON n.oid=co.connamespace
    WHERE co.oid = $1
+   UNION
+  SELECT am.oid,
+         'pg_am'::regclass,
+         am.amname as name,
+         NULL as namespace,
+         'ACCESS METHOD' as kind,
+         NULL as owner,
+         'ACCESS METHOD' as sql_kind,
+         quote_ident(amname) as sql_identifier,
+         null as acl
+    FROM pg_am am
+   WHERE am.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -791,7 +807,7 @@ cc as (
 )
 select 'CREATE DOMAIN ' || format_type(t.oid,null) 
        || E' AS ' || format_type(t.typbasetype,typtypmod) 
-       || coalesce(E'\n '||(select string_agg(definition,E'\n ') from cc),'')
+       || coalesce(E'\n  '||(select string_agg(definition,E'\n  ') from cc),'')
        || case
             when length(col.collcollate) > 0 
             then E'\n  COLLATE ' || quote_ident(col.collcollate::text)
@@ -1554,16 +1570,22 @@ select format(
          E'CREATE OPERATOR %s (\n%s%s%s%s%s%s%s%s%s\n);\n\n',
          cast(o.oid::regoper as text),
          E'  PROCEDURE = '  || cast(o.oprcode::regproc as text),
-         case when o.oprleft <> 0 then E',\n  LEFTARG = ' || format_type(o.oprleft,null) end,
-         case when o.oprright <> 0 then E',\n  RIGHTARG = ' || format_type(o.oprright,null) end,
+         case when o.oprleft <> 0 
+              then E',\n  LEFTARG = ' || format_type(o.oprleft,null) end,
+         case when o.oprright <> 0 
+              then E',\n  RIGHTARG = ' || format_type(o.oprright,null) end,
          case when o.oprcom <> 0 
               then E',\n  COMMUTATOR = OPERATOR('||cast(o.oprcom::regoper as text)||')' end,
          case when o.oprnegate <> 0 
               then E',\n  NEGATOR = OPERATOR('||cast(o.oprnegate::regoper as text)||')' end,
-         case when o.oprrest <> 0 then E',\n  RESTRICT = ' || cast(o.oprrest::regproc as text) end,
-         case when o.oprjoin <> 0 then E',\n  JOIN = ' || cast(o.oprjoin::regproc as text) end,
-         case when o.oprcanhash then E',\n  HASHES' end,
-         case when o.oprcanmerge then E',\n  MERGES' end
+         case when o.oprrest <> 0 
+              then E',\n  RESTRICT = ' || cast(o.oprrest::regproc as text) end,
+         case when o.oprjoin <> 0 
+              then E',\n  JOIN = ' || cast(o.oprjoin::regproc as text) end,
+         case when o.oprcanhash 
+              then E',\n  HASHES' end,
+         case when o.oprcanmerge 
+              then E',\n  MERGES' end
 		)
 	 ||	ddlx_comment($1)
      || ddlx_alter_owner($1) 
@@ -1737,6 +1759,26 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_access_method(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n',
+		amname,
+		case amtype
+		  when 'i' then 'INDEX'::text
+		  else amtype::text
+		end,
+		cast(amhandler as regproc)
+	   )
+        || ddlx_comment($1)
+  from pg_am as am, obj
+ where am.oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
  RETURNS text
  LANGUAGE sql
@@ -1847,6 +1889,8 @@ AS $function$
 	then ddlx_create_collation(oid)
 	when 'pg_conversion'::regclass 
 	then ddlx_create_conversion(oid)
+	when 'pg_am'::regclass 
+	then ddlx_create_access_method(oid)
 	else
 	  case
 		when kind is not null
@@ -1943,7 +1987,12 @@ AS $function$
   select case
     when strpos($1,'(')>0 
     then ddlx_script(cast($1 as regprocedure)::oid)
-    else ddlx_script(cast($1 as regtype)::oid)
+    else ddlx_script((
+         select coalesce(c.oid,t.oid)
+           from pg_type t 
+           left join pg_class c on (c.oid=t.typrelid and t.typtype = 'c' and c.relkind <> 'c') 
+          where t.oid = cast($1 as regtype)::oid
+         ))
      end
 $function$  strict;
 

@@ -23,6 +23,7 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_alter_table_defaults(regclass)   | 
  ddlx_banner(text,text,text,text,text) | 
  ddlx_comment(oid)                     | 
+ ddlx_create_access_method(oid)        | 
  ddlx_create_aggregate(regproc)        | 
  ddlx_create_cast(oid)                 | 
  ddlx_create_class(regclass)           | 

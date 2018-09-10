@@ -78,3 +78,10 @@ GRANT REFERENCES ON TABLE test_class_r TO PUBLIC;
 GRANT TRIGGER ON TABLE test_class_r TO PUBLIC;
 
 (1 row)
+select ddlx_create(oid) from pg_am where amname = 'btree';
+ddlx_create
+CREATE ACCESS METHOD btree
+  TYPE INDEX HANDLER bthandler;
+COMMENT ON ACCESS METHOD btree IS 'b-tree index access method';
+
+(1 row)

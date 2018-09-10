@@ -22,3 +22,4 @@ select ddlx_create(oid) from pg_conversion where conname in ('ascii_to_utf8++') 
 
 select ddlx_grants('test_class_r'::regclass::oid);
 
+select ddlx_create(oid) from pg_am where amname = 'btree';

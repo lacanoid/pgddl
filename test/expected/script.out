@@ -7,6 +7,7 @@ BEGIN;
 /*
 DROP VIEW test_class_v_opt2;
 DROP VIEW test_class_v_opt1;
+DROP VIEW test_class_v2;
 
 DROP VIEW test_class_v;
 */
@@ -33,6 +34,25 @@ ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 
 -- DEPENDANTS
+
+-- Type: VIEW ; Name: test_class_v2; Owner: postgres
+
+CREATE OR REPLACE VIEW test_class_v2 AS
+ SELECT test_class_v.a,
+    test_class_v.b,
+    test_class_v.c,
+    test_class_v.d,
+    test_class_v.e,
+    test_class_v.f,
+    test_class_v.g,
+    test_class_v.h,
+    test_class_v.v
+   FROM test_class_v;
+
+COMMENT ON VIEW test_class_v2 IS NULL;
+
+ALTER VIEW test_class_v2 OWNER TO postgres;
+GRANT SELECT ON test_class_v2 TO PUBLIC;
 
 -- Type: VIEW ; Name: test_class_v_opt1; Owner: postgres
 

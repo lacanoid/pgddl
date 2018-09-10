@@ -296,6 +296,64 @@ GRANT SELECT ON test_class_v TO PUBLIC;
 END;
 
 (1 row)
+CREATE VIEW test_class_v2 AS
+SELECT * FROM test_class_v;
+grant select on test_class_v2 to public;
+SELECT ddlx_script('test_class_v'::regclass);
+ddlx_script
+BEGIN;
+
+/*
+DROP VIEW test_class_v2;
+
+DROP VIEW test_class_v;
+*/
+
+-- Type: VIEW ; Name: test_class_v; Owner: postgres
+
+CREATE OR REPLACE VIEW test_class_v AS
+ SELECT test_class_r.a,
+    test_class_r.b,
+    test_class_r.c,
+    test_class_r.d,
+    test_class_r.e,
+    test_class_r.f,
+    test_class_r.g,
+    test_class_r.h,
+    test_class_r.v
+   FROM test_class_r;
+
+COMMENT ON VIEW test_class_v IS NULL;
+
+ALTER VIEW test_class_v SET (check_option='cascaded');
+
+ALTER VIEW test_class_v OWNER TO postgres;
+GRANT SELECT ON test_class_v TO PUBLIC;
+
+-- DEPENDANTS
+
+-- Type: VIEW ; Name: test_class_v2; Owner: postgres
+
+CREATE OR REPLACE VIEW test_class_v2 AS
+ SELECT test_class_v.a,
+    test_class_v.b,
+    test_class_v.c,
+    test_class_v.d,
+    test_class_v.e,
+    test_class_v.f,
+    test_class_v.g,
+    test_class_v.h,
+    test_class_v.v
+   FROM test_class_v;
+
+COMMENT ON VIEW test_class_v2 IS NULL;
+
+ALTER VIEW test_class_v2 OWNER TO postgres;
+GRANT SELECT ON test_class_v2 TO PUBLIC;
+
+END;
+
+(1 row)
 CREATE MATERIALIZED VIEW test_class_m AS
 SELECT * FROM test_class_r;
 create unique index test_class_mi ON test_class_m (a);

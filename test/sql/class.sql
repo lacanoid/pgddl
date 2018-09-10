@@ -55,6 +55,11 @@ grant select on test_class_v to public;
 SELECT ddlx_script('test_class_v'::regclass);
 SELECT ddlx_script('test_class_v'::regtype);
 
+CREATE VIEW test_class_v2 AS
+SELECT * FROM test_class_v;
+grant select on test_class_v2 to public;
+SELECT ddlx_script('test_class_v'::regclass);
+
 CREATE MATERIALIZED VIEW test_class_m AS
 SELECT * FROM test_class_r;
 create unique index test_class_mi ON test_class_m (a);

@@ -36,8 +36,8 @@ DROP DOMAIN test_type_d;
 */
 
 CREATE DOMAIN test_type_d AS numeric(10,2)
- CHECK ((VALUE IS NOT NULL))
- CHECK ((VALUE > (6)::numeric))
+  CHECK ((VALUE IS NOT NULL))
+  CHECK ((VALUE > (6)::numeric))
   DEFAULT 7;
 
 COMMENT ON DOMAIN test_type_d IS 'my domain';
