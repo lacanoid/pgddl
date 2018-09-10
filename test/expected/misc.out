@@ -34,6 +34,21 @@ CREATE CAST (text AS regclass)
 COMMENT ON CAST (text AS regclass) IS NULL;
 
 (6 rows)
+select ddlx_drop(oid) from pg_cast where castsource = 'text'::regtype order by casttarget;
+ddlx_drop
+DROP CAST (text AS "char");
+
+DROP CAST (text AS name);
+
+DROP CAST (text AS xml);
+
+DROP CAST (text AS character);
+
+DROP CAST (text AS character varying);
+
+DROP CAST (text AS regclass);
+
+(6 rows)
 CREATE COLLATION "POSIX++" (
   LC_COLLATE = 'POSIX',
   LC_CTYPE = 'POSIX'
@@ -49,6 +64,11 @@ COMMENT ON COLLATION "POSIX++" IS 'standard POSIX++ collation';
 ALTER COLLATION "POSIX++" OWNER TO postgres;
 
 (1 row)
+select ddlx_drop(oid) from pg_collation where collname in ('POSIX++') order by collname;
+ddlx_drop
+DROP COLLATION "POSIX++";
+
+(1 row)
 CREATE DEFAULT CONVERSION "ascii_to_utf8++"
   FOR 'SQL_ASCII' TO 'UTF8' FROM ascii_to_utf8;
 COMMENT ON CONVERSION "ascii_to_utf8++" IS 'conversion++ for SQL_ASCII to UTF8';
@@ -58,6 +78,11 @@ CREATE DEFAULT CONVERSION "ascii_to_utf8++"
   FOR 'SQL_ASCII' TO 'UTF8' FROM ascii_to_utf8;
 COMMENT ON CONVERSION "ascii_to_utf8++" IS 'conversion++ for SQL_ASCII to UTF8';
 ALTER CONVERSION "ascii_to_utf8++" OWNER TO postgres;
+
+(1 row)
+select ddlx_drop(oid) from pg_conversion where conname in ('ascii_to_utf8++') order by conname;
+ddlx_drop
+DROP CONVERSION "ascii_to_utf8++";
 
 (1 row)
 select ddlx_grants('test_class_r'::regclass::oid);
@@ -82,6 +107,26 @@ select ddlx_create(oid) from pg_am where amname = 'btree';
 ddlx_create
 CREATE ACCESS METHOD btree
   TYPE INDEX HANDLER bthandler;
+
 COMMENT ON ACCESS METHOD btree IS 'b-tree index access method';
+
+(1 row)
+select ddlx_drop(oid) from pg_am where amname = 'btree';
+ddlx_drop
+DROP ACCESS METHOD btree;
+
+(1 row)
+create operator family opf1 using btree;
+comment on operator family opf1 using btree is 'A comment';
+select ddlx_create(oid) from pg_opfamily where opfname='opf1';
+ddlx_create
+CREATE OPERATOR FAMILY opf1 USING btree USING btree;
+COMMENT ON OPERATOR FAMILY opf1 USING btree IS 'A comment';
+ALTER OPERATOR FAMILY opf1 USING btree OWNER TO postgres;
+
+(1 row)
+select ddlx_drop(oid) from pg_opfamily where opfname='opf1';
+ddlx_drop
+DROP OPERATOR FAMILY opf1 USING btree;
 
 (1 row)

@@ -6,6 +6,7 @@ Version 0.10α
 - New ddlx_grants(oid) function
 - fix ddlx_script(text) dependants bug
 - support for access methods
+- support for operator families
 - ! support for ...
 - ! compiler for particlar pg version
 

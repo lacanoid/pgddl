@@ -330,6 +330,23 @@ AS $function$
          null as acl
     FROM pg_am am
    WHERE am.oid = $1
+   UNION
+  SELECT opf.oid,
+         'pg_opfamily'::regclass,
+         opf.opfname as name,
+		 n.nspname as namespace,
+         'OPERATOR FAMILY' as kind,
+         pg_get_userbyid(opf.opfowner) as owner,
+         'OPERATOR FAMILY' as sql_kind,
+         format('%s%I USING %I',
+           quote_ident(nullif(n.nspname,current_schema()))||'.',
+           opf.opfname,
+           am.amname) 
+           as sql_identifier,
+         null as acl
+    FROM pg_opfamily opf JOIN pg_namespace n ON n.oid=opf.opfnamespace
+    JOIN pg_am am on (am.oid=opf.opfmethod)
+   WHERE opf.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -1764,7 +1781,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_access_method(oid)
  LANGUAGE sql
 AS $function$
 with obj as (select * from ddlx_identify($1))
-select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n',
+select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
 		amname,
 		case amtype
 		  when 'i' then 'INDEX'::text
@@ -1775,6 +1792,24 @@ select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n',
         || ddlx_comment($1)
   from pg_am as am, obj
  where am.oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create_operator_family(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'CREATE OPERATOR FAMILY %s USING %s;\n',
+		obj.sql_identifier,
+		amname
+	   )
+        || ddlx_comment($1)
+        || ddlx_alter_owner($1)
+  from pg_opfamily as opf join pg_am am on (am.oid=opf.opfmethod), 
+       obj
+ where opf.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -1891,6 +1926,8 @@ AS $function$
 	then ddlx_create_conversion(oid)
 	when 'pg_am'::regclass 
 	then ddlx_create_access_method(oid)
+	when 'pg_opfamily'::regclass 
+	then ddlx_create_operator_family(oid)
 	else
 	  case
 		when kind is not null
