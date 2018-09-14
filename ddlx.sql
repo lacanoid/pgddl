@@ -1120,7 +1120,7 @@ select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' ||
                then 'MSTYPE = '||format_type(a.aggmtranstype,null) end,
           case when a.aggmtransspace>0 then 'MSSPACE = '||a.aggmtransspace end,
           'MFINALFUNC = ' || nullif(cast(a.aggmfinalfn::regproc as text),'-'),
-          case when a.aggmfinalextra then E'MFINALFUNC_EXTRA' end,
+          case when a.aggmfinalextra then 'MFINALFUNC_EXTRA' end,
           'MINITCOND = ' || quote_literal(a.aggminitval), 
           case when a.aggsortop>0 
                then 'SORTOP = '||cast(a.aggsortop::regoperator as text) end,
@@ -1131,7 +1131,7 @@ select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' ||
             else quote_literal(p.proparallel)
           end,
           case a.aggkind
-            when 'h' then E',\n  HYPOTHETICAL'
+            when 'h' then 'HYPOTHETICAL'
           end],E',\n  ')
        || E'\n);\n'
   from pg_aggregate a join obj on (true) join pg_proc p on p.oid = a.aggfnoid
