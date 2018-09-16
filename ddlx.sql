@@ -96,6 +96,19 @@ AS $function$
     FROM pg_roles r
    WHERE r.oid = $1
    UNION
+  SELECT r.oid,
+         'pg_rewrite'::regclass,
+         r.rulename as name,
+         null as namespace,
+         'RULE' as kind,
+         null as owner,
+         'RULE' as sql_kind,
+         quote_ident(r.rulename)||' ON '|| 
+           cast(c.oid::regclass as text) sql_identifier,
+         null as acl
+    FROM pg_rewrite r JOIN pg_class c on (c.oid = r.ev_class)
+   WHERE r.oid = $1
+   UNION
   SELECT n.oid,
          'pg_namespace'::regclass,
          n.nspname as name,
@@ -1032,6 +1045,21 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_rule(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+  select case
+         when ev_type='1' and r.rulename='_RETURN'
+         then ddlx_create_class(c.oid)
+         else pg_get_ruledef(r.oid)
+         end
+    from pg_rewrite r join pg_class c on (c.oid=r.ev_class)
+   where r.oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_triggers(regclass)
  RETURNS text
  LANGUAGE sql
@@ -1925,6 +1953,8 @@ AS $function$
     then ddlx_create_access_method(oid)
     when 'pg_opfamily'::regclass 
     then ddlx_create_operator_family(oid)
+    when 'pg_rewrite'::regclass 
+    then ddlx_create_rule(oid)
     else
       case
         when kind is not null
