@@ -138,7 +138,7 @@ AS $function$
          'pg_trigger'::regclass,
          t.tgname as name,
          c.relname as namespace,
-	     CASE t.tgtype::integer & 2
+         CASE t.tgtype::integer & 2
             WHEN 2 THEN 'BEFORE'::text
             WHEN 0 THEN 'AFTER'::text
             ELSE NULL::text
@@ -334,7 +334,7 @@ AS $function$
   SELECT opf.oid,
          'pg_opfamily'::regclass,
          opf.opfname as name,
-		 n.nspname as namespace,
+         n.nspname as namespace,
          'OPERATOR FAMILY' as kind,
          pg_get_userbyid(opf.opfowner) as owner,
          'OPERATOR FAMILY' as sql_kind,
@@ -379,17 +379,17 @@ AS $function$
         format('%s.%I',text(c.oid::regclass),a.attname) AS sql_identifier,
         c.oid, 
         format('%I %s%s%s',
-        	a.attname::text,
-        	format_type(t.oid, a.atttypmod),
-	        CASE
-    	      WHEN length(col.collcollate) > 0 
-        	  THEN ' COLLATE ' || quote_ident(col.collcollate::text)
+            a.attname::text,
+            format_type(t.oid, a.atttypmod),
+            CASE
+              WHEN length(col.collcollate) > 0 
+              THEN ' COLLATE ' || quote_ident(col.collcollate::text)
               ELSE ''
-        	END,
-        	CASE
+            END,
+            CASE
               WHEN a.attnotnull THEN ' NOT NULL'::text
               ELSE ''::text
-        	END) 
+            END) 
         AS definition
    FROM pg_class c
    JOIN pg_namespace s ON s.oid = c.relnamespace
@@ -739,19 +739,19 @@ select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
             case when  t.typlen < 0 then 'VARIABLE' else cast(t.typlen as text) end,
          case when t.typbyval then 'PASSEDBYVALUE' end,
          'ALIGNMENT = ' || 
-		    case t.typalign
-			when 'c' then 'char'
-			when 's' then 'int2'
-			when 'i' then 'int4'
-			when 'd' then 'double'
-		    end, 
+            case t.typalign
+            when 'c' then 'char'
+            when 's' then 'int2'
+            when 'i' then 'int4'
+            when 'd' then 'double'
+            end, 
          'STORAGE = ' || 
-		    case t.typstorage
-			when 'p' then 'plain'
-			when 'e' then 'external'
-			when 'm' then 'main'
-			when 'x' then 'extended'
-		    end, 
+            case t.typstorage
+            when 'p' then 'plain'
+            when 'e' then 'external'
+            when 'm' then 'main'
+            when 'x' then 'extended'
+            end, 
          'CATEGORY = ' || quote_nullable(t.typcategory),
          case when t.typispreferred then E'PREFERRED = true' end,
          case 
@@ -932,9 +932,9 @@ CREATE OR REPLACE FUNCTION ddlx_create_default(oid)
  LANGUAGE sql
 AS $function$
   select format(E'ALTER TABLE %s ALTER %I SET DEFAULT %s;\n\n',
-         	cast(c.oid::regclass as text),
-         	a.attname, 
-         	def.adsrc)
+            cast(c.oid::regclass as text),
+            a.attname, 
+            def.adsrc)
     from pg_attrdef def 
     join pg_class c on c.oid = def.adrelid
     join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum
@@ -948,9 +948,9 @@ CREATE OR REPLACE FUNCTION ddlx_drop_default(oid)
  LANGUAGE sql
 AS $function$
   select format(E'ALTER TABLE %s ALTER %I DROP DEFAULT;\n',
-         	cast(c.oid::regclass as text),
-         	a.attname, 
-         	def.adsrc)
+            cast(c.oid::regclass as text),
+            a.attname, 
+            def.adsrc)
     from pg_attrdef def 
     join pg_class c on c.oid = def.adrelid
     join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum
@@ -1104,7 +1104,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_aggregate(regproc)
 AS $function$ 
   with obj as (select * from ddlx_identify($1))
 select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' || 
-       	array_to_string(array[
+        array_to_string(array[
           'SFUNC = '  || cast(a.aggtransfn::regproc as text),
           'STYPE = ' || format_type(a.aggtranstype,null),
           case when a.aggtransspace>0 then 'SSPACE = '||a.aggtransspace end,
@@ -1328,14 +1328,14 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass)
  select
    coalesce(
     string_agg(format(
-    	E'GRANT %s ON %s TO %s%s;\n',
+        E'GRANT %s ON %s TO %s%s;\n',
         privilege_type, 
         cast($1 as text),
         case grantee  
           when 'PUBLIC' then 'PUBLIC' 
           else quote_ident(grantee) 
         end, 
-		case is_grantable  
+        case is_grantable  
           when 'YES' then ' WITH GRANT OPTION' 
           else '' 
         end), ''),
@@ -1359,16 +1359,16 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regproc)
           text($1::regprocedure)) ||
    coalesce(
     string_agg (format(
-    	E'GRANT %s ON FUNCTION %s TO %s%s;\n',
-    	privilege_type, 
+        E'GRANT %s ON FUNCTION %s TO %s%s;\n',
+        privilege_type, 
         text($1::regprocedure), 
         CASE grantee  
           WHEN 'PUBLIC' THEN 'PUBLIC' 
           ELSE quote_ident(grantee) 
         END,
-		CASE is_grantable  
+        CASE is_grantable  
           WHEN 'YES' THEN ' WITH GRANT OPTION' 
-		  ELSE '' 
+          ELSE '' 
         END), ''),
     '')
  FROM information_schema.routine_privileges g 
@@ -1600,8 +1600,8 @@ select format(
               then E',\n  HASHES' end,
          case when o.oprcanmerge 
               then E',\n  MERGES' end
-		)
-	 ||	ddlx_comment($1)
+        )
+     || ddlx_comment($1)
      || ddlx_alter_owner($1) 
   from pg_operator o
  where oid = $1
@@ -1635,7 +1635,7 @@ with cfg as (select * from pg_ts_config where oid = $1),
 select format(E'CREATE TEXT SEARCH CONFIGURATION %s ( PARSER = %s );\n',
               cast($1 as text),
               prs.sql_identifier)
-	   || ddlx_comment($1)
+       || ddlx_comment($1)
        || ddlx_alter_owner($1) 
   from prs;
 $function$  strict;
@@ -1659,7 +1659,7 @@ select format(E'CREATE TEXT SEARCH DICTIONARY %s\n  ( TEMPLATE = %s%s );\n',
        cast($1 as text),
        tmpl.sql_identifier,
        ', '||dict.dictinitoption)
-	   || ddlx_comment($1)
+       || ddlx_comment($1)
        || ddlx_alter_owner($1) 
   from dict,tmpl;
 $function$  strict;
@@ -1759,12 +1759,12 @@ CREATE OR REPLACE FUNCTION ddlx_create_conversion(oid)
 AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE %sCONVERSION %s\n  FOR %L TO %L FROM %s;\n',
-		case when c.condefault then 'DEFAULT ' end,
-		obj.sql_identifier,
-		pg_encoding_to_char(c.conforencoding),
-		pg_encoding_to_char(c.contoencoding),
-		cast(c.conproc::regproc as text)
-	   )
+        case when c.condefault then 'DEFAULT ' end,
+        obj.sql_identifier,
+        pg_encoding_to_char(c.conforencoding),
+        pg_encoding_to_char(c.contoencoding),
+        cast(c.conproc::regproc as text)
+       )
         || ddlx_comment($1)
         || ddlx_alter_owner($1)
   from pg_conversion as c, obj
@@ -1779,13 +1779,13 @@ CREATE OR REPLACE FUNCTION ddlx_create_access_method(oid)
 AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
-		amname,
-		case amtype
-		  when 'i' then 'INDEX'::text
-		  else amtype::text
-		end,
-		cast(amhandler as regproc)
-	   )
+        amname,
+        case amtype
+          when 'i' then 'INDEX'::text
+          else amtype::text
+        end,
+        cast(amhandler as regproc)
+       )
         || ddlx_comment($1)
   from pg_am as am, obj
  where am.oid = $1
@@ -1799,9 +1799,9 @@ CREATE OR REPLACE FUNCTION ddlx_create_operator_family(oid)
 AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE OPERATOR FAMILY %s USING %s;\n',
-		obj.sql_identifier,
-		amname
-	   )
+        obj.sql_identifier,
+        amname
+       )
         || ddlx_comment($1)
         || ddlx_alter_owner($1)
   from pg_opfamily as opf join pg_am am on (am.oid=opf.opfmethod), 
@@ -1816,7 +1816,7 @@ CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
  LANGUAGE sql
 AS $function$
 select format(E'CREATE SCHEMA %s;\n',cast($1 as text))
-	   || ddlx_comment($1)
+       || ddlx_comment($1)
        || ddlx_alter_owner($1) 
   from pg_namespace n
  where oid = $1
@@ -1862,8 +1862,8 @@ AS $function$
           when 'd' then ddlx_create_type_domain(t.oid)
           when 'b' then ddlx_create_type_base(t.oid)
           when 'r' then ddlx_create_type_range(t.oid)
-		  else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
-		  end 
+          else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
+          end 
           || ddlx_comment(t.oid)
           || ddlx_alter_owner(t.oid) 
      from pg_type t
@@ -1881,58 +1881,58 @@ CREATE OR REPLACE FUNCTION ddlx_create(oid)
 AS $function$
   with obj as (select * from ddlx_identify($1))
   select case obj.classid
-	when 'pg_class'::regclass 
-	then ddlx_create(oid::regclass)
-	when 'pg_proc'::regclass 
-	then ddlx_create(oid::regproc)
-	when 'pg_type'::regclass 
-	then ddlx_create(oid::regtype)
-	when 'pg_operator'::regclass 
-	then ddlx_create(oid::regoper)
-	when 'pg_roles'::regclass 
-	then ddlx_create(oid::regrole)
-	when 'pg_namespace'::regclass 
-	then ddlx_create(oid::regnamespace)
-	when 'pg_ts_config'::regclass 
-	then ddlx_create(oid::regconfig)
-	when 'pg_ts_dict'::regclass 
-	then ddlx_create(oid::regdictionary)
-	when 'pg_ts_parser'::regclass 
-	then ddlx_create_text_search_parser(oid)
-	when 'pg_ts_template'::regclass 
-	then ddlx_create_text_search_template(oid)
-	when 'pg_constraint'::regclass 
-	then ddlx_create_constraint(oid)
-	when 'pg_trigger'::regclass 
-	then ddlx_create_trigger(oid)
-	when 'pg_attrdef'::regclass 
-	then ddlx_create_default(oid)
-	when 'pg_event_trigger'::regclass 
-	then ddlx_create_event_trigger(oid)
-	when 'pg_foreign_data_wrapper'::regclass 
-	then ddlx_create_foreign_data_wrapper(oid)
-	when 'pg_foreign_server'::regclass 
-	then ddlx_create_server(oid)
-	when 'pg_user_mapping'::regclass 
-	then ddlx_create_user_mapping(oid)
-	when 'pg_cast'::regclass 
-	then ddlx_create_cast(oid)
-	when 'pg_collation'::regclass 
-	then ddlx_create_collation(oid)
-	when 'pg_conversion'::regclass 
-	then ddlx_create_conversion(oid)
-	when 'pg_am'::regclass 
-	then ddlx_create_access_method(oid)
-	when 'pg_opfamily'::regclass 
-	then ddlx_create_operator_family(oid)
-	else
-	  case
-		when kind is not null
-		then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
-		else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))
-	   end
- 	 end 
- 	 as ddl
+    when 'pg_class'::regclass 
+    then ddlx_create(oid::regclass)
+    when 'pg_proc'::regclass 
+    then ddlx_create(oid::regproc)
+    when 'pg_type'::regclass 
+    then ddlx_create(oid::regtype)
+    when 'pg_operator'::regclass 
+    then ddlx_create(oid::regoper)
+    when 'pg_roles'::regclass 
+    then ddlx_create(oid::regrole)
+    when 'pg_namespace'::regclass 
+    then ddlx_create(oid::regnamespace)
+    when 'pg_ts_config'::regclass 
+    then ddlx_create(oid::regconfig)
+    when 'pg_ts_dict'::regclass 
+    then ddlx_create(oid::regdictionary)
+    when 'pg_ts_parser'::regclass 
+    then ddlx_create_text_search_parser(oid)
+    when 'pg_ts_template'::regclass 
+    then ddlx_create_text_search_template(oid)
+    when 'pg_constraint'::regclass 
+    then ddlx_create_constraint(oid)
+    when 'pg_trigger'::regclass 
+    then ddlx_create_trigger(oid)
+    when 'pg_attrdef'::regclass 
+    then ddlx_create_default(oid)
+    when 'pg_event_trigger'::regclass 
+    then ddlx_create_event_trigger(oid)
+    when 'pg_foreign_data_wrapper'::regclass 
+    then ddlx_create_foreign_data_wrapper(oid)
+    when 'pg_foreign_server'::regclass 
+    then ddlx_create_server(oid)
+    when 'pg_user_mapping'::regclass 
+    then ddlx_create_user_mapping(oid)
+    when 'pg_cast'::regclass 
+    then ddlx_create_cast(oid)
+    when 'pg_collation'::regclass 
+    then ddlx_create_collation(oid)
+    when 'pg_conversion'::regclass 
+    then ddlx_create_conversion(oid)
+    when 'pg_am'::regclass 
+    then ddlx_create_access_method(oid)
+    when 'pg_opfamily'::regclass 
+    then ddlx_create_operator_family(oid)
+    else
+      case
+        when kind is not null
+        then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
+        else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))
+       end
+     end 
+     as ddl
     from obj
 $function$  strict;
 
@@ -1954,13 +1954,13 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid)
    when 'pg_attrdef'::regclass 
    then ddlx_drop_default(oid)
    else
-	 case
-	   when kind is not null
-	   then format(E'DROP %s %s;\n',obj.sql_kind, obj.sql_identifier)
-	   else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
-	  end
- 	end 
- 	as ddl
+     case
+       when kind is not null
+       then format(E'DROP %s %s;\n',obj.sql_kind, obj.sql_identifier)
+       else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
+      end
+    end 
+    as ddl
    from obj
 $function$  strict;
 
