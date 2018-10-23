@@ -7,6 +7,7 @@ Version 0.10α
 - fix ddlx_script(text) dependants bug
 - support for access methods
 - support for operator families
+- support for rules
 - ! support for ...
 - ! compiler for particlar pg version
 - more use of format() function for speed and readability

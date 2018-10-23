@@ -20,6 +20,7 @@ It also has sophisticated query capabilities which make this project possible.
 Advantages over using other tools like `psql` or `pgdump` include:
 
 - You can use it to extract DDL with **any client** which support running plain SQL queries
+- **Simple API** with just three functions
 - With SQL you can select things to dump by using usual SQL semantics (WHERE, etc)
 - Special function for creating scripts, which drop and recreate entire **dependancy trees**.
   This is useful for example, when one wishes to rename some columns in a view with dependants.
@@ -37,8 +38,8 @@ Some disadvantages:
 
 - Not all Postgres objects and all options are supported yet. 
   The package provides support for basic user-level objects such as types, classes and functions.
-  Initially, support for all `reg*` objects and SQL standard compliant stuff is planned,
-  with more fringe stuff coming later. See [ROADMAP](ROADMAP.md) for what's missing.
+  All `reg*` objects and SQL standard compliant stuff is mostly supported,
+  with more fringe stuff still in constuction. See [ROADMAP](ROADMAP.md) for what's missing.
 - It is not well tested at all. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
   Do not run generated scripts on production databases without testing them!
@@ -63,6 +64,9 @@ or selecting a specific PostgreSQL installation:
 
     make PG_CONFIG=/some/where/bin/pg_config
     make PG_CONFIG=/some/where/bin/pg_config install
+    make PG_CONFIG=/some/where/bin/pg_config installcheck
+
+Make sure you also set the connection parameters like PGPORT right for testing.
 
 And finally inside the database:
 
@@ -87,8 +91,8 @@ The API provides three public user functions:
 
 Currently supported object types are 
 `regtype`, `regclass`, `regproc(edure)`, `regoper(ator)`, `regrole`,
-`regconfig` and `regdictionary`.
-You will probably want to cast object name or oid to the appropriate type.
+`regconfig` and `regdictionary` and several others.
+You will may want to cast object name or oid to the appropriate type.
 
 - `ddlx_create(regtype) returns text`
 
@@ -130,6 +134,13 @@ There is also a convenience function to use `oid` directly, without casting:
     Generates SQL DDL source for object ID, `oid`. 
 	This is the most general-purpose function of the bunch.
 	It also works for objects other than `reg*` types specified above.
+	
+	For those, you can use something like:
+```sql
+SELECT ddlx_create(oid) 
+  FROM pg_foreign_data_wrapper 
+ WHERE fdwname='postgres_fdw';
+```
 
 - `ddlx_drop(oid) returns text`
 

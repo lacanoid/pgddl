@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+
+our $VI = $ENV{VERSION};
+our $V;
+if($VI=~m!(\d+)\.(\d+)!) {
+	my ($maj,$min)=($1,$2);
+	if($maj>=10) { $min=0; }
+	$V = $maj+$min/10.0;
+	print STDERR "Preprocessing for Postgres version $V\n";
+} else {
+	print STDERR "No Postgres version specified in VERSION environment variable";
+}
+
+print "-- preprocessed by sqlpp for PG=$V\n";
+my $l=0; # line number
+while(<>) {
+	$l++;
+	print $_;
+}
