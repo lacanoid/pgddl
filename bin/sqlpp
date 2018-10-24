@@ -2,18 +2,38 @@
 
 our $VI = $ENV{VERSION};
 our $V;
+
+sub errlog { print STDERR "sqlpp:$_[0]\n"; }
+
 if($VI=~m!(\d+)\.(\d+)!) {
 	my ($maj,$min)=($1,$2);
 	if($maj>=10) { $min=0; }
 	$V = $maj+$min/10.0;
-	print STDERR "Preprocessing for Postgres version $V\n";
+	errlog "Preprocessing for Postgres version $V";
 } else {
-	print STDERR "No Postgres version specified in VERSION environment variable";
+	errlog "No Postgres version specified in VERSION environment variable";
 }
 
 print "-- preprocessed by sqlpp for PG=$V\n";
-my $l=0; # line number
-while(<>) {
-	$l++;
-	print $_;
+my $i=0;  # line number
+my $sv=0; # selected version
+my $unless=0;
+while($l=<>) {
+	$i++;
+	if($l=~m!^#(\S+)\s*(\S*)!) {
+		my ($c,$v2)=($1,$2);
+		errlog "Directive line $i \#$c $v2";
+		if($c eq 'if') { $sv=$v2; $unless=0; }
+		elsif($c eq 'unless') { $sv=$v2; $unless=1; }
+		elsif($c eq 'else') { $unless=!$unless; }
+		elsif($c eq 'end') { $sv=0; }
+		else {
+			errlog "Unknown Directive line $i \#$c $v2";
+		}
+	} else {
+		if($sv==0 || ($unless?($V<$sv):($V>=$sv))) {
+			print $l;
+		}
+	}
 }
+

@@ -28,7 +28,7 @@ Support for other postgres objects:
 - language, transform
 - database, policy
 - v10: publication, subscription, statistics
-- v11: procedure, variable
+- v11: procedures
 
 Support for other missing options:
 - storage parameters

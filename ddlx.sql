@@ -60,10 +60,20 @@ AS $function$
          n.nspname AS namespace,
          'FUNCTION' AS kind,
          pg_get_userbyid(p.proowner) AS owner,
+#if 11
+         case p.prokind
+           when 'f' then 'FUNCTION'
+           when 'a' then 'AGGREGATE'
+           when 'p' then 'PROCEDURE'
+           when 'w' then 'WINDOW FUNCTION'
+         end 
+#else
          case
            when p.proisagg then 'AGGREGATE'
            else 'FUNCTION' 
-         end AS sql_kind,
+         end 
+#end
+         AS sql_kind,
          cast($1::regprocedure AS text) AS sql_identifier,
          proacl as acl
     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
