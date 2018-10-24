@@ -2,14 +2,15 @@
 
 Version 0.10α
 -------------
-- added acl to ddlx_identify()
-- New ddlx_grants(oid) function
 - fix ddlx_script(text) dependants bug
 - support for access methods
 - support for operator families
 - support for rules
 - ! support for ...
-- ! compiler for particlar pg version
+- added acl to ddlx_identify()
+- New ddlx_grants(oid) function
+- better storage in ddlx_describe()
+- preprocessor for specific pg version. needed for pg 11
 - more use of format() function for speed and readability
 
 Version 0.9
