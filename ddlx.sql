@@ -1848,7 +1848,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_operator_family(oid)
  LANGUAGE sql
 AS $function$
 with obj as (select * from ddlx_identify($1))
-select format(E'CREATE OPERATOR FAMILY %s USING %s;\n',
+select format(E'CREATE OPERATOR FAMILY %s;\n',
         obj.sql_identifier,
         amname
        )
