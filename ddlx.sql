@@ -296,7 +296,14 @@ CREATE OR REPLACE FUNCTION ddlx_describe(
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
- SELECT a.attname AS name, format_type(t.oid, NULL::integer) AS type,
+WITH
+  storage(k,v) AS (
+         VALUES ('p','plain'),
+                ('e','external'),
+                ('m','main'),
+                ('x','extended')
+)
+SELECT a.attname AS name, format_type(t.oid, NULL::integer) AS type,
         CASE
             WHEN (a.atttypmod - 4) > 0 THEN a.atttypmod - 4
             ELSE NULL::integer
@@ -306,7 +313,7 @@ AS $function$
         col_description(c.oid, a.attnum::integer) AS comment,
         con.conname AS primary_key,
         a.attislocal AS is_local,
-        a.attstorage::text AS storage,
+        storage.v AS storage,
         nullif(col.collcollate::text,'') AS collation,
         a.attnum AS ord,
         s.nspname AS namespace,
@@ -335,6 +342,7 @@ AS $function$
    LEFT JOIN pg_type t ON t.oid = a.atttypid
    LEFT JOIN pg_collation col ON col.oid = a.attcollation
    JOIN pg_namespace tn ON tn.oid = t.typnamespace
+   JOIN storage on storage.k = a.attstorage
   WHERE c.relkind IN ('r','v','c','f') AND a.attnum > 0 AND NOT a.attisdropped
     AND has_table_privilege(c.oid, 'select') AND has_schema_privilege(s.oid, 'usage')
     AND c.oid = $1
@@ -759,7 +767,7 @@ cc as (
 )
 select 'CREATE DOMAIN ' || format_type(t.oid,null)
        || E' AS ' || format_type(t.typbasetype,typtypmod)
-       || coalesce(E'\n '||(select string_agg(definition,E'\n ') from cc),'')
+       || coalesce(E'\n  '||(select string_agg(definition,E'\n  ') from cc),'')
        || case
             when length(col.collcollate) > 0
             then E'\n  COLLATE ' || quote_ident(col.collcollate::text)

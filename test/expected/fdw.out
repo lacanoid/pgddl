@@ -66,8 +66,8 @@ SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='file_
                       ddlx_create                       
 --------------------------------------------------------
  CREATE FOREIGN DATA WRAPPER file_fdw                  +
- HANDLER file_fdw_handler                              +
- VALIDATOR file_fdw_validator;                         +
+   HANDLER file_fdw_handler                            +
+   VALIDATOR file_fdw_validator;                       +
  COMMENT ON FOREIGN DATA WRAPPER file_fdw IS NULL;     +
  ALTER FOREIGN DATA WRAPPER file_fdw OWNER TO postgres;+
  
@@ -108,8 +108,8 @@ SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='postg
                         ddlx_create                         
 ------------------------------------------------------------
  CREATE FOREIGN DATA WRAPPER postgres_fdw                  +
- HANDLER postgres_fdw_handler                              +
- VALIDATOR postgres_fdw_validator;                         +
+   HANDLER postgres_fdw_handler                            +
+   VALIDATOR postgres_fdw_validator;                       +
  COMMENT ON FOREIGN DATA WRAPPER postgres_fdw IS NULL;     +
  ALTER FOREIGN DATA WRAPPER postgres_fdw OWNER TO postgres;+
  
