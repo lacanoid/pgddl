@@ -23,6 +23,7 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_alter_table_defaults(regclass)   | 
  ddlx_banner(text,text,text,text,text) | 
  ddlx_comment(oid)                     | 
+ ddlx_create_access_method(oid)        | 
  ddlx_create_aggregate(regproc)        | 
  ddlx_create_cast(oid)                 | 
  ddlx_create_class(regclass)           | 
@@ -36,7 +37,9 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_create_function(regproc)         | 
  ddlx_create_index(regclass)           | 
  ddlx_create_indexes(regclass)         | 
+ ddlx_create_operator_family(oid)      | 
  ddlx_create_role(regrole)             | 
+ ddlx_create_rule(oid)                 | 
  ddlx_create_rules(regclass)           | 
  ddlx_create_sequence(regclass)        | 
  ddlx_create_server(oid)               | 
@@ -62,9 +65,10 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_get_indexes(regclass)            | 
  ddlx_get_rules(regclass)              | 
  ddlx_get_triggers(regclass)           | 
+ ddlx_grants(oid)                      | 
  ddlx_grants(regclass)                 | 
  ddlx_grants(regproc)                  | 
  ddlx_grants(regrole)                  | 
  ddlx_identify(oid)                    | 
- ddlx_parts(oid)                       | 
+ ddlx_script_parts(oid)                | 
 
