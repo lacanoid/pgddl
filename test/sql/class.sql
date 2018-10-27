@@ -49,8 +49,7 @@ alter table test_class_r2 set with oids;
 SELECT ddlx_script('test_class_r2'::regclass);
 
 CREATE VIEW test_class_v AS
-SELECT * FROM test_class_r 
-  WITH CHECK OPTION;
+SELECT * FROM test_class_r;
 grant select on test_class_v to public;
 SELECT ddlx_script('test_class_v'::regclass);
 SELECT ddlx_script('test_class_v'::regtype);

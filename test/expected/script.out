@@ -28,8 +28,6 @@ CREATE OR REPLACE VIEW test_class_v AS
 
 COMMENT ON VIEW test_class_v IS NULL;
 
-ALTER VIEW test_class_v SET (check_option='cascaded');
-
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 

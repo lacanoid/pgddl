@@ -26,25 +26,25 @@ create type int_t;
 CREATE OR REPLACE FUNCTION int_t4in(cstring)
  RETURNS int_t
  LANGUAGE internal
- IMMUTABLE PARALLEL SAFE STRICT
+ IMMUTABLE STRICT
 AS $function$int4in$function$;
 
 CREATE OR REPLACE FUNCTION int_t4out(int_t)
  RETURNS cstring
  LANGUAGE internal
- IMMUTABLE PARALLEL SAFE STRICT
+ IMMUTABLE STRICT
 AS $function$int4out$function$;
 
 CREATE OR REPLACE FUNCTION int_t4send(int_t)
  RETURNS bytea
  LANGUAGE internal
- IMMUTABLE PARALLEL SAFE STRICT
+ IMMUTABLE STRICT
 AS $function$int4send$function$;
 
 CREATE OR REPLACE FUNCTION int_t4recv(internal)
  RETURNS int_t
  LANGUAGE internal
- IMMUTABLE PARALLEL SAFE STRICT
+ IMMUTABLE STRICT
 AS $function$int4recv$function$;
 
 CREATE TYPE int_t (
