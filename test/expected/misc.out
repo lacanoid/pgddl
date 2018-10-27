@@ -120,7 +120,7 @@ create operator family opf1 using btree;
 comment on operator family opf1 using btree is 'A comment';
 select ddlx_create(oid) from pg_opfamily where opfname='opf1';
 ddlx_create
-CREATE OPERATOR FAMILY opf1 USING btree USING btree;
+CREATE OPERATOR FAMILY opf1 USING btree;
 COMMENT ON OPERATOR FAMILY opf1 USING btree IS 'A comment';
 ALTER OPERATOR FAMILY opf1 USING btree OWNER TO postgres;
 
