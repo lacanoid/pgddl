@@ -341,6 +341,7 @@ AS $function$
          null as acl
     FROM pg_conversion co JOIN pg_namespace n ON n.oid=co.connamespace
    WHERE co.oid = $1
+#if 9.5
    UNION
   SELECT am.oid,
          'pg_am'::regclass,
@@ -353,6 +354,7 @@ AS $function$
          null as acl
     FROM pg_am am
    WHERE am.oid = $1
+#end
    UNION
   SELECT opf.oid,
          'pg_opfamily'::regclass,
@@ -1220,7 +1222,39 @@ $function$  strict;
 ---------------------------------------------------
 
 #if 9.5
-CREATE OR REPLACE FUNCTION ddlx_create_role(regrole)
+CREATE OR REPLACE FUNCTION ddlx_grants(regrole) 
+#else
+CREATE OR REPLACE FUNCTION ddlx_grants_to_role(oid) 
+#end
+ RETURNS text
+ LANGUAGE sql
+ AS $function$
+with 
+q as (
+ select format(E'GRANT %I TO %I%s;\n',
+               r1.rolname,
+               r2.rolname,
+               case
+                 when admin_option then ' WITH ADMIN OPTION'
+                 else ''
+                end)
+        as ddl1
+   from pg_auth_members m
+   join pg_roles r1 on (r1.oid=m.roleid)
+   join pg_roles r2 on (r2.oid=m.member)
+  where (m.member = $1 or m.roleid = $1)
+  order by m.roleid = $1,
+           cast(r2.rolname as text), 
+           cast(r1.rolname as text)
+)
+select coalesce(string_agg(ddl1,'')||E'\n','')
+  from q
+$function$  strict;
+
+---------------------------------------------------
+
+#if 9.5
+CREATE OR REPLACE FUNCTION ddlx_create(regrole)
 #else
 CREATE OR REPLACE FUNCTION ddlx_create_role(oid)
 #end
@@ -1239,7 +1273,7 @@ q1 as (
    case when rolcreatedb then 'CREATEDB' else 'NOCREATEDB' end || E'\n  ' ||
    case when rolcreaterole then 'CREATEROLE' else 'NOCREATEROLE' end || E'\n  ' || 
    case when rolreplication then 'REPLICATION' else 'NOREPLICATION' end || E';\n  ' ||
--- 9.5+ case when rolbypassrls then 'BYPASSRLS' else 'NOBYPASSRLS' end || E';\n' ||
+-- 9.5+   case when rolbypassrls then 'BYPASSRLS' else 'NOBYPASSRLS' end || E',\n' ||
    case 
      when description is not null 
      then E'\n'
@@ -1262,7 +1296,8 @@ q1 as (
              ' CONNECTION LIMIT '||rolconnlimit||E';\n' 
         else '' 
    end ||
-   E'\n' as ddl
+   E'\n'
+   as ddl
    from pg_authid a
    left join pg_shdescription d on d.objoid=a.oid
   where a.oid = $1
@@ -1278,10 +1313,20 @@ q2 as (
   ) as generate_series(i)
  where oid = $1
  ) 
-select ddl||coalesce(ddl_config||E'\n','')
+select ddl||coalesce(ddl_config||E'\n','')||
+#if 9.5
+   ddlx_grants($1::regrole)
+#else
+   ddlx_grants_to_role($1)
+#end
   from q1,q2; 
 $function$  strict
 set datestyle = iso;
+
+#if 9.5
+COMMENT ON FUNCTION ddlx_create(regrole) 
+     IS 'Get SQL CREATE statement for a role';
+#end
 
 ---------------------------------------------------
 
@@ -1445,38 +1490,6 @@ $function$  strict;
 
 ---------------------------------------------------
 
-#if 9.5
-CREATE OR REPLACE FUNCTION ddlx_grants(regrole) 
-#else
-CREATE OR REPLACE FUNCTION ddlx_grants_on_role(oid) 
-#end
- RETURNS text
- LANGUAGE sql
- AS $function$
-with 
-q as (
- select format(E'GRANT %I TO %I%s;\n',
-               r1.rolname,
-               r2.rolname,
-               case
-                 when admin_option then ' WITH ADMIN OPTION'
-                 else ''
-                end)
-        as ddl1
-   from pg_auth_members m
-   join pg_roles r1 on (r1.oid=m.roleid)
-   join pg_roles r2 on (r2.oid=m.member)
-  where (m.member = $1 or m.roleid = $1)
-  order by m.roleid = $1,
-           cast(r1.rolname as text), 
-           cast(r2.rolname as text)
-)
-select coalesce(string_agg(ddl1,'')||E'\n','')
-  from q
-$function$  strict;
-
----------------------------------------------------
-
 CREATE OR REPLACE FUNCTION ddlx_grants(oid) 
  RETURNS text
  LANGUAGE sql
@@ -1499,6 +1512,7 @@ select 'GRANT '||privilege_type
        ||' TO '||grantee||grant_option
        as dcl
   from obj,a
+ order by grantor,grantee,privilege_type
 )
 select coalesce(string_agg(dcl,E';\n')||E';\n','')
   from b
@@ -1529,7 +1543,7 @@ select 1,
        d.refobjid,
        d.refobjsubid,
        d.deptype,
-       to_jsonb(array[array[d.refobjid::int,d.objid::int]])
+       array[array[d.refobjid::int,d.objid::int]]
   from pg_depend d
   left join pg_rewrite r on 
        (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
@@ -1547,13 +1561,13 @@ select depth+1,
        d.refobjsubid,
        d.deptype,
        t.edges ||
-       to_jsonb(array[array[d.refobjid::int,d.objid::int]])
+       array[array[d.refobjid::int,d.objid::int]]
   from tree t
   join pg_depend d on (d.refobjid=t.objid) 
   left join pg_rewrite r on 
        (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
  where r.ev_class is distinct from d.refobjid
-   and not ( t.edges @> to_jsonb(array[array[d.refobjid::int,d.objid::int]]) )
+   and not ( t.edges @> array[array[d.refobjid::int,d.objid::int]] )
 )
 select distinct 
        depth,
@@ -1906,22 +1920,6 @@ $function$  strict;
 #if 9.5
 COMMENT ON FUNCTION ddlx_create(regnamespace) 
      IS 'Get SQL CREATE statement for a schema';
-#end
-
----------------------------------------------------
-
-#if 9.5
-CREATE OR REPLACE FUNCTION ddlx_create(regrole)
- RETURNS text
- LANGUAGE sql
-AS $function$
-   select 
-     ddlx_create_role($1) 
-     || ddlx_grants($1)
-$function$  strict;
-
-COMMENT ON FUNCTION ddlx_create(regrole) 
-     IS 'Get SQL CREATE statement for a role';
 #end
 
 ---------------------------------------------------

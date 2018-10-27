@@ -12,7 +12,7 @@ create role pgddl_test_user2 login connection limit 100;
 create role pgddl_test_user3 valid until 'infinity';
 grant pgddl_test_user2 to pgddl_test_user;
 grant pgddl_test_user3 to pgddl_test_user with admin option;
-select ddlx_create('pgddl_test_user'::regrole);
+select ddlx_create(oid) from pg_roles where rolname='pgddl_test_user';
 ddlx_create
 CREATE GROUP pgddl_test_user;
 ALTER ROLE pgddl_test_user WITH
@@ -35,7 +35,7 @@ GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 
 
 (1 row)
-select ddlx_create('pgddl_test_user3'::regrole);
+select ddlx_create(oid) from pg_roles where rolname='pgddl_test_user3';
 ddlx_create
 CREATE GROUP pgddl_test_user3;
 ALTER ROLE pgddl_test_user3 WITH
@@ -52,7 +52,7 @@ GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 
 
 (1 row)
-select ddlx_create('pgddl_test_user2'::regrole);
+select ddlx_create(oid) from pg_roles where rolname='pgddl_test_user2';
 ddlx_create
 CREATE USER pgddl_test_user2;
 ALTER ROLE pgddl_test_user2 WITH

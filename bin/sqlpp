@@ -2,6 +2,7 @@
 
 our $VI = $ENV{VERSION};
 our $V;
+our $opt_v = 0; # verbose
 
 sub errlog { print STDERR "sqlpp:$_[0]\n"; }
 
@@ -22,7 +23,7 @@ while($l=<>) {
 	$i++;
 	if($l=~m!^#(\S+)\s*(\S*)!) {
 		my ($c,$v2)=($1,$2);
-		errlog "Directive line $i \#$c $v2";
+		if($opt_v) { errlog "Directive line $i \#$c $v2"; }
 		if($c eq 'if') { $sv=$v2; $unless=0; }
 		elsif($c eq 'unless') { $sv=$v2; $unless=1; }
 		elsif($c eq 'else') { $unless=!$unless; }
