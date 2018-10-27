@@ -512,43 +512,9 @@ ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq':
 END;
 
 (1 row)
-create view test_class_v_opt1 with (security_barrier) 
-as select * from test_class_v order by 1;
 create view test_class_v_opt2 
 as select * from test_class_v order by 1;
 alter  view test_class_v_opt2 set (security_barrier='true');
-select ddlx_script('test_class_v_opt1'::regclass);
-ddlx_script
-BEGIN;
-
-/*
-DROP VIEW test_class_v_opt1;
-*/
-
--- Type: VIEW ; Name: test_class_v_opt1; Owner: postgres
-
-CREATE OR REPLACE VIEW test_class_v_opt1 AS
- SELECT test_class_v.a,
-    test_class_v.b,
-    test_class_v.c,
-    test_class_v.d,
-    test_class_v.e,
-    test_class_v.f,
-    test_class_v.g,
-    test_class_v.h,
-    test_class_v.v
-   FROM test_class_v
-  ORDER BY test_class_v.a;
-
-COMMENT ON VIEW test_class_v_opt1 IS NULL;
-
-ALTER VIEW test_class_v_opt1 SET (security_barrier='true');
-
-ALTER VIEW test_class_v_opt1 OWNER TO postgres;
-
-END;
-
-(1 row)
 select ddlx_script('test_class_v_opt2'::regclass);
 ddlx_script
 BEGIN;
@@ -738,8 +704,7 @@ DROP AGGREGATE test_proc_agg_1(text);
 
 CREATE AGGREGATE test_proc_agg_1(text) (
   SFUNC = textcat,
-  STYPE = text,
-  PARALLEL = UNSAFE
+  STYPE = text
 );
 
 COMMENT ON AGGREGATE test_proc_agg_1(text) IS NULL;
@@ -770,8 +735,7 @@ DROP AGGREGATE test_proc_agg_2(anyelement);
 CREATE AGGREGATE test_proc_agg_2(anyelement) (
   SFUNC = array_append,
   STYPE = anyarray,
-  INITCOND = '{}',
-  PARALLEL = UNSAFE
+  INITCOND = '{}'
 );
 
 COMMENT ON AGGREGATE test_proc_agg_2(anyelement) IS NULL;

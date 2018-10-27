@@ -87,7 +87,11 @@ AS $function$
          pg_get_userbyid(t.typowner) AS owner,
          coalesce(cc.v,tt.v2,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier,
+#if 9.2
          typacl as acl
+#else
+		 null as acl
+#end
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
     LEFT JOIN typ_type AS tt ON tt.k = t.typtype
     LEFT JOIN pg_class AS c ON c.oid = t.typrelid
@@ -250,6 +254,7 @@ AS $function$
          null as acl
     FROM pg_ts_template tmpl JOIN pg_namespace n ON n.oid=tmpl.tmplnamespace
    WHERE tmpl.oid = $1
+#if 9.3
    UNION
   SELECT evt.oid,
          'pg_event_trigger'::regclass,
@@ -262,6 +267,7 @@ AS $function$
          null as acl
     FROM pg_event_trigger evt
    WHERE evt.oid = $1
+#end
    UNION
   SELECT fdw.oid,
          'pg_foreign_data_wrapper'::regclass,
@@ -655,7 +661,7 @@ CREATE OR REPLACE FUNCTION ddlx_banner(
  LANGUAGE sql
 AS $function$
   SELECT format(E'%s-- Type: %s ; Name: %s; Owner: %s\n\n',
-                E'--\n-- ' || extra || E'\n',
+                E'--\n-- ' || $5 || E'\n',
                 $2,$1,$4)
 $function$;
 
@@ -805,7 +811,7 @@ select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
 $function$  strict;
 
 ---------------------------------------------------
-
+#if 9.2
 CREATE OR REPLACE FUNCTION ddlx_create_type_range(regtype)
  RETURNS text
  LANGUAGE sql
@@ -826,7 +832,7 @@ select 'CREATE TYPE ' || format_type($1,null) || ' AS RANGE ('
   left join pg_collation col on (col.oid=r.rngcollation)
  where r.rngtypid = $1
 $function$  strict;
-
+#end
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_type_enum(regtype)
@@ -1186,7 +1192,7 @@ select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' ||
           'PARALLEL = ' || case p.proparallel
             when 's' then 'SAFE'
             when 'r' then 'RESTRICTED'
-            when 'u' then 'UNSAFE'
+            when 'u' then null -- 'UNSAFE'
             else quote_literal(p.proparallel)
           end,
 #if 9.4
@@ -1329,7 +1335,7 @@ COMMENT ON FUNCTION ddlx_create(regrole)
 #end
 
 ---------------------------------------------------
-
+#if 9.3
 CREATE OR REPLACE FUNCTION ddlx_create_event_trigger(oid)
  RETURNS text
  LANGUAGE sql
@@ -1351,7 +1357,7 @@ AS $function$
     || ddlx_alter_owner($1) 
    from obj;
 $function$  strict;
-
+#end
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_foreign_data_wrapper(oid)
@@ -1502,7 +1508,7 @@ a as (
         case 
         when is_grantable then ' WITH GRANT OPTION' else ''
         end as grant_option
-   from obj,aclexplode(obj.acl) e
+   from aclexplode((select acl from obj)) e
    left join pg_roles r1 on (r1.oid = e.grantor)
    left join pg_roles r2 on (r2.oid = e.grantee)
 ),
@@ -1944,7 +1950,9 @@ AS $function$
           when 'e' then ddlx_create_type_enum(t.oid)
           when 'd' then ddlx_create_type_domain(t.oid)
           when 'b' then ddlx_create_type_base(t.oid)
+#if 9.2
           when 'r' then ddlx_create_type_range(t.oid)
+#end
           else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
           end 
           || ddlx_comment(t.oid)
@@ -1998,8 +2006,10 @@ AS $function$
     then ddlx_create_trigger(oid)
     when 'pg_attrdef'::regclass 
     then ddlx_create_default(oid)
+#if 9.3
     when 'pg_event_trigger'::regclass 
     then ddlx_create_event_trigger(oid)
+#end
     when 'pg_foreign_data_wrapper'::regclass 
     then ddlx_create_foreign_data_wrapper(oid)
     when 'pg_foreign_server'::regclass 

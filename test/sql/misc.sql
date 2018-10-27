@@ -25,9 +25,6 @@ select ddlx_drop(oid) from pg_conversion where conname in ('ascii_to_utf8++') or
 
 select ddlx_grants('test_class_r'::regclass::oid);
 
-select ddlx_create(oid) from pg_am where amname = 'btree';
-select ddlx_drop(oid) from pg_am where amname = 'btree';
-
 create operator family opf1 using btree;
 comment on operator family opf1 using btree is 'A comment';
 select ddlx_create(oid) from pg_opfamily where opfname='opf1';

@@ -103,19 +103,6 @@ GRANT TRUNCATE ON TABLE test_class_r TO postgres;
 GRANT UPDATE ON TABLE test_class_r TO postgres;
 
 (1 row)
-select ddlx_create(oid) from pg_am where amname = 'btree';
-ddlx_create
-CREATE ACCESS METHOD btree
-  TYPE INDEX HANDLER bthandler;
-
-COMMENT ON ACCESS METHOD btree IS 'b-tree index access method';
-
-(1 row)
-select ddlx_drop(oid) from pg_am where amname = 'btree';
-ddlx_drop
-DROP ACCESS METHOD btree;
-
-(1 row)
 create operator family opf1 using btree;
 comment on operator family opf1 using btree is 'A comment';
 select ddlx_create(oid) from pg_opfamily where opfname='opf1';

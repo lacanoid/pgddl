@@ -88,13 +88,10 @@ create table test_collation (
 );
 select ddlx_script('test_collation'::regclass);
 
-create view test_class_v_opt1 with (security_barrier) 
-as select * from test_class_v order by 1;
 create view test_class_v_opt2 
 as select * from test_class_v order by 1;
 alter  view test_class_v_opt2 set (security_barrier='true');
 
-select ddlx_script('test_class_v_opt1'::regclass);
 select ddlx_script('test_class_v_opt2'::regclass);
 
 select ddlx_script('test_class_v_opt2'::regclass::oid);
