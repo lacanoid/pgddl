@@ -1157,32 +1157,44 @@ select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' ||
         array_to_string(array[
           'SFUNC = '  || cast(a.aggtransfn::regproc as text),
           'STYPE = ' || format_type(a.aggtranstype,null),
+#if 9.4
           case when a.aggtransspace>0 then 'SSPACE = '||a.aggtransspace end,
+#end
           'FINALFUNC = ' || nullif(cast(a.aggfinalfn::regproc as text),'-'), 
+#if 9.4
           case when a.aggfinalextra then 'FINALFUNC_EXTRA' end,
+#if 9.6
           'COMBINEFUNC = ' || nullif(cast(a.aggcombinefn::regproc as text),'-'), 
           'SERIALFUNC = ' || nullif(cast(a.aggserialfn::regproc as text),'-'), 
           'DESERIALFUNC = ' || nullif(cast(a.aggdeserialfn::regproc as text),'-'), 
+#end
           'INITCOND = ' || quote_literal(a.agginitval), 
+#if 9.5
           'MSFUNC = ' || nullif(cast(a.aggmtransfn::regproc as text),'-'), 
           'MINVFUNC = ' || nullif(cast(a.aggminvtransfn::regproc as text),'-'), 
+#if 9.6
           case when a.aggmtranstype>0 
                then 'MSTYPE = '||format_type(a.aggmtranstype,null) end,
+#if 9.4
           case when a.aggmtransspace>0 then 'MSSPACE = '||a.aggmtransspace end,
           'MFINALFUNC = ' || nullif(cast(a.aggmfinalfn::regproc as text),'-'),
           case when a.aggmfinalextra then 'MFINALFUNC_EXTRA' end,
           'MINITCOND = ' || quote_literal(a.aggminitval), 
-          case when a.aggsortop>0 
-               then 'SORTOP = '||cast(a.aggsortop::regoperator as text) end,
+#if 9.6
           'PARALLEL = ' || case p.proparallel
             when 's' then 'SAFE'
             when 'r' then 'RESTRICTED'
             when 'u' then 'UNSAFE'
             else quote_literal(p.proparallel)
           end,
+#if 9.4
           case a.aggkind
             when 'h' then 'HYPOTHETICAL'
-          end],E',\n  ')
+          end,
+#end
+          case when a.aggsortop>0 
+               then 'SORTOP = '||cast(a.aggsortop::regoperator as text) end
+          ],E',\n  ')
        || E'\n);\n'
   from pg_aggregate a join obj on (true) join pg_proc p on p.oid = a.aggfnoid
  where a.aggfnoid = $1
@@ -1207,7 +1219,11 @@ $function$  strict;
 
 ---------------------------------------------------
 
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create_role(regrole)
+#else
+CREATE OR REPLACE FUNCTION ddlx_create_role(oid)
+#end
  RETURNS text
  LANGUAGE sql
 AS $function$ 
@@ -1429,24 +1445,31 @@ $function$  strict;
 
 ---------------------------------------------------
 
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_grants(regrole) 
+#else
+CREATE OR REPLACE FUNCTION ddlx_grants_on_role(oid) 
+#end
  RETURNS text
  LANGUAGE sql
  AS $function$
 with 
 q as (
  select format(E'GRANT %I TO %I%s;\n',
-               cast(roleid::regrole as text),
-               cast(member::regrole as text),
+               r1.rolname,
+               r2.rolname,
                case
                  when admin_option then ' WITH ADMIN OPTION'
                  else ''
                 end)
         as ddl1
-   from pg_auth_members where (member = $1 or roleid = $1)
-  order by roleid = $1,
-           cast(roleid::regrole as text), 
-           cast(member::regrole as text)
+   from pg_auth_members m
+   join pg_roles r1 on (r1.oid=m.roleid)
+   join pg_roles r2 on (r2.oid=m.member)
+  where (m.member = $1 or m.roleid = $1)
+  order by m.roleid = $1,
+           cast(r1.rolname as text), 
+           cast(r2.rolname as text)
 )
 select coalesce(string_agg(ddl1,'')||E'\n','')
   from q
@@ -1460,13 +1483,15 @@ CREATE OR REPLACE FUNCTION ddlx_grants(oid)
  AS $function$
 with obj as (select * from ddlx_identify($1)),
 a as (
- select coalesce(nullif(grantor,0)::regrole::text,'PUBLIC') as grantor,
-        coalesce(nullif(grantee,0)::regrole::text,'PUBLIC') as grantee,
+ select coalesce(r1.rolname,'PUBLIC') as grantor,
+        coalesce(r2.rolname,'PUBLIC') as grantee,
         privilege_type,
         case 
         when is_grantable then ' WITH GRANT OPTION' else ''
         end as grant_option
-   from obj,aclexplode(obj.acl)
+   from obj,aclexplode(obj.acl) e
+   left join pg_roles r1 on (r1.oid = e.grantor)
+   left join pg_roles r2 on (r2.oid = e.grantee)
 ),
 b as (
 select 'GRANT '||privilege_type
@@ -1823,6 +1848,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
+#if 9.6
 CREATE OR REPLACE FUNCTION ddlx_create_access_method(oid)
  RETURNS text
  LANGUAGE sql
@@ -1840,6 +1866,7 @@ select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
   from pg_am as am, obj
  where am.oid = $1
 $function$  strict;
+#end
 
 ---------------------------------------------------
 
@@ -1861,7 +1888,11 @@ $function$  strict;
 
 ---------------------------------------------------
 
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
+#else
+CREATE OR REPLACE FUNCTION ddlx_create_schema(oid)
+#end
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -1872,11 +1903,14 @@ select format(E'CREATE SCHEMA %s;\n',cast($1 as text))
  where oid = $1
 $function$  strict;
 
+#if 9.5
 COMMENT ON FUNCTION ddlx_create(regnamespace) 
      IS 'Get SQL CREATE statement for a schema';
+#end
 
 ---------------------------------------------------
 
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create(regrole)
  RETURNS text
  LANGUAGE sql
@@ -1888,6 +1922,7 @@ $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regrole) 
      IS 'Get SQL CREATE statement for a role';
+#end
 
 ---------------------------------------------------
 
@@ -1940,9 +1975,17 @@ AS $function$
     when 'pg_operator'::regclass 
     then ddlx_create(oid::regoper)
     when 'pg_roles'::regclass 
+#if 9.5
     then ddlx_create(oid::regrole)
+#else
+    then ddlx_create_role(oid)
+#end
     when 'pg_namespace'::regclass 
+#if 9.5
     then ddlx_create(oid::regnamespace)
+#else
+	then ddlx_create_schema(oid)
+#end
     when 'pg_ts_config'::regclass 
     then ddlx_create(oid::regconfig)
     when 'pg_ts_dict'::regclass 
@@ -1971,8 +2014,10 @@ AS $function$
     then ddlx_create_collation(oid)
     when 'pg_conversion'::regclass 
     then ddlx_create_conversion(oid)
+#if 9.6
     when 'pg_am'::regclass 
     then ddlx_create_access_method(oid)
+#end
     when 'pg_opfamily'::regclass 
     then ddlx_create_operator_family(oid)
     when 'pg_rewrite'::regclass 
