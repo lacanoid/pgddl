@@ -364,6 +364,20 @@ AS $function$
    WHERE lan.oid = $1
 #if 9.5
    UNION
+  SELECT trf.oid,
+         'pg_transform'::regclass,
+         null as name,
+         null as namespace,
+		 'TRANSFORM' kind,
+         null as owner,
+         'TRANSFORM' as sql_kind,
+         format('FOR %s LANGUAGE %I',
+		          format_type(trf.trftype,null),
+		          l.lanname) as sql_identifier,
+         null as acl
+    FROM pg_transform trf JOIN pg_language l on (l.oid=trf.trflang)
+   WHERE trf.oid = $1
+   UNION
   SELECT am.oid,
          'pg_am'::regclass,
          am.amname as name,
@@ -788,11 +802,10 @@ select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
        array_to_string(array[ 
          'INPUT = '  || cast(t.typinput::regproc as text),  
          'OUTPUT = ' || cast(t.typoutput::regproc as text),
-         'SEND = ' || nullif(cast(t.typsend::regproc as text),'-'), 
-         'RECEIVE = ' || nullif(cast(t.typreceive::regproc as text),'-'),
-         'TYPMOD_IN = ' || nullif(cast(t.typmodin::regproc as text),'-'),
-         'TYPMOD_OUT = ' || nullif(cast(t.typmodout::regproc as text),'-'),
---         'ANALYZE = ' || nullif(cast(t.typanalyze::regproc as text),'-'),
+         'SEND = ' || cast(nullif(t.typsend,0)::regproc as text), 
+         'RECEIVE = ' || cast(nullif(t.typreceive,0)::regproc as text),
+         'TYPMOD_IN = ' || cast(nullif(t.typmodin,0)::regproc as text),
+         'TYPMOD_OUT = ' || cast(nullif(t.typmodout,0)::regproc as text),
          'ANALYZE = ' || cast(nullif(t.typanalyze,0)::regproc as text),
          'INTERNALLENGTH = ' || 
             case when  t.typlen < 0 then 'VARIABLE' else cast(t.typlen as text) end,
@@ -2084,6 +2097,11 @@ AS $function$
     then ddlx_create_collation(oid)
     when 'pg_conversion'::regclass 
     then ddlx_create_conversion(oid)
+    when 'pg_language'::regclass 
+    then ddlx_create_language(oid)
+#if 9.5
+    when 'pg_transform'::regclass 
+    then ddlx_create_transform(oid)
 #if 9.6
     when 'pg_am'::regclass 
     then ddlx_create_access_method(oid)
