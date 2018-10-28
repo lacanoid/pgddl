@@ -117,3 +117,23 @@ ddlx_drop
 DROP OPERATOR FAMILY opf1 USING btree;
 
 (1 row)
+select ddlx_create_language(oid) from pg_language 
+ where lanname in ('internal','c','sql') 
+ order by lanname;
+ddlx_create_language
+CREATE OR REPLACE LANGUAGE c
+  VALIDATOR fmgr_c_validator;
+COMMENT ON LANGUAGE c IS 'dynamically-loaded C functions';
+ALTER LANGUAGE c OWNER TO postgres;
+
+CREATE OR REPLACE LANGUAGE internal
+  VALIDATOR fmgr_internal_validator;
+COMMENT ON LANGUAGE internal IS 'built-in functions';
+ALTER LANGUAGE internal OWNER TO postgres;
+
+CREATE OR REPLACE TRUSTED LANGUAGE sql
+  VALIDATOR fmgr_sql_validator;
+COMMENT ON LANGUAGE sql IS 'SQL-language functions';
+ALTER LANGUAGE sql OWNER TO postgres;
+
+(3 rows)

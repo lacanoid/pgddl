@@ -48,8 +48,10 @@ Some disadvantages:
 That said, it has still proven quite useful in a number of situations.
 
 
-Curently developed and tested on PostgreSQL 9.6. Might work with other versions.
- 
+Curently developed and tested on PostgreSQL 10. 
+Included preprocessor adapts the source to target PG version. 
+Tested to install on version 9.1 and later. 
+Some tests might fail on older versions. 
 
 Installation
 ------------
@@ -92,7 +94,7 @@ The API provides three public user functions:
 Currently supported object types are 
 `regtype`, `regclass`, `regproc(edure)`, `regoper(ator)`, `regrole`,
 `regconfig` and `regdictionary` and several others.
-You will may want to cast object name or oid to the appropriate type.
+You may want to cast object name or oid to the appropriate type.
 
 - `ddlx_create(regtype) returns text`
 
@@ -137,9 +139,7 @@ There is also a convenience function to use `oid` directly, without casting:
 	
 	For those, you can use something like:
 ```sql
-SELECT ddlx_create(oid) 
-  FROM pg_foreign_data_wrapper 
- WHERE fdwname='postgres_fdw';
+SELECT ddlx_create(oid) FROM pg_foreign_data_wrapper WHERE fdwname='postgres_fdw';
 ```
 
 - `ddlx_drop(oid) returns text`

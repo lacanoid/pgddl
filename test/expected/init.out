@@ -37,6 +37,7 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_create_function(regproc)         | 
  ddlx_create_index(regclass)           | 
  ddlx_create_indexes(regclass)         | 
+ ddlx_create_language(oid)             | 
  ddlx_create_operator_family(oid)      | 
  ddlx_create_rule(oid)                 | 
  ddlx_create_rules(regclass)           | 
@@ -45,6 +46,7 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_create_table(regclass)           | 
  ddlx_create_text_search_parser(oid)   | 
  ddlx_create_text_search_template(oid) | 
+ ddlx_create_transform(oid)            | 
  ddlx_create_trigger(oid)              | 
  ddlx_create_triggers(regclass)        | 
  ddlx_create_type_base(regtype)        | 

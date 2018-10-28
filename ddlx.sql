@@ -347,6 +347,21 @@ AS $function$
          null as acl
     FROM pg_conversion co JOIN pg_namespace n ON n.oid=co.connamespace
    WHERE co.oid = $1
+   UNION
+  SELECT lan.oid,
+         'pg_language'::regclass,
+         lan.lanname as name,
+         null as namespace,
+         case 
+           when lan.lanpltrusted then 'TRUSTED LANGUAGE'
+           else 'LANGUAGE' 
+         end as kind,
+         pg_get_userbyid(lan.lanowner) as owner,
+         'LANGUAGE' as sql_kind,
+         quote_ident(lan.lanname) as sql_identifier,
+         lan.lanacl as acl
+    FROM pg_language lan
+   WHERE lan.oid = $1
 #if 9.5
    UNION
   SELECT am.oid,
@@ -777,7 +792,8 @@ select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
          'RECEIVE = ' || nullif(cast(t.typreceive::regproc as text),'-'),
          'TYPMOD_IN = ' || nullif(cast(t.typmodin::regproc as text),'-'),
          'TYPMOD_OUT = ' || nullif(cast(t.typmodout::regproc as text),'-'),
-         'ANALYZE = ' || nullif(cast(t.typanalyze::regproc as text),'-'),
+--         'ANALYZE = ' || nullif(cast(t.typanalyze::regproc as text),'-'),
+         'ANALYZE = ' || cast(nullif(t.typanalyze,0)::regproc as text),
          'INTERNALLENGTH = ' || 
             case when  t.typlen < 0 then 'VARIABLE' else cast(t.typlen as text) end,
          case when t.typbyval then 'PASSEDBYVALUE' end,
@@ -1192,7 +1208,7 @@ select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' ||
           'PARALLEL = ' || case p.proparallel
             when 's' then 'SAFE'
             when 'r' then 'RESTRICTED'
-            when 'u' then null -- 'UNSAFE'
+            when 'u' then null -- 'UNSAFE', default
             else quote_literal(p.proparallel)
           end,
 #if 9.4
@@ -1434,6 +1450,50 @@ AS $function$
 $function$  strict;
 
 ---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create_language(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ with obj as (select * from pg_language where oid = $1)
+ select format(
+           E'CREATE OR REPLACE %sLANGUAGE %I%s;\n',
+           case when obj.lanpltrusted then 'TRUSTED ' end,
+           obj.lanname,
+           E'\n  '||nullif(array_to_string(array[
+			'HANDLER ' || nullif(lanplcallfoid,0)::regproc::text,
+			'INLINE ' || nullif(laninline,0)::regproc::text,
+			'VALIDATOR ' || nullif(lanvalidator,0)::regproc::text
+	       ],' '),'')
+	       )
+    || ddlx_comment($1)
+    || ddlx_alter_owner($1)
+    || ddlx_grants($1)
+   from obj;
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create_transform(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ with obj as (select * from pg_transform where oid = $1)
+ select format(
+           E'CREATE OR REPLACE TRANSFORM %s (\n'||
+           E'  FROM SQL WITH FUNCTION %s\n' ||
+           E'  TO SQL WITH FUNCTION %s\n);\n',
+		   format('FOR %s LANGUAGE %I',
+		          format_type(obj.trftype,null),
+		          l.lanname),
+			cast(obj.trffromsql::regprocedure as text),
+			cast(obj.trftosql::regprocedure as text)
+        )
+    || ddlx_comment($1)
+   from obj join pg_language l on (l.oid=obj.trflang);
+$function$  strict;
+
+---------------------------------------------------
 --  Grants
 ---------------------------------------------------
 
@@ -1479,19 +1539,19 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regproc)
         E'GRANT %s ON FUNCTION %s TO %s%s;\n',
         privilege_type, 
         text($1::regprocedure), 
-        CASE grantee  
-          WHEN 'PUBLIC' THEN 'PUBLIC' 
-          ELSE quote_ident(grantee) 
-        END,
-        CASE is_grantable  
-          WHEN 'YES' THEN ' WITH GRANT OPTION' 
-          ELSE '' 
-        END), ''),
+        case grantee  
+          when 'PUBLIC' then 'PUBLIC' 
+          else quote_ident(grantee) 
+        end,
+        case is_grantable  
+          when 'YES' then ' WITH GRANT OPTION' 
+          else '' 
+        end), ''),
     '')
- FROM information_schema.routine_privileges g 
+ from information_schema.routine_privileges g 
  join obj on (true)
- WHERE routine_schema=obj.namespace 
-   AND specific_name=obj.name||'_'||obj.oid
+ where routine_schema=obj.namespace 
+   and specific_name=obj.name||'_'||obj.oid
 $function$  strict;
 
 ---------------------------------------------------
