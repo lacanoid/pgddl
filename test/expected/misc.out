@@ -137,3 +137,30 @@ COMMENT ON LANGUAGE sql IS 'SQL-language functions';
 ALTER LANGUAGE sql OWNER TO postgres;
 
 (3 rows)
+-- schema
+create schema ddlx_test_schema1;
+comment on schema ddlx_test_schema1 is 'test schema';
+grant usage on schema ddlx_test_schema1 to public;
+select ddlx_create(oid) from pg_namespace where nspname='ddlx_test_schema1';
+ddlx_create
+CREATE SCHEMA ddlx_test_schema1;
+COMMENT ON SCHEMA ddlx_test_schema1 IS 'test schema';
+ALTER SCHEMA ddlx_test_schema1 OWNER TO postgres;
+GRANT USAGE ON SCHEMA ddlx_test_schema1 TO PUBLIC;
+GRANT CREATE ON SCHEMA ddlx_test_schema1 TO postgres;
+GRANT USAGE ON SCHEMA ddlx_test_schema1 TO postgres;
+
+(1 row)
+-- look for unidentified objects
+select classid::regclass,count(*)
+  from (
+select classid,objid,ddlx_identify(objid) as obj
+  from ddlx_get_dependants((select oid from pg_namespace where nspname='public')) d
+) a
+ where (a.obj).kind is null group by classid
+ order by 2 desc, cast(classid::regclass as text) ;
+classid|count
+pg_extension|2
+(1 row)
+ 
+ 

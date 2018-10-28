@@ -980,8 +980,6 @@ $function$ strict;
 
 ---------------------------------------------------
 
-
-
 CREATE OR REPLACE FUNCTION ddlx_alter_table_defaults(regclass)
  RETURNS text
  LANGUAGE sql
@@ -1977,9 +1975,10 @@ CREATE OR REPLACE FUNCTION ddlx_create_schema(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
-select format(E'CREATE SCHEMA %s;\n',cast($1 as text))
+select format(E'CREATE SCHEMA %I;\n',n.nspname)
        || ddlx_comment($1)
        || ddlx_alter_owner($1) 
+       || ddlx_grants($1)
   from pg_namespace n
  where oid = $1
 $function$  strict;
@@ -2018,6 +2017,9 @@ AS $function$
           end 
           || ddlx_comment(t.oid)
           || ddlx_alter_owner(t.oid) 
+#if 9.2
+          || ddlx_grants(t.oid) 
+#end
      from pg_type t
     where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;

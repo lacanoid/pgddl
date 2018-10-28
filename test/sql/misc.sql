@@ -33,3 +33,21 @@ select ddlx_drop(oid) from pg_opfamily where opfname='opf1';
 select ddlx_create_language(oid) from pg_language 
  where lanname in ('internal','c','sql') 
  order by lanname;
+
+-- schema
+create schema ddlx_test_schema1;
+comment on schema ddlx_test_schema1 is 'test schema';
+grant usage on schema ddlx_test_schema1 to public;
+select ddlx_create(oid) from pg_namespace where nspname='ddlx_test_schema1';
+
+-- look for unidentified objects
+select classid::regclass,count(*)
+  from (
+select classid,objid,ddlx_identify(objid) as obj
+  from ddlx_get_dependants((select oid from pg_namespace where nspname='public')) d
+) a
+ where (a.obj).kind is null group by classid
+ order by 2 desc, cast(classid::regclass as text) ;
+
+ 
+ 
