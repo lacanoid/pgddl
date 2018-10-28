@@ -1451,29 +1451,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_language(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
- with obj as (select * from pg_language where oid = $1)
- select format(
-           E'CREATE OR REPLACE %sLANGUAGE %I%s;\n',
-           case when obj.lanpltrusted then 'TRUSTED ' end,
-           obj.lanname,
-           E'\n  '||nullif(array_to_string(array[
-			'HANDLER ' || nullif(lanplcallfoid,0)::regproc::text,
-			'INLINE ' || nullif(laninline,0)::regproc::text,
-			'VALIDATOR ' || nullif(lanvalidator,0)::regproc::text
-	       ],' '),'')
-	       )
-    || ddlx_comment($1)
-    || ddlx_alter_owner($1)
-    || ddlx_grants($1)
-   from obj;
-$function$  strict;
-
----------------------------------------------------
-
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create_transform(oid)
  RETURNS text
  LANGUAGE sql
@@ -1492,6 +1470,7 @@ AS $function$
     || ddlx_comment($1)
    from obj join pg_language l on (l.oid=obj.trflang);
 $function$  strict;
+#end
 
 ---------------------------------------------------
 --  Grants
@@ -1582,6 +1561,29 @@ select 'GRANT '||privilege_type
 )
 select coalesce(string_agg(dcl,E';\n')||E';\n','')
   from b
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create_language(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ with obj as (select * from pg_language where oid = $1)
+ select format(
+           E'CREATE OR REPLACE %sLANGUAGE %I%s;\n',
+           case when obj.lanpltrusted then 'TRUSTED ' end,
+           obj.lanname,
+           E'\n  '||nullif(array_to_string(array[
+			'HANDLER ' || nullif(lanplcallfoid,0)::regproc::text,
+			'INLINE ' || nullif(laninline,0)::regproc::text,
+			'VALIDATOR ' || nullif(lanvalidator,0)::regproc::text
+	       ],' '),'')
+	       )
+    || ddlx_comment($1)
+    || ddlx_alter_owner($1)
+    || ddlx_grants($1)
+   from obj;
 $function$  strict;
 
 ---------------------------------------------------
