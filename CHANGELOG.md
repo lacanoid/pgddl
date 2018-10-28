@@ -5,11 +5,10 @@ Version 0.10α
 - pg 11 compatible, but it runs on older versions from 9.1 on
 - fix ddlx_script(text) dependants bug
 - support for rules
-- ! support for ...
 - support for languages and transforms
-- support for rules
 - support for access methods
 - some support for operator families
+- ! support for ...
 - added acl to ddlx_identify()
 - New ddlx_grants(oid) function
 - better storage parameter output in ddlx_describe()

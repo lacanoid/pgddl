@@ -845,16 +845,17 @@ CREATE OR REPLACE FUNCTION ddlx_create_type_range(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$
-select 'CREATE TYPE ' || format_type($1,null) || ' AS RANGE ('
-       || E'\n  SUBTYPE = '  || format_type(r.rngsubtype,null)
-       || coalesce(E',\n  SUBTYPE_OPCLASS = '  || quote_ident(opc.opcname),'')
-       || case
+select 'CREATE TYPE ' || format_type($1,null) || E' AS RANGE (\n  ' ||
+        array_to_string(array[
+          'SUBTYPE = '  || format_type(r.rngsubtype,null),
+          'SUBTYPE_OPCLASS = '  || quote_ident(opc.opcname),
+          case
             when length(col.collcollate) > 0 
-            then E',\n  COLLATION = ' || quote_ident(col.collcollate::text)
-            else ''
-          end 
-       || coalesce(E',\n  CANONICAL = ' || nullif(cast(r.rngcanonical::regproc as text),'-'),'')
-       || coalesce(E',\n  SUBTYPE_DIFF = ' || nullif(cast(r.rngsubdiff::regproc as text),'-'),'')
+            then 'COLLATION = ' || quote_ident(col.collcollate::text)
+          end,
+          'CANONICAL = ' || cast(nullif(r.rngcanonical,0)::regproc as text),
+          'SUBTYPE_DIFF = ' || cast(nullif(r.rngsubdiff,0)::regproc as text)
+        ],E'\n  ')
        || E'\n);\n\n'
   from pg_range r
   left join pg_opclass opc on (opc.oid=r.rngsubopc)
@@ -1197,24 +1198,24 @@ select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' ||
 #if 9.4
           case when a.aggtransspace>0 then 'SSPACE = '||a.aggtransspace end,
 #end
-          'FINALFUNC = ' || nullif(cast(a.aggfinalfn::regproc as text),'-'), 
+          'FINALFUNC = ' || cast(nullif(a.aggfinalfn,0)::regproc as text), 
 #if 9.4
           case when a.aggfinalextra then 'FINALFUNC_EXTRA' end,
 #if 9.6
-          'COMBINEFUNC = ' || nullif(cast(a.aggcombinefn::regproc as text),'-'), 
-          'SERIALFUNC = ' || nullif(cast(a.aggserialfn::regproc as text),'-'), 
-          'DESERIALFUNC = ' || nullif(cast(a.aggdeserialfn::regproc as text),'-'), 
+          'COMBINEFUNC = ' || cast(nullif(a.aggcombinefn,0)::regproc as text), 
+          'SERIALFUNC = ' || cast(nullif(a.aggserialfn,0)::regproc as text), 
+          'DESERIALFUNC = ' || cast(nullif(a.aggdeserialfn,0)::regproc as text), 
 #end
           'INITCOND = ' || quote_literal(a.agginitval), 
 #if 9.5
-          'MSFUNC = ' || nullif(cast(a.aggmtransfn::regproc as text),'-'), 
-          'MINVFUNC = ' || nullif(cast(a.aggminvtransfn::regproc as text),'-'), 
+          'MSFUNC = ' || cast(nullif(a.aggmtransfn,0)::regproc as text), 
+          'MINVFUNC = ' || cast(nullif(a.aggminvtransfn,0)::regproc as text), 
 #if 9.6
           case when a.aggmtranstype>0 
                then 'MSTYPE = '||format_type(a.aggmtranstype,null) end,
 #if 9.4
           case when a.aggmtransspace>0 then 'MSSPACE = '||a.aggmtransspace end,
-          'MFINALFUNC = ' || nullif(cast(a.aggmfinalfn::regproc as text),'-'),
+          'MFINALFUNC = ' || cast(nullif(a.aggmfinalfn,0)::regproc as text),
           case when a.aggmfinalextra then 'MFINALFUNC_EXTRA' end,
           'MINITCOND = ' || quote_literal(a.aggminitval), 
 #if 9.6
@@ -1614,16 +1615,11 @@ with recursive
   tree(depth,classid,objid,objsubid,refclassid,refobjid,refobjsubid,deptype,edges) 
 as (
 select 1,
-       case when r.oid is not null 
-            then 'pg_class'::regclass 
+       case when r.oid is not null then 'pg_class'::regclass 
             else d.classid::regclass 
        end as classid,
        coalesce(r.ev_class,d.objid) as objid,
-       d.objsubid,
-       d.refclassid,
-       d.refobjid,
-       d.refobjsubid,
-       d.deptype,
+       d.objsubid, d.refclassid, d.refobjid,d.refobjsubid, d.deptype,
        array[array[d.refobjid::int,d.objid::int]]
   from pg_depend d
   left join pg_rewrite r on 
@@ -1631,18 +1627,12 @@ select 1,
  where d.refobjid = $1 and r.ev_class is distinct from d.refobjid
  union all
 select depth+1,
-       case when r.oid is not null 
-            then 'pg_class'::regclass 
+       case when r.oid is not null then 'pg_class'::regclass 
             else d.classid::regclass 
        end as classid,
        coalesce(r.ev_class,d.objid) as objid,
-       d.objsubid,
-       d.refclassid,
-       d.refobjid,
-       d.refobjsubid,
-       d.deptype,
-       t.edges ||
-       array[array[d.refobjid::int,d.objid::int]]
+       d.objsubid, d.refclassid, d.refobjid, d.refobjsubid, d.deptype,
+       t.edges || array[array[d.refobjid::int,d.objid::int]]
   from tree t
   join pg_depend d on (d.refobjid=t.objid) 
   left join pg_rewrite r on 
@@ -1652,12 +1642,8 @@ select depth+1,
 )
 select distinct 
        depth,
-       classid,
-       objid,
-       objsubid,
-       refclassid,
-       refobjid,
-       refobjsubid,
+       classid,objid,objsubid,
+       refclassid,refobjid,refobjsubid,
        deptype
   from tree
 $$ language sql;
@@ -1846,11 +1832,11 @@ AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE TEXT SEARCH PARSER %s (\n  %s\n);\n',obj.sql_identifier,
          array_to_string(array[
-           'START = '    || nullif(cast(p.prsstart::regproc as text),'-'), 
-           'GETTOKEN = ' || nullif(cast(p.prstoken::regproc as text),'-'), 
-           'END = '      || nullif(cast(p.prsend::regproc as text),'-'), 
-           'LEXTYPES = ' || nullif(cast(p.prslextype::regproc as text),'-'), 
-           'HEADLINE = ' || nullif(cast(p.prsheadline::regproc as text),'-')
+           'START = '    || cast(nullif(p.prsstart,0)::regproc as text), 
+           'GETTOKEN = ' || cast(nullif(p.prstoken,0)::regproc as text), 
+           'END = '      || cast(nullif(p.prsend,0)::regproc as text), 
+           'LEXTYPES = ' || cast(nullif(p.prslextype,0)::regproc as text), 
+           'HEADLINE = ' || cast(nullif(p.prsheadline,0)::regproc as text)
            ],E',\n  ')
         )
         || ddlx_comment($1)
@@ -1867,8 +1853,8 @@ AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE TEXT SEARCH TEMPLATE %s (\n  %s\n);\n',obj.sql_identifier,
          array_to_string(array[
-           'INIT = '   || nullif(cast(t.tmplinit::regproc as text),'-'), 
-           'LEXIZE = ' || nullif(cast(t.tmpllexize::regproc as text),'-') 
+           'INIT = '   || cast(nullif(t.tmplinit,0)::regproc as text), 
+           'LEXIZE = ' || cast(nullif(t.tmpllexize,0)::regproc as text) 
            ],E',\n  ')
         )
         || ddlx_comment($1)
