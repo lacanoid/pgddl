@@ -34,9 +34,19 @@ select ddlx_create_language(oid) from pg_language
  where lanname in ('internal','c','sql') 
  order by lanname;
 
+-- database
+begin;
+create user ddlx_test_user4;
+comment on database contrib_regression is 'DDLX Test Database';
+alter database contrib_regression owner to postgres;
+alter database contrib_regression connection limit 1234;
+grant create on database contrib_regression to ddlx_test_user4 with grant option;
+select ddlx_create(oid) from pg_database where datname='contrib_regression';
+abort;
+
 -- schema
 create schema ddlx_test_schema1;
-comment on schema ddlx_test_schema1 is 'test schema';
+comment on schema ddlx_test_schema1 is 'DDLX Test Schema';
 grant usage on schema ddlx_test_schema1 to public;
 select ddlx_create(oid) from pg_namespace where nspname='ddlx_test_schema1';
 

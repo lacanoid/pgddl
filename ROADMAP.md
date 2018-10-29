@@ -21,19 +21,20 @@ Tasks
 -----
 
 Support for other postgres objects:
-- rule
-- language, transform
-- tablespace
-- regnamespace
+- rule (DONE)
+- language (DONE), transform (DONE)
+- tablespace 
+- regnamespace (DONE)
+- database (DONE)
 - access method, operator family, operator class, 
 - extension
-- database, policy
+- policy
 - v10: publication, subscription, statistics
 - v11: procedures
 
 Support for other missing options:
 - storage parameters
-- comments on all objects
+- comments on all objects (missing: databases)
 - ownership of all objects (missing: fdw, server)
 - grants on all objects (missing: schema)
 - tablespace settings
@@ -43,6 +44,7 @@ Support for other missing options:
 - grants vs superuser (grantor)
 - enabled/disabled triggers
 - clustering
+- database settings (alter database set)
 - v10: partitions, generated
 
 Other:

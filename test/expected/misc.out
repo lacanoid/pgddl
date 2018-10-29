@@ -137,14 +137,45 @@ COMMENT ON LANGUAGE sql IS 'SQL-language functions';
 ALTER LANGUAGE sql OWNER TO postgres;
 
 (3 rows)
+-- database
+begin;
+create user ddlx_test_user4;
+comment on database contrib_regression is 'DDLX Test Database';
+alter database contrib_regression owner to postgres;
+alter database contrib_regression connection limit 1234;
+grant create on database contrib_regression to ddlx_test_user4 with grant option;
+select ddlx_create(oid) from pg_database where datname='contrib_regression';
+ddlx_create
+CREATE DATABASE contrib_regression WITH
+  ENCODING = UTF8
+  LC_COLLATE = "en_US.UTF-8"
+  LC_CTYPE = "en_US.UTF-8";
+
+COMMENT ON DATABASE contrib_regression IS 'DDLX Test Database';
+
+ALTER DATABASE contrib_regression WITH ALLOW_CONNECTIONS true;
+ALTER DATABASE contrib_regression WITH CONNECTION LIMIT 1234;
+ALTER DATABASE contrib_regression WITH IS_TEMPLATE false;
+ALTER DATABASE contrib_regression SET TABLESPACE pg_default;
+
+ALTER DATABASE contrib_regression OWNER TO postgres;
+GRANT CONNECT ON DATABASE contrib_regression TO PUBLIC;
+GRANT TEMPORARY ON DATABASE contrib_regression TO PUBLIC;
+GRANT CREATE ON DATABASE contrib_regression TO ddlx_test_user4 WITH GRANT OPTION;
+GRANT CONNECT ON DATABASE contrib_regression TO postgres;
+GRANT CREATE ON DATABASE contrib_regression TO postgres;
+GRANT TEMPORARY ON DATABASE contrib_regression TO postgres;
+
+(1 row)
+abort;
 -- schema
 create schema ddlx_test_schema1;
-comment on schema ddlx_test_schema1 is 'test schema';
+comment on schema ddlx_test_schema1 is 'DDLX Test Schema';
 grant usage on schema ddlx_test_schema1 to public;
 select ddlx_create(oid) from pg_namespace where nspname='ddlx_test_schema1';
 ddlx_create
 CREATE SCHEMA ddlx_test_schema1;
-COMMENT ON SCHEMA ddlx_test_schema1 IS 'test schema';
+COMMENT ON SCHEMA ddlx_test_schema1 IS 'DDLX Test Schema';
 ALTER SCHEMA ddlx_test_schema1 OWNER TO postgres;
 GRANT USAGE ON SCHEMA ddlx_test_schema1 TO PUBLIC;
 GRANT CREATE ON SCHEMA ddlx_test_schema1 TO postgres;

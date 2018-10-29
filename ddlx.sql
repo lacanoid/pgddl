@@ -90,7 +90,7 @@ AS $function$
 #if 9.2
          typacl as acl
 #else
-		 null as acl
+         null as acl
 #end
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
     LEFT JOIN typ_type AS tt ON tt.k = t.typtype
@@ -368,12 +368,12 @@ AS $function$
          'pg_transform'::regclass,
          null as name,
          null as namespace,
-		 'TRANSFORM' kind,
+         'TRANSFORM' kind,
          null as owner,
          'TRANSFORM' as sql_kind,
          format('FOR %s LANGUAGE %I',
-		          format_type(trf.trftype,null),
-		          l.lanname) as sql_identifier,
+                  format_type(trf.trftype,null),
+                  l.lanname) as sql_identifier,
          null as acl
     FROM pg_transform trf JOIN pg_language l on (l.oid=trf.trflang)
    WHERE trf.oid = $1
@@ -407,6 +407,18 @@ AS $function$
     FROM pg_opfamily opf JOIN pg_namespace n ON n.oid=opf.opfnamespace
     JOIN pg_am am on (am.oid=opf.opfmethod)
    WHERE opf.oid = $1
+   UNION
+  SELECT dat.oid,
+         'pg_database'::regclass,
+         dat.datname as name,
+         null as namespace,
+         'DATABASE' as kind,
+         pg_get_userbyid(dat.datdba) as owner,
+         'DATABASE' as sql_kind,
+         quote_ident(dat.datname) as sql_identifier,
+         dat.datacl as acl
+    FROM pg_database dat
+   WHERE dat.oid = $1
 $function$  strict;
 
 ---------------------------------------------------
@@ -703,7 +715,12 @@ AS $function$
  with obj as (select * from ddlx_identify($1))
  select format(
           E'COMMENT ON %s %s IS %L;\n',
-          obj.sql_kind, sql_identifier, obj_description(oid))
+          obj.sql_kind, sql_identifier, 
+          case 
+            when obj.classid='pg_database'::regclass
+            then shobj_description(oid,classid::name)
+            else obj_description(oid)
+          end)
    from obj
 $function$ strict;
 
@@ -1473,11 +1490,11 @@ AS $function$
            E'CREATE OR REPLACE TRANSFORM %s (\n'||
            E'  FROM SQL WITH FUNCTION %s\n' ||
            E'  TO SQL WITH FUNCTION %s\n);\n',
-		   format('FOR %s LANGUAGE %I',
-		          format_type(obj.trftype,null),
-		          l.lanname),
-			cast(obj.trffromsql::regprocedure as text),
-			cast(obj.trftosql::regprocedure as text)
+           format('FOR %s LANGUAGE %I',
+                  format_type(obj.trftype,null),
+                  l.lanname),
+            cast(obj.trffromsql::regprocedure as text),
+            cast(obj.trftosql::regprocedure as text)
         )
     || ddlx_comment($1)
    from obj join pg_language l on (l.oid=obj.trflang);
@@ -1587,11 +1604,11 @@ AS $function$
            case when obj.lanpltrusted then 'TRUSTED ' end,
            obj.lanname,
            E'\n  '||nullif(array_to_string(array[
-			'HANDLER ' || nullif(lanplcallfoid,0)::regproc::text,
-			'INLINE ' || nullif(laninline,0)::regproc::text,
-			'VALIDATOR ' || nullif(lanvalidator,0)::regproc::text
-	       ],' '),'')
-	       )
+            'HANDLER ' || nullif(lanplcallfoid,0)::regproc::text,
+            'INLINE ' || nullif(laninline,0)::regproc::text,
+            'VALIDATOR ' || nullif(lanvalidator,0)::regproc::text
+           ],' '),'')
+           )
     || ddlx_comment($1)
     || ddlx_alter_owner($1)
     || ddlx_grants($1)
@@ -1927,6 +1944,42 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_database(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'CREATE DATABASE %s WITH\n  %s;\n\n',
+              obj.sql_identifier,
+              array_to_string(array[
+               'ENCODING = '||pg_encoding_to_char(d.encoding),
+               'LC_COLLATE = '||quote_ident(d.datcollate),
+               'LC_CTYPE = '||quote_ident(d.datctype)
+              ],E'\n  ')
+              )
+       || ddlx_comment($1) || E'\n' ||
+       format(E'ALTER DATABASE %s WITH ALLOW_CONNECTIONS %s;\n',
+              obj.sql_identifier, d.datallowconn::text) ||
+       case when d.datconnlimit>0 then
+       format(E'ALTER DATABASE %s WITH CONNECTION LIMIT %s;\n',
+              obj.sql_identifier, d.datconnlimit) 
+       else '' end ||
+       format(E'ALTER DATABASE %s WITH IS_TEMPLATE %s;\n',
+              obj.sql_identifier, d.datistemplate::text) || 
+       case when s.oid is not null then
+       format(E'ALTER DATABASE %s SET TABLESPACE %I;\n\n',
+              obj.sql_identifier, s.spcname) 
+       else '' end 
+       -- missing GUC settings
+       || ddlx_alter_owner($1) 
+       || ddlx_grants($1)
+  from pg_database as d 
+  left join pg_tablespace s on (s.oid=d.dattablespace), obj
+ where d.oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 #if 9.6
 CREATE OR REPLACE FUNCTION ddlx_create_access_method(oid)
  RETURNS text
@@ -2053,16 +2106,8 @@ AS $function$
 #if 9.5
     then ddlx_create(oid::regnamespace)
 #else
-	then ddlx_create_schema(oid)
+    then ddlx_create_schema(oid)
 #end
-    when 'pg_ts_config'::regclass 
-    then ddlx_create(oid::regconfig)
-    when 'pg_ts_dict'::regclass 
-    then ddlx_create(oid::regdictionary)
-    when 'pg_ts_parser'::regclass 
-    then ddlx_create_text_search_parser(oid)
-    when 'pg_ts_template'::regclass 
-    then ddlx_create_text_search_template(oid)
     when 'pg_constraint'::regclass 
     then ddlx_create_constraint(oid)
     when 'pg_trigger'::regclass 
@@ -2098,6 +2143,16 @@ AS $function$
     then ddlx_create_operator_family(oid)
     when 'pg_rewrite'::regclass 
     then ddlx_create_rule(oid)
+    when 'pg_ts_config'::regclass 
+    then ddlx_create(oid::regconfig)
+    when 'pg_ts_dict'::regclass 
+    then ddlx_create(oid::regdictionary)
+    when 'pg_ts_parser'::regclass 
+    then ddlx_create_text_search_parser(oid)
+    when 'pg_ts_template'::regclass 
+    then ddlx_create_text_search_template(oid)
+    when 'pg_database'::regclass 
+    then ddlx_create_database(oid)
     else
       case
         when kind is not null

@@ -6,14 +6,16 @@ Version 0.10α
 - fix ddlx_script(text) dependants bug
 - support for rules
 - support for languages and transforms
+- support for databases
 - support for access methods
 - some support for operator families
-- ! support for ...
 - added acl to ddlx_identify()
-- New ddlx_grants(oid) function
+- new ddlx_grants(oid) function
+- ddlx_get_dependants_recursive() faster
 - better storage parameter output in ddlx_describe()
 - preprocessor for specific pg version
 - more use of format() function for speed and readability
+- bug fixes
 
 Version 0.9
 -----------
