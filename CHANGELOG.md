@@ -11,10 +11,11 @@ Version 0.10α
 - some support for operator families
 - added acl to ddlx_identify()
 - new ddlx_grants(oid) function
-- ddlx_get_dependants_recursive() faster
+- ddlx_get_dependants_recursive() is faster
 - better storage parameter output in ddlx_describe()
 - preprocessor for specific pg version
 - more use of format() function for speed and readability
+- some code cleanup for speed and readability
 - bug fixes
 
 Version 0.9

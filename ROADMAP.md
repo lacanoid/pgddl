@@ -26,7 +26,7 @@ Support for other postgres objects:
 - tablespace 
 - regnamespace (DONE)
 - database (DONE)
-- access method, operator family, operator class, 
+- access method, operator family, operator class 
 - extension
 - policy
 - v10: publication, subscription, statistics
@@ -45,10 +45,11 @@ Support for other missing options:
 - enabled/disabled triggers
 - clustering
 - database settings (alter database set)
+- row level permissions
 - v10: partitions, generated
 
 Other:
-- compiler from one source to specific pg version
+- compiler from one source to specific pg version (DONE)
 - handle dependancies for type better (use shell types)
 - improve and add to simple tests
 - make some tests to test if what we output actually runs, test execute them
