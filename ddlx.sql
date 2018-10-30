@@ -719,6 +719,8 @@ AS $function$
           case 
             when obj.classid='pg_database'::regclass
             then shobj_description(oid,classid::name)
+            when obj.classid='pg_tablespace'::regclass
+            then shobj_description(oid,classid::name)
             else obj_description(oid)
           end)
    from obj
@@ -1608,7 +1610,7 @@ AS $function$
             'INLINE ' || nullif(laninline,0)::regproc::text,
             'VALIDATOR ' || nullif(lanvalidator,0)::regproc::text
            ],' '),'')
-           )
+        )
     || ddlx_comment($1)
     || ddlx_alter_owner($1)
     || ddlx_grants($1)
@@ -1940,6 +1942,24 @@ select format(E'CREATE %sCONVERSION %s\n  FOR %L TO %L FROM %s;\n',
         || ddlx_alter_owner($1)
   from pg_conversion as c, obj
  where c.oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create_tablespace(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'CREATE TABLESPACE %s%s;\n',
+         obj.sql_identifier,
+		 ' LOCATION '||quote_literal(pg_tablespace_location(t.oid))
+	     )
+        || ddlx_comment($1)
+        || ddlx_alter_owner($1)
+        || ddlx_grants($1)
+  from pg_tablespace as t, obj
+ where t.oid = $1
 $function$  strict;
 
 ---------------------------------------------------

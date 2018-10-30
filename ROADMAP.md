@@ -43,7 +43,7 @@ Support for other missing options:
 - column grants
 - grants vs superuser (grantor)
 - enabled/disabled triggers
-- clustering
+- cluster on table
 - database settings (alter database set)
 - row level permissions
 - v10: partitions, generated

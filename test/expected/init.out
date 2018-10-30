@@ -45,6 +45,7 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_create_sequence(regclass)        | 
  ddlx_create_server(oid)               | 
  ddlx_create_table(regclass)           | 
+ ddlx_create_tablespace(oid)           | 
  ddlx_create_text_search_parser(oid)   | 
  ddlx_create_text_search_template(oid) | 
  ddlx_create_transform(oid)            | 
