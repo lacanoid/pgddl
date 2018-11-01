@@ -44,6 +44,8 @@ grant create on database contrib_regression to ddlx_test_user4 with grant option
 select ddlx_create(oid) from pg_database where datname='contrib_regression';
 abort;
 
+select ddlx_script(oid) from pg_tablespace where spcname='pg_default';
+
 -- schema
 create schema ddlx_test_schema1;
 comment on schema ddlx_test_schema1 is 'DDLX Test Schema';
