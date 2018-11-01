@@ -1918,7 +1918,7 @@ AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE TABLESPACE %s%s;\n',
          obj.sql_identifier,
-		 ' LOCATION '||quote_literal(nullif(pg_tablespace_location(t.oid),''))
+		 ' LOCATION '||quote_literal(pg_tablespace_location(t.oid))
 	     ) || format(E'%s',
          (
    select string_agg(format('ALTER TABLESPACE %s SET ( %s = %s );', 

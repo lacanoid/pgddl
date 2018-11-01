@@ -168,6 +168,21 @@ GRANT TEMPORARY ON DATABASE contrib_regression TO postgres;
 
 (1 row)
 abort;
+select ddlx_script(oid) from pg_tablespace where spcname='pg_default';
+ddlx_script
+BEGIN;
+
+/*
+DROP TABLESPACE pg_default;
+*/
+
+CREATE TABLESPACE pg_default LOCATION '';
+COMMENT ON TABLESPACE pg_default IS 'default';
+ALTER TABLESPACE pg_default OWNER TO postgres;
+
+END;
+
+(1 row)
 -- schema
 create schema ddlx_test_schema1;
 comment on schema ddlx_test_schema1 is 'DDLX Test Schema';
