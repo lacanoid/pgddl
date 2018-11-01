@@ -7,6 +7,7 @@ Version 0.10α
 - support for rules
 - support for languages and transforms
 - support for databases
+- support for tablespaces
 - support for access methods
 - some support for operator families
 - added acl to ddlx_identify()

@@ -1,4 +1,3 @@
--- preprocessed by sqlpp for PG=10
 --
 --  DDL eXtractor functions
 --  version 0.10 lacanoid@ljudmila.org
@@ -61,10 +60,19 @@ AS $function$
          n.nspname AS namespace,
          'FUNCTION' AS kind,
          pg_get_userbyid(p.proowner) AS owner,
+#if 11
+         case p.prokind
+           when 'f' then 'FUNCTION'
+           when 'a' then 'AGGREGATE'
+           when 'p' then 'PROCEDURE'
+           when 'w' then 'WINDOW FUNCTION'
+         end 
+#else
          case
            when p.proisagg then 'AGGREGATE'
            else 'FUNCTION' 
          end 
+#end
          AS sql_kind,
          cast($1::regprocedure AS text) AS sql_identifier,
          proacl as acl
@@ -79,7 +87,11 @@ AS $function$
          pg_get_userbyid(t.typowner) AS owner,
          coalesce(cc.v,tt.v2,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier,
+#if 9.2
          typacl as acl
+#else
+         null as acl
+#end
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
     LEFT JOIN typ_type AS tt ON tt.k = t.typtype
     LEFT JOIN pg_class AS c ON c.oid = t.typrelid
@@ -242,6 +254,7 @@ AS $function$
          null as acl
     FROM pg_ts_template tmpl JOIN pg_namespace n ON n.oid=tmpl.tmplnamespace
    WHERE tmpl.oid = $1
+#if 9.3
    UNION
   SELECT evt.oid,
          'pg_event_trigger'::regclass,
@@ -254,6 +267,7 @@ AS $function$
          null as acl
     FROM pg_event_trigger evt
    WHERE evt.oid = $1
+#end
    UNION
   SELECT fdw.oid,
          'pg_foreign_data_wrapper'::regclass,
@@ -348,6 +362,7 @@ AS $function$
          lan.lanacl as acl
     FROM pg_language lan
    WHERE lan.oid = $1
+#if 9.5
    UNION
   SELECT trf.oid,
          'pg_transform'::regclass,
@@ -374,6 +389,7 @@ AS $function$
          null as acl
     FROM pg_am am
    WHERE am.oid = $1
+#end
    UNION
   SELECT opf.oid,
          'pg_opfamily'::regclass,
@@ -855,6 +871,7 @@ select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
 $function$  strict;
 
 ---------------------------------------------------
+#if 9.2
 CREATE OR REPLACE FUNCTION ddlx_create_type_range(regtype)
  RETURNS text
  LANGUAGE sql
@@ -876,6 +893,7 @@ select 'CREATE TYPE ' || format_type($1,null) || E' AS RANGE (\n  ' ||
   left join pg_collation col on (col.oid=r.rngcollation)
  where r.rngtypid = $1
 $function$  strict;
+#end
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_type_enum(regtype)
@@ -1206,30 +1224,41 @@ select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' ||
         array_to_string(array[
           'SFUNC = '  || cast(a.aggtransfn::regproc as text),
           'STYPE = ' || format_type(a.aggtranstype,null),
+#if 9.4
           case when a.aggtransspace>0 then 'SSPACE = '||a.aggtransspace end,
+#end
           'FINALFUNC = ' || cast(nullif(a.aggfinalfn,0)::regproc as text), 
+#if 9.4
           case when a.aggfinalextra then 'FINALFUNC_EXTRA' end,
+#if 9.6
           'COMBINEFUNC = ' || cast(nullif(a.aggcombinefn,0)::regproc as text), 
           'SERIALFUNC = ' || cast(nullif(a.aggserialfn,0)::regproc as text), 
           'DESERIALFUNC = ' || cast(nullif(a.aggdeserialfn,0)::regproc as text), 
+#end
           'INITCOND = ' || quote_literal(a.agginitval), 
+#if 9.5
           'MSFUNC = ' || cast(nullif(a.aggmtransfn,0)::regproc as text), 
           'MINVFUNC = ' || cast(nullif(a.aggminvtransfn,0)::regproc as text), 
+#if 9.6
           case when a.aggmtranstype>0 
                then 'MSTYPE = '||format_type(a.aggmtranstype,null) end,
+#if 9.4
           case when a.aggmtransspace>0 then 'MSSPACE = '||a.aggmtransspace end,
           'MFINALFUNC = ' || cast(nullif(a.aggmfinalfn,0)::regproc as text),
           case when a.aggmfinalextra then 'MFINALFUNC_EXTRA' end,
           'MINITCOND = ' || quote_literal(a.aggminitval), 
+#if 9.6
           'PARALLEL = ' || case p.proparallel
             when 's' then 'SAFE'
             when 'r' then 'RESTRICTED'
             when 'u' then null -- 'UNSAFE', default
             else quote_literal(p.proparallel)
           end,
+#if 9.4
           case a.aggkind
             when 'h' then 'HYPOTHETICAL'
           end,
+#end
           case when a.aggsortop>0 
                then 'SORTOP = '||cast(a.aggsortop::regoperator as text) end
           ],E',\n  ')
@@ -1257,7 +1286,11 @@ $function$  strict;
 
 ---------------------------------------------------
 
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_grants(regrole) 
+#else
+CREATE OR REPLACE FUNCTION ddlx_grants_to_role(oid) 
+#end
  RETURNS text
  LANGUAGE sql
  AS $function$
@@ -1285,7 +1318,11 @@ $function$  strict;
 
 ---------------------------------------------------
 
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create(regrole)
+#else
+CREATE OR REPLACE FUNCTION ddlx_create_role(oid)
+#end
  RETURNS text
  LANGUAGE sql
 AS $function$ 
@@ -1342,15 +1379,22 @@ q2 as (
  where oid = $1
  ) 
 select ddl||coalesce(ddl_config||E'\n','')||
+#if 9.5
    ddlx_grants($1::regrole)
+#else
+   ddlx_grants_to_role($1)
+#end
   from q1,q2; 
 $function$  strict
 set datestyle = iso;
 
+#if 9.5
 COMMENT ON FUNCTION ddlx_create(regrole) 
      IS 'Get SQL CREATE statement for a role';
+#end
 
 ---------------------------------------------------
+#if 9.3
 CREATE OR REPLACE FUNCTION ddlx_create_event_trigger(oid)
  RETURNS text
  LANGUAGE sql
@@ -1372,6 +1416,7 @@ AS $function$
     || ddlx_alter_owner($1) 
    from obj;
 $function$  strict;
+#end
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_foreign_data_wrapper(oid)
@@ -1449,6 +1494,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create_transform(oid)
  RETURNS text
  LANGUAGE sql
@@ -1467,6 +1513,7 @@ AS $function$
     || ddlx_comment($1)
    from obj join pg_language l on (l.oid=obj.trflang);
 $function$  strict;
+#end
 
 ---------------------------------------------------
 --  Grants
@@ -1972,6 +2019,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
+#if 9.6
 CREATE OR REPLACE FUNCTION ddlx_create_access_method(oid)
  RETURNS text
  LANGUAGE sql
@@ -1989,6 +2037,7 @@ select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
   from pg_am as am, obj
  where am.oid = $1
 $function$  strict;
+#end
 
 ---------------------------------------------------
 
@@ -2010,7 +2059,11 @@ $function$  strict;
 
 ---------------------------------------------------
 
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
+#else
+CREATE OR REPLACE FUNCTION ddlx_create_schema(oid)
+#end
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2022,8 +2075,10 @@ select format(E'CREATE SCHEMA %I;\n',n.nspname)
  where oid = $1
 $function$  strict;
 
+#if 9.5
 COMMENT ON FUNCTION ddlx_create(regnamespace) 
      IS 'Get SQL CREATE statement for a schema';
+#end
 
 ---------------------------------------------------
 
@@ -2047,12 +2102,16 @@ AS $function$
           when 'e' then ddlx_create_type_enum(t.oid)
           when 'd' then ddlx_create_type_domain(t.oid)
           when 'b' then ddlx_create_type_base(t.oid)
+#if 9.2
           when 'r' then ddlx_create_type_range(t.oid)
+#end
           else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
           end 
           || ddlx_comment(t.oid)
           || ddlx_alter_owner(t.oid) 
+#if 9.2
           || ddlx_grants(t.oid) 
+#end
      from pg_type t
     where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;
@@ -2077,17 +2136,27 @@ AS $function$
     when 'pg_operator'::regclass 
     then ddlx_create(oid::regoper)
     when 'pg_roles'::regclass 
+#if 9.5
     then ddlx_create(oid::regrole)
+#else
+    then ddlx_create_role(oid)
+#end
     when 'pg_namespace'::regclass 
+#if 9.5
     then ddlx_create(oid::regnamespace)
+#else
+    then ddlx_create_schema(oid)
+#end
     when 'pg_constraint'::regclass 
     then ddlx_create_constraint(oid)
     when 'pg_trigger'::regclass 
     then ddlx_create_trigger(oid)
     when 'pg_attrdef'::regclass 
     then ddlx_create_default(oid)
+#if 9.3
     when 'pg_event_trigger'::regclass 
     then ddlx_create_event_trigger(oid)
+#end
     when 'pg_foreign_data_wrapper'::regclass 
     then ddlx_create_foreign_data_wrapper(oid)
     when 'pg_foreign_server'::regclass 
@@ -2102,10 +2171,13 @@ AS $function$
     then ddlx_create_conversion(oid)
     when 'pg_language'::regclass 
     then ddlx_create_language(oid)
+#if 9.5
     when 'pg_transform'::regclass 
     then ddlx_create_transform(oid)
+#if 9.6
     when 'pg_am'::regclass 
     then ddlx_create_access_method(oid)
+#end
     when 'pg_opfamily'::regclass 
     then ddlx_create_operator_family(oid)
     when 'pg_rewrite'::regclass 
@@ -2229,4 +2301,3 @@ $function$  strict;
 
 COMMENT ON FUNCTION ddlx_script(text) 
      IS 'Get SQL DDL script for an object and dependants by object name';
-
