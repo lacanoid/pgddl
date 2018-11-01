@@ -177,11 +177,11 @@ CREATE TABLE users (
     name text
 );
 
-SELECT ddlx_script('users'::regclass);
+SELECT ddlx_script('users');
 
 CREATE TYPE my_enum AS ENUM ('foo','bar');
 
-SELECT ddlx_script('my_enum'::regtype);
+SELECT ddlx_script('my_enum');
 
 SELECT ddlx_script(current_role::regrole);
 
