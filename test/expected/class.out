@@ -26,6 +26,7 @@ select kind, sql_identifier from ddlx_identify('test_class_r'::regclass);
 kind|sql_identifier
 TABLE|test_class_r
 (1 row)
+alter table test_class_r alter h set storage external;
 create trigger aaaa before 
 update on test_class_r
    for each row when (old.* is distinct from new.*) execute procedure trig('AAAA');
@@ -61,6 +62,8 @@ COMMENT ON TABLE test_class_r IS 'Comment1';
 ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
+
+ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key
   UNIQUE (b);
@@ -121,6 +124,8 @@ COMMENT ON TABLE test_class_r IS 'Comment1';
 ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
+
+ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key
   UNIQUE (b);

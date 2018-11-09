@@ -21,6 +21,7 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_script(text)                     | Get SQL DDL script for an object and dependants by object name
  ddlx_alter_owner(oid)                 | 
  ddlx_alter_table_defaults(regclass)   | 
+ ddlx_alter_table_storage(regclass)    | 
  ddlx_banner(text,text,text,text,text) | 
  ddlx_comment(oid)                     | 
  ddlx_create_access_method(oid)        | 

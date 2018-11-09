@@ -24,6 +24,7 @@ CREATE TABLE test_class_r (
 COMMENT ON TABLE test_class_r IS 'Comment1';
 grant all on test_class_r to public;
 select kind, sql_identifier from ddlx_identify('test_class_r'::regclass);
+alter table test_class_r alter h set storage external;
 
 create trigger aaaa before 
 update on test_class_r

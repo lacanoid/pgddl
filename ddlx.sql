@@ -1029,6 +1029,24 @@ $function$ strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_alter_table_storage(regclass)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+  select 
+    coalesce(
+      string_agg( 
+        'ALTER TABLE '||text($1)|| 
+          ' ALTER '||quote_ident(name)|| 
+          ' SET STORAGE '||storage, 
+        E';\n') || E';\n\n', 
+    '')
+   from ddlx_describe($1)
+  where storage is not null
+$function$ strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_default(oid)
  RETURNS text
  LANGUAGE sql
@@ -1715,6 +1733,7 @@ AS $function$
    select 
      ddlx_create_class($1) 
      || ddlx_alter_table_defaults($1) 
+     || ddlx_alter_table_storage($1) 
      || ddlx_create_constraints($1) 
      || ddlx_create_indexes($1) 
      || ddlx_create_triggers($1) 
