@@ -2,7 +2,7 @@ DDL eXtractor functions  for PostgreSQL
 =======================================
 
 This is an SQL-only extension for PostgreSQL that provides uniform functions for generating 
-SQL Data Definition Language (DDL) scripts for objects stored in a database. 
+SQL Data Definition Language (DDL) scripts for objects created in a database. 
 It contains a bunch of SQL functions  to convert PostgreSQL system catalogs 
 to nicely formatted snippets of SQL DDL, such as CREATE TABLE.
 
@@ -15,12 +15,13 @@ and therefore requires shell access or local installation to be of use.
 
 PostgreSQL however already provides a number of helper functions which already greatly help 
 with reconstructing DDL and are of course used by this extension.
-It also has sophisticated query capabilities which make this project possible.
+PostgreSQL also has sophisticated query capabilities, such as CTEs and window functions 
+which make this project possible.
 
 Advantages over using other tools like `psql` or `pgdump` include:
 
 - You can use it to extract DDL with **any client** which support running plain SQL queries
-- **Simple API** with just three functions
+- **Simple API** with just three functions. Just supply `oid`.
 - With SQL you can select things to dump by using usual SQL semantics (WHERE, etc)
 - Special function for creating scripts, which drop and recreate entire **dependancy trees**.
   This is useful for example, when one wishes to rename some columns in a view with dependants.
@@ -39,13 +40,16 @@ Some disadvantages:
 - Not all Postgres objects and all options are supported yet. 
   The package provides support for basic user-level objects such as types, classes and functions.
   All `reg*` objects and SQL standard compliant stuff is mostly supported,
-  with more fringe stuff still in constuction. See [ROADMAP](ROADMAP.md) for what's missing.
-- It is not well tested at all. While it contains a number of regression tests, these can be
+  with more fringe stuff still in constuction. 
+  The intention for version 1.0 to support all objects. 
+  See [ROADMAP](ROADMAP.md) for some of what's missing.
+- It is not very well tested. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
   Do not run generated scripts on production databases without testing them!
 - It is kind of slow-ish for complicated dependancy trees
 
-That said, it has still proven quite useful in a number of situations.
+That said, it has still proven quite useful in a number of situations
+and is used with a number of production databases.
 
 
 Curently developed and tested on PostgreSQL 10. 
@@ -91,10 +95,8 @@ The API provides three public user functions:
 - `ddlx_drop(oid)` - builds SQL DDL drop statements
 - `ddlx_script(oid)` - builds SQL DDL scripts of entire dependancy trees
 
-Currently supported object types are 
-`regtype`, `regclass`, `regproc(edure)`, `regoper(ator)`, `regrole`,
-`regconfig` and `regdictionary` and several others.
-You may want to cast object name or oid to the appropriate type.
+You can use these simply by casting object name (or oid) to some `reg*` type.
+All `reg*` types are supported:
 
 - `ddlx_create(regtype) returns text`
 

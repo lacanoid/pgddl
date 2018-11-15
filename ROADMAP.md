@@ -23,21 +23,21 @@ Tasks
 Support for other postgres objects:
 - rule (DONE)
 - language (DONE), transform (DONE)
-- tablespace 
+- tablespace (DONE)
 - regnamespace (DONE)
 - database (DONE)
 - access method, operator family, operator class 
 - extension
 - policy
-- v10: publication, subscription, statistics
-- v11: procedures
+- PG 10: publication, subscription, statistics
+- PG 11: procedures
 
 Support for other missing options:
-- storage parameters
+- storage parameters (DONE)
 - comments on all objects (missing: databases)
 - ownership of all objects (missing: fdw, server)
 - grants on all objects (missing: schema)
-- tablespace settings
+- relation tablespace settings (also on indexes)
 - serial (alter sequence set owner column)
 - column options (foreign tables!)
 - column grants
@@ -46,11 +46,14 @@ Support for other missing options:
 - cluster on table
 - database settings (alter database set)
 - row level permissions
-- v10: partitions, generated
+- PG 10: partitions
+- PG 10: generated
 
 Other:
 - compiler from one source to specific pg version (DONE)
-- handle dependancies for type better (use shell types)
+- PG version specific tests
+- improve dumping of comments
+- handle dependancies for types better (use shell types)
 - improve and add to simple tests
 - make some tests to test if what we output actually runs, test execute them
 - make some tests which compare to output of pg_dump for any sql file:
@@ -89,7 +92,7 @@ mainly to support code completion and various \d* commands.
 ### pgdump
 
 Database dump tool `pgdump` contains lots of packaged SQL for handling metadata 
-and especially consideres various dependancies.
+and especially considers various dependancies.
 
 ### pgAdmin3
 

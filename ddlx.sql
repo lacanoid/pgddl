@@ -1033,16 +1033,31 @@ CREATE OR REPLACE FUNCTION ddlx_alter_table_storage(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
+with 
+obj as (select * from ddlx_identify($1)),
+cs as (
   select 
     coalesce(
       string_agg( 
-        'ALTER TABLE '||text($1)|| 
-          ' ALTER '||quote_ident(name)|| 
+        'ALTER '||obj.sql_kind||' '||text($1)|| 
+          ' ALTER '||quote_ident(d.name)|| 
           ' SET STORAGE '||storage, 
         E';\n') || E';\n\n', 
-    '')
-   from ddlx_describe($1)
+    '') as ddl
+   from ddlx_describe($1) d, obj
   where storage is not null
+),
+ts as (
+  select case when s.oid is not null then
+         format(E'ALTER %s %s SET TABLESPACE %I;\n\n',
+                obj.sql_kind, obj.sql_identifier, s.spcname) 
+         else '' end as ddl
+    from obj, pg_class c 
+    left join pg_tablespace s on (s.oid=c.reltablespace)
+   where c.oid = $1
+)
+select cs.ddl || ts.ddl
+  from cs,ts
 $function$ strict;
 
 ---------------------------------------------------
@@ -1977,6 +1992,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
+#if 9.2
 CREATE OR REPLACE FUNCTION ddlx_create_tablespace(oid)
  RETURNS text
  LANGUAGE sql
@@ -1999,6 +2015,7 @@ select format(E'CREATE TABLESPACE %s%s;\n',
   from pg_tablespace as t, obj
  where t.oid = $1
 $function$  strict;
+#end
 
 ---------------------------------------------------
 
@@ -2211,8 +2228,10 @@ AS $function$
     then ddlx_create_text_search_template(oid)
     when 'pg_database'::regclass 
     then ddlx_create_database(oid)
+#if 9.2
     when 'pg_tablespace'::regclass 
     then ddlx_create_tablespace(oid)
+#end
     else
       case
         when kind is not null
