@@ -4,7 +4,7 @@ our $VI = $ENV{VERSION};
 our $V;
 our $opt_v = 0; # verbose
 
-sub errlog { print STDERR "sqlpp:$_[0]\n"; }
+sub errlog { print STDERR "pssqlpp:$_[0]\n"; }
 
 if($VI=~m!(\d+)\.(\d+)!) {
 	my ($maj,$min)=($1,$2);
