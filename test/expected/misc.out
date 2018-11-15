@@ -138,36 +138,38 @@ ALTER LANGUAGE sql OWNER TO postgres;
 
 (3 rows)
 -- database
+create database ddlx_testdb with encoding=UTF8 template=template0 lc_collate="POSIX" lc_ctype="POSIX";
+comment on database ddlx_testdb is 'DDLX Test Database';
+alter database ddlx_testdb owner to postgres;
+alter database ddlx_testdb connection limit 1234;
 begin;
 create user ddlx_test_user4;
-comment on database contrib_regression is 'DDLX Test Database';
-alter database contrib_regression owner to postgres;
-alter database contrib_regression connection limit 1234;
-grant create on database contrib_regression to ddlx_test_user4 with grant option;
-select ddlx_create(oid) from pg_database where datname='contrib_regression';
+grant create on database ddlx_testdb to ddlx_test_user4 with grant option;
+select ddlx_create(oid) from pg_database where datname='ddlx_testdb';
 ddlx_create
-CREATE DATABASE contrib_regression WITH
+CREATE DATABASE ddlx_testdb WITH
   ENCODING = UTF8
-  LC_COLLATE = "en_US.UTF-8"
-  LC_CTYPE = "en_US.UTF-8";
+  LC_COLLATE = "C"
+  LC_CTYPE = "C";
 
-COMMENT ON DATABASE contrib_regression IS 'DDLX Test Database';
+COMMENT ON DATABASE ddlx_testdb IS 'DDLX Test Database';
 
-ALTER DATABASE contrib_regression WITH ALLOW_CONNECTIONS true;
-ALTER DATABASE contrib_regression WITH CONNECTION LIMIT 1234;
-ALTER DATABASE contrib_regression WITH IS_TEMPLATE false;
-ALTER DATABASE contrib_regression SET TABLESPACE pg_default;
+ALTER DATABASE ddlx_testdb WITH ALLOW_CONNECTIONS true;
+ALTER DATABASE ddlx_testdb WITH CONNECTION LIMIT 1234;
+ALTER DATABASE ddlx_testdb WITH IS_TEMPLATE false;
+ALTER DATABASE ddlx_testdb SET TABLESPACE pg_default;
 
-ALTER DATABASE contrib_regression OWNER TO postgres;
-GRANT CONNECT ON DATABASE contrib_regression TO PUBLIC;
-GRANT TEMPORARY ON DATABASE contrib_regression TO PUBLIC;
-GRANT CREATE ON DATABASE contrib_regression TO ddlx_test_user4 WITH GRANT OPTION;
-GRANT CONNECT ON DATABASE contrib_regression TO postgres;
-GRANT CREATE ON DATABASE contrib_regression TO postgres;
-GRANT TEMPORARY ON DATABASE contrib_regression TO postgres;
+ALTER DATABASE ddlx_testdb OWNER TO postgres;
+GRANT CONNECT ON DATABASE ddlx_testdb TO PUBLIC;
+GRANT TEMPORARY ON DATABASE ddlx_testdb TO PUBLIC;
+GRANT CREATE ON DATABASE ddlx_testdb TO ddlx_test_user4 WITH GRANT OPTION;
+GRANT CONNECT ON DATABASE ddlx_testdb TO postgres;
+GRANT CREATE ON DATABASE ddlx_testdb TO postgres;
+GRANT TEMPORARY ON DATABASE ddlx_testdb TO postgres;
 
 (1 row)
 abort;
+drop database ddlx_testdb;
 select ddlx_script(oid) from pg_tablespace where spcname='pg_default';
 ddlx_script
 BEGIN;

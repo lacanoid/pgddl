@@ -35,14 +35,16 @@ select ddlx_create_language(oid) from pg_language
  order by lanname;
 
 -- database
+create database ddlx_testdb with encoding=UTF8 template=template0 lc_collate="POSIX" lc_ctype="POSIX";
+comment on database ddlx_testdb is 'DDLX Test Database';
+alter database ddlx_testdb owner to postgres;
+alter database ddlx_testdb connection limit 1234;
 begin;
 create user ddlx_test_user4;
-comment on database contrib_regression is 'DDLX Test Database';
-alter database contrib_regression owner to postgres;
-alter database contrib_regression connection limit 1234;
-grant create on database contrib_regression to ddlx_test_user4 with grant option;
-select ddlx_create(oid) from pg_database where datname='contrib_regression';
+grant create on database ddlx_testdb to ddlx_test_user4 with grant option;
+select ddlx_create(oid) from pg_database where datname='ddlx_testdb';
 abort;
+drop database ddlx_testdb;
 
 select ddlx_script(oid) from pg_tablespace where spcname='pg_default';
 
