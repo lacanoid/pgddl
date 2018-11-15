@@ -31,7 +31,8 @@ Advantages over using other tools like `psql` or `pgdump` include:
    pretty printing,
    using **idempotent DDL** where possible (preferring ALTER to CREATE), 
    creating indexes which are part of a constraint with ADD CONSTRAINT and so on.
-- **No shell access** or shell commands with hairy options required (for running pg_dump), just use SELECT and hairy SQL!
+- **No shell access** or shell commands with hairy options required (for running pg_dump), 
+  just use SELECT and hairy SQL!
 - It is entrely made out of **plain SQL functions** so you don't have to install any extra
   languages, not even PLpgSQL! It runs on plain vanilla Postgres.
   
@@ -48,8 +49,8 @@ Some disadvantages:
   Do not run generated scripts on production databases without testing them!
 - It is kind of slow-ish for complicated dependancy trees
 
-That said, it has still proven quite useful in a number of situations
-and is used with a number of production databases.
+That said, it has still proven quite useful in a many situations
+and is being used with a number of production databases.
 
 
 Curently developed and tested on PostgreSQL 10. 

@@ -1,14 +1,14 @@
 ! = todo
 
-Version 0.10α
--------------
+Version 0.10
+------------
 - pg 11 compatible, but it runs on older versions from 9.1 on
 - fix ddlx_script(text) dependants bug
-- support for rules
 - support for languages and transforms
 - support for databases
 - support for tablespaces
-- support for colum storage parameters
+- support for rules
+- support for column storage parameters
 - some support for access methods
 - some support for operator families
 - added acl to ddlx_identify()

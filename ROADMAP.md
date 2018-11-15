@@ -21,11 +21,6 @@ Tasks
 -----
 
 Support for other postgres objects:
-- rule (DONE)
-- language (DONE), transform (DONE)
-- tablespace (DONE)
-- regnamespace (DONE)
-- database (DONE)
 - access method, operator family, operator class 
 - extension
 - policy
@@ -33,26 +28,24 @@ Support for other postgres objects:
 - PG 11: procedures
 
 Support for other missing options:
-- storage parameters (DONE)
-- comments on all objects (missing: databases)
-- ownership of all objects (missing: fdw, server)
-- grants on all objects (missing: schema)
-- relation tablespace settings (also on indexes)
-- serial (alter sequence set owner column)
 - column options (foreign tables!)
 - column grants
+- row level permissions
+- PG 10: partitions
+- comments on all objects
+- ownership of all objects 
+- grants on all objects (missing: fdw, server)
+- serial (alter sequence set owner column)
 - grants vs superuser (grantor)
 - enabled/disabled triggers
 - cluster on table
 - database settings (alter database set)
-- row level permissions
-- PG 10: partitions
-- PG 10: generated
+- PG 10+: generated
 
 Other:
-- compiler from one source to specific pg version (DONE)
 - PG version specific tests
-- improve dumping of comments
+- improve support for non superusers (more testing, etc)
+- improve dumping of comments (be quiet on NULL comments)
 - handle dependancies for types better (use shell types)
 - improve and add to simple tests
 - make some tests to test if what we output actually runs, test execute them
