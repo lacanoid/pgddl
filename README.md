@@ -72,6 +72,7 @@ or selecting a specific PostgreSQL installation:
     make PG_CONFIG=/some/where/bin/pg_config
     make PG_CONFIG=/some/where/bin/pg_config install
     make PG_CONFIG=/some/where/bin/pg_config installcheck
+    PGPORT=5432 make PG_CONFIG=/some/where/bin/pg_config clean install installcheck
 
 Make sure you also set the connection parameters like PGPORT right for testing.
 
