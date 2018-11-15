@@ -14,4 +14,4 @@ include $(PGXS)
 
 $(DATA_built): ddlx.sql
 	@echo "Building extension version" $(EXT_VERSION) "for Postgres version" $(VERSION)
-	VERSION=${VERSION} ./bin/sqlpp $^ >$@
+	VERSION=${VERSION} ./bin/pgsqlpp $^ >$@
