@@ -32,7 +32,7 @@ Advantages over using other tools like `psql` or `pgdump` include:
    using **idempotent DDL** where possible (preferring ALTER to CREATE), 
    creating indexes which are part of a constraint with ADD CONSTRAINT and so on.
 - **No shell access** or shell commands with hairy options required (for running pg_dump), 
-  just use SELECT and hairy SQL!
+  just use SELECT and hairy SQL instead!
 - It is entrely made out of **plain SQL functions** so you don't have to install any extra
   languages, not even PLpgSQL! It runs on plain vanilla Postgres.
   
