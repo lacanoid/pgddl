@@ -10,13 +10,13 @@ Some other SQL databases support commands like SHOW CREATE TABLE or provide
 other facilities for the purpose. 
 
 PostgreSQL currently doesn't provide overall in-server DDL extracting functions,
-but rather just a separate `pg_dump` program. It is an external tool to the server 
+but rather a separate `pg_dump` program. It is an external tool to the server 
 and therefore requires shell access or local installation to be of use.
 
 PostgreSQL however already provides a number of helper functions which already greatly help 
 with reconstructing DDL and are of course used by this extension.
 PostgreSQL also has sophisticated query capabilities, such as CTEs and window functions 
-which make this project possible.
+which make this project possible by using only SQL.
 
 Advantages over using other tools like `psql` or `pgdump` include:
 
