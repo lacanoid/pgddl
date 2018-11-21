@@ -44,6 +44,7 @@ Support for other missing options:
 
 Other:
 - PG version specific tests
+- use ONLY when appropriate
 - improve support for non superusers (more testing, etc)
 - improve dumping of comments (be quiet on NULL comments)
 - handle dependancies for types better (use shell types)
