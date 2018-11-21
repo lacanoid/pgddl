@@ -42,7 +42,7 @@ Some disadvantages:
   The package provides support for basic user-level objects such as types, classes and functions.
   All `reg*` objects and SQL standard compliant stuff is mostly supported,
   with more fringe stuff still in constuction. 
-  The intention for version 1.0 to support all objects. 
+  The intention for version 1.0 is to support all objects. 
   See [ROADMAP](ROADMAP.md) for some of what's missing.
 - It is not very well tested. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
