@@ -1,5 +1,8 @@
 ! = todo
 
+Version 0.11
+------------
+
 Version 0.10
 ------------
 - pg 11 compatible, but it runs on older versions from 9.1 on

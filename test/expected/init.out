@@ -1,7 +1,7 @@
 CREATE EXTENSION ddlx;
 \pset tuples_only
 \dx ddlx
- ddlx | 0.10    | public | DDL eXtractor functions
+ ddlx | 0.11    | public | DDL eXtractor functions
 
 select oid::regprocedure,obj_description(oid) from pg_proc p where proname like 'ddlx_%'
 order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "C";

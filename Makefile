@@ -2,7 +2,7 @@ PG_CONFIG    = pg_config
 PKG_CONFIG   = pkg-config
 
 EXTENSION    = ddlx
-EXT_VERSION  = 0.10
+EXT_VERSION  = 0.11
 
 DATA_built   = ddlx--$(EXT_VERSION).sql
 
