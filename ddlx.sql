@@ -1567,8 +1567,8 @@ select attrelid::regclass,attname,
 ),
 a as (
  select attname,
-        coalesce(r1.rolname,'PUBLIC') as grantor,
-        coalesce(r2.rolname,'PUBLIC') as grantee,
+        coalesce(quote_ident(r1.rolname),'PUBLIC') as grantor,
+        coalesce(quote_ident(r2.rolname),'PUBLIC') as grantee,
         privilege_type,
         case 
         when is_grantable then ' WITH GRANT OPTION' else ''
@@ -1661,8 +1661,8 @@ CREATE OR REPLACE FUNCTION ddlx_grants(oid)
  AS $function$
 with obj as (select * from ddlx_identify($1)),
 a as (
- select coalesce(r1.rolname,'PUBLIC') as grantor,
-        coalesce(r2.rolname,'PUBLIC') as grantee,
+ select coalesce(quote_ident(r1.rolname),'PUBLIC') as grantor,
+        coalesce(quote_ident(r2.rolname),'PUBLIC') as grantee,
         privilege_type,
         case 
         when is_grantable then ' WITH GRANT OPTION' else ''
