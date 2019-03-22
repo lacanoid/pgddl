@@ -1666,11 +1666,9 @@ $function$  strict;
 --  Dependancy handling
 ---------------------------------------------------
 
-create or replace function ddlx_get_dependants_recursive(
+create or replace function ddlx_get_dependants(
  in oid, 
- out depth int, out classid regclass, out objid oid, out objsubid integer, 
- out refclassid regclass, out refobjid oid, out refobjsubid integer, 
- out deptype "char"
+ out depth int, out classid regclass, out objid oid
 )
 returns setof record as $$
 with recursive 
@@ -1701,26 +1699,18 @@ select depth+1,
        (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
  where r.ev_class is distinct from d.refobjid
    and not ( t.edges @> array[array[d.refobjid::int,d.objid::int]] )
-)
+),
+ddlx_get_dependants_recursive as (
 select distinct 
        depth,
        classid,objid,objsubid,
        refclassid,refobjid,refobjsubid,
        deptype
   from tree
-$$ language sql;
-
----------------------------------------------------
-
-create or replace function ddlx_get_dependants(
- in oid, 
- out depth int, out classid regclass, out objid oid
-)
-returns setof record as $$
-with 
+),
 q as (
   select distinct depth,classid,objid
-    from ddlx_get_dependants_recursive($1)
+    from ddlx_get_dependants_recursive
    where deptype = 'n'
 )
 select depth,classid,objid 

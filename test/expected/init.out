@@ -64,7 +64,6 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_drop_trigger(oid)                | 
  ddlx_get_constraints(regclass)        | 
  ddlx_get_dependants(oid)              | 
- ddlx_get_dependants_recursive(oid)    | 
  ddlx_get_functions(regproc)           | 
  ddlx_get_indexes(regclass)            | 
  ddlx_get_rules(regclass)              | 
