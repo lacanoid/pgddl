@@ -1552,11 +1552,52 @@ $function$  strict;
 --  Grants
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_grants_columns(regclass) 
+ RETURNS text
+ LANGUAGE sql
+ AS $function$
+with
+obj as (select * from ddlx_identify($1)),
+e as (
+select attrelid::regclass,attname,
+       (aclexplode(attacl)).* 
+  from pg_attribute 
+ where attrelid=$1
+ order by privilege_type,attnum
+),
+a as (
+ select attname,
+        coalesce(r1.rolname,'PUBLIC') as grantor,
+        coalesce(r2.rolname,'PUBLIC') as grantee,
+        privilege_type,
+        case 
+        when is_grantable then ' WITH GRANT OPTION' else ''
+        end as grant_option
+   from e
+   left join pg_roles r1 on (r1.oid = e.grantor)
+   left join pg_roles r2 on (r2.oid = e.grantee)
+),
+b as (
+select format('GRANT %s (%s) ON %s TO %s%s',
+              privilege_type,attname,obj.sql_identifier,
+              grantee,grant_option)
+       as dcl
+  from obj,a
+ order by grantor,grantee,privilege_type
+)
+select coalesce(string_agg(dcl,E';\n')||E';\n','')
+  from b
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_grants(regclass) 
  RETURNS text
  LANGUAGE sql
  AS $function$
- with obj as (select * from ddlx_identify($1))
+ with 
+ obj as (select * from ddlx_identify($1)),
+ a   as (
  select
    coalesce(
     string_agg(format(
@@ -1571,12 +1612,15 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass)
           when 'YES' then ' WITH GRANT OPTION' 
           else '' 
         end), ''),
-    '')
+    '') as ddl
  FROM information_schema.table_privileges g 
  join obj on (true)
  WHERE table_schema=obj.namespace 
    AND table_name=obj.name
    AND grantee<>obj.owner
+)
+select coalesce(a.ddl,'')||
+       ddlx_grants_columns($1) from a
 $function$  strict;
 
 ---------------------------------------------------
@@ -1628,9 +1672,9 @@ a as (
    left join pg_roles r2 on (r2.oid = e.grantee)
 ),
 b as (
-select 'GRANT '||privilege_type
-       ||' ON '||obj.sql_kind||' '||obj.sql_identifier
-       ||' TO '||grantee||grant_option
+select format('GRANT %s ON %s %s TO %s%s',
+              privilege_type,obj.sql_kind,obj.sql_identifier,
+              grantee,grant_option)
        as dcl
   from obj,a
  order by grantor,grantee,privilege_type

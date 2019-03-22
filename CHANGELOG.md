@@ -3,6 +3,7 @@
 Version 0.11
 ------------
 - function ddlx_get_dependants_recursive() rolled into ddlx_get_dependants()
+- support for column grants
 
 Version 0.10
 ------------

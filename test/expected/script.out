@@ -49,7 +49,9 @@ CREATE OR REPLACE VIEW test_class_v2 AS
 COMMENT ON VIEW test_class_v2 IS NULL;
 
 ALTER VIEW test_class_v2 OWNER TO postgres;
-GRANT SELECT ON test_class_v2 TO PUBLIC;
+GRANT SELECT (a) ON test_class_v2 TO PUBLIC;
+GRANT SELECT (b) ON test_class_v2 TO PUBLIC;
+GRANT SELECT (c) ON test_class_v2 TO PUBLIC;
 
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 

@@ -298,7 +298,7 @@ END;
 (1 row)
 CREATE VIEW test_class_v2 AS
 SELECT * FROM test_class_v;
-grant select on test_class_v2 to public;
+grant select (a,b,c) on test_class_v2 to public;
 SELECT ddlx_script('test_class_v'::regclass);
 ddlx_script
 BEGIN;
@@ -347,7 +347,9 @@ CREATE OR REPLACE VIEW test_class_v2 AS
 COMMENT ON VIEW test_class_v2 IS NULL;
 
 ALTER VIEW test_class_v2 OWNER TO postgres;
-GRANT SELECT ON test_class_v2 TO PUBLIC;
+GRANT SELECT (a) ON test_class_v2 TO PUBLIC;
+GRANT SELECT (b) ON test_class_v2 TO PUBLIC;
+GRANT SELECT (c) ON test_class_v2 TO PUBLIC;
 
 END;
 

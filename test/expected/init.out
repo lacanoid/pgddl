@@ -72,6 +72,7 @@ order by obj_description(oid) is null, cast(oid::regprocedure as text) collate "
  ddlx_grants(regclass)                 | 
  ddlx_grants(regproc)                  | 
  ddlx_grants(regrole)                  | 
+ ddlx_grants_columns(regclass)         | 
  ddlx_identify(oid)                    | 
  ddlx_script_parts(oid)                | 
 
