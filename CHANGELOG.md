@@ -1,7 +1,7 @@
 ! = todo
 
-Version 0.11
-------------
+Version 0.11alpha
+-----------------
 - support for column grants
 - function ddlx_get_dependants_recursive() rolled into ddlx_get_dependants()
 
