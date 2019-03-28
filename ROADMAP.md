@@ -24,12 +24,12 @@ Support for other postgres objects:
 - access method, operator family, operator class 
 - extension
 - policy
-- PG 10: publication, subscription, statistics
+- PG 10: publication, subscription
+- PG 10: statistics
 - PG 11: procedures
 
 Support for other missing options:
 - column options (foreign tables!)
-- column grants
 - row level permissions
 - PG 10: partitions
 - comments on all objects

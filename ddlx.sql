@@ -24,6 +24,7 @@ AS $function$
   WITH 
   rel_kind(k,v) AS (
          VALUES ('r','TABLE'),
+                ('p','TABLE'),
                 ('v','VIEW'),
                 ('i','INDEX'),
                 ('S','SEQUENCE'),
@@ -496,7 +497,7 @@ SELECT  a.attnum AS ord,
    LEFT JOIN pg_collation col ON col.oid = a.attcollation
    JOIN pg_namespace tn ON tn.oid = t.typnamespace
    JOIN storage on storage.k = a.attstorage
-  WHERE c.relkind IN ('r','v','c','f') AND a.attnum > 0 AND NOT a.attisdropped
+  WHERE c.relkind IN ('r','v','c','f','p') AND a.attnum > 0 AND NOT a.attisdropped
     AND has_table_privilege(c.oid, 'select') AND has_schema_privilege(s.oid, 'usage')
     AND c.oid = $1
   ORDER BY s.nspname, c.relname, a.attnum;
@@ -649,7 +650,7 @@ AS $function$
    JOIN pg_class i ON i.oid = x.indexrelid
    JOIN pg_depend d ON d.objid = x.indexrelid
    LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
-  WHERE c.relkind in ('r','m') AND i.relkind = 'i'::"char" 
+  WHERE c.relkind in ('r','m','p') AND i.relkind = 'i'::"char" 
     AND coalesce(c.oid = $1,true)
 $function$;
 
@@ -960,7 +961,7 @@ AS $function$
    JOIN pg_class i ON i.oid = x.indexrelid
    JOIN pg_depend d ON d.objid = x.indexrelid
    LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
-  WHERE c.relkind in ('r','m') AND i.relkind = 'i'::"char" 
+  WHERE c.relkind in ('r','m','p') AND i.relkind = 'i'::"char" 
     AND i.oid = $1
 )
  SELECT indexdef || E';\n'
