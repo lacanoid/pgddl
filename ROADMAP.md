@@ -29,7 +29,7 @@ Support for other postgres objects:
 - PG 11: procedures
 
 Support for other missing options:
-- column options (foreign tables!)
+- column options
 - row level permissions
 - PG 10: partitions
 - comments on all objects
@@ -48,6 +48,7 @@ Other:
 - improve support for non superusers (more testing, etc)
 - improve dumping of comments (be quiet on NULL comments)
 - handle dependancies for types better (use shell types)
+- handle SERIAL sequences better
 - improve and add to simple tests
 - make some tests to test if what we output actually runs, test execute them
 - make some tests which compare to output of pg_dump for any sql file:

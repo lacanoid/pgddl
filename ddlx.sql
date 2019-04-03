@@ -474,17 +474,23 @@ SELECT  a.attnum AS ord,
         c.relname AS class_name,
         format('%s.%I',text(c.oid::regclass),a.attname) AS sql_identifier,
         c.oid as relid,
-        format('%I %s%s%s',
+        format('%I %s%s%s%s',
          a.attname::text,
          format_type(t.oid, a.atttypmod),
+         case
+           when a.attfdwoptions is not null
+           then (
+             select ' OPTIONS ( '||string_agg(
+                quote_ident(option_name)||' '||quote_nullable(option_value), 
+                ', ')||' ) '
+               from pg_options_to_table(a.attfdwoptions))
+         end,
          CASE
            WHEN length(col.collcollate) > 0
            THEN ' COLLATE ' || quote_ident(col.collcollate::text)
-              ELSE ''
          END,
          CASE
-              WHEN a.attnotnull THEN ' NOT NULL'::text
-              ELSE ''::text
+              WHEN a.attnotnull THEN ' NOT NULL'
          END)
         AS definition
    FROM pg_class c

@@ -13,7 +13,7 @@ SELECT pg_file_write('pgddltest.tmp',E'Hello, World!\nThis is some text\n',false
 CREATE SERVER serv FOREIGN DATA WRAPPER file_fdw;
 
 CREATE FOREIGN TABLE test_class_f (
-  line text
+  line text options ( force_not_null 'true' )
 ) 
 SERVER serv
 OPTIONS ( filename 'pgddltest.tmp', format 'text' );
@@ -21,7 +21,7 @@ COMMENT ON FOREIGN TABLE test_class_f IS 'A Foreign table';
 COMMENT ON COLUMN test_class_f.line IS 'A Line of text';
 GRANT ALL ON test_class_f TO PUBLIC;
 
-SELECT * FROM test_class_f;
+-- SELECT * FROM test_class_f;
 
 SELECT ddlx_script('test_class_f'::regclass);
 
