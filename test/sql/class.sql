@@ -4,7 +4,7 @@
 SET client_min_messages = warning;
 SET ROLE postgres;
 
-select kind, sql_identifier from ddlx_identify('ddlx_identify(oid)'::regprocedure);
+select sql_kind, sql_identifier from ddlx_identify('ddlx_identify(oid)'::regprocedure);
 
 create function trig() returns trigger as 
 $$begin return old; end $$
@@ -23,7 +23,7 @@ CREATE TABLE test_class_r (
 );
 COMMENT ON TABLE test_class_r IS 'Comment1';
 grant all on test_class_r to public;
-select kind, sql_identifier from ddlx_identify('test_class_r'::regclass);
+select sql_kind, sql_identifier from ddlx_identify('test_class_r'::regclass);
 alter table test_class_r alter h set storage external;
 
 create trigger aaaa before 
@@ -66,7 +66,7 @@ create unique index test_class_mi ON test_class_m (a);
 
 SELECT ddlx_script('test_class_m'::regclass);
 
-select kind, sql_identifier from ddlx_identify('ddlx_identify(oid)'::regprocedure);
+select sql_kind, sql_identifier from ddlx_identify('ddlx_identify(oid)'::regprocedure);
 
 create function funfun(a int, b text default null, out c numeric, out d text) returns setof record as 
 $$ select 3.14, 'now'::text $$ language sql cost 123 rows 19

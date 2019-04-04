@@ -16,7 +16,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
   IN oid,  
   OUT oid oid, OUT classid regclass, 
   OUT name name,  OUT namespace name,  
-  OUT kind text, OUT owner name, OUT sql_kind text, 
+  OUT owner name, OUT sql_kind text, 
   OUT sql_identifier text, OUT acl aclitem[])
  RETURNS record
  LANGUAGE sql
@@ -46,7 +46,6 @@ AS $function$
          'pg_class'::regclass,
          c.relname AS name,
          n.nspname AS namespace,
-         coalesce(cc.v,c.relkind::text) AS kind,
          pg_get_userbyid(c.relowner) AS owner,
          coalesce(cc.v,c.relkind::text) AS sql_kind,
          cast($1::regclass AS text) AS sql_identifier,
@@ -59,7 +58,6 @@ AS $function$
          'pg_proc'::regclass,
          p.proname AS name,
          n.nspname AS namespace,
-         'FUNCTION' AS kind,
          pg_get_userbyid(p.proowner) AS owner,
 #if 11
          case p.prokind
@@ -84,7 +82,6 @@ AS $function$
          'pg_type'::regclass,
          t.typname AS name,
          n.nspname AS namespace,
-         coalesce(tt.v,t.typtype::text) AS kind,
          pg_get_userbyid(t.typowner) AS owner,
          coalesce(cc.v,tt.v2,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier,
@@ -103,7 +100,6 @@ AS $function$
          'pg_roles'::regclass,
          r.rolname as name,
          null as namespace,
-         case when rolcanlogin then 'USER' else 'GROUP' end as kind,
          null as owner,
          'ROLE' as sql_kind,
          quote_ident(r.rolname) as sql_identifier,
@@ -115,7 +111,6 @@ AS $function$
          'pg_rewrite'::regclass,
          r.rulename as name,
          null as namespace,
-         'RULE' as kind,
          null as owner,
          'RULE' as sql_kind,
          quote_ident(r.rulename)||' ON '|| 
@@ -128,11 +123,6 @@ AS $function$
          'pg_namespace'::regclass,
          n.nspname as name,
          current_database() as namespace,
-         case 
-           when n.nspname like 'pg_%' then 'SYSTEM' 
-           when n.nspname = r.rolname then 'AUTHORIZATION'
-           else 'NAMESPACE'
-         end as kind,
          pg_get_userbyid(n.nspowner) AS owner,
          'SCHEMA' as sql_kind,
          quote_ident(n.nspname) as sql_identifier,
@@ -144,7 +134,6 @@ AS $function$
          'pg_constraint'::regclass,
          con.conname as name,
          c.relname as namespace,
-         coalesce(tt.column2,con.contype) as kind,
          null as owner,
          'CONSTRAINT' as sql_kind,
          quote_ident(con.conname)
@@ -166,11 +155,6 @@ AS $function$
          'pg_trigger'::regclass,
          t.tgname as name,
          c.relname as namespace,
-         CASE t.tgtype::integer & 2
-            WHEN 2 THEN 'BEFORE'::text
-            WHEN 0 THEN 'AFTER'::text
-            ELSE NULL::text
-         END AS kind, 
          null as owner,
          'TRIGGER' as sql_kind,
          format('%I ON %s',t.tgname,cast(c.oid::regclass as text)) as sql_identifier,
@@ -182,7 +166,6 @@ AS $function$
          'pg_attrdef'::regclass,
          a.attname as name,
          c.relname as namespace,
-         'DEFAULT' as kind,
          null as owner,
          'DEFAULT' as sql_kind,
          format('%s.%I',cast(c.oid::regclass as text),a.attname) as sql_identifier,
@@ -196,7 +179,6 @@ AS $function$
          'pg_operator'::regclass,
          op.oprname as name,
          n.nspname as namespace,
-         'OPERATOR' as kind,
          pg_get_userbyid(op.oprowner) as owner,
          'OPERATOR' as sql_kind,
          cast(op.oid::regoperator as text) as sql_identifier,
@@ -208,7 +190,6 @@ AS $function$
          'pg_ts_config'::regclass,
          cfg.cfgname as name,
          n.nspname as namespace,
-         'TEXT SEARCH CONFIGURATION' as kind,
          pg_get_userbyid(cfg.cfgowner) as owner,
          'TEXT SEARCH CONFIGURATION' as sql_kind,
          cast(cfg.oid::regconfig as text) as sql_identifier,
@@ -220,7 +201,6 @@ AS $function$
          'pg_ts_dict'::regclass,
          dict.dictname as name,
          n.nspname as namespace,
-         'TEXT SEARCH DICTIONARY' as kind,
          pg_get_userbyid(dict.dictowner) as owner,
          'TEXT SEARCH DICTIONARY' as sql_kind,
          cast(dict.oid::regdictionary as text) as sql_identifier,
@@ -232,7 +212,6 @@ AS $function$
          'pg_ts_parser'::regclass,
          prs.prsname as name,
          n.nspname as namespace,
-         'TEXT SEARCH PARSER' as kind,
          null as owner,
          'TEXT SEARCH PARSER' as sql_kind,
          format('%s%I',
@@ -246,7 +225,6 @@ AS $function$
          'pg_ts_template'::regclass,
          tmpl.tmplname as name,
          n.nspname as namespace,
-         'TEXT SEARCH TEMPLATE' as kind,
          null as owner,
          'TEXT SEARCH TEMPLATE' as sql_kind,
          format('%s%I',
@@ -261,7 +239,6 @@ AS $function$
          'pg_event_trigger'::regclass,
          evt.evtname as name,
          null as namespace,
-         evt.evtevent as kind,
          pg_get_userbyid(evt.evtowner) as owner,
          'EVENT TRIGGER' as sql_kind,
          quote_ident(evt.evtname) as sql_identifier,
@@ -274,7 +251,6 @@ AS $function$
          'pg_foreign_data_wrapper'::regclass,
          fdw.fdwname as name,
          null as namespace,
-         'FOREIGN DATA WRAPPER' as kind,
          pg_get_userbyid(fdw.fdwowner) as owner,
          'FOREIGN DATA WRAPPER' as sql_kind,
          quote_ident(fdw.fdwname) as sql_identifier,
@@ -286,7 +262,6 @@ AS $function$
          'pg_foreign_server'::regclass,
          srv.srvname as name,
          null as namespace,
-         'SERVER' as kind,
          pg_get_userbyid(srv.srvowner) as owner,
          'SERVER' as sql_kind,
          quote_ident(srv.srvname) as sql_identifier,
@@ -298,7 +273,6 @@ AS $function$
          'pg_user_mapping'::regclass,
          null as name,
          null as namespace,
-         'USER MAPPING' as kind,
          null as owner,
          'USER MAPPING' as sql_kind,
          'FOR '||quote_ident(ums.usename)||
@@ -311,7 +285,6 @@ AS $function$
          'pg_cast'::regclass,
          null as name,
          null as namespace,
-         'CAST' as kind,
          null as owner,
          'CAST' as sql_kind,
          format('(%s AS %s)',
@@ -325,7 +298,6 @@ AS $function$
          'pg_collation'::regclass,
          co.collname as name,
          n.nspname as namespace,
-         'COLLATION' as kind,
          pg_get_userbyid(co.collowner) as owner,
          'COLLATION' as sql_kind,
          format('%s%I',
@@ -339,7 +311,6 @@ AS $function$
          'pg_conversion'::regclass,
          co.conname as name,
          n.nspname as namespace,
-         'CONVERSION' as kind,
          pg_get_userbyid(co.conowner) as owner,
          'CONVERSION' as sql_kind,
          format('%s%I',
@@ -353,10 +324,6 @@ AS $function$
          'pg_language'::regclass,
          lan.lanname as name,
          null as namespace,
-         case 
-           when lan.lanpltrusted then 'TRUSTED LANGUAGE'
-           else 'LANGUAGE' 
-         end as kind,
          pg_get_userbyid(lan.lanowner) as owner,
          'LANGUAGE' as sql_kind,
          quote_ident(lan.lanname) as sql_identifier,
@@ -369,7 +336,6 @@ AS $function$
          'pg_transform'::regclass,
          null as name,
          null as namespace,
-         'TRANSFORM' kind,
          null as owner,
          'TRANSFORM' as sql_kind,
          format('FOR %s LANGUAGE %I',
@@ -383,7 +349,6 @@ AS $function$
          'pg_am'::regclass,
          am.amname as name,
          NULL as namespace,
-         'ACCESS METHOD' as kind,
          NULL as owner,
          'ACCESS METHOD' as sql_kind,
          quote_ident(amname) as sql_identifier,
@@ -396,7 +361,6 @@ AS $function$
          'pg_opfamily'::regclass,
          opf.opfname as name,
          n.nspname as namespace,
-         'OPERATOR FAMILY' as kind,
          pg_get_userbyid(opf.opfowner) as owner,
          'OPERATOR FAMILY' as sql_kind,
          format('%s%I USING %I',
@@ -413,7 +377,6 @@ AS $function$
          'pg_database'::regclass,
          dat.datname as name,
          null as namespace,
-         'DATABASE' as kind,
          pg_get_userbyid(dat.datdba) as owner,
          'DATABASE' as sql_kind,
          quote_ident(dat.datname) as sql_identifier,
@@ -425,7 +388,6 @@ AS $function$
          'pg_tablespace'::regclass,
          spc.spcname as name,
          null as namespace,
-         'TABLESPACE' as kind,
          pg_get_userbyid(spc.spcowner) as owner,
          'TABLESPACE' as sql_kind,
          quote_ident(spc.spcname) as sql_identifier,
@@ -759,8 +721,8 @@ AS $function$
     when 't' then 'TEMPORARY '
     else ''
   end
-  || obj.kind || ' ' || obj.sql_identifier
-  || case obj.kind when 'TYPE' then ' AS' else '' end 
+  || obj.sql_kind || ' ' || obj.sql_identifier
+  || case obj.sql_kind when 'TYPE' then ' AS' else '' end 
   ||
   E' (\n'||
     coalesce(''||(
@@ -827,7 +789,7 @@ AS $function$
  FROM information_schema.sequences s JOIN obj ON (true)
  WHERE sequence_schema = obj.namespace
    AND sequence_name = obj.name
-   AND obj.kind = 'SEQUENCE'
+   AND obj.sql_kind = 'SEQUENCE'
 $function$  strict;
 
 ---------------------------------------------------
@@ -990,23 +952,23 @@ AS $function$
  ),
 
  settings as (
-   select 'ALTER ' || obj.kind || ' ' || text($1) || ' SET (' || 
+   select 'ALTER ' || obj.sql_kind || ' ' || text($1) || ' SET (' || 
           quote_ident(option_name)||'='||quote_nullable(option_value) ||');' as ss
      from pg_options_to_table((select reloptions from pg_class where oid = $1))
      join obj on (true)
  )
 
- select ddlx_banner(obj.name,obj.kind,obj.namespace,obj.owner) 
+ select ddlx_banner(obj.name,obj.sql_kind,obj.namespace,obj.owner) 
   ||
  case 
-  when obj.kind in ('VIEW','MATERIALIZED VIEW') then ddlx_create_view($1)  
-  when obj.kind in ('TABLE','TYPE','FOREIGN TABLE') then ddlx_create_table($1)
-  when obj.kind in ('SEQUENCE') then ddlx_create_sequence($1)
-  when obj.kind in ('INDEX') then ddlx_create_index($1)
-  else '-- UNSUPPORTED CLASS: '||obj.kind
+  when obj.sql_kind in ('VIEW','MATERIALIZED VIEW') then ddlx_create_view($1)  
+  when obj.sql_kind in ('TABLE','TYPE','FOREIGN TABLE') then ddlx_create_table($1)
+  when obj.sql_kind in ('SEQUENCE') then ddlx_create_sequence($1)
+  when obj.sql_kind in ('INDEX') then ddlx_create_index($1)
+  else '-- UNSUPPORTED CLASS: '||obj.sql_kind
  end 
   || E'\n' ||
-  case when obj.kind not in ('TYPE') then ddlx_comment($1) else '' end
+  case when obj.sql_kind not in ('TYPE') then ddlx_comment($1) else '' end
   ||
   coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'')
   ||
@@ -1246,7 +1208,7 @@ AS $function$
  with obj as (select * from ddlx_identify($1))
  select
    case
-     when obj.kind = 'INDEX' then ''
+     when obj.sql_kind = 'INDEX' then ''
      else 'ALTER '||sql_kind||' '||sql_identifier||
           ' OWNER TO '||quote_ident(owner)||E';\n'
    end
@@ -2275,7 +2237,7 @@ AS $function$
 #end
     else
       case
-        when kind is not null
+        when obj.sql_kind is not null
         then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
         else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))
        end
@@ -2303,7 +2265,7 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid)
    then ddlx_drop_default(oid)
    else
      case
-       when kind is not null
+       when obj.sql_kind is not null
        then format(E'DROP %s %s;\n',obj.sql_kind, obj.sql_identifier)
        else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
       end

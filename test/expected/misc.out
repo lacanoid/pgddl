@@ -205,7 +205,7 @@ select classid::regclass,count(*)
 select classid,objid,ddlx_identify(objid) as obj
   from ddlx_get_dependants((select oid from pg_namespace where nspname='public')) d
 ) a
- where (a.obj).kind is null group by classid
+ where (a.obj).sql_kind is null group by classid
  order by 2 desc, cast(classid::regclass as text) ;
 classid|count
 pg_extension|2
