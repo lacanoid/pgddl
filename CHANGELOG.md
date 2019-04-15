@@ -19,7 +19,7 @@ Version 0.10
 - support for column storage parameters
 - some support for access methods
 - some support for operator families
-- added acl to ddlx_identify()
+- added column 'acl' to ddlx_identify()
 - new ddlx_grants(oid) function
 - ddlx_get_dependants_recursive() is faster
 - better storage parameter output in ddlx_describe()
