@@ -5,7 +5,8 @@ Version 0.11alpha
 - support for column grants
 - function ddlx_get_dependants_recursive() rolled into ddlx_get_dependants()
 - support for fdw options on columns
-- removed column 'kind' from ddlx_describe()
+- removed column 'kind' from ddlx_identify()
+- bug fix in create enum
 
 Version 0.10
 ------------

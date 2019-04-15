@@ -878,7 +878,7 @@ ee as (
   order by enumsortorder
 )
 select 'CREATE TYPE ' || format_type($1,null) || ' AS ENUM (' || E'\n ' ||
-       string_agg(label,E'\n ') || E'\n);\n\n'
+       string_agg(label,E',\n ') || E'\n);\n\n'
   from ee
 $function$  strict;
 

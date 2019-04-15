@@ -13,9 +13,9 @@ DROP TYPE test_type_e;
 */
 
 CREATE TYPE test_type_e AS ENUM (
- 'foo'
- 'bar'
- 'baz'
+ 'foo',
+ 'bar',
+ 'baz',
  'qux'
 );
 
