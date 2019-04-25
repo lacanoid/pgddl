@@ -21,7 +21,7 @@ Tasks
 -----
 
 Support for other postgres objects:
-- access method, operator family, operator class 
+- access method, operator family, operator class, pg_amop, pg_amproc
 - extension
 - policy
 - PG 10: publication, subscription
