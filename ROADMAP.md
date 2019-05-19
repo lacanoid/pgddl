@@ -7,8 +7,8 @@ Plus it couldn't handle dumping say only functions from certain schema.
 I have since then learned how to fix my database and pg_dump got options like --schema.
 
 But the idea of a database being able to dump itself more autonomously persisted.
-After all, if LISP can do it, why not Postgres with its' awesome SQL power? 
-Information is all there in the system catalogs, one just needs to decypher it.
+After all, if LISP can do it, why not Postgres with its awesome SQL power? 
+Information is all there in the system catalogs. One just needs to decipher it.
 
 This tool uses information schema and standard SQL as much as possible, 
 but for any actual practical use decoding of PostgreSQL system catalogs is required. 
