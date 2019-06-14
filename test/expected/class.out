@@ -30,8 +30,11 @@ alter table test_class_r alter h set storage external;
 create trigger aaaa before 
 update on test_class_r
    for each row when (old.* is distinct from new.*) execute procedure trig('AAAA');
+alter table test_class_r disable trigger aaaa;
 create unique index idx1 on test_class_r (lower(b)) where b is not null;
 create index idx2 on test_class_r using gin (v);
+create index idx3 on test_class_r(g);
+cluster test_class_r using idx3;
 SELECT ddlx_script('test_class_r'::regclass);
 ddlx_script
 BEGIN;
@@ -74,6 +77,8 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
 
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);
+CREATE INDEX idx3 ON public.test_class_r USING btree (g);
+CLUSTER test_class_r USING idx3;
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 
@@ -136,6 +141,8 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
 
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);
+CREATE INDEX idx3 ON public.test_class_r USING btree (g);
+CLUSTER test_class_r USING idx3;
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 

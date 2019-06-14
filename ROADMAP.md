@@ -38,9 +38,11 @@ Support for other missing options:
 - serial (alter sequence set owner column)
 - grants vs superuser (grantor)
 - enabled/disabled triggers
-- cluster on table
+- cluster on index
 - database settings (alter database set)
 - PG 10+: generated
+- fillfactor
+- pre/post data
 
 Other:
 - PG version specific tests

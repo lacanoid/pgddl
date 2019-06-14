@@ -1,5 +1,9 @@
 ! = todo
 
+Version 0.12alpha
+-----------------
+- support CLUSTER table USING index
+
 Version 0.11
 ------------
 - support for column grants

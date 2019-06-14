@@ -29,9 +29,12 @@ alter table test_class_r alter h set storage external;
 create trigger aaaa before 
 update on test_class_r
    for each row when (old.* is distinct from new.*) execute procedure trig('AAAA');
+alter table test_class_r disable trigger aaaa;
 
 create unique index idx1 on test_class_r (lower(b)) where b is not null;
 create index idx2 on test_class_r using gin (v);
+create index idx3 on test_class_r(g);
+cluster test_class_r using idx3;
 
 SELECT ddlx_script('test_class_r'::regclass);
 SELECT ddlx_script('test_class_r'::regtype);

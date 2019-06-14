@@ -594,23 +594,16 @@ $function$;
 CREATE OR REPLACE FUNCTION ddlx_get_indexes(
   regclass default null,
   OUT oid oid, OUT namespace text, OUT class text, OUT name text, 
-  OUT tablespace text, OUT indexdef text, OUT constraint_name text)
+  OUT tablespace text, OUT constraint_name text)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
  SELECT DISTINCT
-        c.oid AS oid, 
+        i.oid AS oid, 
         n.nspname::text AS namespace, 
         c.relname::text AS class, 
         i.relname::text AS name,
         NULL::text AS tablespace, 
-        CASE d.refclassid
-            WHEN 'pg_constraint'::regclass 
-            THEN 'ALTER TABLE ' || text(c.oid::regclass) 
-                 || ' ADD CONSTRAINT ' || quote_ident(cc.conname) 
-                 || ' ' || pg_get_constraintdef(cc.oid)
-            ELSE pg_get_indexdef(i.oid)
-        END AS indexdef, 
         cc.conname::text AS constraint_name
    FROM pg_index x
    JOIN pg_class c ON c.oid = x.indrelid
@@ -923,14 +916,19 @@ AS $function$
                  || ' ADD CONSTRAINT ' || quote_ident(cc.conname) 
                  || ' ' || pg_get_constraintdef(cc.oid)
             ELSE pg_get_indexdef(i.oid)
-        END AS indexdef 
+        END ||
+        CASE WHEN x.indisclustered 
+             THEN format(E';\nCLUSTER %s USING %I',text(c.oid::regclass),i.relname)
+             ELSE ''
+        END
+        AS indexdef 
    FROM pg_index x
    JOIN pg_class c ON c.oid = x.indrelid
    JOIN pg_class i ON i.oid = x.indexrelid
    JOIN pg_depend d ON d.objid = x.indexrelid
    LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
-  WHERE c.relkind in ('r','m','p') AND i.relkind = 'i'::"char" 
-    AND i.oid = $1
+  WHERE i.oid = $1
+    -- AND c.relkind in ('r','m','p') AND i.relkind = 'i'::"char"  
 )
  SELECT indexdef || E';\n'
    FROM ii
@@ -1194,7 +1192,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass)
  LANGUAGE sql
 AS $function$
  with ii as (select * from ddlx_get_indexes($1) order by name)
- SELECT coalesce( string_agg(indexdef||E';\n','') || E'\n' , '')
+ SELECT coalesce( string_agg(ddlx_create_index(oid),'') || E'\n' , E'')
    FROM ii
   WHERE constraint_name is null
 $function$  strict;
