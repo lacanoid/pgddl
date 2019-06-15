@@ -1,0 +1,8 @@
+#!/usr/bin/perl
+
+my $v1=`pg_config --version`;
+if($v1=~/(\d+)\.(\d+)/) {
+	my ($maj,$min)=($1,$2);
+	my $v=$maj+$min/10;
+	print "$v\n";
+}

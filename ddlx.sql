@@ -542,6 +542,7 @@ AS $function$
 
 CREATE OR REPLACE FUNCTION ddlx_get_triggers(
   regclass default null,
+  OUT oid oid,
   OUT is_constraint text, OUT trigger_name text, OUT action_order text, 
   OUT event_manipulation text, OUT event_object_sql_identifier text, 
   OUT action_statement text, OUT action_orientation text,
@@ -550,7 +551,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_triggers(
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
- SELECT 
+ SELECT t.oid,
         CASE t.tgisinternal
             WHEN true THEN 'CONSTRAINT'::text
             ELSE NULL::text
@@ -1149,27 +1150,34 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_trigger(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+ select pg_get_triggerdef($1,true)||
+        case when t.tgenabled = 'D' 
+             then format(E';\nALTER TABLE %s DISABLE TRIGGER %I',
+                         cast(t.tgrelid::regclass as text), t.tgname)
+             else ''
+        end
+   from pg_trigger t
+  where oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_triggers(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
  with tg as (
-  select trigger_definition as sql 
+  select ddlx_create_trigger(oid) as sql 
  from ddlx_get_triggers($1) where is_constraint is null
  order by trigger_name 
  -- per SQL triggers get called in order created vs name as in PostgreSQL
  )
  select coalesce(string_agg(sql,E';\n')||E';\n\n','')
    from tg
-$function$  strict;
-
----------------------------------------------------
-
-CREATE OR REPLACE FUNCTION ddlx_create_trigger(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
- select pg_get_triggerdef($1,true)
 $function$  strict;
 
 ---------------------------------------------------

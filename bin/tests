@@ -1,0 +1,3 @@
+#!/usr/bin/perl
+print "init role type class fdw tsearch misc script\n";
+

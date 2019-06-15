@@ -7,6 +7,7 @@ EXT_VERSION  = 0.12
 DATA_built   = ddlx--$(EXT_VERSION).sql
 
 REGRESS      = init role type class fdw tsearch misc script 
+#REGRESS      = ($shell bin/tests)
 REGRESS_OPTS = --inputdir=test
 
 PGXS := $(shell $(PG_CONFIG) --pgxs)

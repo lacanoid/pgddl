@@ -3,13 +3,14 @@
 Version 0.12alpha
 -----------------
 - support CLUSTER table USING index
+- support for disabled triggers
 
 Version 0.11
 ------------
 - support for column grants
-- function ddlx_get_dependants_recursive() rolled into ddlx_get_dependants()
 - support for fdw options on columns
-- removed column 'kind' from ddlx_identify()
+- function ddlx_get_dependants_recursive() rolled into ddlx_get_dependants()
+- removed redundant column 'kind' from ddlx_identify()
 - bug fix in create enum
 
 Version 0.10

@@ -81,6 +81,7 @@ CREATE INDEX idx3 ON public.test_class_r USING btree (g);
 CLUSTER test_class_r USING idx3;
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
+ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
 
 ALTER TABLE test_class_r OWNER TO postgres;
 GRANT INSERT ON test_class_r TO PUBLIC;
@@ -145,6 +146,7 @@ CREATE INDEX idx3 ON public.test_class_r USING btree (g);
 CLUSTER test_class_r USING idx3;
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
+ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
 
 ALTER TABLE test_class_r OWNER TO postgres;
 GRANT INSERT ON test_class_r TO PUBLIC;
