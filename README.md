@@ -213,12 +213,12 @@ Nevertheless, some of them are:
 
 - `ddlx_create_class(regclass) returns text`
 
-    Get bare-bones (pre-data) DDL for class object.
+    Get bare-bones (pre-data) SQL DDL CREATE statement for class object.
     This includes column definitions, not null and comments.
 
 - `ddlx_alter_class(regclass) returns text`
 
-    Get additional (post-data) DDL for class object.
+    Get additional (post-data) SQL DDL ALTER statements for class object.
     This includes dafaults, storage parametes, constraints, indexes, triggers, rules,
     owner and grants
 

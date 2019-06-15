@@ -1336,17 +1336,22 @@ CREATE OR REPLACE FUNCTION ddlx_create_role(oid)
 AS $function$ 
 with 
 q1 as (
- select 
-   'CREATE ' || case when rolcanlogin then 'USER' else 'GROUP' end 
-   ||' '||quote_ident(rolname)|| E';\n' ||
-   'ALTER ROLE '|| quote_ident(rolname) || E' WITH\n  ' ||
-   case when rolcanlogin then 'LOGIN' else 'NOLOGIN' end || E'\n  ' ||
-   case when rolsuper then 'SUPERUSER' else 'NOSUPERUSER' end || E'\n  ' ||
-   case when rolinherit then 'INHERIT' else 'NOINHERIT' end || E'\n  ' ||
-   case when rolcreatedb then 'CREATEDB' else 'NOCREATEDB' end || E'\n  ' ||
-   case when rolcreaterole then 'CREATEROLE' else 'NOCREATEROLE' end || E'\n  ' || 
-   case when rolreplication then 'REPLICATION' else 'NOREPLICATION' end || E';\n  ' ||
--- 9.5+   case when rolbypassrls then 'BYPASSRLS' else 'NOBYPASSRLS' end || E',\n' ||
+ select format(E'CREATE %s %I;\n',
+                case when rolcanlogin then 'USER' else 'GROUP' end,
+                rolname) ||
+
+        format(E'ALTER ROLE %I WITH\n  %s;\n',rolname,
+                array_to_string(array[
+   case when rolcanlogin then 'LOGIN' else 'NOLOGIN' end,
+   case when rolsuper then 'SUPERUSER' else 'NOSUPERUSER' end,
+   case when rolinherit then 'INHERIT' else 'NOINHERIT' end,
+   case when rolcreatedb then 'CREATEDB' else 'NOCREATEDB' end,
+   case when rolcreaterole then 'CREATEROLE' else 'NOCREATEROLE' end, 
+#if 9.5
+   case when rolbypassrls then 'BYPASSRLS' else 'NOBYPASSRLS' end,
+#end
+   case when rolreplication then 'REPLICATION' else 'NOREPLICATION' end
+                ],E'\n  ')) ||
    case 
      when description is not null 
      then E'\n'
@@ -2180,7 +2185,8 @@ CREATE OR REPLACE FUNCTION ddlx_create(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
-  with obj as (select * from ddlx_identify($1))
+  with obj as (select * from ddlx_identify($1)),
+  def as (
   select case obj.classid
     when 'pg_class'::regclass 
     then ddlx_create(oid::regclass)
@@ -2260,6 +2266,8 @@ AS $function$
      end 
      as ddl
     from obj
+   )
+   select ddl from def
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(oid) 

@@ -6,6 +6,7 @@ Version 0.12alpha
 - support for disabled triggers
 - added new ddlx_alter_class(regclass) (internal) function, for post data DDL
 - slight refactoring removing some code duplication
+- more use of format() function for speed and readability
 
 Version 0.11
 ------------
