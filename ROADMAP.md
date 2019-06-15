@@ -37,8 +37,6 @@ Support for other missing options:
 - grants on all objects (missing: fdw, server)
 - serial (alter sequence set owner column)
 - grants vs superuser (grantor)
-- enabled/disabled triggers
-- cluster on index
 - database settings (alter database set)
 - PG 10+: generated
 - fillfactor
@@ -86,10 +84,11 @@ Other DDL dumping tools
 Command line client `psql` contains lots of packaged SQL for handling metadata 
 mainly to support code completion and various \d* commands.
 
-### pgdump
+### pg_dump
 
-Database dump tool `pgdump` contains lots of packaged SQL for handling metadata 
-and especially considers various dependancies.
+Database dump tool `pg_dump` contains lots of packaged SQL for handling metadata 
+and especially considers various dependancies. Source code for main C is is about 20000 
+lines long.
 
 ### pgAdmin3
 
