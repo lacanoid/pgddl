@@ -408,6 +408,32 @@ AS $function$
          spc.spcacl as acl
     FROM pg_tablespace spc
    WHERE spc.oid = $1
+   UNION
+#if 9.3
+  SELECT amproc.oid,
+         'pg_amproc'::regclass,
+         'FUNCTION '||amprocnum,
+         null as namespace,
+         null as owner,
+         'AMPROC' as sql_kind,
+         format('FUNCTION %s %s',amprocnum,cast(amproc.amproc::regprocedure as text))
+         as sql_identifier,
+         null as acl
+    FROM pg_amproc amproc
+   WHERE amproc.oid = $1
+   UNION
+  SELECT amop.oid,
+         'pg_amop'::regclass,
+         'OPERATOR '||amopstrategy,
+         null as namespace,
+         null as owner,
+         'AMOP' as sql_kind,
+         format('OPERATOR %s %s',amopstrategy,cast(amop.amopopr::regoperator as text))
+         as sql_identifier,
+         null as acl
+    FROM pg_amop amop
+   WHERE amop.oid = $1
+#end
 $function$  strict;
 
 ---------------------------------------------------
@@ -1533,7 +1559,8 @@ AS $function$
     c.relname AS tablename,
     pol.polname AS policyname,
         CASE
-            WHEN pol.polroles = '{0}'::oid[] THEN string_to_array('PUBLIC'::text, ''::text)::name[]
+            WHEN pol.polroles = '{0}'::oid[] 
+            THEN string_to_array('PUBLIC'::text, ''::text)::name[]
             ELSE ARRAY( SELECT pg_authid.rolname
                FROM pg_authid
               WHERE pg_authid.oid = ANY (pol.polroles)
@@ -1552,7 +1579,7 @@ AS $function$
             WHEN true THEN 'PERMISSIVE'
             ELSE 'RESTRICTIVE'
         END AS permissive,
-#end
+#if 9.5
     pg_get_expr(pol.polqual, pol.polrelid) AS qual,
     pg_get_expr(pol.polwithcheck, pol.polrelid) AS with_check
    FROM pg_policy pol
@@ -1565,11 +1592,11 @@ select format(
 			array_to_string(array[
 #if 10
              'AS '||p.permissive,
-#end
+#if 9.5
              'FOR '||p.cmd,
              'TO '||array_to_string(p.roles,', '),
-             E'USING '||p.qual,
-             E'WITH CHECK '||p.with_check
+             'USING '||p.qual,
+             'WITH CHECK '||p.with_check
              ],E'\n  ')
              )
     || ddlx_comment($1)
@@ -2195,6 +2222,95 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_amproc(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with 
+a as (
+ select *
+   from pg_amproc as amp
+   join pg_opfamily opf on (opf.oid=amp.amprocfamily) 
+   join pg_am am on (am.oid=opf.opfmethod)
+  where amp.oid = $1),
+f as (select * from ddlx_identify((select amprocfamily from a)) ),
+obj as (select * from ddlx_identify($1))
+select format(E'ALTER OPERATOR FAMILY %s ADD %s;',
+        f.sql_identifier,
+        obj.sql_identifier
+       )
+  from a,f,obj
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_drop_amproc(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with 
+a as (
+ select *
+   from pg_amproc as amp
+   join pg_opfamily opf on (opf.oid=amp.amprocfamily) 
+   join pg_am am on (am.oid=opf.opfmethod)
+  where amp.oid = $1),
+f as (select * from ddlx_identify((select amprocfamily from a)) ),
+obj as (select * from ddlx_identify($1))
+select format(E'ALTER OPERATOR FAMILY %s DROP %s;\n',
+        f.sql_identifier,
+        obj.sql_identifier
+       )
+  from a,f,obj
+$function$  strict;
+
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create_amop(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with 
+a as (
+ select *
+   from pg_amop as amp
+   join pg_opfamily opf on (opf.oid=amp.amopfamily) 
+   join pg_am am on (am.oid=opf.opfmethod)
+  where amp.oid = $1),
+f as (select * from ddlx_identify((select amopfamily from a)) ),
+obj as (select * from ddlx_identify($1))
+select format(E'ALTER OPERATOR FAMILY %s ADD %s;',
+        f.sql_identifier,
+        obj.sql_identifier
+       )
+  from a,f,obj
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_drop_amop(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with 
+a as (
+ select *
+   from pg_amop as amp
+   join pg_opfamily opf on (opf.oid=amp.amopfamily) 
+   join pg_am am on (am.oid=opf.opfmethod)
+  where amp.oid = $1),
+f as (select * from ddlx_identify((select amopfamily from a)) ),
+obj as (select * from ddlx_identify($1))
+select format(E'ALTER OPERATOR FAMILY %s DROP %s;\n',
+        f.sql_identifier,
+        obj.sql_identifier
+       )
+  from a,f,obj
+$function$  strict;
+
+---------------------------------------------------
+
 #if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
 #else
@@ -2320,11 +2436,13 @@ AS $function$
 #if 9.2
     when 'pg_tablespace'::regclass 
     then ddlx_create_tablespace(oid)
-#end
 #if 9.3
     when 'pg_event_trigger'::regclass 
     then ddlx_create_event_trigger(oid)
-#end
+    when 'pg_amproc'::regclass 
+    then ddlx_create_amproc(oid)
+    when 'pg_amop'::regclass 
+    then ddlx_create_amop(oid)
 #if 9.5
     when 'pg_policy'::regclass 
     then ddlx_create_policy(oid)
@@ -2369,6 +2487,10 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid)
    then ddlx_drop_trigger(oid)
    when 'pg_attrdef'::regclass 
    then ddlx_drop_default(oid)
+   when 'pg_amproc'::regclass 
+   then ddlx_drop_amproc(oid)
+   when 'pg_amop'::regclass 
+   then ddlx_drop_amop(oid)
    else
      case
        when obj.sql_kind is not null

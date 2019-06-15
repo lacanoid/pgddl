@@ -92,5 +92,20 @@ select classid,objid,ddlx_identify(objid) as obj
  where (a.obj).sql_kind is null group by classid
  order by 2 desc, cast(classid::regclass as text) ;
 
- 
- 
+ -- schema 2
+create schema ddlx_test_schema2;
+comment on schema ddlx_test_schema2 is 'DDLX Test Schema 2';
+grant usage on schema ddlx_test_schema2 to public;
+create extension ltree schema ddlx_test_schema2;
+set search_path=ddlx_test_schema2,public;
+-- select ddlx_script(oid) from pg_namespace where nspname='ddlx_test_schema2';
+set search_path=public;
+
+-- look for unidentified objects 2
+select classid::regclass,count(*)
+  from (
+select classid,objid,ddlx_identify(objid) as obj
+  from ddlx_get_dependants((select oid from pg_namespace where nspname='ddlx_test_schema2')) d
+) a
+ where (a.obj).sql_kind is null group by classid
+ order by 2 desc, cast(classid::regclass as text) ;
