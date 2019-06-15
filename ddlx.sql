@@ -2272,28 +2272,26 @@ AS $function$
     then ddlx_create(oid::regtype)
     when 'pg_operator'::regclass 
     then ddlx_create(oid::regoper)
-    when 'pg_roles'::regclass 
-#if 9.5
-    then ddlx_create(oid::regrole)
-#else
-    then ddlx_create_role(oid)
-#end
-    when 'pg_namespace'::regclass 
-#if 9.5
-    then ddlx_create(oid::regnamespace)
-#else
-    then ddlx_create_schema(oid)
-#end
+    when 'pg_opfamily'::regclass 
+    then ddlx_create_operator_family(oid)
+    when 'pg_rewrite'::regclass 
+    then ddlx_create_rule(oid)
+    when 'pg_ts_config'::regclass 
+    then ddlx_create(oid::regconfig)
+    when 'pg_ts_dict'::regclass 
+    then ddlx_create(oid::regdictionary)
+    when 'pg_ts_parser'::regclass 
+    then ddlx_create_text_search_parser(oid)
+    when 'pg_ts_template'::regclass 
+    then ddlx_create_text_search_template(oid)
+    when 'pg_database'::regclass 
+    then ddlx_create_database(oid)
     when 'pg_constraint'::regclass 
     then ddlx_create_constraint(oid)
     when 'pg_trigger'::regclass 
     then ddlx_create_trigger(oid)
     when 'pg_attrdef'::regclass 
     then ddlx_create_default(oid)
-#if 9.3
-    when 'pg_event_trigger'::regclass 
-    then ddlx_create_event_trigger(oid)
-#end
     when 'pg_foreign_data_wrapper'::regclass 
     then ddlx_create_foreign_data_wrapper(oid)
     when 'pg_foreign_server'::regclass 
@@ -2309,6 +2307,25 @@ AS $function$
     when 'pg_language'::regclass 
     then ddlx_create_language(oid)
 #if 9.5
+    when 'pg_roles'::regclass 
+    then ddlx_create(oid::regrole)
+    when 'pg_namespace'::regclass 
+    then ddlx_create(oid::regnamespace)
+#else
+    when 'pg_roles'::regclass 
+    then ddlx_create_role(oid)
+    when 'pg_namespace'::regclass 
+    then ddlx_create_schema(oid)
+#end
+#if 9.2
+    when 'pg_tablespace'::regclass 
+    then ddlx_create_tablespace(oid)
+#end
+#if 9.3
+    when 'pg_event_trigger'::regclass 
+    then ddlx_create_event_trigger(oid)
+#end
+#if 9.5
     when 'pg_policy'::regclass 
     then ddlx_create_policy(oid)
     when 'pg_transform'::regclass 
@@ -2316,24 +2333,6 @@ AS $function$
 #if 9.6
     when 'pg_am'::regclass 
     then ddlx_create_access_method(oid)
-#end
-    when 'pg_opfamily'::regclass 
-    then ddlx_create_operator_family(oid)
-    when 'pg_rewrite'::regclass 
-    then ddlx_create_rule(oid)
-    when 'pg_ts_config'::regclass 
-    then ddlx_create(oid::regconfig)
-    when 'pg_ts_dict'::regclass 
-    then ddlx_create(oid::regdictionary)
-    when 'pg_ts_parser'::regclass 
-    then ddlx_create_text_search_parser(oid)
-    when 'pg_ts_template'::regclass 
-    then ddlx_create_text_search_template(oid)
-    when 'pg_database'::regclass 
-    then ddlx_create_database(oid)
-#if 9.2
-    when 'pg_tablespace'::regclass 
-    then ddlx_create_tablespace(oid)
 #end
     else
       case
