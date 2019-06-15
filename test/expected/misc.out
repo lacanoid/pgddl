@@ -199,6 +199,78 @@ GRANT USAGE ON SCHEMA ddlx_test_schema1 TO postgres;
 GRANT USAGE ON SCHEMA ddlx_test_schema1 TO PUBLIC;
 
 (1 row)
+-- row level security
+begin;
+create user ddlx_test_user5;
+create extension "uuid-ossp" ;
+create table if not exists items (
+  id uuid default uuid_generate_v4() not null primary key,
+  value text,
+  acl_read uuid[] default array[]::uuid[],
+  acl_write uuid[] default array[]::uuid[]
+);
+-- e.g. ('f386...5e99', 'I row and therefore I am', {'eac6...f6c9'}, {'0fdc...947f'})
+create policy item_owner
+on items
+for all
+to postgres
+using (
+  items.acl_read && regexp_split_to_array(current_setting('jwt.claims.roles'), ',')::uuid[]
+  or items.acl_write && regexp_split_to_array(current_setting('jwt.claims.roles'), ',')::uuid[]
+)
+with check (
+  items.acl_write && regexp_split_to_array(current_setting('jwt.claims.roles'), ',')::uuid[]
+);
+create index read_permissions_index on items using gin(acl_read);
+create index write_permissions_index on items using gin(acl_write);
+select ddlx_script('items');
+ddlx_script
+BEGIN;
+
+/*
+DROP POLICY item_owner ON items;
+
+DROP TABLE items;
+*/
+
+-- Type: TABLE ; Name: items; Owner: postgres
+
+CREATE TABLE items (
+    id uuid NOT NULL,
+    value text,
+    acl_read uuid[],
+    acl_write uuid[]
+);
+
+COMMENT ON TABLE items IS NULL;
+
+ALTER TABLE items ALTER id SET DEFAULT uuid_generate_v4();
+ALTER TABLE items ALTER acl_read SET DEFAULT ARRAY[]::uuid[];
+ALTER TABLE items ALTER acl_write SET DEFAULT ARRAY[]::uuid[];
+
+ALTER TABLE items ADD CONSTRAINT items_pkey
+  PRIMARY KEY (id);
+
+CREATE INDEX read_permissions_index ON public.items USING gin (acl_read);
+CREATE INDEX write_permissions_index ON public.items USING gin (acl_write);
+
+ALTER TABLE items OWNER TO postgres;
+
+-- DEPENDANTS
+
+CREATE POLICY item_owner ON items
+  AS PERMISSIVE
+  FOR ALL
+  TO postgres
+  USING ((acl_read && (regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text))::uuid[]) OR (acl_write && (regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text))::uuid[]))
+  WITH CHECK (acl_write && (regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text))::uuid[]);
+COMMENT ON POLICY item_owner ON items IS NULL;
+
+END;
+
+(1 row)
+drop user ddlx_test_user5;
+commit;
 -- look for unidentified objects
 select classid::regclass,count(*)
   from (
@@ -208,7 +280,7 @@ select classid,objid,ddlx_identify(objid) as obj
  where (a.obj).sql_kind is null group by classid
  order by 2 desc, cast(classid::regclass as text) ;
 classid|count
-pg_extension|2
+pg_extension|3
 (1 row)
  
  

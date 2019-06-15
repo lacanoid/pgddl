@@ -332,6 +332,20 @@ AS $function$
    WHERE lan.oid = $1
 #if 9.5
    UNION
+  SELECT pol.oid,
+         'pg_policy'::regclass,
+         pol.polname as name,
+         null as namespace,
+         null as owner,
+         'POLICY' as sql_kind,
+         format('%I ON %s',
+                  polname,
+                  cast(c.oid::regclass as text)) 
+         as sql_identifier,
+         null as acl
+    FROM pg_policy pol JOIN pg_class c on (c.oid=pol.polrelid)
+   WHERE pol.oid = $1
+   UNION
   SELECT trf.oid,
          'pg_transform'::regclass,
          null as name,
@@ -1507,6 +1521,65 @@ $function$  strict;
 ---------------------------------------------------
 
 #if 9.5
+CREATE OR REPLACE FUNCTION ddlx_create_policy(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ with obj as (select * from ddlx_identify($1)),
+ pol1 as (
+ SELECT
+    pol.oid,
+    n.nspname AS schemaname,
+    c.relname AS tablename,
+    pol.polname AS policyname,
+        CASE
+            WHEN pol.polroles = '{0}'::oid[] THEN string_to_array('PUBLIC'::text, ''::text)::name[]
+            ELSE ARRAY( SELECT pg_authid.rolname
+               FROM pg_authid
+              WHERE pg_authid.oid = ANY (pol.polroles)
+              ORDER BY pg_authid.rolname)
+        END AS roles,
+        CASE pol.polcmd
+            WHEN 'r'::"char" THEN 'SELECT'::text
+            WHEN 'a'::"char" THEN 'INSERT'::text
+            WHEN 'w'::"char" THEN 'UPDATE'::text
+            WHEN 'd'::"char" THEN 'DELETE'::text
+            WHEN '*'::"char" THEN 'ALL'::text
+            ELSE NULL::text
+        END AS cmd,
+#if 10
+        CASE pol.polpermissive 
+            WHEN true THEN 'PERMISSIVE'
+            ELSE 'RESTRICTIVE'
+        END AS permissive,
+#end
+    pg_get_expr(pol.polqual, pol.polrelid) AS qual,
+    pg_get_expr(pol.polwithcheck, pol.polrelid) AS with_check
+   FROM pg_policy pol
+     JOIN pg_class c ON c.oid = pol.polrelid
+     LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+)
+select format(
+           E'CREATE POLICY %s\n  %s;\n',
+            obj.sql_identifier,
+			array_to_string(array[
+#if 10
+             'AS '||p.permissive,
+#end
+             'FOR '||p.cmd,
+             'TO '||array_to_string(p.roles,', '),
+             E'USING '||p.qual,
+             E'WITH CHECK '||p.with_check
+             ],E'\n  ')
+             )
+    || ddlx_comment($1)
+   from obj join pol1 p using (oid);
+$function$  strict;
+#end
+
+---------------------------------------------------
+
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create_transform(oid)
  RETURNS text
  LANGUAGE sql
@@ -2236,6 +2309,8 @@ AS $function$
     when 'pg_language'::regclass 
     then ddlx_create_language(oid)
 #if 9.5
+    when 'pg_policy'::regclass 
+    then ddlx_create_policy(oid)
     when 'pg_transform'::regclass 
     then ddlx_create_transform(oid)
 #if 9.6

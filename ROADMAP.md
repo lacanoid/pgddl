@@ -23,14 +23,12 @@ Tasks
 Support for other postgres objects:
 - access method, operator family, operator class, pg_amop, pg_amproc
 - extension
-- policy
 - PG 10: publication, subscription
 - PG 10: statistics
 - PG 11: procedures
 
 Support for other missing options:
 - column options
-- row level permissions
 - PG 10: partitions
 - comments on all objects
 - ownership of all objects 
@@ -40,7 +38,6 @@ Support for other missing options:
 - database settings (alter database set)
 - PG 10+: generated
 - fillfactor
-- pre/post data
 
 Other:
 - PG version specific tests
