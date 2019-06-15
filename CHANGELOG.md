@@ -6,6 +6,7 @@ Version 0.12alpha
 - support for disabled triggers
 - support for policies (row level security)
 - support for grants on foreign data wrappers and servers
+- some support for operator classes, pg_amproc, pg_amop
 - added new ddlx_alter_class(regclass) (internal) function, for post data DDL
 - more use of format() function for speed and readability
 - slight refactoring removing some code duplication

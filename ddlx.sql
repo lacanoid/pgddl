@@ -410,6 +410,22 @@ AS $function$
    WHERE spc.oid = $1
    UNION
 #if 9.3
+  SELECT opc.oid,
+         'pg_opclass'::regclass,
+         opcname as name,
+         n.nspname as namespace,
+         pg_get_userbyid(opc.opcowner) as owner,
+         'OPERATOR CLASS' as sql_kind,
+         format('%s%I USING %I',
+           quote_ident(nullif(n.nspname,current_schema()))||'.',
+           opc.opcname,
+           am.amname) 
+           as sql_identifier,
+         null as acl
+    FROM pg_opclass opc JOIN pg_namespace n ON n.oid=opc.opcnamespace
+    JOIN pg_am am ON am.oid=opc.opcmethod
+   WHERE opc.oid = $1
+   UNION
   SELECT amproc.oid,
          'pg_amproc'::regclass,
          'FUNCTION '||amprocnum,
@@ -1926,9 +1942,10 @@ CREATE OR REPLACE FUNCTION ddlx_create(regoper)
  RETURNS text
  LANGUAGE sql
 AS $function$
+with obj as (select * from ddlx_identify($1))
 select format(
          E'CREATE OPERATOR %s (\n%s%s%s%s%s%s%s%s%s\n);\n\n',
-         cast(o.oid::regoper as text),
+         obj.sql_identifier,
          E'  PROCEDURE = '  || cast(o.oprcode::regproc as text),
          case when o.oprleft <> 0 
               then E',\n  LEFTARG = ' || format_type(o.oprleft,null) end,
@@ -1949,8 +1966,8 @@ select format(
         )
      || ddlx_comment($1)
      || ddlx_alter_owner($1) 
-  from pg_operator o
- where oid = $1
+  from pg_operator o,obj
+ where o.oid = $1
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regoper) 
@@ -2204,6 +2221,30 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_operator_class(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'CREATE OPERATOR CLASS %s %sFOR TYPE %s USING %I%s;\n',
+        obj.sql_identifier,
+        case when opcdefault then 'DEFAULT ' else '' end,
+        format_type(opc.opcintype,null),
+        am.amname,
+        case when opf.opfname is distinct from opc.opcname
+             then format(' FAMILY %I',opf.opfname)
+             else '' end
+       )
+        || ddlx_comment($1)
+        || ddlx_alter_owner($1)
+  from pg_opclass as opc join pg_am am on (am.oid=opc.opcmethod)
+  left join pg_opfamily opf on (opf.oid=opc.opcfamily), 
+       obj
+ where opc.oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_operator_family(oid)
  RETURNS text
  LANGUAGE sql
@@ -2443,6 +2484,8 @@ AS $function$
     then ddlx_create_amproc(oid)
     when 'pg_amop'::regclass 
     then ddlx_create_amop(oid)
+    when 'pg_opclass'::regclass 
+    then ddlx_create_operator_class(oid)
 #if 9.5
     when 'pg_policy'::regclass 
     then ddlx_create_policy(oid)
