@@ -4,6 +4,7 @@ Version 0.12alpha
 -----------------
 - support CLUSTER table USING index
 - support for disabled triggers
+- support for grants on foreign data wrappers and servers
 - added new ddlx_alter_class(regclass) (internal) function, for post data DDL
 - slight refactoring removing some code duplication
 - more use of format() function for speed and readability

@@ -1339,7 +1339,6 @@ q1 as (
  select format(E'CREATE %s %I;\n',
                 case when rolcanlogin then 'USER' else 'GROUP' end,
                 rolname) ||
-
         format(E'ALTER ROLE %I WITH\n  %s;\n',rolname,
                 array_to_string(array[
    case when rolcanlogin then 'LOGIN' else 'NOLOGIN' end,
@@ -1352,28 +1351,26 @@ q1 as (
 #end
    case when rolreplication then 'REPLICATION' else 'NOREPLICATION' end
                 ],E'\n  ')) ||
+                array_to_string(array[
    case 
      when description is not null 
      then E'\n'
           ||'COMMENT ON ROLE '||quote_ident(rolname)
-          ||' IS '||quote_literal(description)||E';\n'
-     else ''
-   end || E'\n' ||
+          ||' IS '||quote_literal(description)
+   end,
    case when rolpassword is not null 
         then 'ALTER ROLE '|| quote_ident(rolname)||
-             ' ENCRYPTED PASSWORD '||quote_literal(rolpassword)||E';\n' 
-        else '' 
-   end ||
+             ' ENCRYPTED PASSWORD '||quote_literal(rolpassword)
+   end,
    case when rolvaliduntil is not null 
         then 'ALTER ROLE '|| quote_ident(rolname)||
-             ' VALID UNTIL '||quote_nullable(rolvaliduntil)||E';\n' 
-        else '' 
-   end ||
+             ' VALID UNTIL '||quote_nullable(rolvaliduntil)
+   end,
    case when rolconnlimit>=0  
         then 'ALTER ROLE '|| quote_ident(rolname)||
-             ' CONNECTION LIMIT '||rolconnlimit||E';\n' 
-        else '' 
-   end ||
+             ' CONNECTION LIMIT '||rolconnlimit
+   end
+                ],E';\n') ||
    E'\n'
    as ddl
    from pg_authid a
@@ -1457,6 +1454,7 @@ AS $function$
     ,'') || E';\n' 
     || ddlx_comment($1)
     || ddlx_alter_owner($1) 
+    || ddlx_grants($1) 
    from obj;
 $function$  strict;
 
@@ -1471,7 +1469,7 @@ AS $function$
     'CREATE SERVER ' || quote_ident(obj.srvname) ||
     coalesce(E'\nTYPE ' || quote_literal(obj.srvtype),'') ||
     coalesce(E'\nVERSION ' || quote_literal(obj.srvversion),'') ||
-    E'\nFOREIGN DATA WRAPPER ' || 
+    E' FOREIGN DATA WRAPPER ' || 
       (select quote_ident(fdwname)
          from pg_foreign_data_wrapper
         where oid = obj.srvfdw) ||
@@ -1483,6 +1481,7 @@ AS $function$
     ,'') || E';\n' 
     || ddlx_comment($1)
     || ddlx_alter_owner($1) 
+    || ddlx_grants($1) 
    from obj;
 $function$  strict;
 
@@ -1653,7 +1652,11 @@ a as (
 ),
 b as (
 select format('GRANT %s ON %s %s TO %s%s',
-              privilege_type,obj.sql_kind,obj.sql_identifier,
+              privilege_type,
+              case obj.sql_kind
+              when 'SERVER' then 'FOREIGN SERVER'
+              else obj.sql_kind end,
+              obj.sql_identifier,
               grantee,grant_option)
        as dcl
   from obj,a
@@ -2264,7 +2267,12 @@ AS $function$
         else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))
        end
      end 
-     as ddl
+     as ddl,
+     case when obj.owner is not null
+          then ddlx_alter_owner(obj.oid) else '' end ||
+     case when obj.acl is not null
+          then ddlx_grants(obj.oid) else '' end
+     as dcl
     from obj
    )
    select ddl from def

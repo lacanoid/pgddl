@@ -25,10 +25,8 @@ ALTER ROLE pgddl_test_user WITH
   NOREPLICATION;
 
 COMMENT ON ROLE pgddl_test_user IS 'pg_ddl test user...';
-
 ALTER ROLE pgddl_test_user ENCRYPTED PASSWORD 'md5db6d137a5ac4e8c22bed58e3e6687aca';
-ALTER ROLE pgddl_test_user VALID UNTIL '2100-01-01 00:00:00-08';
-
+ALTER ROLE pgddl_test_user VALID UNTIL '2100-01-01 00:00:00-08'
 ALTER ROLE pgddl_test_user SET standard_conforming_strings=true;
 
 GRANT pgddl_test_user2 TO pgddl_test_user;
@@ -47,9 +45,7 @@ ALTER ROLE pgddl_test_user3 WITH
   NOCREATEROLE
   NOBYPASSRLS
   NOREPLICATION;
-
-ALTER ROLE pgddl_test_user3 VALID UNTIL 'infinity';
-
+ALTER ROLE pgddl_test_user3 VALID UNTIL 'infinity'
 GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 
 
@@ -65,9 +61,7 @@ ALTER ROLE pgddl_test_user2 WITH
   NOCREATEROLE
   NOBYPASSRLS
   NOREPLICATION;
-
-ALTER ROLE pgddl_test_user2 CONNECTION LIMIT 100;
-
+ALTER ROLE pgddl_test_user2 CONNECTION LIMIT 100
 GRANT pgddl_test_user2 TO pgddl_test_user;
 
 

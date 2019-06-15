@@ -34,7 +34,7 @@ Support for other missing options:
 - PG 10: partitions
 - comments on all objects
 - ownership of all objects 
-- grants on all objects (missing: fdw, server)
+- grants on all objects
 - serial (alter sequence set owner column)
 - grants vs superuser (grantor)
 - database settings (alter database set)
@@ -47,6 +47,7 @@ Other:
 - use ONLY when appropriate
 - improve support for non superusers (more testing, etc)
 - improve dumping of comments (be quiet on NULL comments)
+  Currently NULL comments are included, to encourage commenting.
 - handle dependancies for types better (use shell types)
 - handle SERIAL sequences better
 - improve and add to simple tests
