@@ -4,6 +4,8 @@ Version 0.12alpha
 -----------------
 - support CLUSTER table USING index
 - support for disabled triggers
+- added new ddlx_alter_class(regclass) (internal) function, for post data DDL
+- slight refactoring removing some code duplication
 
 Version 0.11
 ------------
@@ -36,7 +38,7 @@ Version 0.10
 Version 0.9
 -----------
 - renamed extension to ddlx
-- API rename pg_ddlx -> ddlx (it is enough)
+- API rename pg_ddlx -> ddlx (it is long enough)
 - support for event triggers
 - support for foreign data wrappers
 - support for foreign servers

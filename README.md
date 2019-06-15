@@ -38,11 +38,11 @@ Advantages over using other tools like `psql` or `pg_dump` include:
   
 Some disadvantages:
 
-- Not all Postgres objects and all options are supported yet. 
-  The package provides support for basic user-level objects such as types, classes and functions.
+- Not all Postgres objects and all options are supported yet. Postgres is huge. 
+  This package provides support for basic user-level objects such as types, classes and functions.
   All `reg*` objects and SQL standard compliant stuff is mostly supported,
-  with more fringe stuff still in constuction. 
-  The intention for version 1.0 is to support all objects. 
+  with more fringe stuff still under constuction. 
+  The intention for version 1.0 is to support all Postgres objects. 
   See [ROADMAP](ROADMAP.md) for some of what's missing.
 - It is not very well tested. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
@@ -51,7 +51,7 @@ Some disadvantages:
 
 That said, it has still proven quite useful in a many situations
 and is being used with a number of production databases.
-
+Bug reports are welcome.
 
 Curently developed and tested on PostgreSQL 10. 
 Included preprocessor adapts the source to target PG version. 
@@ -97,7 +97,12 @@ The API provides three public user functions:
 - `ddlx_drop(oid)` - builds SQL DDL drop statements
 - `ddlx_script(oid)` - builds SQL DDL scripts of entire dependancy trees
 
-You can use these simply by casting object name (or oid) to some `reg*` type.
+These are overloaded for use with various `reg*` types supported by Postgres.
+You can use these simply by casting object name (or oid) to some `reg*` type:
+```sql
+SELECT ddlx_create('my_table'::regclass);
+```
+
 All `reg*` types are supported:
 
 - `ddlx_create(regtype) returns text`
@@ -113,7 +118,7 @@ All `reg*` types are supported:
 - `ddlx_create(regproc) returns text`
 - `ddlx_create(regprocedure) returns text`
 
-    Generates SQL DDL source of function `regproc`.
+    Generates SQL DDL source of function/procedure `regproc`.
 
 - `ddlx_create(regoper) returns text`
 - `ddlx_create(regoperator) returns text`
@@ -199,11 +204,27 @@ Nevertheless, some of them are:
 
 - `ddlx_identify(oid) returns record`
 
-    Identify an object by object ID, `oid`. This function is used a lot in others.
+    Identify an object by object ID, `oid`. Searches all supported system catalogs.
+    This function is used a lot by others in this extension.
 
 - `ddlx_describe(regclass) returns setof record`
 
     Get columns of a class.
+
+- `ddlx_create_class(regclass) returns text`
+
+    Get bare-bones (pre-data) DDL for class object.
+    This includes column definitions, not null and comments.
+
+- `ddlx_alter_class(regclass) returns text`
+
+    Get additional (post-data) DDL for class object.
+    This includes dafaults, storage parametes, constraints, indexes, triggers, rules,
+    owner and grants
+
+- `ddlx_grants(oid) returns text`
+
+    Return GRANT statements for an object
 
 See file [ddlx.sql](ddlx.sql) and [full list of functions](test/expected/init.out) for additional details.
 Functions with comments are public API. The rest are intended for internal use, the purpose can

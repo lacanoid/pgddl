@@ -1750,13 +1750,12 @@ AS $function$ select null::text $function$;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(regclass)
+CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
    select 
-     ddlx_create_class($1) 
-     || ddlx_alter_table_defaults($1) 
+     ddlx_alter_table_defaults($1) 
      || ddlx_alter_table_storage($1) 
      || ddlx_create_constraints($1) 
      || ddlx_create_indexes($1) 
@@ -1764,6 +1763,17 @@ AS $function$
      || ddlx_create_rules($1) 
      || ddlx_alter_owner($1) 
      || ddlx_grants($1)
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create(regclass)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+   select 
+     ddlx_create_class($1) ||
+     ddlx_alter_class($1)
     from pg_class c
    where c.oid = $1 and c.relkind <> 'c'
    union 
