@@ -117,6 +117,19 @@ ddlx_drop
 DROP OPERATOR FAMILY opf1 USING btree;
 
 (1 row)
+create operator class opc1 for type text using btree family opf1 as storage text;
+select ddlx_create(oid) from pg_opclass where opcname='opc1';
+ddlx_create
+CREATE OPERATOR CLASS opc1 FOR TYPE text USING btree FAMILY opf1 AS STORAGE text;
+COMMENT ON OPERATOR CLASS opc1 USING btree IS NULL;
+ALTER OPERATOR CLASS opc1 USING btree OWNER TO postgres;
+
+(1 row)
+select ddlx_drop(oid) from pg_opclass where opcname='opc1';
+ddlx_drop
+DROP OPERATOR CLASS opc1 USING btree;
+
+(1 row)
 select ddlx_create_language(oid) from pg_language 
  where lanname in ('internal','c','sql') 
  order by lanname;

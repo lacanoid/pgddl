@@ -2226,14 +2226,16 @@ CREATE OR REPLACE FUNCTION ddlx_create_operator_class(oid)
  LANGUAGE sql
 AS $function$
 with obj as (select * from ddlx_identify($1))
-select format(E'CREATE OPERATOR CLASS %s %sFOR TYPE %s USING %I%s;\n',
-        obj.sql_identifier,
+select format(E'CREATE OPERATOR CLASS %s %sFOR TYPE %s USING %I%s AS STORAGE %s;\n',
+        format('%s%I',quote_ident(nullif(obj.namespace,current_schema()))||'.',
+                obj.name),
         case when opcdefault then 'DEFAULT ' else '' end,
         format_type(opc.opcintype,null),
         am.amname,
         case when opf.opfname is distinct from opc.opcname
              then format(' FAMILY %I',opf.opfname)
-             else '' end
+             else '' end,
+        format_type(opc.opcintype,null)
        )
         || ddlx_comment($1)
         || ddlx_alter_owner($1)

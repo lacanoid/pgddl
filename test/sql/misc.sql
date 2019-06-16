@@ -30,6 +30,10 @@ comment on operator family opf1 using btree is 'A comment';
 select ddlx_create(oid) from pg_opfamily where opfname='opf1';
 select ddlx_drop(oid) from pg_opfamily where opfname='opf1';
 
+create operator class opc1 for type text using btree family opf1 as storage text;
+select ddlx_create(oid) from pg_opclass where opcname='opc1';
+select ddlx_drop(oid) from pg_opclass where opcname='opc1';
+
 select ddlx_create_language(oid) from pg_language 
  where lanname in ('internal','c','sql') 
  order by lanname;
