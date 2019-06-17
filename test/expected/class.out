@@ -223,8 +223,8 @@ CREATE UNLOGGED TABLE test_class_r2 (
     cc character(20),
     vv character varying(20),
     n numeric(10,2)
-) WITH OIDS
-;
+)
+  WITH OIDS;
 
 COMMENT ON TABLE test_class_r2 IS NULL;
 
@@ -763,5 +763,37 @@ GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO postgres WITH GRANT OPTION;
 
 END;
+
+(1 row)
+-----
+create table test_parent ( i serial );
+create table test_child () inherits (test_parent);
+select ddlx_create('test_parent'::regclass); 
+ddlx_create
+-- Type: TABLE ; Name: test_parent; Owner: postgres
+
+CREATE TABLE test_parent (
+    i integer NOT NULL
+);
+
+COMMENT ON TABLE test_parent IS NULL;
+
+ALTER TABLE test_parent ALTER i SET DEFAULT nextval('test_parent_i_seq'::regclass);
+
+ALTER TABLE test_parent OWNER TO postgres;
+
+(1 row)
+select ddlx_create('test_child'::regclass); 
+ddlx_create
+-- Type: TABLE ; Name: test_child; Owner: postgres
+
+CREATE TABLE test_child ()
+  INHERITS(test_parent);
+
+COMMENT ON TABLE test_child IS NULL;
+
+ALTER TABLE test_child ALTER i SET DEFAULT nextval('test_parent_i_seq'::regclass);
+
+ALTER TABLE test_child OWNER TO postgres;
 
 (1 row)

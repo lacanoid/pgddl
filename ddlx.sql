@@ -777,8 +777,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass)
  LANGUAGE sql
 AS $function$
   with obj as (select * from ddlx_identify($1))
-  select 
-  
+  select   
     array_to_string(array[
     'CREATE '||
   case relpersistence
@@ -789,46 +788,68 @@ AS $function$
   || obj.sql_kind || ' ' || obj.sql_identifier
   || case obj.sql_kind when 'TYPE' then ' AS' else '' end 
   ||
-  E' (\n'||
-    coalesce(''||(
-      SELECT coalesce(string_agg('    '||definition,E',\n'),'')
-        FROM ddlx_describe($1) WHERE is_local
-    )||E'\n','')||')'
-  ||
-  (SELECT 
-    coalesce(' INHERITS(' || string_agg(i.inhparent::regclass::text,', ') || E')\n', '')
-     FROM pg_inherits i WHERE i.inhrelid = $1) 
 #if 10
-  ||
+  case
+  when c.relispartition
+  then ' PARTITION OF ' || (SELECT string_agg(i.inhparent::regclass::text,',')
+                             FROM pg_inherits i WHERE i.inhrelid = $1) 
+
+  else
+    ' (' ||coalesce(E'\n' ||
+      (SELECT string_agg('    '||definition,E',\n')
+         FROM ddlx_describe($1) WHERE is_local)||E'\n','') || ')'
+  end
+#else
+    ' (' ||coalesce(E'\n' ||
+      (SELECT string_agg('    '||definition,E',\n')
+         FROM ddlx_describe($1) WHERE is_local)||E'\n','') || ')'
+#end
+#if 10
+  ,
+  case when c.relpartbound is not null
+       then pg_get_expr(c.relpartbound,c.oid,true)
+  end
+#end
+  ,
+#if 10
+  case
+  when not c.relispartition
+  then (SELECT 'INHERITS(' || string_agg(i.inhparent::regclass::text,', ') || E')'
+          FROM pg_inherits i WHERE i.inhrelid = $1)
+  end
+#else
+  (SELECT 'INHERITS(' || string_agg(i.inhparent::regclass::text,', ') || E')'
+     FROM pg_inherits i WHERE i.inhrelid = $1) 
+#end
+#if 10
+  ,
   CASE 
   WHEN p.partstrat IS NOT NULL
-  THEN E'  PARTITION BY ' || 
-       CASE p.partstrat
-       WHEN 'l' THEN 'LIST'
-       WHEN 'r' THEN 'RANGE'
-       WHEN 'h' THEN 'HASH'
-       ELSE 'UNKNOWN'
-       END 
-       ||' ('|| 
+  THEN format('PARTITION BY %s (%s)',
+         CASE p.partstrat
+         WHEN 'l' THEN 'LIST'
+         WHEN 'r' THEN 'RANGE'
+         WHEN 'h' THEN 'HASH'
+         ELSE 'UNKNOWN'
+         END, 
        (
        	 select string_agg(quote_ident(a.attname::text),',')
        	   from unnest(p.partattrs) as u
        	   join pg_attribute a on (u=a.attnum and a.attrelid=c.oid)
-       ) || ')'
-       || E'\n'
-  ELSE '' END
+       ))
+  END
 #end
-  ||
-  CASE relhasoids WHEN true THEN E' WITH OIDS\n' ELSE '' END 
-  ||
-  coalesce(
-    E'\nSERVER '||quote_ident(fs.srvname)||E'\nOPTIONS (\n'||
+  ,
+  CASE relhasoids WHEN true THEN 'WITH OIDS' END 
+  ,
+    E'SERVER '||quote_ident(fs.srvname)||E' OPTIONS (\n'||
     (select string_agg(
               '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
               E',\n')
        from pg_options_to_table(ft.ftoptions))||E'\n)'
-    ,'') 
-    ],E'\n  ')
+    
+
+  ],E'\n  ')
   ||
   E';\n'
  FROM pg_class c JOIN obj ON (true)

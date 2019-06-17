@@ -36,8 +36,8 @@ CREATE TABLE customers (
     cust_name character varying(32) NOT NULL,
     cust_address text,
     cust_country text
-)  PARTITION BY LIST (cust_country)
-;
+)
+  PARTITION BY LIST (cust_country);
 
 COMMENT ON TABLE customers IS NULL;
 
@@ -56,10 +56,8 @@ DROP TABLE customer_jap;
 
 -- Type: TABLE ; Name: customer_jap; Owner: postgres
 
-CREATE TABLE customer_jap (
-
-) INHERITS(customers)
-;
+CREATE TABLE customer_jap PARTITION OF customers
+  FOR VALUES IN ('jap');
 
 COMMENT ON TABLE customer_jap IS NULL;
 

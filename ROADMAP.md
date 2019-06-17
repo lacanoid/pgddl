@@ -29,7 +29,7 @@ Support for other postgres objects:
 
 Support for other missing options:
 - column options
-- PG 10: partitions
+- PG 10: partitions (collations, expressions, subpartitions)
 - comments on all objects
 - ownership of all objects 
 - grants on all objects

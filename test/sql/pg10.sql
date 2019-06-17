@@ -21,12 +21,11 @@ CREATE INDEX ON measurement_y2006m02 (logdate);
 CREATE INDEX ON measurement_y2006m03 (logdate);
 
 select ddlx_script('measurement');
-
+------
 CREATE TABLE customers(cust_id bigint NOT NULL,cust_name varchar(32) NOT NULL,cust_address text,
 cust_country text) PARTITION BY LIST(cust_country);
 CREATE TABLE customer_ind PARTITION OF customers FOR VALUES IN ('ind');
 CREATE TABLE customer_jap PARTITION OF customers FOR VALUES IN ('jap');
--- CREATE TABLE customers_def PARTITION OF customers DEFAULT;
 INSERT INTO customers VALUES (2039,'Puja','Hyderabad','ind');
 SELECT tableoid::regclass,* FROM customers;
 SELECT * FROM customer_ind;
@@ -35,7 +34,6 @@ SELECT * FROM customer_jap;
 
 select ddlx_script('customers');
 select ddlx_script('customer_jap'); 
-
 -- statistics
 CREATE TABLE test_stat (
     a   int,
@@ -44,3 +42,4 @@ CREATE TABLE test_stat (
 CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
 
 select ddlx_script('test_stat');
+select pg_get_statisticsobjdef(oid) from pg_statistic_ext where stxname='test_stat1';

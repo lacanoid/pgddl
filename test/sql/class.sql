@@ -123,3 +123,8 @@ CREATE AGGREGATE test_proc_agg_2(anyelement) (
 
 select ddlx_script('test_proc_agg_2'::regproc);
 
+-----
+create table test_parent ( i serial );
+create table test_child () inherits (test_parent);
+select ddlx_create('test_parent'::regclass); 
+select ddlx_create('test_child'::regclass); 

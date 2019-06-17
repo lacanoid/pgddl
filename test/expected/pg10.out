@@ -29,8 +29,8 @@ CREATE TABLE measurement (
     logdate date NOT NULL,
     peaktemp integer,
     unitsales integer
-)  PARTITION BY RANGE (logdate)
-;
+)
+  PARTITION BY RANGE (logdate);
 
 COMMENT ON TABLE measurement IS NULL;
 
@@ -39,11 +39,11 @@ ALTER TABLE measurement OWNER TO postgres;
 END;
 
 (1 row)
+------
 CREATE TABLE customers(cust_id bigint NOT NULL,cust_name varchar(32) NOT NULL,cust_address text,
 cust_country text) PARTITION BY LIST(cust_country);
 CREATE TABLE customer_ind PARTITION OF customers FOR VALUES IN ('ind');
 CREATE TABLE customer_jap PARTITION OF customers FOR VALUES IN ('jap');
--- CREATE TABLE customers_def PARTITION OF customers DEFAULT;
 INSERT INTO customers VALUES (2039,'Puja','Hyderabad','ind');
 SELECT tableoid::regclass,* FROM customers;
 tableoid|cust_id|cust_name|cust_address|cust_country
@@ -74,8 +74,8 @@ CREATE TABLE customers (
     cust_name character varying(32) NOT NULL,
     cust_address text,
     cust_country text
-)  PARTITION BY LIST (cust_country)
-;
+)
+  PARTITION BY LIST (cust_country);
 
 COMMENT ON TABLE customers IS NULL;
 
@@ -94,10 +94,8 @@ DROP TABLE customer_jap;
 
 -- Type: TABLE ; Name: customer_jap; Owner: postgres
 
-CREATE TABLE customer_jap (
-
-) INHERITS(customers)
-;
+CREATE TABLE customer_jap PARTITION OF customers
+  FOR VALUES IN ('jap');
 
 COMMENT ON TABLE customer_jap IS NULL;
 
@@ -133,4 +131,8 @@ ALTER TABLE test_stat OWNER TO postgres;
 
 END;
 
+(1 row)
+select pg_get_statisticsobjdef(oid) from pg_statistic_ext where stxname='test_stat1';
+pg_get_statisticsobjdef
+CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat
 (1 row)
