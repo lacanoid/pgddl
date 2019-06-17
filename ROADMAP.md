@@ -33,9 +33,12 @@ Support for other missing options:
 - grants on all objects
 - serial (alter sequence set owner column)
 - grants vs superuser (grantor)
-- database settings (alter database set)
 - PG 10+: generated
 - fillfactor
+- NOT VALID constraints
+- unpopulated material views
+- ALTER COLUMN SET attribute_option
+- ALTER COLUMN SET STATISTICS
 
 Other:
 - PG version specific tests

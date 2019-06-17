@@ -2277,7 +2277,13 @@ select format(E'CREATE DATABASE %s WITH\n  %s;\n\n',
        format(E'ALTER DATABASE %s SET TABLESPACE %I;\n\n',
               obj.sql_identifier, s.spcname) 
        else '' end 
-       -- missing GUC settings
+       ||
+       (  select coalesce(string_agg(
+                   'ALTER DATABASE '||obj.sql_identifier||' SET '||cfg||';',E'\n'
+		 ) || E'\n\n', '')
+          from unnest((select setconfig from pg_db_role_setting
+	                where setdatabase = $1 and setrole = 0::oid)) as cfg
+       )
        || ddlx_alter_owner($1) 
        || ddlx_grants($1)
   from pg_database as d 

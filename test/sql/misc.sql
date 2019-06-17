@@ -43,6 +43,7 @@ create database ddlx_testdb with encoding='UTF8' template=template0 lc_collate='
 comment on database ddlx_testdb is 'DDLX Test Database';
 alter database ddlx_testdb owner to postgres;
 alter database ddlx_testdb connection limit 1234;
+alter database ddlx_testdb set standard_conforming_strings = true;
 begin;
 create user ddlx_test_user4;
 grant create on database ddlx_testdb to ddlx_test_user4 with grant option;

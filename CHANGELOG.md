@@ -7,6 +7,7 @@ Version 0.12alpha
 - support for policies (row level security)
 - support for statistics
 - support for grants on foreign data wrappers and servers
+- support for ALTER DATABASE SET configurations
 - some support for partitioning
 - some support for operator classes, pg_amproc, pg_amop
 - added new ddlx_alter_class(regclass) (internal) function, for post data DDL
