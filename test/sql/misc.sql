@@ -81,8 +81,8 @@ with check (
   items.acl_write && regexp_split_to_array(current_setting('jwt.claims.roles'), ',')::uuid[]
 );
 
-create index read_permissions_index on items using gin(acl_read);
-create index write_permissions_index on items using gin(acl_write);
+-- create index read_permissions_index on items using gin(acl_read);
+-- create index write_permissions_index on items using gin(acl_write);
 
 select ddlx_script('items');
 drop user ddlx_test_user5;

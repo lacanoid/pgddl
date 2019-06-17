@@ -408,8 +408,8 @@ AS $function$
          spc.spcacl as acl
     FROM pg_tablespace spc
    WHERE spc.oid = $1
-   UNION
 #if 9.3
+   UNION
   SELECT opc.oid,
          'pg_opclass'::regclass,
          opcname as name,
@@ -495,6 +495,7 @@ SELECT  a.attnum AS ord,
         format('%I %s%s%s%s',
          a.attname::text,
          format_type(t.oid, a.atttypmod),
+#if 9.2
          case
            when a.attfdwoptions is not null
            then (
@@ -503,6 +504,9 @@ SELECT  a.attnum AS ord,
                 ', ')||' ) '
                from pg_options_to_table(a.attfdwoptions))
          end,
+#else
+         null::text,
+#end
          CASE
            WHEN length(col.collcollate) > 0
            THEN ' COLLATE ' || quote_ident(col.collcollate::text)
@@ -722,9 +726,9 @@ AS $function$
    WHERE coalesce(p.oid = $1, true)
 $function$;
 
----------------------------------------------------
---  DDL generator functions for individial object types
----------------------------------------------------
+-----------------------------------------------------------
+--  DDL generator functions for individial object types  --
+-----------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_banner(
    name text, kind text, namespace text, owner text, extra text default null
@@ -756,6 +760,14 @@ AS $function$
           end)
    from obj
 $function$ strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_grants(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ select null::text $function$;
+-- will be redefined later
 
 ---------------------------------------------------
 
@@ -1633,7 +1645,7 @@ select format(
             obj.sql_identifier,
 			array_to_string(array[
 #if 10
-             'AS '||p.permissive,
+             'AS '||nullif(p.permissive,'PERMISSIVE'),
 #if 9.5
              'FOR '||p.cmd,
              'TO '||array_to_string(p.roles,', '),
@@ -2225,12 +2237,12 @@ $function$  strict;
 
 ---------------------------------------------------
 
-#if 9.6
 CREATE OR REPLACE FUNCTION ddlx_create_access_method(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
 with obj as (select * from ddlx_identify($1))
+#if 9.6
 select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
         amname,
         case amtype
@@ -2239,11 +2251,13 @@ select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
         end,
         cast(amhandler as regproc)
        )
+#else
+select format(E'-- CREATE ACCESS METHOD %I;\n\n',amname)
+#end
         || ddlx_comment($1)
   from pg_am as am, obj
  where am.oid = $1
 $function$  strict;
-#end
 
 ---------------------------------------------------
 
