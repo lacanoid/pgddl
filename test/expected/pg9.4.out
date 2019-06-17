@@ -1,0 +1,180 @@
+\pset null _null_
+\pset format unaligned
+SET client_min_messages = warning;
+SET ROLE postgres;
+CREATE EXTENSION postgres_fdw;
+CREATE SERVER serv2 
+FOREIGN DATA WRAPPER postgres_fdw
+OPTIONS (host 'localhost');
+CREATE USER MAPPING FOR PUBLIC 
+SERVER serv2 
+OPTIONS (user 'foo');
+SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='postgres_fdw'));
+ddlx_create
+CREATE FOREIGN DATA WRAPPER postgres_fdw
+  HANDLER postgres_fdw_handler
+  VALIDATOR postgres_fdw_validator;
+COMMENT ON FOREIGN DATA WRAPPER postgres_fdw IS NULL;
+ALTER FOREIGN DATA WRAPPER postgres_fdw OWNER TO postgres;
+
+(1 row)
+SELECT ddlx_create((select oid from pg_foreign_server where srvname='serv2'));
+ddlx_create
+CREATE SERVER serv2 FOREIGN DATA WRAPPER postgres_fdw
+OPTIONS (
+    host 'localhost'
+);
+COMMENT ON SERVER serv2 IS NULL;
+ALTER SERVER serv2 OWNER TO postgres;
+
+(1 row)
+SELECT ddlx_create((select umid from pg_user_mappings where srvname='serv2' and usename='public'));
+ddlx_create
+CREATE USER MAPPING FOR public SERVER serv2
+OPTIONS (
+    "user" 'foo'
+);
+
+(1 row)
+SELECT ddlx_drop((select umid from pg_user_mappings where srvname='serv2' and usename='public'));
+ddlx_drop
+DROP USER MAPPING FOR public SERVER serv2;
+
+(1 row)
+------------------
+CREATE VIEW test_class_v_co1 AS
+SELECT * FROM test_class_v 
+  WITH CHECK OPTION;
+grant select on test_class_v_co1 to public;
+SELECT ddlx_script('test_class_v_co1'::regclass);
+ddlx_script
+BEGIN;
+
+/*
+DROP VIEW test_class_v_co1;
+*/
+
+-- Type: VIEW ; Name: test_class_v_co1; Owner: postgres
+
+CREATE OR REPLACE VIEW test_class_v_co1 AS
+ SELECT test_class_v.a,
+    test_class_v.b,
+    test_class_v.c,
+    test_class_v.d,
+    test_class_v.e,
+    test_class_v.f,
+    test_class_v.g,
+    test_class_v.h,
+    test_class_v.v
+   FROM test_class_v;
+
+COMMENT ON VIEW test_class_v_co1 IS NULL;
+
+ALTER VIEW test_class_v_co1 SET (check_option='cascaded');
+
+ALTER VIEW test_class_v_co1 OWNER TO postgres;
+GRANT SELECT ON test_class_v_co1 TO PUBLIC;
+
+END;
+
+(1 row)
+SELECT ddlx_script('test_class_v_co1'::regtype);
+ddlx_script
+BEGIN;
+
+/*
+DROP VIEW test_class_v_co1;
+*/
+
+-- Type: VIEW ; Name: test_class_v_co1; Owner: postgres
+
+CREATE OR REPLACE VIEW test_class_v_co1 AS
+ SELECT test_class_v.a,
+    test_class_v.b,
+    test_class_v.c,
+    test_class_v.d,
+    test_class_v.e,
+    test_class_v.f,
+    test_class_v.g,
+    test_class_v.h,
+    test_class_v.v
+   FROM test_class_v;
+
+COMMENT ON VIEW test_class_v_co1 IS NULL;
+
+ALTER VIEW test_class_v_co1 SET (check_option='cascaded');
+
+ALTER VIEW test_class_v_co1 OWNER TO postgres;
+GRANT SELECT ON test_class_v_co1 TO PUBLIC;
+
+END;
+
+(1 row)
+CREATE VIEW test_class_v_co2 AS
+SELECT * FROM test_class_v 
+  WITH CASCADED CHECK OPTION;
+grant select on test_class_v_co2 to public;
+SELECT ddlx_script('test_class_v_co2'::regclass);
+ddlx_script
+BEGIN;
+
+/*
+DROP VIEW test_class_v_co2;
+*/
+
+-- Type: VIEW ; Name: test_class_v_co2; Owner: postgres
+
+CREATE OR REPLACE VIEW test_class_v_co2 AS
+ SELECT test_class_v.a,
+    test_class_v.b,
+    test_class_v.c,
+    test_class_v.d,
+    test_class_v.e,
+    test_class_v.f,
+    test_class_v.g,
+    test_class_v.h,
+    test_class_v.v
+   FROM test_class_v;
+
+COMMENT ON VIEW test_class_v_co2 IS NULL;
+
+ALTER VIEW test_class_v_co2 SET (check_option='cascaded');
+
+ALTER VIEW test_class_v_co2 OWNER TO postgres;
+GRANT SELECT ON test_class_v_co2 TO PUBLIC;
+
+END;
+
+(1 row)
+SELECT ddlx_script('test_class_v_co2'::regtype);
+ddlx_script
+BEGIN;
+
+/*
+DROP VIEW test_class_v_co2;
+*/
+
+-- Type: VIEW ; Name: test_class_v_co2; Owner: postgres
+
+CREATE OR REPLACE VIEW test_class_v_co2 AS
+ SELECT test_class_v.a,
+    test_class_v.b,
+    test_class_v.c,
+    test_class_v.d,
+    test_class_v.e,
+    test_class_v.f,
+    test_class_v.g,
+    test_class_v.h,
+    test_class_v.v
+   FROM test_class_v;
+
+COMMENT ON VIEW test_class_v_co2 IS NULL;
+
+ALTER VIEW test_class_v_co2 SET (check_option='cascaded');
+
+ALTER VIEW test_class_v_co2 OWNER TO postgres;
+GRANT SELECT ON test_class_v_co2 TO PUBLIC;
+
+END;
+
+(1 row)
