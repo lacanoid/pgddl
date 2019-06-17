@@ -112,9 +112,10 @@ CREATE TABLE test_stat (
 CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
 \x
 select ddlx_create(oid),ddlx_drop(oid) from pg_statistic_ext where stxname='test_stat1';
-ddlx_create|-- CREATE UNIDENTIFIED OBJECT: 7878960
+ddlx_create|CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
+ALTER STATISTICS test_stat1 OWNER TO postgres;
 
-ddlx_drop|-- DROP UNIDENTIFIED OBJECT: 7878960
+ddlx_drop|DROP STATISTICS test_stat1;
 
 \x
 select ddlx_script('test_stat');
@@ -138,6 +139,7 @@ ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
   PRIMARY KEY (a);
 
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
+ALTER STATISTICS test_stat1 OWNER TO postgres;
 
 ALTER TABLE test_stat OWNER TO postgres;
 

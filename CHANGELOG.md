@@ -5,6 +5,7 @@ Version 0.12alpha
 - support CLUSTER table USING index
 - support for disabled triggers
 - support for policies (row level security)
+- support for statistics
 - support for grants on foreign data wrappers and servers
 - some support for partitioning
 - some support for operator classes, pg_amproc, pg_amop

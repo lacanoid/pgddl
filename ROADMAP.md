@@ -21,11 +21,9 @@ Tasks
 -----
 
 Support for other postgres objects:
-- access method, operator family, operator class, pg_amop, pg_amproc
+- pg_amop, pg_amproc
 - extension
 - PG 10: publication, subscription
-- PG 10: statistics
-- PG 11: procedures
 
 Support for other missing options:
 - column options

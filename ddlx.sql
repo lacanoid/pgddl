@@ -451,6 +451,21 @@ AS $function$
     FROM pg_amop amop
    WHERE amop.oid = $1
 #end
+#if 10
+   UNION
+  SELECT stx.oid,
+         'pg_statistic_ext'::regclass,
+         stx.stxname,
+         n.nspname as namespace,
+         pg_get_userbyid(stx.stxowner) as owner,
+         'STATISTICS' as sql_kind,
+         format('%s%I',quote_ident(nullif(n.nspname,current_schema()))||'.',stx.stxname) 
+         as sql_identifier,
+         null as acl
+    FROM pg_statistic_ext stx join pg_namespace n on (n.oid=stxnamespace)
+   WHERE stx.oid = $1
+
+#end
 $function$  strict;
 
 ---------------------------------------------------
@@ -763,12 +778,13 @@ AS $function$
 $function$ strict;
 
 ---------------------------------------------------
+-- forward declarations, will be redefined later
+---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_grants(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$ select null::text $function$;
--- will be redefined later
+CREATE OR REPLACE FUNCTION ddlx_grants(oid) RETURNS text
+  LANGUAGE sql AS $function$ select null::text $function$;
+CREATE OR REPLACE FUNCTION ddlx_create(oid) RETURNS text
+  LANGUAGE sql AS $function$ select null::text $function$;
 
 ---------------------------------------------------
 
@@ -1324,7 +1340,7 @@ AS $function$
 #if 10
  ,
  b as (
-  select coalesce(string_agg(pg_get_statisticsobjdef(oid),E';\n' order by oid)||E';\n\n', '') as ddl_stx
+  select coalesce(string_agg(ddlx_create(oid),'' order by oid)||E'\n', '') as ddl_stx
     from pg_statistic_ext where stxrelid = $1
  )
 select ddl_idx || ddl_stx from a,b
@@ -2570,6 +2586,10 @@ AS $function$
 #if 9.6
     when 'pg_am'::regclass 
     then ddlx_create_access_method(oid)
+#if 10
+    when 'pg_statistic_ext'::regclass
+    then pg_get_statisticsobjdef(oid)||E';\n'||
+         ddlx_alter_owner(oid)
 #end
     else
       case
