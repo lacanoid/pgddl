@@ -106,10 +106,17 @@ END;
 (1 row)
 -- statistics
 CREATE TABLE test_stat (
-    a   int,
+    a   int primary key,
     b   int
 );
 CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
+\x
+select ddlx_create(oid),ddlx_drop(oid) from pg_statistic_ext where stxname='test_stat1';
+ddlx_create|-- CREATE UNIDENTIFIED OBJECT: 7878960
+
+ddlx_drop|-- DROP UNIDENTIFIED OBJECT: 7878960
+
+\x
 select ddlx_script('test_stat');
 ddlx_script
 BEGIN;
@@ -121,18 +128,19 @@ DROP TABLE test_stat;
 -- Type: TABLE ; Name: test_stat; Owner: postgres
 
 CREATE TABLE test_stat (
-    a integer,
+    a integer NOT NULL,
     b integer
 );
 
 COMMENT ON TABLE test_stat IS NULL;
 
+ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
+  PRIMARY KEY (a);
+
+CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
+
 ALTER TABLE test_stat OWNER TO postgres;
 
 END;
 
-(1 row)
-select pg_get_statisticsobjdef(oid) from pg_statistic_ext where stxname='test_stat1';
-pg_get_statisticsobjdef
-CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat
 (1 row)

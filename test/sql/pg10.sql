@@ -36,10 +36,12 @@ select ddlx_script('customers');
 select ddlx_script('customer_jap'); 
 -- statistics
 CREATE TABLE test_stat (
-    a   int,
+    a   int primary key,
     b   int
 );
 CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
 
+\x
+select ddlx_create(oid),ddlx_drop(oid) from pg_statistic_ext where stxname='test_stat1';
+\x
 select ddlx_script('test_stat');
-select pg_get_statisticsobjdef(oid) from pg_statistic_ext where stxname='test_stat1';

@@ -1315,10 +1315,22 @@ CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
- with ii as (select * from ddlx_get_indexes($1) order by name)
- SELECT coalesce( string_agg(ddlx_create_index(oid),'') || E'\n' , E'')
-   FROM ii
-  WHERE constraint_name is null
+ with
+ ii as (select * from ddlx_get_indexes($1) order by name),
+ a as (
+  select coalesce(string_agg(ddlx_create_index(oid),'') || E'\n' , E'') as ddl_idx
+    from ii where constraint_name is null
+ )
+#if 10
+ ,
+ b as (
+  select coalesce(string_agg(pg_get_statisticsobjdef(oid),E';\n' order by oid)||E';\n\n', '') as ddl_stx
+    from pg_statistic_ext where stxrelid = $1
+ )
+select ddl_idx || ddl_stx from a,b
+#else
+select ddl_idx from a
+#end
 $function$  strict;
 
 ---------------------------------------------------
