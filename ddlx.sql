@@ -765,6 +765,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass)
 AS $function$
   with obj as (select * from ddlx_identify($1))
   select 
+  
+    array_to_string(array[
     'CREATE '||
   case relpersistence
     when 'u' then 'UNLOGGED '
@@ -781,10 +783,30 @@ AS $function$
     )||E'\n','')||')'
   ||
   (SELECT 
-    coalesce(' INHERITS(' || string_agg(i.inhparent::regclass::text,', ') || ')', '')
+    coalesce(' INHERITS(' || string_agg(i.inhparent::regclass::text,', ') || E')\n', '')
      FROM pg_inherits i WHERE i.inhrelid = $1) 
+#if 10
   ||
-  CASE relhasoids WHEN true THEN ' WITH OIDS' ELSE '' END 
+  CASE 
+  WHEN p.partstrat IS NOT NULL
+  THEN E'  PARTITION BY ' || CASE p.partstrat
+       WHEN 'l' THEN 'LIST ('|| (
+       	 select string_agg(quote_ident(a.attname::text),',')
+       	   from unnest(p.partattrs) as u
+       	   join pg_attribute a on (u=a.attnum and a.attrelid=c.oid)
+       )||')'
+       WHEN 'r' THEN 'RANGE ('||(
+       	 select string_agg(quote_ident(a.attname::text),',')
+       	   from unnest(p.partattrs) as u
+       	   join pg_attribute a on (u=a.attnum and a.attrelid=c.oid)
+       )||')'
+       WHEN 'h' THEN 'HASH ()'
+       ELSE 'UNKNOWN'
+       END || E'\n'
+  ELSE '' END
+#end
+  ||
+  CASE relhasoids WHEN true THEN E' WITH OIDS\n' ELSE '' END 
   ||
   coalesce(
     E'\nSERVER '||quote_ident(fs.srvname)||E'\nOPTIONS (\n'||
@@ -793,11 +815,15 @@ AS $function$
               E',\n')
        from pg_options_to_table(ft.ftoptions))||E'\n)'
     ,'') 
+    ],E'\n  ')
   ||
   E';\n'
  FROM pg_class c JOIN obj ON (true)
  LEFT JOIN pg_foreign_table  ft ON (c.oid = ft.ftrelid)
  LEFT JOIN pg_foreign_server fs ON (ft.ftserver = fs.oid)
+#if 10
+ LEFT JOIN pg_partitioned_table p ON p.partrelid = c.oid
+#end
  WHERE c.oid = $1
 -- AND relkind in ('r','c')
 $function$  strict;
@@ -1215,7 +1241,7 @@ AS $function$
              then format(E';\nALTER TABLE %s DISABLE TRIGGER %I',
                          cast(t.tgrelid::regclass as text), t.tgname)
              else ''
-        end
+        end||E';\n'
    from pg_trigger t
   where oid = $1
 $function$  strict;
@@ -1232,7 +1258,7 @@ AS $function$
  order by trigger_name 
  -- per SQL triggers get called in order created vs name as in PostgreSQL
  )
- select coalesce(string_agg(sql,E';\n')||E';\n\n','')
+ select coalesce(string_agg(sql,'')||E'\n','')
    from tg
 $function$  strict;
 

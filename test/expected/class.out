@@ -223,7 +223,8 @@ CREATE UNLOGGED TABLE test_class_r2 (
     cc character(20),
     vv character varying(20),
     n numeric(10,2)
-) WITH OIDS;
+) WITH OIDS
+;
 
 COMMENT ON TABLE test_class_r2 IS NULL;
 

@@ -1,3 +1,22 @@
 #!/usr/bin/perl
-print "init role type class fdw tsearch misc script\n";
+
+
+our $t = "init role type class fdw tsearch misc script";
+
+our $VI = $ENV{VERSION};
+our $V;
+our $opt_v = 0; # verbose
+
+sub errlog { print STDERR "tests:$_[0]\n"; }
+
+if($ARGV[0]) { $VI=$ARGV[0] }
+
+if($VI=~m!(\d+)\.(\d+)!) {
+	my ($maj,$min)=($1,$2);
+	if($maj>=10) { $min=0; }
+	$V = $maj+$min/10.0;
+	print "pg".$V."\n";
+} else {
+	errlog "No Postgres version specified in VERSION environment variable";
+}
 
