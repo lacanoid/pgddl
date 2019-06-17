@@ -84,7 +84,7 @@ ALTER TABLE customers OWNER TO postgres;
 END;
 
 (1 row)
-select ddlx_script('customer_jap');
+select ddlx_script('customer_jap'); 
 ddlx_script
 BEGIN;
 
@@ -102,6 +102,34 @@ CREATE TABLE customer_jap (
 COMMENT ON TABLE customer_jap IS NULL;
 
 ALTER TABLE customer_jap OWNER TO postgres;
+
+END;
+
+(1 row)
+-- statistics
+CREATE TABLE test_stat (
+    a   int,
+    b   int
+);
+CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
+select ddlx_script('test_stat');
+ddlx_script
+BEGIN;
+
+/*
+DROP TABLE test_stat;
+*/
+
+-- Type: TABLE ; Name: test_stat; Owner: postgres
+
+CREATE TABLE test_stat (
+    a integer,
+    b integer
+);
+
+COMMENT ON TABLE test_stat IS NULL;
+
+ALTER TABLE test_stat OWNER TO postgres;
 
 END;
 

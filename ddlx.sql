@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.11alpha lacanoid@ljudmila.org
+--  version 0.12alpha lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -27,6 +27,7 @@ AS $function$
                 ('p','TABLE'),
                 ('v','VIEW'),
                 ('i','INDEX'),
+                ('I','INDEX'),
                 ('S','SEQUENCE'),
                 ('s','SPECIAL'),
                 ('m','MATERIALIZED VIEW'),
@@ -672,7 +673,7 @@ AS $function$
    JOIN pg_class i ON i.oid = x.indexrelid
    JOIN pg_depend d ON d.objid = x.indexrelid
    LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
-  WHERE c.relkind in ('r','m','p') AND i.relkind = 'i'::"char" 
+  WHERE c.relkind in ('r','m','p') AND i.relkind in ('i','I')
     AND coalesce(c.oid = $1,true)
 $function$;
 
@@ -801,20 +802,20 @@ AS $function$
   ||
   CASE 
   WHEN p.partstrat IS NOT NULL
-  THEN E'  PARTITION BY ' || CASE p.partstrat
-       WHEN 'l' THEN 'LIST ('|| (
-       	 select string_agg(quote_ident(a.attname::text),',')
-       	   from unnest(p.partattrs) as u
-       	   join pg_attribute a on (u=a.attnum and a.attrelid=c.oid)
-       )||')'
-       WHEN 'r' THEN 'RANGE ('||(
-       	 select string_agg(quote_ident(a.attname::text),',')
-       	   from unnest(p.partattrs) as u
-       	   join pg_attribute a on (u=a.attnum and a.attrelid=c.oid)
-       )||')'
-       WHEN 'h' THEN 'HASH ()'
+  THEN E'  PARTITION BY ' || 
+       CASE p.partstrat
+       WHEN 'l' THEN 'LIST'
+       WHEN 'r' THEN 'RANGE'
+       WHEN 'h' THEN 'HASH'
        ELSE 'UNKNOWN'
-       END || E'\n'
+       END 
+       ||' ('|| 
+       (
+       	 select string_agg(quote_ident(a.attname::text),',')
+       	   from unnest(p.partattrs) as u
+       	   join pg_attribute a on (u=a.attnum and a.attrelid=c.oid)
+       ) || ')'
+       || E'\n'
   ELSE '' END
 #end
   ||
@@ -1634,8 +1635,8 @@ AS $function$
             ELSE 'RESTRICTIVE'
         END AS permissive,
 #if 9.5
-    pg_get_expr(pol.polqual, pol.polrelid) AS qual,
-    pg_get_expr(pol.polwithcheck, pol.polrelid) AS with_check
+    pg_get_expr(pol.polqual, pol.polrelid,true) AS qual,
+    pg_get_expr(pol.polwithcheck, pol.polrelid,true) AS with_check
    FROM pg_policy pol
      JOIN pg_class c ON c.oid = pol.polrelid
      LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -1649,8 +1650,8 @@ select format(
 #if 9.5
              'FOR '||p.cmd,
              'TO '||array_to_string(p.roles,', '),
-             'USING '||p.qual,
-             'WITH CHECK '||p.with_check
+             'USING ('||p.qual||')',
+             'WITH CHECK ('||p.with_check||')'
              ],E'\n  ')
              )
     || ddlx_comment($1)
@@ -2655,3 +2656,4 @@ $function$  strict;
 
 COMMENT ON FUNCTION ddlx_script(text) 
      IS 'Get SQL DDL script for an object and dependants by object name';
+

@@ -34,4 +34,13 @@ UPDATE customers SET cust_country ='jap' WHERE cust_id=2039;
 SELECT * FROM customer_jap;
 
 select ddlx_script('customers');
-select ddlx_script('customer_jap');
+select ddlx_script('customer_jap'); 
+
+-- statistics
+CREATE TABLE test_stat (
+    a   int,
+    b   int
+);
+CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
+
+select ddlx_script('test_stat');

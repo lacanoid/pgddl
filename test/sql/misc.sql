@@ -39,7 +39,7 @@ select ddlx_create_language(oid) from pg_language
  order by lanname;
 
 -- database
-create database ddlx_testdb with encoding=UTF8 template=template0 lc_collate="POSIX" lc_ctype="POSIX";
+create database ddlx_testdb with encoding='UTF8' template=template0 lc_collate='POSIX' lc_ctype='POSIX';
 comment on database ddlx_testdb is 'DDLX Test Database';
 alter database ddlx_testdb owner to postgres;
 alter database ddlx_testdb connection limit 1234;
@@ -59,8 +59,6 @@ grant usage on schema ddlx_test_schema1 to public;
 select ddlx_create(oid) from pg_namespace where nspname='ddlx_test_schema1';
 
 -- row level security
-begin;
-create user ddlx_test_user5;
 create extension "uuid-ossp" ;
 create table if not exists items (
   id uuid default uuid_generate_v4() not null primary key,
@@ -85,8 +83,7 @@ with check (
 -- create index write_permissions_index on items using gin(acl_write);
 
 select ddlx_script('items');
-drop user ddlx_test_user5;
-commit;
+
 -- look for unidentified objects
 select classid::regclass,count(*)
   from (

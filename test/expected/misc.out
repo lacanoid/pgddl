@@ -151,7 +151,7 @@ ALTER LANGUAGE sql OWNER TO postgres;
 
 (3 rows)
 -- database
-create database ddlx_testdb with encoding=UTF8 template=template0 lc_collate="POSIX" lc_ctype="POSIX";
+create database ddlx_testdb with encoding='UTF8' template=template0 lc_collate='POSIX' lc_ctype='POSIX';
 comment on database ddlx_testdb is 'DDLX Test Database';
 alter database ddlx_testdb owner to postgres;
 alter database ddlx_testdb connection limit 1234;
@@ -213,8 +213,6 @@ GRANT USAGE ON SCHEMA ddlx_test_schema1 TO PUBLIC;
 
 (1 row)
 -- row level security
-begin;
-create user ddlx_test_user5;
 create extension "uuid-ossp" ;
 create table if not exists items (
   id uuid default uuid_generate_v4() not null primary key,
@@ -271,15 +269,13 @@ ALTER TABLE items OWNER TO postgres;
 CREATE POLICY item_owner ON items
   FOR ALL
   TO postgres
-  USING ((acl_read && (regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text))::uuid[]) OR (acl_write && (regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text))::uuid[]))
-  WITH CHECK (acl_write && (regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text))::uuid[]);
+  USING (acl_read && regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text)::uuid[] OR acl_write && regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text)::uuid[])
+  WITH CHECK (acl_write && regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text)::uuid[]);
 COMMENT ON POLICY item_owner ON items IS NULL;
 
 END;
 
 (1 row)
-drop user ddlx_test_user5;
-commit;
 -- look for unidentified objects
 select classid::regclass,count(*)
   from (
