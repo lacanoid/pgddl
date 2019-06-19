@@ -1,7 +1,5 @@
-! = todo
-
-Version 0.12alpha
------------------
+Version 0.12
+------------
 - support CLUSTER table USING index
 - support for disabled triggers
 - support for policies (row level security)
