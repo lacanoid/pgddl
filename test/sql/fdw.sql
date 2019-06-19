@@ -23,7 +23,7 @@ COMMENT ON SERVER serv IS 'File server';
 GRANT USAGE ON FOREIGN SERVER serv TO PUBLIC;
 COMMENT ON FOREIGN TABLE test_class_f IS 'A Foreign table';
 COMMENT ON COLUMN test_class_f.line IS 'A Line of text';
-GRANT ALL ON test_class_f TO PUBLIC;
+REVOKE ALL ON test_class_f FROM PUBLIC;
 
 -- SELECT * FROM test_class_f;
 
