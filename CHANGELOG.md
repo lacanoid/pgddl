@@ -1,3 +1,7 @@
+Version 0.13alpha
+-----------------
+- slightly reworked some of the queries in ddlx_get_* functions to make them a lot faster :)
+
 Version 0.12
 ------------
 - support CLUSTER table USING index

@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.12 lacanoid@ljudmila.org
+--  version 0.13 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -579,9 +579,11 @@ AS $function$
         c.condeferrable AS is_deferrable, 
         c.condeferred  AS initially_deferred, 
         r.oid as regclass, c.oid AS sysid
-   FROM pg_namespace nc, pg_namespace nr, pg_constraint c, pg_class r
-  WHERE nc.oid = c.connamespace AND nr.oid = r.relnamespace AND c.conrelid = r.oid
-    AND coalesce(r.oid=$1,true);
+   FROM pg_constraint c
+   JOIN pg_class r ON c.conrelid = r.oid
+   JOIN pg_namespace nc ON nc.oid = c.connamespace
+   JOIN pg_namespace nr ON nr.oid = r.relnamespace
+  WHERE $1 IS NULL OR r.oid=$1
 $function$;
 
 ---------------------------------------------------
@@ -609,7 +611,7 @@ AS $function$
    FROM pg_rewrite r
    JOIN pg_class c ON c.oid = r.ev_class
    JOIN pg_namespace n ON n.oid = c.relnamespace
-  WHERE coalesce(c.oid=$1,true)
+  WHERE ($1 IS NULL OR c.oid=$1)
     AND NOT (r.ev_type = '1'::"char" AND r.rulename = '_RETURN'::name)
   ORDER BY r.oid
   $function$;
@@ -663,7 +665,7 @@ AS $function$
    LEFT JOIN pg_namespace s ON s.oid = c.relnamespace
    LEFT JOIN pg_proc p ON p.oid = t.tgfoid
    LEFT JOIN pg_namespace s1 ON s1.oid = p.pronamespace
-   WHERE coalesce(c.oid=$1,true)
+   WHERE $1 IS NULL OR c.oid=$1
 $function$;
 
 ---------------------------------------------------
@@ -689,7 +691,7 @@ AS $function$
    JOIN pg_depend d ON d.objid = x.indexrelid
    LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
   WHERE c.relkind in ('r','m','p') AND i.relkind in ('i','I')
-    AND coalesce(c.oid = $1,true)
+    AND ($1 IS NULL OR c.oid = $1)
 $function$;
 
 ---------------------------------------------------
@@ -739,7 +741,7 @@ AS $function$
    LEFT JOIN pg_language l ON l.oid = p.prolang
    LEFT JOIN pg_roles u ON p.proowner = u.oid
    LEFT JOIN pg_description ON p.oid = pg_description.objoid
-   WHERE coalesce(p.oid = $1, true)
+   WHERE $1 IS NULL OR p.oid = $1
 $function$;
 
 -----------------------------------------------------------
