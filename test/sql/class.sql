@@ -37,6 +37,7 @@ create index idx3 on test_class_r(g);
 cluster test_class_r using idx3;
 
 SELECT ddlx_script('test_class_r'::regclass);
+cluster test_class_r using test_class_r_pkey;
 SELECT ddlx_script('test_class_r'::regtype);
 SELECT ddlx_script('idx1'::regclass);
 SELECT ddlx_script('idx2'::regclass);

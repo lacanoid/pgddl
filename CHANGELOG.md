@@ -1,6 +1,7 @@
 Version 0.13alpha
 -----------------
 - slightly reworked some of the queries in ddlx_get_* functions to make them a lot faster :)
+- CLUSTER now also works for constraint indexes
 
 Version 0.12
 ------------

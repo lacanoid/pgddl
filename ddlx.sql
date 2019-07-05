@@ -1051,10 +1051,6 @@ AS $function$
                  || ' ADD CONSTRAINT ' || quote_ident(cc.conname) 
                  || ' ' || pg_get_constraintdef(cc.oid)
             ELSE pg_get_indexdef(i.oid)
-        END ||
-        CASE WHEN x.indisclustered 
-             THEN format(E';\nCLUSTER %s USING %I',text(c.oid::regclass),i.relname)
-             ELSE ''
         END
         AS indexdef 
    FROM pg_index x
@@ -1338,6 +1334,14 @@ AS $function$
  a as (
   select coalesce(string_agg(ddlx_create_index(oid),'') || E'\n' , E'') as ddl_idx
     from ii where constraint_name is null
+ ),
+ c as (
+  select coalesce(string_agg(format(E'CLUSTER %s USING %s;\n\n',
+                                    indrelid::regclass::text,indexrelid::regclass::text),
+		  ''),'')
+         as ddl_cluster
+    from pg_index i
+   where i.indrelid = $1 and indisclustered
  )
 #if 10
  ,
@@ -1345,9 +1349,9 @@ AS $function$
   select coalesce(string_agg(ddlx_create(oid),'' order by oid)||E'\n', '') as ddl_stx
     from pg_statistic_ext where stxrelid = $1
  )
-select ddl_idx || ddl_stx from a,b
+select ddl_idx || ddl_cluster || ddl_stx from a,b,c
 #else
-select ddl_idx from a
+select ddl_idx || ddl_cluster from a
 #end
 $function$  strict;
 

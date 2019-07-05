@@ -78,6 +78,7 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 CREATE INDEX idx3 ON public.test_class_r USING btree (g);
+
 CLUSTER test_class_r USING idx3;
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
@@ -103,6 +104,7 @@ ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regcl
 END;
 
 (1 row)
+cluster test_class_r using test_class_r_pkey;
 SELECT ddlx_script('test_class_r'::regtype);
 ddlx_script
 BEGIN;
@@ -143,7 +145,8 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 CREATE INDEX idx3 ON public.test_class_r USING btree (g);
-CLUSTER test_class_r USING idx3;
+
+CLUSTER test_class_r USING test_class_r_pkey;
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
