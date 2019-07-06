@@ -41,17 +41,18 @@ Support for other missing options:
 - ALTER COLUMN SET STATISTICS
 
 Other:
-- PG version specific tests
 - use ONLY when appropriate
 - improve support for non superusers (more testing, etc)
 - improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
 - handle dependancies for types better (use shell types)
 - handle SERIAL sequences better
+- do not emit ALTER OWNER for objects owned by current role
 - improve and add to simple tests
 - make some tests to test if what we output actually runs, test execute them
-- make some tests which compare to output of pg_dump for any sql file:
-  test load file -> pg_dump compared to load file -> ddl_dump -> reload -> pg_dump
+- make some tests which compare to output of pg_dump;
+  make utility for any sql file to compare the dump by pg_dump and ddlx.
+  Comparison should compare actual contents, not merely text.
 
 Options
 -------
@@ -70,6 +71,8 @@ Some options as to what and how to dump stuff might be required:
       ddldata  boolean  -- add statements preserve / copy table data
     );
 
+Also, consider pre and post data DDL.
+
 These might be passed as optional second arg to extractor functions
 Perhaps as a text array? JSON?
 
@@ -86,8 +89,8 @@ mainly to support code completion and various \d* commands.
 ### pg_dump
 
 Database dump tool `pg_dump` contains lots of packaged SQL for handling metadata 
-and especially considers various dependancies. Source code for main C is is about 20000 
-lines long.
+and especially considers various dependancies. Source code for main C source file
+is is about 20000 lines long.
 
 ### pgAdmin3
 

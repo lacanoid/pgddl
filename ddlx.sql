@@ -1351,7 +1351,7 @@ AS $function$
  )
 select ddl_idx || ddl_cluster || ddl_stx from a,b,c
 #else
-select ddl_idx || ddl_cluster from a
+select ddl_idx || ddl_cluster from a,c
 #end
 $function$  strict;
 
@@ -1497,7 +1497,7 @@ q1 as (
    case when rolcreatedb then 'CREATEDB' else 'NOCREATEDB' end,
    case when rolcreaterole then 'CREATEROLE' else 'NOCREATEROLE' end, 
 #if 9.5
-   case when rolbypassrls then 'BYPASSRLS' else 'NOBYPASSRLS' end,
+   case when rolbypassrls then 'BYPASSRLS' end,
 #end
    case when rolreplication then 'REPLICATION' else 'NOREPLICATION' end
                 ],E'\n  ')) ||

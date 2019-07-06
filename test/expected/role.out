@@ -21,7 +21,6 @@ ALTER ROLE pgddl_test_user WITH
   INHERIT
   NOCREATEDB
   NOCREATEROLE
-  NOBYPASSRLS
   NOREPLICATION;
 
 COMMENT ON ROLE pgddl_test_user IS 'pg_ddl test user...';
@@ -43,7 +42,6 @@ ALTER ROLE pgddl_test_user3 WITH
   INHERIT
   NOCREATEDB
   NOCREATEROLE
-  NOBYPASSRLS
   NOREPLICATION;
 ALTER ROLE pgddl_test_user3 VALID UNTIL 'infinity'
 GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
@@ -59,7 +57,6 @@ ALTER ROLE pgddl_test_user2 WITH
   INHERIT
   NOCREATEDB
   NOCREATEROLE
-  NOBYPASSRLS
   NOREPLICATION;
 ALTER ROLE pgddl_test_user2 CONNECTION LIMIT 100
 GRANT pgddl_test_user2 TO pgddl_test_user;
