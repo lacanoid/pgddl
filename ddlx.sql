@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.13 lacanoid@ljudmila.org
+--  version 0.13alpha lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -846,18 +846,7 @@ AS $function$
   ,
   CASE 
   WHEN p.partstrat IS NOT NULL
-  THEN format('PARTITION BY %s (%s)',
-         CASE p.partstrat
-         WHEN 'l' THEN 'LIST'
-         WHEN 'r' THEN 'RANGE'
-         WHEN 'h' THEN 'HASH'
-         ELSE 'UNKNOWN'
-         END, 
-       (
-       	 select string_agg(quote_ident(a.attname::text),',')
-       	   from unnest(p.partattrs) as u
-       	   join pg_attribute a on (u=a.attnum and a.attrelid=c.oid)
-       ))
+  THEN 'PARTITION BY ' || pg_get_partkeydef($1)
   END
 #end
   ,

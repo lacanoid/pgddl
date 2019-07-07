@@ -104,6 +104,42 @@ ALTER TABLE customer_jap OWNER TO postgres;
 END;
 
 (1 row)
+create table log (
+ ts timestamp,
+ code int,
+ t text,
+ a boolean,
+ d varchar collate "C",
+ j json
+)
+partition by range (code,date_trunc('month',ts),t collate "C",a,((code%100)/100));
+select ddlx_script('log');
+ddlx_script
+BEGIN;
+
+/*
+DROP TABLE log;
+*/
+
+-- Type: TABLE ; Name: log; Owner: postgres
+
+CREATE TABLE log (
+    ts timestamp without time zone,
+    code integer,
+    t text,
+    a boolean,
+    d character varying COLLATE "C",
+    j json
+)
+  PARTITION BY RANGE (code, date_trunc('month'::text, ts), t COLLATE "C", a, (((code % 100) / 100)));
+
+COMMENT ON TABLE log IS NULL;
+
+ALTER TABLE log OWNER TO postgres;
+
+END;
+
+(1 row)
 -- statistics
 CREATE TABLE test_stat (
     a   int primary key,

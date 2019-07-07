@@ -34,6 +34,18 @@ SELECT * FROM customer_jap;
 
 select ddlx_script('customers');
 select ddlx_script('customer_jap'); 
+
+create table log (
+ ts timestamp,
+ code int,
+ t text,
+ a boolean,
+ d varchar collate "C",
+ j json
+)
+partition by range (code,date_trunc('month',ts),t collate "C",a,((code%100)/100));
+select ddlx_script('log');
+
 -- statistics
 CREATE TABLE test_stat (
     a   int primary key,

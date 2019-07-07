@@ -26,7 +26,7 @@ Support for other postgres objects:
 - PG 10: publication, subscription
 
 Support for other missing options:
-- PG 10: partitions (collations, expressions, subpartitions)
+- PG 10: partitions (subpartitions)
 - comments on all objects
 - ownership of all objects 
 - grants on all objects
