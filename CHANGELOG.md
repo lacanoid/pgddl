@@ -2,6 +2,7 @@ Version 0.13alpha
 -----------------
 - slightly reworked some of the queries in ddlx_get_* functions to make them a lot faster :)
 - CLUSTER now also works for constraint indexes
+- support for ALTER TABLE ALTER COLUMN SET configurations (attoptions)
 
 Version 0.12
 ------------
@@ -70,7 +71,7 @@ Version 0.8
 - API rename pg_ddl -> pg_ddlx (think DDL eXtractor)
 - add pg_ddlx_create(oid) and pg_ddlx_drop(oid) functions to API
 - pg_ddlx_script() now also includes dependant objects
-  and wraps the whole thing in with BEGIN/END
+  and wraps the whole thing with BEGIN/END
 - support for regoper, regoperator
 - support for regnamespace (grants are missing!)
 - fix pg_ddlx_get_triggers() (TRUNCATE and INSTEAD supported)

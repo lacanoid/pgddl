@@ -26,7 +26,6 @@ Support for other postgres objects:
 - PG 10: publication, subscription
 
 Support for other missing options:
-- column options
 - PG 10: partitions (collations, expressions, subpartitions)
 - comments on all objects
 - ownership of all objects 
@@ -37,7 +36,6 @@ Support for other missing options:
 - fillfactor
 - NOT VALID constraints
 - unpopulated material views
-- ALTER COLUMN SET attribute_option
 - ALTER COLUMN SET STATISTICS
 
 Other:

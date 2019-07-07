@@ -477,7 +477,7 @@ CREATE OR REPLACE FUNCTION ddlx_describe(
   OUT "default" text, OUT comment text, OUT primary_key name,
   OUT is_local boolean, OUT storage text, OUT collation text, 
   OUT namespace name, OUT class_name name, OUT sql_identifier text,
-  OUT relid oid, OUT definition text)
+  OUT relid oid, OUT options text[], OUT definition text)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
@@ -508,7 +508,12 @@ SELECT  a.attnum AS ord,
         c.relname AS class_name,
         format('%s.%I',text(c.oid::regclass),a.attname) AS sql_identifier,
         c.oid as relid,
-        format('%I %s%s%s%s',
+#if 9.2
+        attoptions||attfdwoptions as options,
+#else
+        attoptions as options,
+#end
+	format('%I %s%s%s%s',
          a.attname::text,
          format_type(t.oid, a.atttypmod),
 #if 9.2
@@ -1133,17 +1138,29 @@ CREATE OR REPLACE FUNCTION ddlx_alter_table_storage(regclass)
 AS $function$
 with 
 obj as (select * from ddlx_identify($1)),
+d as (select * from ddlx_describe($1)),
 cs as (
   select 
     coalesce(
-      string_agg( 
-        'ALTER '||obj.sql_kind||' '||text($1)|| 
-          ' ALTER '||quote_ident(d.name)|| 
-          ' SET STORAGE '||storage, 
-        E';\n') || E';\n\n', 
+      string_agg(format(E'ALTER %s %s ALTER %s SET STORAGE %s;',
+      			obj.sql_kind,obj.sql_identifier,quote_ident(d.name),
+			storage), E'\n') || E'\n\n', 
     '') as ddl
-   from ddlx_describe($1) d, obj
+   from d, obj
   where storage is not null
+),
+ob as (
+ select coalesce(string_agg(a.ddl, E'\n') || E'\n\n', '')
+        as ddl
+ from (
+ select format(E'ALTER %s %s ALTER %s SET ( %s = %s );',
+      		 obj.sql_kind,obj.sql_identifier,quote_ident(att.attname),
+	         option_name, quote_nullable(option_value))
+        as ddl
+   from pg_attribute att, obj, pg_options_to_table(att.attoptions) t
+  where att.attrelid=$1 and attoptions is not null
+  order by attnum
+ ) as a
 ),
 ts as (
   select case when s.oid is not null then
@@ -1154,8 +1171,8 @@ ts as (
     left join pg_tablespace s on (s.oid=c.reltablespace)
    where c.oid = $1
 )
-select cs.ddl || ts.ddl
-  from cs,ts
+select cs.ddl || ob.ddl || ts.ddl
+  from cs,ob,ts
 $function$ strict;
 
 ---------------------------------------------------
