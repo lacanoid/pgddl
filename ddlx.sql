@@ -481,13 +481,6 @@ CREATE OR REPLACE FUNCTION ddlx_describe(
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
-WITH
-  storage(k,v) AS (
-         VALUES ('p','plain'),
-                ('e','external'),
-                ('m','main'),
-                ('x','extended')
-)
 SELECT  a.attnum AS ord,
         a.attname AS name, 
         format_type(t.oid, NULL::integer) AS type,
@@ -501,7 +494,13 @@ SELECT  a.attnum AS ord,
         con.conname AS primary_key,
         a.attislocal AS is_local,
         case when a.attstorage<>t.typstorage
-             then storage.v
+             then case a.attstorage
+	          when 'p' then 'plain'::text
+	          when 'e' then 'external'::text
+	          when 'm' then 'main'::text
+	          when 'x' then 'extended'::text
+                  else a.attstorage::text
+		  end
         end as storage,
         nullif(col.collcollate::text,'') AS collation,
         s.nspname AS namespace,
@@ -545,7 +544,6 @@ SELECT  a.attnum AS ord,
    LEFT JOIN pg_type t ON t.oid = a.atttypid
    LEFT JOIN pg_collation col ON col.oid = a.attcollation
    JOIN pg_namespace tn ON tn.oid = t.typnamespace
-   JOIN storage on storage.k = a.attstorage
   WHERE c.relkind IN ('r','v','c','f','p') AND a.attnum > 0 AND NOT a.attisdropped
     AND has_table_privilege(c.oid, 'select') AND has_schema_privilege(s.oid, 'usage')
     AND c.oid = $1
@@ -1492,6 +1490,17 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_alter_role_auth(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ select case when rolpassword is not null
+	     then 'ALTER ROLE '|| quote_ident(rolname)||
+                  ' ENCRYPTED PASSWORD '||quote_literal(rolpassword)
+	end
+   from pg_authid where oid = $1
+$function$  strict;
+
 #if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create(regrole)
 #else
@@ -1505,7 +1514,7 @@ q1 as (
  select format(E'CREATE %s %I;\n',
                 case when rolcanlogin then 'USER' else 'GROUP' end,
                 rolname) ||
-        format(E'ALTER ROLE %I WITH\n  %s;\n',rolname,
+        format(E'ALTER ROLE %I WITH\n  %s;\n\n',rolname,
                 array_to_string(array[
    case when rolcanlogin then 'LOGIN' else 'NOLOGIN' end,
    case when rolsuper then 'SUPERUSER' else 'NOSUPERUSER' end,
@@ -1517,29 +1526,27 @@ q1 as (
 #end
    case when rolreplication then 'REPLICATION' else 'NOREPLICATION' end
                 ],E'\n  ')) ||
-                array_to_string(array[
+   		array_to_string(array[
    case 
      when description is not null 
-     then E'\n'
-          ||'COMMENT ON ROLE '||quote_ident(rolname)
-          ||' IS '||quote_literal(description)
+     then 'COMMENT ON ROLE '||quote_ident(rolname)||
+          ' IS '||quote_literal(description)||E';\n'
    end,
-   case when rolpassword is not null 
-        then 'ALTER ROLE '|| quote_ident(rolname)||
-             ' ENCRYPTED PASSWORD '||quote_literal(rolpassword)
+   case when has_table_privilege('pg_catalog.pg_authid'::regclass, 'select')
+        then ddlx_alter_role_auth(a.oid)||E';\n'
    end,
    case when rolvaliduntil is not null 
         then 'ALTER ROLE '|| quote_ident(rolname)||
-             ' VALID UNTIL '||quote_nullable(rolvaliduntil)
+             ' VALID UNTIL '||quote_nullable(rolvaliduntil)||E';\n'
    end,
    case when rolconnlimit>=0  
         then 'ALTER ROLE '|| quote_ident(rolname)||
-             ' CONNECTION LIMIT '||rolconnlimit
+             ' CONNECTION LIMIT '||rolconnlimit||E';\n'
    end
-                ],E';\n') ||
+                ],'') ||
    E'\n'
    as ddl
-   from pg_authid a
+   from pg_roles a
    left join pg_shdescription d on d.objoid=a.oid
   where a.oid = $1
  ),

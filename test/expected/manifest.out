@@ -22,6 +22,7 @@ select * from a
  ddlx_script(text)                     | Get SQL DDL script for an object and dependants by object name
  ddlx_alter_class(regclass)            | 
  ddlx_alter_owner(oid)                 | 
+ ddlx_alter_role_auth(oid)             | 
  ddlx_alter_table_defaults(regclass)   | 
  ddlx_alter_table_storage(regclass)    | 
  ddlx_banner(text,text,text,text,text) | 
