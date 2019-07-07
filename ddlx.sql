@@ -1120,11 +1120,10 @@ CREATE OR REPLACE FUNCTION ddlx_alter_table_defaults(regclass)
 AS $function$
   select 
     coalesce(
-      string_agg( 
-        'ALTER TABLE '||text($1)|| 
-          ' ALTER '||quote_ident(name)|| 
-          ' SET DEFAULT '||"default", 
-        E';\n') || E';\n\n', 
+      string_agg(
+        format('ALTER TABLE %s ALTER %I SET DEFAULT %s;',
+                text($1),name,"default"), 
+        E'\n') || E'\n\n', 
     '')
    from ddlx_describe($1)
   where "default" is not null
@@ -1142,8 +1141,8 @@ d as (select * from ddlx_describe($1)),
 cs as (
   select 
     coalesce(
-      string_agg(format(E'ALTER %s %s ALTER %s SET STORAGE %s;',
-      			obj.sql_kind,obj.sql_identifier,quote_ident(d.name),
+      string_agg(format(E'ALTER %s %s ALTER %I SET STORAGE %s;',
+      			obj.sql_kind,obj.sql_identifier,d.name,
 			storage), E'\n') || E'\n\n', 
     '') as ddl
    from d, obj
@@ -1153,8 +1152,8 @@ ob as (
  select coalesce(string_agg(a.ddl, E'\n') || E'\n\n', '')
         as ddl
  from (
- select format(E'ALTER %s %s ALTER %s SET ( %s = %s );',
-      		 obj.sql_kind,obj.sql_identifier,quote_ident(att.attname),
+ select format(E'ALTER %s %s ALTER %I SET ( %s = %s );',
+      		 obj.sql_kind,obj.sql_identifier,att.attname,
 	         option_name, quote_nullable(option_value))
         as ddl
    from pg_attribute att, obj, pg_options_to_table(att.attoptions) t
