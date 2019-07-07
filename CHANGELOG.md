@@ -3,7 +3,7 @@ Version 0.13alpha
 - slightly reworked some of the queries in ddlx_get_* functions to make them a lot faster :)
 - CLUSTER now also works for constraint indexes
 - support for ALTER TABLE ALTER COLUMN SET configurations (attoptions)
-- ddlx_create(regnamespace) now works for non-superusers + additional bugfixes
+- ddlx_create(regrole) now works for non-superusers + additional bugfixes
 
 Version 0.12
 ------------
