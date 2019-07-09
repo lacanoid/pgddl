@@ -35,7 +35,7 @@ alter table test_class_r disable trigger aaaa;
 
 create unique index idx1 on test_class_r (lower(b)) where b is not null;
 create index idx2 on test_class_r using gin (v);
-create index idx3 on test_class_r(g);
+create index idx3 on test_class_r(g) with (fillfactor=50);
 cluster test_class_r using idx3;
 
 SELECT ddlx_script('test_class_r'::regclass);
@@ -50,9 +50,10 @@ CREATE UNLOGGED TABLE test_class_r2 (
   cc char(20),
   vv varchar(20),
   n  numeric(10,2),
-  constraint "blah" foreign key (a) references test_class_r(a) deferrable initially deferred
-);
+  constraint "blah" foreign key (a) references test_class_r(a)
+ );
 alter table test_class_r2 set with oids;
+alter table test_class_r2 add  constraint "blah2" foreign key (a) references test_class_r(a) deferrable initially deferred not valid;
 SELECT ddlx_script('test_class_r2'::regclass);
 
 CREATE VIEW test_class_v AS

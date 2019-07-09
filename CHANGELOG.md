@@ -4,7 +4,7 @@ Version 0.13alpha
 - CLUSTER now also works for constraint indexes
 - support for ALTER TABLE ALTER COLUMN SET configurations (attoptions)
 - ddlx_create(regrole) now works for non-superusers + additional bugfixes
-- partition key now displayed correctly thanks to pg_get_partkeydef()
+- added tests for index fillfactor and not valid constraints
 
 Version 0.12
 ------------

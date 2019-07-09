@@ -33,8 +33,6 @@ Support for other missing options:
 - serial (alter sequence set owner column)
 - grants vs superuser (grantor)
 - PG 10+: generated
-- fillfactor
-- NOT VALID constraints
 - unpopulated material views
 - ALTER COLUMN SET STATISTICS
 

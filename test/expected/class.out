@@ -35,7 +35,7 @@ update on test_class_r
 alter table test_class_r disable trigger aaaa;
 create unique index idx1 on test_class_r (lower(b)) where b is not null;
 create index idx2 on test_class_r using gin (v);
-create index idx3 on test_class_r(g);
+create index idx3 on test_class_r(g) with (fillfactor=50);
 cluster test_class_r using idx3;
 SELECT ddlx_script('test_class_r'::regclass);
 ddlx_script
@@ -82,7 +82,7 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
 
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);
-CREATE INDEX idx3 ON public.test_class_r USING btree (g);
+CREATE INDEX idx3 ON public.test_class_r USING btree (g) WITH (fillfactor='50');
 
 CLUSTER test_class_r USING idx3;
 
@@ -152,7 +152,7 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
 
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);
-CREATE INDEX idx3 ON public.test_class_r USING btree (g);
+CREATE INDEX idx3 ON public.test_class_r USING btree (g) WITH (fillfactor='50');
 
 CLUSTER test_class_r USING test_class_r_pkey;
 
@@ -213,9 +213,10 @@ CREATE UNLOGGED TABLE test_class_r2 (
   cc char(20),
   vv varchar(20),
   n  numeric(10,2),
-  constraint "blah" foreign key (a) references test_class_r(a) deferrable initially deferred
-);
+  constraint "blah" foreign key (a) references test_class_r(a)
+ );
 alter table test_class_r2 set with oids;
+alter table test_class_r2 add  constraint "blah2" foreign key (a) references test_class_r(a) deferrable initially deferred not valid;
 SELECT ddlx_script('test_class_r2'::regclass);
 ddlx_script
 BEGIN;
@@ -242,7 +243,9 @@ COMMENT ON TABLE test_class_r2 IS NULL;
 ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
 
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah
-  FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED;
+  FOREIGN KEY (a) REFERENCES test_class_r(a);
+ALTER TABLE test_class_r2 ADD CONSTRAINT blah2
+  FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED NOT VALID;
 
 ALTER TABLE test_class_r2 OWNER TO postgres;
 
