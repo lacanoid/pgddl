@@ -409,7 +409,6 @@ AS $function$
          spc.spcacl as acl
     FROM pg_tablespace spc
    WHERE spc.oid = $1
-#if 9.3
    UNION
   SELECT opc.oid,
          'pg_opclass'::regclass,
@@ -426,6 +425,7 @@ AS $function$
     FROM pg_opclass opc JOIN pg_namespace n ON n.oid=opc.opcnamespace
     JOIN pg_am am ON am.oid=opc.opcmethod
    WHERE opc.oid = $1
+#if 9.3
    UNION
   SELECT amproc.oid,
          'pg_amproc'::regclass,
@@ -1139,11 +1139,12 @@ ob as (
  select coalesce(string_agg(a.ddl, E'\n') || E'\n\n', '')
         as ddl
  from (
- select format(E'ALTER %s %s ALTER %I SET ( %s = %s );',
+ select
+ (select format(E'ALTER %s %s ALTER %I SET ( %s = %s );',
       		 obj.sql_kind,obj.sql_identifier,att.attname,
 	         option_name, quote_nullable(option_value))
-        as ddl
-   from pg_attribute att, obj, pg_options_to_table(att.attoptions) t
+   from pg_options_to_table(att.attoptions)) as ddl
+   from pg_attribute att, obj
   where att.attrelid=$1 and attoptions is not null
   order by attnum
  ) as a
@@ -1339,8 +1340,9 @@ AS $function$
     from ii where constraint_name is null
  ),
  c as (
-  select coalesce(string_agg(format(E'CLUSTER %s USING %s;\n\n',
-                                    indrelid::regclass::text,indexrelid::regclass::text),
+  select coalesce(string_agg(format(E'CLUSTER %s USING %I;\n\n',
+                                    indrelid::regclass::text,
+				    (select relname from pg_class c2 where c2.oid=i.indexrelid)),
 		  ''),'')
          as ddl_cluster
     from pg_index i
@@ -2050,8 +2052,9 @@ CREATE OR REPLACE FUNCTION ddlx_create(regoper)
 AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(
-         E'CREATE OPERATOR %s (\n%s%s%s%s%s%s%s%s%s\n);\n\n',
-         obj.sql_identifier,
+         E'CREATE OPERATOR %s%s (\n%s%s%s%s%s%s%s%s%s\n);\n\n',
+	 nullif(obj.namespace,current_schema())||'.',
+	 obj.name,
          E'  PROCEDURE = '  || cast(o.oprcode::regproc as text),
          case when o.oprleft <> 0 
               then E',\n  LEFTARG = ' || format_type(o.oprleft,null) end,
@@ -2579,6 +2582,8 @@ AS $function$
     then ddlx_create_conversion(oid)
     when 'pg_language'::regclass 
     then ddlx_create_language(oid)
+    when 'pg_opclass'::regclass 
+    then ddlx_create_operator_class(oid)
 #if 9.5
     when 'pg_roles'::regclass 
     then ddlx_create(oid::regrole)
@@ -2600,8 +2605,6 @@ AS $function$
     then ddlx_create_amproc(oid)
     when 'pg_amop'::regclass 
     then ddlx_create_amop(oid)
-    when 'pg_opclass'::regclass 
-    then ddlx_create_operator_class(oid)
 #if 9.5
     when 'pg_policy'::regclass 
     then ddlx_create_policy(oid)

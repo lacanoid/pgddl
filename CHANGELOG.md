@@ -6,6 +6,7 @@ Version 0.13alpha
 - ddlx_create(regrole) now works for non-superusers + additional bugfixes
 - partition key now displayed correctly thanks to pg_get_partkeydef(oid)
 - added tests for index fillfactor and not valid constraints
+- bug fixes: operator name, cluster, 9.1 compatibility
 
 Version 0.12
 ------------
