@@ -33,8 +33,8 @@ CREATE TABLE measurement (
   PARTITION BY RANGE (logdate);
 
 COMMENT ON TABLE measurement IS NULL;
-
 ALTER TABLE measurement OWNER TO postgres;
+
 
 END;
 
@@ -78,8 +78,8 @@ CREATE TABLE customers (
   PARTITION BY LIST (cust_country);
 
 COMMENT ON TABLE customers IS NULL;
-
 ALTER TABLE customers OWNER TO postgres;
+
 
 END;
 
@@ -98,8 +98,8 @@ CREATE TABLE customer_jap PARTITION OF customers
   FOR VALUES IN ('jap');
 
 COMMENT ON TABLE customer_jap IS NULL;
-
 ALTER TABLE customer_jap OWNER TO postgres;
+
 
 END;
 
@@ -134,8 +134,8 @@ CREATE TABLE log (
   PARTITION BY RANGE (code, date_trunc('month'::text, ts), t COLLATE "C", a, (((code % 100) / 100)));
 
 COMMENT ON TABLE log IS NULL;
-
 ALTER TABLE log OWNER TO postgres;
+
 
 END;
 
@@ -170,6 +170,7 @@ CREATE TABLE test_stat (
 );
 
 COMMENT ON TABLE test_stat IS NULL;
+ALTER TABLE test_stat OWNER TO postgres;
 
 ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
   PRIMARY KEY (a);
@@ -177,7 +178,6 @@ ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
 ALTER STATISTICS test_stat1 OWNER TO postgres;
 
-ALTER TABLE test_stat OWNER TO postgres;
 
 END;
 

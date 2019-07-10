@@ -40,8 +40,8 @@ CREATE TABLE customers (
   PARTITION BY LIST (cust_country);
 
 COMMENT ON TABLE customers IS NULL;
-
 ALTER TABLE customers OWNER TO postgres;
+
 
 END;
 
@@ -60,8 +60,8 @@ CREATE TABLE customer_jap PARTITION OF customers
   FOR VALUES IN ('jap');
 
 COMMENT ON TABLE customer_jap IS NULL;
-
 ALTER TABLE customer_jap OWNER TO postgres;
+
 
 END;
 
@@ -80,8 +80,8 @@ CREATE TABLE customer_def PARTITION OF customers
   DEFAULT;
 
 COMMENT ON TABLE customer_def IS NULL;
-
 ALTER TABLE customer_def OWNER TO postgres;
+
 
 END;
 
@@ -114,6 +114,7 @@ CREATE TABLE test_stat (
 );
 
 COMMENT ON TABLE test_stat IS NULL;
+ALTER TABLE test_stat OWNER TO postgres;
 
 ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
   PRIMARY KEY (a);
@@ -121,7 +122,6 @@ ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
 ALTER STATISTICS test_stat1 OWNER TO postgres;
 
-ALTER TABLE test_stat OWNER TO postgres;
 
 END;
 
@@ -154,11 +154,11 @@ CREATE TABLE dept (
   PARTITION BY HASH (id);
 
 COMMENT ON TABLE dept IS NULL;
+ALTER TABLE dept OWNER TO postgres;
 
 ALTER TABLE dept ADD CONSTRAINT dept_pkey
   PRIMARY KEY (id);
 
-ALTER TABLE dept OWNER TO postgres;
 
 END;
 
@@ -177,13 +177,13 @@ CREATE TABLE dept_7 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 6);
 
 COMMENT ON TABLE dept_7 IS NULL;
+ALTER TABLE dept_7 OWNER TO postgres;
 
 ALTER TABLE dept_7 ADD CONSTRAINT dept_7_pkey
   PRIMARY KEY (id);
 
 ALTER TABLE dept_7 ADD CONSTRAINT dept_7_pkey PRIMARY KEY (id);
 
-ALTER TABLE dept_7 OWNER TO postgres;
 
 END;
 

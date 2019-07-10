@@ -44,6 +44,7 @@ CREATE TABLE items (
 );
 
 COMMENT ON TABLE items IS NULL;
+ALTER TABLE items OWNER TO postgres;
 
 ALTER TABLE items ALTER id SET DEFAULT uuid_generate_v4();
 ALTER TABLE items ALTER acl_read SET DEFAULT ARRAY[]::uuid[];
@@ -52,7 +53,6 @@ ALTER TABLE items ALTER acl_write SET DEFAULT ARRAY[]::uuid[];
 ALTER TABLE items ADD CONSTRAINT items_pkey
   PRIMARY KEY (id);
 
-ALTER TABLE items OWNER TO postgres;
 
 -- DEPENDANTS
 

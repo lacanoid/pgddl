@@ -474,10 +474,12 @@ CREATE OR REPLACE FUNCTION ddlx_describe(
   IN regclass,
   OUT ord smallint,
   OUT name name, OUT type text, OUT size integer, OUT not_null boolean,
-  OUT "default" text, OUT comment text, OUT primary_key name,
+  OUT "default" text,
+  OUT comment text, OUT primary_key name,
   OUT is_local boolean, OUT storage text, OUT collation text, 
   OUT namespace name, OUT class_name name, OUT sql_identifier text,
-  OUT relid oid, OUT options text[], OUT definition text)
+  OUT relid oid, OUT options text[], OUT definition text,
+  OUT sequence regclass)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
@@ -514,7 +516,7 @@ SELECT  a.attnum AS ord,
 #end
 	format('%I %s%s%s%s',
          a.attname::text,
-         format_type(t.oid, a.atttypmod),
+	 format_type(t.oid, a.atttypmod),
 #if 9.2
          case
            when a.attfdwoptions is not null
@@ -534,7 +536,8 @@ SELECT  a.attnum AS ord,
          CASE
               WHEN a.attnotnull THEN ' NOT NULL'
          END)
-        AS definition
+        AS definition,
+        pg_get_serial_sequence(c.oid::regclass::text,a.attname)::regclass as sequence	
    FROM pg_class c
    JOIN pg_namespace s ON s.oid = c.relnamespace
    JOIN pg_attribute a ON c.oid = a.attrelid
@@ -544,6 +547,8 @@ SELECT  a.attnum AS ord,
    LEFT JOIN pg_type t ON t.oid = a.atttypid
    LEFT JOIN pg_collation col ON col.oid = a.attcollation
    JOIN pg_namespace tn ON tn.oid = t.typnamespace
+   LEFT JOIN pg_depend d ON def.oid = d.objid AND d.deptype='n'
+   LEFT JOIN pg_class seq ON seq.oid = d.refobjid AND seq.relkind='S'
   WHERE c.relkind IN ('r','v','c','f','p') AND a.attnum > 0 AND NOT a.attisdropped
     AND has_table_privilege(c.oid, 'select') AND has_schema_privilege(s.oid, 'usage')
     AND c.oid = $1
@@ -793,6 +798,22 @@ CREATE OR REPLACE FUNCTION ddlx_create(oid) RETURNS text
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+ with obj as (select * from ddlx_identify($1))
+ select
+   case
+     when obj.sql_kind = 'INDEX' then ''
+     else 'ALTER '||sql_kind||' '||sql_identifier||
+          ' OWNER TO '||quote_ident(owner)||E';\n'
+   end
+  from obj 
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_table(regclass)
  RETURNS text
  LANGUAGE sql
@@ -892,14 +913,13 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass)
+CREATE OR REPLACE FUNCTION ddlx_alter_sequence(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
  with obj as (select * from ddlx_identify($1))
  select 
- 'CREATE SEQUENCE '||(oid::regclass::text) || E';\n'
- ||'ALTER SEQUENCE '||(oid::regclass::text) 
+    'ALTER SEQUENCE '||(oid::regclass::text) 
  ||E'\n INCREMENT BY '||increment
  ||E'\n MINVALUE '||minimum_value
  ||E'\n MAXVALUE '||maximum_value
@@ -910,6 +930,24 @@ AS $function$
  WHERE sequence_schema = obj.namespace
    AND sequence_name = obj.name
    AND obj.sql_kind = 'SEQUENCE'
+$function$  strict;
+
+CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+ with obj as (select * from ddlx_identify($1)),
+ seq as (
+  select sc.oid::regclass,d.refobjid::regclass,a.attname
+   from pg_class sc
+   left join pg_depend d on d.objid = sc.oid and d.deptype = 'a'
+   left join pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
+   where relkind='S' and sc.oid = $1
+ )
+ select 
+ 'CREATE SEQUENCE '||(obj.oid::regclass::text) || E';\n'
+ || ddlx_alter_sequence($1)
+   from obj;
 $function$  strict;
 
 ---------------------------------------------------
@@ -1091,6 +1129,8 @@ AS $function$
   || E'\n' ||
   case when obj.sql_kind not in ('TYPE') then ddlx_comment($1) else '' end
   ||
+  case when obj.sql_kind = ('TABLE') then ddlx_alter_owner($1) else '' end
+  ||
   coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'')
   ||
   coalesce(E'\n'||(select string_agg(ss,E'\n')||E'\n' from settings),'') 
@@ -1105,15 +1145,32 @@ CREATE OR REPLACE FUNCTION ddlx_alter_table_defaults(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
-  select 
+with
+def as (
+ select 
     coalesce(
       string_agg(
         format('ALTER TABLE %s ALTER %I SET DEFAULT %s;',
                 text($1),name,"default"), 
         E'\n') || E'\n\n', 
-    '')
+    '') as ddl
    from ddlx_describe($1)
   where "default" is not null
+    and "sequence" is null
+),
+seq as (
+ select 
+    coalesce(
+      string_agg(
+        format('ALTER SEQUENCE %s OWNED BY %s;',
+                "sequence",sql_identifier), 
+        E'\n') || E'\n\n', 
+    '') as ddl
+   from ddlx_describe($1)
+  where "sequence" is not null
+)
+select def.ddl || seq.ddl
+  from def,seq
 $function$ strict;
 
 ---------------------------------------------------
@@ -1168,7 +1225,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_default(oid)
  RETURNS text
  LANGUAGE sql
 AS $function$
-  select format(E'ALTER TABLE %s ALTER %I SET DEFAULT %s;\n\n',
+  select format(E'ALTER TABLE %s ALTER %I SET DEFAULT %s;\n',
             cast(c.oid::regclass as text),
             a.attname, 
             def.adsrc)
@@ -1358,22 +1415,6 @@ select ddl_idx || ddl_cluster || ddl_stx from a,b,c
 #else
 select ddl_idx || ddl_cluster from a,c
 #end
-$function$  strict;
-
----------------------------------------------------
-
-CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
- with obj as (select * from ddlx_identify($1))
- select
-   case
-     when obj.sql_kind = 'INDEX' then ''
-     else 'ALTER '||sql_kind||' '||sql_identifier||
-          ' OWNER TO '||quote_ident(owner)||E';\n'
-   end
-  from obj 
 $function$  strict;
 
 ---------------------------------------------------
@@ -1986,15 +2027,17 @@ CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
-   select 
+with obj as (select * from ddlx_identify($1))
+  select 
      ddlx_alter_table_defaults($1) 
      || ddlx_alter_table_storage($1) 
      || ddlx_create_constraints($1) 
      || ddlx_create_indexes($1) 
      || ddlx_create_triggers($1) 
      || ddlx_create_rules($1) 
-     || ddlx_alter_owner($1) 
+     || case when obj.sql_kind is distinct from 'TABLE' then ddlx_alter_owner($1) else '' end
      || ddlx_grants($1)
+    from obj
 $function$  strict;
 
 ---------------------------------------------------
@@ -2659,6 +2702,8 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid)
    then ddlx_drop_amop(oid)
    else
      case
+       when obj.sql_kind = 'SEQUENCE'
+       then format(E'DROP %s IF EXISTS %s;\n',obj.sql_kind, obj.sql_identifier)
        when obj.sql_kind is not null
        then format(E'DROP %s %s;\n',obj.sql_kind, obj.sql_identifier)
        else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))

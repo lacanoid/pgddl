@@ -63,10 +63,12 @@ CREATE TABLE test_class_r (
 );
 
 COMMENT ON TABLE test_class_r IS 'Comment1';
+ALTER TABLE test_class_r OWNER TO postgres;
 
-ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
+
+ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
@@ -89,7 +91,6 @@ CLUSTER test_class_r USING idx3;
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
 
-ALTER TABLE test_class_r OWNER TO postgres;
 GRANT INSERT ON test_class_r TO PUBLIC;
 GRANT SELECT ON test_class_r TO PUBLIC;
 GRANT UPDATE ON test_class_r TO PUBLIC;
@@ -104,7 +105,6 @@ ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
   CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
 
 ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
-
 
 END;
 
@@ -133,10 +133,12 @@ CREATE TABLE test_class_r (
 );
 
 COMMENT ON TABLE test_class_r IS 'Comment1';
+ALTER TABLE test_class_r OWNER TO postgres;
 
-ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
+
+ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
@@ -159,7 +161,6 @@ CLUSTER test_class_r USING test_class_r_pkey;
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
 
-ALTER TABLE test_class_r OWNER TO postgres;
 GRANT INSERT ON test_class_r TO PUBLIC;
 GRANT SELECT ON test_class_r TO PUBLIC;
 GRANT UPDATE ON test_class_r TO PUBLIC;
@@ -239,20 +240,19 @@ CREATE UNLOGGED TABLE test_class_r2 (
   WITH OIDS;
 
 COMMENT ON TABLE test_class_r2 IS NULL;
+ALTER TABLE test_class_r2 OWNER TO postgres;
 
-ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
+ALTER SEQUENCE test_class_r2_i_seq OWNED BY test_class_r2.i;
 
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah
   FOREIGN KEY (a) REFERENCES test_class_r(a);
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah2
   FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED NOT VALID;
 
-ALTER TABLE test_class_r2 OWNER TO postgres;
 
 -- DEPENDANTS
 
 ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
-
 
 END;
 
@@ -486,7 +486,7 @@ ddlx_script
 BEGIN;
 
 /*
-DROP SEQUENCE test_type_s;
+DROP SEQUENCE IF EXISTS test_type_s;
 */
 
 -- Type: SEQUENCE ; Name: test_type_s; Owner: postgres
@@ -530,15 +530,14 @@ CREATE TABLE test_collation (
 );
 
 COMMENT ON TABLE test_collation IS NULL;
-
-ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
-
 ALTER TABLE test_collation OWNER TO postgres;
+
+ALTER SEQUENCE test_collation_id_seq OWNED BY test_collation.id;
+
 
 -- DEPENDANTS
 
 ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
-
 
 END;
 
@@ -791,10 +790,10 @@ CREATE TABLE test_parent (
 );
 
 COMMENT ON TABLE test_parent IS NULL;
-
-ALTER TABLE test_parent ALTER i SET DEFAULT nextval('test_parent_i_seq'::regclass);
-
 ALTER TABLE test_parent OWNER TO postgres;
+
+ALTER SEQUENCE test_parent_i_seq OWNED BY test_parent.i;
+
 
 (1 row)
 select ddlx_create('test_child'::regclass); 
@@ -805,9 +804,9 @@ CREATE TABLE test_child ()
   INHERITS(test_parent);
 
 COMMENT ON TABLE test_child IS NULL;
+ALTER TABLE test_child OWNER TO postgres;
 
 ALTER TABLE test_child ALTER i SET DEFAULT nextval('test_parent_i_seq'::regclass);
 
-ALTER TABLE test_child OWNER TO postgres;
 
 (1 row)
