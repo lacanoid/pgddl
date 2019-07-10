@@ -1202,9 +1202,21 @@ ob as (
 	         option_name, quote_nullable(option_value))
    from pg_options_to_table(att.attoptions)) as ddl
    from pg_attribute att, obj
-  where att.attrelid=$1 and attoptions is not null
+  where attnum>0 and att.attrelid=$1 and attoptions is not null
   order by attnum
  ) as a
+),
+os as (
+ select coalesce(string_agg(a2.ddl, E'\n') || E'\n\n', '')
+        as ddl
+ from (
+ select format(E'ALTER %s %s ALTER %I SET STATISTICS %s;',
+      		 obj.sql_kind,obj.sql_identifier,att.attname,
+	         attstattarget) as ddl
+   from pg_attribute att, obj
+  where attnum>0 and att.attrelid=$1 and attstattarget>=0
+  order by attnum
+ ) as a2
 ),
 ts as (
   select case when s.oid is not null then
@@ -1215,8 +1227,8 @@ ts as (
     left join pg_tablespace s on (s.oid=c.reltablespace)
    where c.oid = $1
 )
-select cs.ddl || ob.ddl || ts.ddl
-  from cs,ob,ts
+select cs.ddl || ob.ddl || os.ddl || ts.ddl
+  from cs,ob,os,ts
 $function$ strict;
 
 ---------------------------------------------------

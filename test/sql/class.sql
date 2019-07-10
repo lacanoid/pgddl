@@ -24,6 +24,7 @@ CREATE TABLE test_class_r (
 COMMENT ON TABLE test_class_r IS 'Comment1';
 alter table test_class_r alter e set (n_distinct=10);
 alter table test_class_r alter f set (n_distinct=100);
+alter table test_class_r alter h set statistics 50;
 grant all on test_class_r to public;
 select sql_kind, sql_identifier from ddlx_identify('test_class_r'::regclass);
 alter table test_class_r alter h set storage external;

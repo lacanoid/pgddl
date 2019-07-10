@@ -1,11 +1,12 @@
 Version 0.13alpha
 -----------------
 - support for ALTER TABLE ALTER COLUMN SET configurations (attoptions)
+- support for ALTER TABLE ALTER COLUMN SET STATISTICS (attstattarget)
 - better handling of SERIAL columns, particularly in scripts
-- CLUSTER now also works for constraint indexes + bugfixes
-- slightly reworked some of the queries in ddlx_get_* functions to make them a lot faster :)
-- ddlx_create(regrole) now works for non-superusers + additional bugfixes
+- CLUSTER now also works for constraint indexes + name bugfix
+- ddlx_create(regrole) now works for non-superusers + other bugfixes
 - partition key now displayed correctly thanks to pg_get_partkeydef(oid)
+- slightly reworked some of the queries in ddlx_get_* functions to make them a lot faster :)
 - added tests for index fillfactor and not valid constraints
 - misc bug fixes: operator name, better 9.1 compatibility
 

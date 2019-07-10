@@ -30,19 +30,17 @@ Support for other missing options:
 - comments on all objects
 - ownership of all objects 
 - grants on all objects
-- serial (alter sequence set owner column)
-- grants vs superuser (grantor)
+- grants vs current_role (who is grantor?)
 - PG 10+: generated
 - unpopulated material views
-- ALTER COLUMN SET STATISTICS
 
 Other:
+- figure out how to elegantly separate pre-data, post-data, create, alter and dcl
 - use ONLY when appropriate
 - improve support for non superusers (more testing, etc)
 - improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
 - handle dependancies for types better (use shell types)
-- handle SERIAL sequences better
 - do not emit ALTER OWNER for objects owned by current role
 - improve and add to simple tests
 - make some tests to test if what we output actually runs, test execute them
