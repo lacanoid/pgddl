@@ -905,7 +905,11 @@ AS $function$
     when 'v' THEN 'OR REPLACE VIEW ' 
     when 'm' THEN 'MATERIALIZED VIEW '
   end || (oid::regclass::text) || E' AS\n'||
-  pg_catalog.pg_get_viewdef(oid,true)||E'\n'
+  trim(';' from pg_catalog.pg_get_viewdef(oid,true))||
+  case when relkind='m' and not relispopulated
+       then E'\n  WITH NO DATA'
+       else E''
+  end || E';\n'
  FROM pg_class t
  WHERE oid = $1
    AND relkind in ('v','m')

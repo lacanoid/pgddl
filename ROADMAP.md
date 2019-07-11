@@ -32,7 +32,8 @@ Support for other missing options:
 - grants on all objects
 - grants vs current_role (who is grantor?)
 - PG 10+: generated
-- unpopulated material views
+- materialized view tablespace & storage parameters
+- table of type
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
