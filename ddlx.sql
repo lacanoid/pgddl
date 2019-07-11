@@ -433,7 +433,9 @@ AS $function$
          null as namespace,
          null as owner,
          'AMPROC' as sql_kind,
-         format('FUNCTION %s %s',amprocnum,cast(amproc.amproc::regprocedure as text))
+         format('FUNCTION %s (%s)',
+	        amprocnum,
+	        array_to_string(array[amproclefttype,amprocrighttype]::regtype[],','))
          as sql_identifier,
          null as acl
     FROM pg_amproc amproc
@@ -445,7 +447,9 @@ AS $function$
          null as namespace,
          null as owner,
          'AMOP' as sql_kind,
-         format('OPERATOR %s %s',amopstrategy,cast(amop.amopopr::regoperator as text))
+         format('OPERATOR %s (%s)',
+	        amopstrategy,
+	        array_to_string(array[amoplefttype,amoprighttype]::regtype[],','))
          as sql_identifier,
          null as acl
     FROM pg_amop amop
@@ -2454,9 +2458,10 @@ a as (
   where amp.oid = $1),
 f as (select * from ddlx_identify((select amprocfamily from a)) ),
 obj as (select * from ddlx_identify($1))
-select format(E'ALTER OPERATOR FAMILY %s ADD %s;',
+select format(E'ALTER OPERATOR FAMILY %s ADD %s %s;',
         f.sql_identifier,
-        obj.sql_identifier
+        obj.sql_identifier,
+	cast(a.amproc::regprocedure as text)
        )
   from a,f,obj
 $function$  strict;
@@ -2494,14 +2499,23 @@ with
 a as (
  select *
    from pg_amop as amp
-   join pg_opfamily opf on (opf.oid=amp.amopfamily) 
-   join pg_am am on (am.oid=opf.opfmethod)
+   join pg_opfamily opf on opf.oid=amp.amopfamily
+   join pg_am am on am.oid=opf.opfmethod
   where amp.oid = $1),
 f as (select * from ddlx_identify((select amopfamily from a)) ),
 obj as (select * from ddlx_identify($1))
-select format(E'ALTER OPERATOR FAMILY %s ADD %s;',
+select format(E'ALTER OPERATOR FAMILY %s ADD OPERATOR %s %s (%s) %s;',
         f.sql_identifier,
-        obj.sql_identifier
+	amopstrategy,
+	amopopr::regoper::text,
+	array_to_string(array[amoplefttype,amoprighttype]::regtype[],','),
+	case amoppurpose
+	when 'o' then 'FOR ORDER BY '||
+	     	      (select quote_ident(opfname)
+		         from pg_opfamily f
+			 where f.oid = a.amopsortfamily)
+	when 's' then 'FOR SEARCH'
+	end
        )
   from a,f,obj
 $function$  strict;

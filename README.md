@@ -43,7 +43,7 @@ Some disadvantages:
   All `reg*` objects and SQL standard compliant stuff is mostly supported,
   with more fringe stuff still under constuction. 
   The intention for version 1.0 is to support all Postgres objects. 
-  See [ROADMAP](ROADMAP.md) for some of what's missing.
+  See [ROADMAP](ROADMAP.md) for some of what's still missing.
 - It is not very well tested. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
   Do not run generated scripts on production databases without testing them first!
@@ -174,6 +174,9 @@ At the begining of a script, there are commented-out DROP statements for all dep
 so you can see them easily.
 
 At the end of a script, there are CREATE statements to rebuild dropped dependant objects.
+
+DDL statements generated have identifiers schema-prefixed for stuff not in current schema.
+If you want to dump a whole namespace without schema names, set `search_path` before calling `ddlx_script`().
 
 Note that dropping dependant tables will erase all data stored there, so use with care!
 Scripts might be more useful for rebuilding layers of functions and views and such.
