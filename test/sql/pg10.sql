@@ -3,7 +3,15 @@
 
 SET client_min_messages = warning;
 SET ROLE postgres;
-
+------
+CREATE TABLE options (
+       name text primary key,
+       value text not null,
+       regtype regtype not null default('text'::regtype)
+);
+ALTER TABLE options SET ( parallel_workers = 2 );
+select ddlx_script('options');
+------
 CREATE TABLE measurement (
     city_id         int not null,
     logdate         date not null,
