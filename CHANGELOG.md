@@ -3,6 +3,7 @@ Version 0.13alpha
 - support for ALTER TABLE ALTER COLUMN SET configurations (attoptions)
 - support for ALTER TABLE ALTER COLUMN SET STATISTICS (attstattarget)
 - support for materialized views WITH NO DATA
+- some support for tables OF type (still missing not nulls)
 - better handling of SERIAL columns, particularly in scripts
 - CLUSTER now also works for constraint indexes + name bugfix
 - ddlx_create(regrole) now works for non-superusers + other bugfixes

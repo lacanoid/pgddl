@@ -832,6 +832,7 @@ AS $function$
     else ''
   end
   || obj.sql_kind || ' ' || obj.sql_identifier
+  || case when reloftype>0 then ' OF '||cast(reloftype::regtype as text) else '' end
   || case obj.sql_kind when 'TYPE' then ' AS' else '' end 
   ||
 #if 10
@@ -841,14 +842,16 @@ AS $function$
                              FROM pg_inherits i WHERE i.inhrelid = $1) 
 
   else
+#end
+    case when reloftype>0
+    then ''
+    else
     ' (' ||coalesce(E'\n' ||
       (SELECT string_agg('    '||definition,E',\n')
          FROM ddlx_describe($1) WHERE is_local)||E'\n','') || ')'
+    end
+#if 10
   end
-#else
-    ' (' ||coalesce(E'\n' ||
-      (SELECT string_agg('    '||definition,E',\n')
-         FROM ddlx_describe($1) WHERE is_local)||E'\n','') || ')'
 #end
 #if 10
   ,
