@@ -1,5 +1,5 @@
-Version 0.13alpha
------------------
+Version 0.13
+------------
 - support for ALTER TABLE ALTER COLUMN SET configurations (attoptions)
 - support for ALTER TABLE ALTER COLUMN SET STATISTICS (attstattarget)
 - support for materialized views WITH NO DATA
@@ -10,6 +10,7 @@ Version 0.13alpha
 - partition key now displayed correctly thanks to pg_get_partkeydef(oid)
 - slightly reworked some of the queries in ddlx_get_* functions to make them a lot faster :)
 - added tests for index fillfactor and not valid constraints
+- removal of obsolete pg_attrdef.adsrc
 - misc bug fixes: operator name, better 9.1 compatibility
 
 Version 0.12

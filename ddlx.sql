@@ -495,7 +495,7 @@ SELECT  a.attnum AS ord,
             ELSE NULL::integer
         END AS size,
         a.attnotnull AS not_null,
-        def.adsrc AS "default",
+        pg_get_expr(def.adbin,def.adrelid) AS "default",
         col_description(c.oid, a.attnum::integer) AS comment,
         con.conname AS primary_key,
         a.attislocal AS is_local,
@@ -1251,7 +1251,7 @@ AS $function$
   select format(E'ALTER TABLE %s ALTER %I SET DEFAULT %s;\n',
             cast(c.oid::regclass as text),
             a.attname, 
-            def.adsrc)
+            pg_get_expr(def.adbin,def.adrelid))
     from pg_attrdef def 
     join pg_class c on c.oid = def.adrelid
     join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum
@@ -1266,8 +1266,7 @@ CREATE OR REPLACE FUNCTION ddlx_drop_default(oid)
 AS $function$
   select format(E'ALTER TABLE %s ALTER %I DROP DEFAULT;\n',
             cast(c.oid::regclass as text),
-            a.attname, 
-            def.adsrc)
+            a.attname)
     from pg_attrdef def 
     join pg_class c on c.oid = def.adrelid
     join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum
