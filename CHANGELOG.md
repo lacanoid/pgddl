@@ -1,3 +1,7 @@
+Version 0.14alpha
+-----------------
+- improved for Postgres 12
+
 Version 0.13
 ------------
 - support for ALTER TABLE ALTER COLUMN SET configurations (attoptions)

@@ -22,22 +22,24 @@ Tasks
 
 Support for other postgres objects:
 - pg_amop, pg_amproc
-- extension
+- extensions
 - PG 10: publication, subscription
 
 Support for other missing options:
-- PG 10: partitions (subpartitions)
+- PG 10+: partitions (subpartitions)
+- PG 10+: generated
 - comments on all objects
 - ownership of all objects 
 - grants on all objects
 - grants vs current_role (who is grantor?)
-- PG 10+: generated
 - materialized view tablespace & storage parameters
-- table of type
+- table of type (not null)
+- SET STATISTICS on indexes
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
 - use ONLY when appropriate
+- move not nulls to constraints section
 - improve support for non superusers (more testing, etc)
 - improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
