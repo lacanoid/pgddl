@@ -11,8 +11,8 @@ sub errlog { print STDERR "tests:$_[0]\n"; }
 
 if($ARGV[0]) { $VI=$ARGV[0] }
 
-if($VI=~m!(\d+)\.(\d+)!) {
-	my ($maj,$min)=($1,$2);
+if($VI=~m!(\d+)(\.(\d+))?!) {
+	my ($maj,$min)=($1+0,$3+0);
 	if($maj>=10) { $min=0; }
 	$V = $maj+$min/10.0;
 	print "pg".$V."\n";

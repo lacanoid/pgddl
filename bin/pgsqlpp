@@ -6,8 +6,8 @@ our $opt_v = 0; # verbose
 
 sub errlog { print STDERR "pssqlpp:$_[0]\n"; }
 
-if($VI=~m!(\d+)\.(\d+)!) {
-	my ($maj,$min)=($1,$2);
+if($VI=~m!(\d+)(\.(\d+))?!) {
+	my ($maj,$min)=($1+0,$3+0);
 	if($maj>=10) { $min=0; }
 	$V = $maj+$min/10.0;
 	errlog "Preprocessing for Postgres version $V";
@@ -15,7 +15,7 @@ if($VI=~m!(\d+)\.(\d+)!) {
 	errlog "No Postgres version specified in VERSION environment variable";
 }
 
-print "-- preprocessed by sqlpp for PG=$V\n";
+print "-- preprocessed by pgsqlpp for PG=$V\n";
 my $i=0;  # line number
 my $sv=0; # selected version
 my $unless=0;
