@@ -877,8 +877,10 @@ AS $function$
   THEN 'PARTITION BY ' || pg_get_partkeydef($1)
   END
 #end
+#unless 12
   ,
-  CASE relhasoids WHEN true THEN 'WITH OIDS' END 
+  CASE relhasoids WHEN true THEN 'WITH OIDS' END
+#end
   ,
     E'SERVER '||quote_ident(fs.srvname)||E' OPTIONS (\n'||
     (select string_agg(
