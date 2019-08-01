@@ -64,6 +64,7 @@ select * from a
  ddlx_create_type_domain(regtype)      | 
  ddlx_create_type_enum(regtype)        | 
  ddlx_create_type_range(regtype)       | 
+ ddlx_create_type_shell(regtype)       | 
  ddlx_create_user_mapping(oid)         | 
  ddlx_create_view(regclass)            | 
  ddlx_describe(regclass)               | 

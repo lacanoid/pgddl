@@ -968,6 +968,17 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_type_shell(regtype)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+select 'CREATE TYPE ' || format_type(oid,null) || ';\n'
+  from pg_type t
+ where oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_type_base(regtype)
  RETURNS text
  LANGUAGE sql
