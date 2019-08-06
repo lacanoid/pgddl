@@ -1,6 +1,6 @@
-Version 0.14alpha
------------------
-- improved for Postgres 12
+Version 0.14
+------------
+- improved for Postgres 12 (WITH OIDS is deprecated)
 
 Version 0.13
 ------------
