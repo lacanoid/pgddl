@@ -16,6 +16,7 @@ Querying pg_catalog can turn out to be quite complicated for a somewhat casual S
 This project attempts to collect many SQL snippets made over the years into a coherent extension.
 
 This will hopefully help to keep relevant SQL code for these things in one place.
+Perhaps this can also be of some use to GUI tools builders and such.
 
 Tasks
 -----
@@ -95,5 +96,13 @@ PgAdmin3 DDL generation and schema handling code is an interesting
 mix of wxWidgets GUI toolkit (C++) and SQL. It requires GUI.
 Generated DDLs are database administrator friendly.
 
+### pgAdmin4
 
+PgAdmin4 is the stuff of legends
+
+Mailing list discussions
+------------------------
+
+- [Export the CREATE TABLE command in pure SQL](https://www.postgresql.org/message-id/flat/2bc470194b4837c1f733a4e05f569bc6%40dalibo.info)
+- [SHOW CREATE](https://www.postgresql.org/message-id/flat/20190705163203.GD24679%40fetter.org)
 
