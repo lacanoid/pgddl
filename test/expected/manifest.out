@@ -6,7 +6,7 @@ a as (
 )
 select * from a
 ;
- ddlx_create(oid)                      | Get SQL CREATE statement for a generic object by object id
+ ddlx_create(oid,text[])               | Get SQL CREATE statement for a generic object by object id
  ddlx_create(regclass)                 | Get SQL CREATE statement for a table, view, sequence or index
  ddlx_create(regconfig)                | Get SQL CREATE statement for a text search configuration
  ddlx_create(regdictionary)            | Get SQL CREATE statement for a text search dictionary
@@ -18,8 +18,8 @@ select * from a
  ddlx_create(regrole)                  | Get SQL CREATE statement for a role
  ddlx_create(regtype)                  | Get SQL CREATE statement for a user defined data type
  ddlx_drop(oid)                        | Get SQL DROP statement for an object by object id
- ddlx_script(oid)                      | Get SQL DDL script for an object and dependants by object id
- ddlx_script(text)                     | Get SQL DDL script for an object and dependants by object name
+ ddlx_script(oid,text[])               | Get SQL DDL script for an object and dependants by object id
+ ddlx_script(text,text[])              | Get SQL DDL script for an object and dependants by object name
  ddlx_alter_class(regclass)            | 
  ddlx_alter_owner(oid)                 | 
  ddlx_alter_role_auth(oid)             | 
@@ -85,5 +85,5 @@ select * from a
  ddlx_grants(regrole)                  | 
  ddlx_grants_columns(regclass)         | 
  ddlx_identify(oid)                    | 
- ddlx_script_parts(oid)                | 
+ ddlx_script_parts(oid,text[])         | 
 

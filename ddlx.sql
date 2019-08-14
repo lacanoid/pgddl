@@ -797,7 +797,7 @@ $function$ strict;
 
 CREATE OR REPLACE FUNCTION ddlx_grants(oid) RETURNS text
   LANGUAGE sql AS $function$ select null::text $function$;
-CREATE OR REPLACE FUNCTION ddlx_create(oid) RETURNS text
+CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}') RETURNS text
   LANGUAGE sql AS $function$ select null::text $function$;
 
 ---------------------------------------------------
@@ -2624,7 +2624,7 @@ COMMENT ON FUNCTION ddlx_create(regtype)
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(oid)
+CREATE OR REPLACE FUNCTION ddlx_create(oid,options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2727,7 +2727,7 @@ AS $function$
    select ddl from def
 $function$  strict;
 
-COMMENT ON FUNCTION ddlx_create(oid) 
+COMMENT ON FUNCTION ddlx_create(oid, text[]) 
      IS 'Get SQL CREATE statement for a generic object by object id';
      
 ---------------------------------------------------
@@ -2767,7 +2767,7 @@ COMMENT ON FUNCTION ddlx_drop(oid)
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_script_parts(
- IN oid,
+ IN oid, ddlx_options text[] default '{}',
  OUT ddl_create text, OUT ddl_drop text,
  OUT ddl_create_deps text, OUT ddl_drop_deps text)
  RETURNS record
@@ -2777,11 +2777,11 @@ with
 ddl as (
 select row_number() over() as n,
        ddlx_drop(objid),
-       ddlx_create(objid),
+       ddlx_create(objid,$2),
        objid
   from ddlx_get_dependants($1)
 )
-select ddlx_create($1) as ddl_create,
+select ddlx_create($1,$2) as ddl_create,
        ddlx_drop($1) as ddl_drop,
        string_agg(ddlx_create,E'\n' order by n) as ddl_create_deps,
        string_agg(ddlx_drop,'' order by n desc) as ddl_drop_deps
@@ -2790,7 +2790,7 @@ $function$ strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_script(oid)
+CREATE OR REPLACE FUNCTION ddlx_script(oid, ddlx_options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2803,21 +2803,21 @@ select E'BEGIN;\n\n'||
          E'\n-- DEPENDANTS\n\n'||ddl_create_deps
        )||
        E'\nEND;\n'
-  from ddlx_script_parts($1)
+  from ddlx_script_parts($1,$2)
 $function$ strict;
 
-COMMENT ON FUNCTION ddlx_script(oid) 
+COMMENT ON FUNCTION ddlx_script(oid, text[]) 
      IS 'Get SQL DDL script for an object and dependants by object id';
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_script(sql_identifier text)
+CREATE OR REPLACE FUNCTION ddlx_script(sql_identifier text, ddlx_options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
   select case
     when strpos($1,'(')>0 
-    then ddlx_script(cast($1 as regprocedure)::oid)
+    then ddlx_script(cast($1 as regprocedure)::oid, $2)
     else ddlx_script((
          select coalesce(c.oid,t.oid)
            from pg_type t 
@@ -2827,6 +2827,6 @@ AS $function$
      end
 $function$  strict;
 
-COMMENT ON FUNCTION ddlx_script(text) 
+COMMENT ON FUNCTION ddlx_script(text, text[]) 
      IS 'Get SQL DDL script for an object and dependants by object name';
 
