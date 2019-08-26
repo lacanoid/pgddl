@@ -1229,7 +1229,7 @@ ob as (
 	         option_name, quote_nullable(option_value))
    from pg_options_to_table(att.attoptions)) as ddl
    from pg_attribute att, obj
-  where attnum>0 and att.attrelid=$1 and attoptions is not null
+  where attnum>0 and att.attrelid=$1 and attoptions is not null and not attisdropped
   order by attnum
  ) as a
 ),
@@ -1241,7 +1241,7 @@ os as (
       		 obj.sql_kind,obj.sql_identifier,att.attname,
 	         attstattarget) as ddl
    from pg_attribute att, obj
-  where attnum>0 and att.attrelid=$1 and attstattarget>=0
+  where attnum>0 and att.attrelid=$1 and attstattarget>=0 and not attisdropped
   order by attnum
  ) as a2
 ),
@@ -1270,7 +1270,7 @@ AS $function$
             pg_get_expr(def.adbin,def.adrelid))
     from pg_attrdef def 
     join pg_class c on c.oid = def.adrelid
-    join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum
+    join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum and not a.attisdropped
    where def.oid = $1
 $function$ strict;
 
@@ -1285,7 +1285,7 @@ AS $function$
             a.attname)
     from pg_attrdef def 
     join pg_class c on c.oid = def.adrelid
-    join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum
+    join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum and not a.attisdropped
    where def.oid = $1
 $function$ strict;
 
@@ -1844,7 +1844,7 @@ e as (
 select attrelid::regclass,attname,
        (aclexplode(attacl)).* 
   from pg_attribute 
- where attrelid=$1
+ where attrelid=$1 and not attisdropped
  order by privilege_type,attnum
 ),
 a as (
