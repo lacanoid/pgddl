@@ -36,6 +36,7 @@ Support for other missing options:
 - materialized view tablespace & storage parameters
 - table of type (not null)
 - SET STATISTICS on indexes
+- SET STATISTICS should skip dropped columns
 - handle relrowsecurity and relforcerowsecurity (ALTER TABLE ENABLE ROW LEVEL SECURITY)
 
 Other:
