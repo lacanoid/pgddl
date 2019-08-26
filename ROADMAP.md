@@ -36,7 +36,7 @@ Support for other missing options:
 - materialized view tablespace & storage parameters
 - table of type (not null)
 - SET STATISTICS on indexes
-- handle relrowsecurity and relforcerowsecurity
+- handle relrowsecurity and relforcerowsecurity (ALTER TABLE ENABLE ROW LEVEL SECURITY)
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
