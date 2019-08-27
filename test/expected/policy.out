@@ -24,6 +24,8 @@ with check (
 );
 -- create index read_permissions_index on items using gin(acl_read);
 -- create index write_permissions_index on items using gin(acl_write);
+alter table items enable row level security;
+alter table items force row level security;
 select ddlx_script('items');
 ddlx_script
 BEGIN;
@@ -53,6 +55,8 @@ ALTER TABLE items ALTER acl_write SET DEFAULT ARRAY[]::uuid[];
 ALTER TABLE items ADD CONSTRAINT items_pkey
   PRIMARY KEY (id);
 
+ALTER TABLE items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE items FORCE ROW LEVEL SECURITY;
 
 -- DEPENDANTS
 

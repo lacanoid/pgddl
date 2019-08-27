@@ -2,7 +2,8 @@ Version 0.15alpha
 -----------------
 - added parameter ddlx_options text[] to a bunch of functions
 - bug fixes WRT dropped attributes
-	
+- support for ALTER TABLE ENABLE/FORCE ROW LEVEL SECURITY
+
 Version 0.14
 ------------
 - improved for Postgres 12 (WITH OIDS is deprecated)

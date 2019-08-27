@@ -2059,6 +2059,28 @@ CREATE OR REPLACE FUNCTION ddlx_create(regtype)
 AS $function$ select null::text $function$;
 -- will be redefined later
 
+#if 9.5
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_alter_table_rls(regclass)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+  select case
+         when c.relrowsecurity
+	 then 'ALTER TABLE '||cast($1 as text)||E' ENABLE ROW LEVEL SECURITY;\n'
+	 else ''
+	 end ||
+	 case
+         when c.relforcerowsecurity
+	 then 'ALTER TABLE '||cast($1 as text)||E' FORCE ROW LEVEL SECURITY;\n'
+	 else ''
+	 end
+    from pg_class c 
+   where oid = $1
+$function$  strict;
+#end
+
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass)
@@ -2072,7 +2094,10 @@ with obj as (select * from ddlx_identify($1))
      || ddlx_create_constraints($1) 
      || ddlx_create_indexes($1) 
      || ddlx_create_triggers($1) 
-     || ddlx_create_rules($1) 
+     || ddlx_create_rules($1)
+#if 9.5
+     || ddlx_alter_table_rls($1)
+#end
      || case when obj.sql_kind is distinct from 'TABLE' then ddlx_alter_owner($1) else '' end
      || ddlx_grants($1)
     from obj

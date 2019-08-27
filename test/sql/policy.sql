@@ -27,5 +27,6 @@ with check (
 
 -- create index read_permissions_index on items using gin(acl_read);
 -- create index write_permissions_index on items using gin(acl_write);
-
+alter table items enable row level security;
+alter table items force row level security;
 select ddlx_script('items');

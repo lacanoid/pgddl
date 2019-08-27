@@ -25,6 +25,7 @@ select * from a
  ddlx_alter_role_auth(oid)             | 
  ddlx_alter_sequence(regclass)         | 
  ddlx_alter_table_defaults(regclass)   | 
+ ddlx_alter_table_rls(regclass)        | 
  ddlx_alter_table_storage(regclass)    | 
  ddlx_banner(text,text,text,text,text) | 
  ddlx_comment(oid)                     | 
