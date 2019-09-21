@@ -3,6 +3,7 @@ Version 0.15alpha
 - added parameter ddlx_options text[] to a bunch of functions
 - bug fixes WRT dropped attributes
 - support for ALTER TABLE ENABLE/FORCE ROW LEVEL SECURITY
+- support for publications
 
 Version 0.14
 ------------

@@ -220,3 +220,18 @@ ALTER STATISTICS test_stat1 OWNER TO postgres;
 END;
 
 (1 row)
+-- publication
+create publication ddlx_test_pub
+  for table customer_ind, customer_jap
+ with ( publish='insert,delete' );
+select ddlx_create(oid),ddlx_drop(oid) from pg_publication where pubname='ddlx_test_pub';
+ddlx_create|ddlx_drop
+CREATE PUBLICATION ddlx_test_pub
+  FOR TABLE customer_ind, customer_jap
+  WITH ( publish='insert,delete' );
+ALTER PUBLICATION ddlx_test_pub OWNER TO postgres;
+COMMENT ON PUBLICATION ddlx_test_pub IS NULL;
+|DROP PUBLICATION ddlx_test_pub;
+
+(1 row)
+drop publication ddlx_test_pub;

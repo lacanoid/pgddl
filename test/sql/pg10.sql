@@ -65,3 +65,11 @@ CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
 select ddlx_create(oid),ddlx_drop(oid) from pg_statistic_ext where stxname='test_stat1';
 \x
 select ddlx_script('test_stat');
+-- publication
+create publication ddlx_test_pub
+  for table customer_ind, customer_jap
+ with ( publish='insert,delete' );
+
+select ddlx_create(oid),ddlx_drop(oid) from pg_publication where pubname='ddlx_test_pub';
+drop publication ddlx_test_pub;
+

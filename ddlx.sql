@@ -468,7 +468,17 @@ AS $function$
          null as acl
     FROM pg_statistic_ext stx join pg_namespace n on (n.oid=stxnamespace)
    WHERE stx.oid = $1
-
+   UNION
+  SELECT pub.oid,
+         'pg_publication'::regclass,
+         pub.pubname,
+         NULL as namespace,
+         pg_get_userbyid(pub.pubowner) as owner,
+         'PUBLICATION' as sql_kind,
+         quote_ident(pub.pubname) as sql_identifier,
+         null as acl
+    FROM pg_publication pub
+   WHERE pub.oid = $1
 #end
 $function$  strict;
 
@@ -1747,9 +1757,9 @@ AS $function$
    join pg_user_mapping um ON um.oid = obj.oid;
 $function$  strict;
 
+#if 9.5
 ---------------------------------------------------
 
-#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create_policy(oid)
  RETURNS text
  LANGUAGE sql
@@ -1807,9 +1817,9 @@ select format(
 $function$  strict;
 #end
 
+#if 9.5
 ---------------------------------------------------
 
-#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_create_transform(oid)
  RETURNS text
  LANGUAGE sql
@@ -1827,6 +1837,39 @@ AS $function$
         )
     || ddlx_comment($1)
    from obj join pg_language l on (l.oid=obj.trflang);
+$function$  strict;
+#end
+
+#if 10
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create_publication(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ with obj as (select * from pg_publication where oid = $1)
+ select format(
+           E'CREATE PUBLICATION %I\n  FOR %s\n  WITH ( publish=%s );\n',
+	   obj.pubname,
+	   case when obj.puballtables then 'ALL TABLES'
+	        else format('TABLE %s',(
+		  select string_agg(cast(prrelid::regclass as text),', ')
+		    from pg_publication_rel
+		   where prpubid = $1
+		))
+           end,
+	   quote_literal(array_to_string(array[
+		 case when obj.pubinsert then 'insert' end
+		,case when obj.pubupdate then 'update' end
+		,case when obj.pubdelete then 'delete' end
+#if 11
+		,case when obj.pubtruncate then 'truncate' end
+#if 10
+	    ],','))
+	   )
+    || ddlx_alter_owner($1)
+    || ddlx_comment($1)
+   from obj
 $function$  strict;
 #end
 
@@ -2733,6 +2776,8 @@ AS $function$
     when 'pg_statistic_ext'::regclass
     then pg_get_statisticsobjdef(oid)||E';\n'||
          ddlx_alter_owner(oid)
+    when 'pg_publication'::regclass 
+    then ddlx_create_publication(oid)
 #end
     else
       case

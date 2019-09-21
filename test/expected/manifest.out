@@ -50,6 +50,7 @@ select * from a
  ddlx_create_operator_class(oid)       | 
  ddlx_create_operator_family(oid)      | 
  ddlx_create_policy(oid)               | 
+ ddlx_create_publication(oid)          | 
  ddlx_create_rule(oid)                 | 
  ddlx_create_rules(regclass)           | 
  ddlx_create_sequence(regclass)        | 
