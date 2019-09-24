@@ -229,7 +229,8 @@ Nevertheless, some of them are:
 
     Return GRANT statements for an object
 
-- `ddlx_grants(oid) returns setof record`
+- `ddlx_apropos(pattern) returns setof record`
+
     Search query bodies (functions and view definitions) for a pattern.
 
 ```
