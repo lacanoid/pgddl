@@ -109,6 +109,9 @@ select ddlx_script('test_class_v_opt2');
 create or replace function test_proc_1() returns text as
 $$ select 'Hello, world!'::text $$ language sql;
 
+create or replace function test_proc_2(integer) returns text strict as
+$$ select b from test_class_r where a = $1 $$ language sql;
+
 select ddlx_script('test_proc_1'::regproc);
 select ddlx_script('test_proc_1'::regproc::oid);
 select ddlx_script('test_proc_1()');

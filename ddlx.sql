@@ -2093,6 +2093,115 @@ select depth,classid,objid
 $$ language sql;
 
 ---------------------------------------------------
+--  Search function bodies
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_apropos(
+  pattern text default null,
+  OUT classid regclass,
+  OUT objid oid,
+  OUT sql_identifier text,
+  OUT sql_kind text,
+  OUT language name, 
+  OUT owner name,
+  OUT comment text, 
+  OUT retset boolean,
+  OUT namespace name, OUT name name, 
+  OUT definition text)
+ RETURNS SETOF record
+ LANGUAGE sql
+AS $function$
+with
+  rel_kind(k,v) AS (
+         VALUES ('r','TABLE'),
+                ('p','TABLE'),
+                ('v','VIEW'),
+                ('i','INDEX'),
+                ('I','INDEX'),
+                ('S','SEQUENCE'),
+                ('m','MATERIALIZED VIEW'),
+                ('c','TYPE'),
+                ('f','FOREIGN TABLE')
+  )
+
+select	'pg_proc'::regclass as classid,
+        p.oid AS objid, 
+	p.oid::regprocedure::text AS sql_identifier, 
+#if 11
+         case p.prokind
+           when 'f' then 'FUNCTION'
+           when 'a' then 'AGGREGATE'
+           when 'p' then 'PROCEDURE'
+           when 'w' then 'WINDOW FUNCTION'
+         end 
+#else
+         case
+           when p.proisagg then 'AGGREGATE'
+           else 'FUNCTION' 
+         end
+#end
+        AS sql_kind,
+        l.lanname AS language, 
+#if 9.5
+	p.proowner::regrole::name
+#else
+	u.rolname
+#end
+	AS owner,
+        obj_description(p.oid) AS comment,
+        p.proretset AS retset, 
+	s.nspname AS namespace, p.proname AS name,
+        p.prosrc AS definition
+   FROM pg_proc p
+   JOIN pg_namespace s ON s.oid = p.pronamespace
+   JOIN pg_language l ON l.oid = p.prolang
+#unless 9.5
+   JOIN pg_roles u ON p.proowner = u.oid
+#end
+  WHERE ($1 is null
+         OR p.oid::regprocedure::text similar to $1
+         OR p.prosrc similar to $1
+         OR obj_description(p.oid) similar to $1)
+    AND has_schema_privilege(s.oid, 'usage')
+    AND has_function_privilege(p.oid, 'execute')
+UNION
+ SELECT	'pg_class'::regclass as classid,
+        c.oid AS objid, 
+	c.oid::regclass::text AS sql_identifier, 
+        k.v AS sql_kind,
+        'sql' AS language, 
+#if 9.5
+	c.relowner::regrole::name
+#else
+	u.rolname
+#end
+	AS owner,
+        obj_description(c.oid) AS comment,
+        true AS retset, 
+	s.nspname AS namespace, c.relname AS name,
+        pg_get_viewdef(c.oid,true) AS definition
+   FROM pg_class c JOIN rel_kind k on k.k=c.relkind
+   JOIN pg_namespace s ON s.oid = c.relnamespace
+#unless 9.5
+   JOIN pg_roles u ON c.relowner = u.oid
+#end
+  WHERE ($1 is null
+         OR c.oid::regclass::text similar to $1
+         OR pg_get_viewdef(c.oid,true) similar to $1
+         OR obj_description(c.oid) similar to $1)
+    AND
+#if 9.5
+        s.oid<>'pg_toast'::regnamespace
+#else
+        s.nspname<>'pg_toast'
+#end
+    AND has_schema_privilege(s.oid, 'usage')
+    AND has_table_privilege(c.oid, 'select')
+ORDER BY 2
+$function$;
+
+
+---------------------------------------------------
 --  Main script generating functions
 ---------------------------------------------------
 

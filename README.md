@@ -229,6 +229,14 @@ Nevertheless, some of them are:
 
     Return GRANT statements for an object
 
+- `ddlx_grants(oid) returns setof record`
+    Search query bodies (functions and view definitions) for a pattern.
+
+```
+SELECT ddlx_create(objid) FROM ddlx_apropos('%users%');
+
+```
+
 See file [ddlx.sql](ddlx.sql) and [full list of functions](test/expected/manifest.out) for additional details.
 Functions with comments are public API. The rest are intended for internal use, the purpose can
 usually be inferred from the name.

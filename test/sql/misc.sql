@@ -59,6 +59,16 @@ comment on schema ddlx_test_schema1 is 'DDLX Test Schema';
 grant usage on schema ddlx_test_schema1 to public;
 select ddlx_create(oid) from pg_namespace where nspname='ddlx_test_schema1';
 
+-- apropos
+select classid, sql_kind, sql_identifier
+  from ddlx_apropos('%test_class%');
+
+select namespace,sql_kind, count(*)
+  from ddlx_apropos()
+ where namespace<>'pg_catalog'
+ group by 1,2
+ order by 1,2;
+
 -- look for unidentified objects
 select classid::regclass,count(*)
   from (

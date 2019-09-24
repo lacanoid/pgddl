@@ -215,6 +215,43 @@ GRANT USAGE ON SCHEMA ddlx_test_schema1 TO postgres;
 GRANT USAGE ON SCHEMA ddlx_test_schema1 TO PUBLIC;
 
 (1 row)
+-- apropos
+select classid, sql_kind, sql_identifier
+  from ddlx_apropos('%test_class%');
+classid|sql_kind|sql_identifier
+pg_class|SEQUENCE|test_class_r_a_seq
+pg_class|TABLE|test_class_r
+pg_class|INDEX|test_class_r_pkey
+pg_class|INDEX|test_class_r_b_key
+pg_class|SEQUENCE|test_class_r2_i_seq
+pg_class|TABLE|test_class_r2
+pg_class|VIEW|test_class_v
+pg_class|VIEW|test_class_v2
+pg_class|MATERIALIZED VIEW|test_class_m
+pg_class|INDEX|test_class_mi
+pg_class|VIEW|test_class_v_opt2
+pg_proc|FUNCTION|test_proc_2(integer)
+pg_class|FOREIGN TABLE|test_class_f
+(13 rows)
+select namespace,sql_kind, count(*)
+  from ddlx_apropos()
+ where namespace<>'pg_catalog'
+ group by 1,2
+ order by 1,2;
+namespace|sql_kind|count
+information_schema|FUNCTION|12
+information_schema|TABLE|7
+information_schema|VIEW|60
+public|AGGREGATE|2
+public|FOREIGN TABLE|1
+public|FUNCTION|104
+public|INDEX|7
+public|MATERIALIZED VIEW|1
+public|SEQUENCE|5
+public|TABLE|6
+public|TYPE|1
+public|VIEW|3
+(12 rows)
 -- look for unidentified objects
 select classid::regclass,count(*)
   from (
