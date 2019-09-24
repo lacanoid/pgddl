@@ -235,23 +235,20 @@ pg_class|FOREIGN TABLE|test_class_f
 (13 rows)
 select namespace,sql_kind, count(*)
   from ddlx_apropos()
- where namespace<>'pg_catalog'
+ where namespace not in ('pg_catalog','information_schema')
+   and sql_kind <> 'FUNCTION'
  group by 1,2
  order by 1,2;
 namespace|sql_kind|count
-information_schema|FUNCTION|12
-information_schema|TABLE|7
-information_schema|VIEW|60
 public|AGGREGATE|2
 public|FOREIGN TABLE|1
-public|FUNCTION|104
 public|INDEX|7
 public|MATERIALIZED VIEW|1
 public|SEQUENCE|5
 public|TABLE|6
 public|TYPE|1
 public|VIEW|3
-(12 rows)
+(8 rows)
 -- look for unidentified objects
 select classid::regclass,count(*)
   from (

@@ -65,7 +65,8 @@ select classid, sql_kind, sql_identifier
 
 select namespace,sql_kind, count(*)
   from ddlx_apropos()
- where namespace<>'pg_catalog'
+ where namespace not in ('pg_catalog','information_schema')
+   and sql_kind <> 'FUNCTION'
  group by 1,2
  order by 1,2;
 

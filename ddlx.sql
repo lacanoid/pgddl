@@ -1871,7 +1871,6 @@ AS $function$
     || ddlx_comment($1)
    from obj
 $function$  strict;
-#end
 
 ---------------------------------------------------
 --  Grants
@@ -2107,7 +2106,7 @@ CREATE OR REPLACE FUNCTION ddlx_apropos(
   OUT comment text, 
   OUT retset boolean,
   OUT namespace name, OUT name name, 
-  OUT definition text)
+  OUT source text)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
@@ -2151,7 +2150,7 @@ select	'pg_proc'::regclass as classid,
         obj_description(p.oid) AS comment,
         p.proretset AS retset, 
 	s.nspname AS namespace, p.proname AS name,
-        p.prosrc AS definition
+        p.prosrc AS source
    FROM pg_proc p
    JOIN pg_namespace s ON s.oid = p.pronamespace
    JOIN pg_language l ON l.oid = p.prolang
@@ -2179,7 +2178,7 @@ UNION
         obj_description(c.oid) AS comment,
         true AS retset, 
 	s.nspname AS namespace, c.relname AS name,
-        pg_get_viewdef(c.oid,true) AS definition
+        pg_get_viewdef(c.oid,true) AS source
    FROM pg_class c JOIN rel_kind k on k.k=c.relkind
    JOIN pg_namespace s ON s.oid = c.relnamespace
 #unless 9.5
