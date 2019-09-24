@@ -479,6 +479,17 @@ AS $function$
          null as acl
     FROM pg_publication pub
    WHERE pub.oid = $1
+   UNION
+  SELECT sub.oid,
+         'pg_subscription'::regclass,
+         sub.subname,
+         NULL as namespace,
+         pg_get_userbyid(sub.subowner) as owner,
+         'SUBSCRIPTION' as sql_kind,
+         quote_ident(sub.subname) as sql_identifier,
+         null as acl
+    FROM pg_subscription sub
+   WHERE sub.oid = $1
 #end
 $function$  strict;
 
@@ -1849,7 +1860,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_publication(oid)
 AS $function$ 
  with obj as (select * from pg_publication where oid = $1)
  select format(
-           E'CREATE PUBLICATION %I\n  FOR %s\n  WITH ( publish=%s );\n',
+           E'CREATE PUBLICATION %I\n  FOR %s\n  WITH ( publish=%L );\n',
 	   obj.pubname,
 	   case when obj.puballtables then 'ALL TABLES'
 	        else format('TABLE %s',(
@@ -1858,19 +1869,43 @@ AS $function$
 		   where prpubid = $1
 		))
            end,
-	   quote_literal(array_to_string(array[
+	   array_to_string(array[
 		 case when obj.pubinsert then 'insert' end
 		,case when obj.pubupdate then 'update' end
 		,case when obj.pubdelete then 'delete' end
 #if 11
 		,case when obj.pubtruncate then 'truncate' end
 #if 10
-	    ],','))
+	    ],',')
 	   )
     || ddlx_alter_owner($1)
     || ddlx_comment($1)
    from obj
 $function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+ with obj as (select * from pg_subscription where oid = $1)
+ select format(
+           E'CREATE SUBSCRIPTION %I\n  CONNECTION %L\n  PUBLICATION %s\n  WITH (\n    %s );\n',
+	   obj.subname,
+	   obj.subconninfo,
+	   array_to_string(obj.subpublications,', '),
+	   array_to_string(array[
+		'connect='||quote_literal(obj.subenabled),
+		'slot_name='||quote_literal(obj.subslotname),
+		'synchronous_commit='||quote_literal(obj.subsynccommit)
+	   ],E'\n    ')	   
+	   )
+    || ddlx_alter_owner($1)
+    || ddlx_comment($1)
+   from obj
+$function$  strict;
+#end
 
 ---------------------------------------------------
 --  Grants
@@ -2886,6 +2921,8 @@ AS $function$
          ddlx_alter_owner(oid)
     when 'pg_publication'::regclass 
     then ddlx_create_publication(oid)
+    when 'pg_subscription'::regclass 
+    then ddlx_create_subscription(oid)
 #end
     else
       case

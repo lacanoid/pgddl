@@ -56,6 +56,7 @@ select * from a
  ddlx_create_rules(regclass)           | 
  ddlx_create_sequence(regclass)        | 
  ddlx_create_server(oid)               | 
+ ddlx_create_subscription(oid)         | 
  ddlx_create_table(regclass)           | 
  ddlx_create_tablespace(oid)           | 
  ddlx_create_text_search_parser(oid)   | 

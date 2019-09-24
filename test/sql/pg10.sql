@@ -66,10 +66,25 @@ select ddlx_create(oid),ddlx_drop(oid) from pg_statistic_ext where stxname='test
 \x
 select ddlx_script('test_stat');
 -- publication
+begin;
 create publication ddlx_test_pub
-  for table customer_ind, customer_jap
- with ( publish='insert,delete' );
+   for table customer_ind, customer_jap
+  with ( publish='insert,delete' );
 
 select ddlx_create(oid),ddlx_drop(oid) from pg_publication where pubname='ddlx_test_pub';
-drop publication ddlx_test_pub;
+commit;
+-- drop publication ddlx_test_pub;
+
+/*
+create subscription ddlx_test_sub
+  connection 'dbname=contrib_regression'
+  publication ddlx_test_pub
+  with ( connect=false );
+
+select ddlx_create(oid),ddlx_drop(oid) from pg_subscription where subname='ddlx_test_sub';
+
+drop subscription ddlx_test_sub;
+*/
+
+
 
