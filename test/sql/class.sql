@@ -39,9 +39,9 @@ create index idx2 on test_class_r using gin (v);
 create index idx3 on test_class_r(g) with (fillfactor=50);
 cluster test_class_r using idx3;
 
-SELECT ddlx_script('test_class_r'::regclass);
+SELECT replace(ddlx_script('test_class_r'::regclass),'FUNCTION','PROCEDURE') as ddlx_script;
 cluster test_class_r using test_class_r_pkey;
-SELECT ddlx_script('test_class_r'::regtype);
+SELECT replace(ddlx_script('test_class_r'::regtype),'FUNCTION','PROCEDURE') as ddlx_script;
 SELECT ddlx_script('idx1'::regclass);
 SELECT ddlx_script('idx2'::regclass);
 
@@ -53,7 +53,7 @@ CREATE UNLOGGED TABLE test_class_r2 (
   n  numeric(10,2),
   constraint "blah" foreign key (a) references test_class_r(a)
  );
-alter table test_class_r2 set with oids;
+-- alter table test_class_r2 set with oids;
 alter table test_class_r2 add  constraint "blah2" foreign key (a) references test_class_r(a) deferrable initially deferred not valid;
 SELECT ddlx_script('test_class_r2'::regclass);
 

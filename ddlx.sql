@@ -43,8 +43,7 @@ AS $function$
                 ('p','PSEUDO','TYPE'),
                 ('r','RANGE','TYPE')
   )
-  SELECT c.oid,
-         'pg_class'::regclass,
+  SELECT c.oid,'pg_class'::regclass,
          c.relname AS name,
          n.nspname AS namespace,
          pg_get_userbyid(c.relowner) AS owner,
@@ -55,8 +54,7 @@ AS $function$
     LEFT JOIN rel_kind AS cc on cc.k = c.relkind
    WHERE c.oid = $1
    UNION 
-  SELECT p.oid,
-         'pg_proc'::regclass,
+  SELECT p.oid,'pg_proc'::regclass,
          p.proname AS name,
          n.nspname AS namespace,
          pg_get_userbyid(p.proowner) AS owner,
@@ -79,8 +77,7 @@ AS $function$
     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
    WHERE p.oid = $1
    UNION 
-  SELECT t.oid,
-         'pg_type'::regclass,
+  SELECT t.oid,'pg_type'::regclass,
          t.typname AS name,
          n.nspname AS namespace,
          pg_get_userbyid(t.typowner) AS owner,
@@ -97,8 +94,7 @@ AS $function$
     LEFT JOIN rel_kind AS cc ON cc.k = c.relkind
    WHERE t.oid = $1
    UNION
-  SELECT r.oid,
-         'pg_roles'::regclass,
+  SELECT r.oid,'pg_roles'::regclass,
          r.rolname as name,
          null as namespace,
          null as owner,
@@ -108,8 +104,7 @@ AS $function$
     FROM pg_roles r
    WHERE r.oid = $1
    UNION
-  SELECT r.oid,
-         'pg_rewrite'::regclass,
+  SELECT r.oid,'pg_rewrite'::regclass,
          r.rulename as name,
          null as namespace,
          null as owner,
@@ -120,8 +115,7 @@ AS $function$
     FROM pg_rewrite r JOIN pg_class c on (c.oid = r.ev_class)
    WHERE r.oid = $1
    UNION
-  SELECT n.oid,
-         'pg_namespace'::regclass,
+  SELECT n.oid,'pg_namespace'::regclass,
          n.nspname as name,
          current_database() as namespace,
          pg_get_userbyid(n.nspowner) AS owner,
@@ -131,8 +125,7 @@ AS $function$
     FROM pg_namespace n join pg_roles r on r.oid = n.nspowner
    WHERE n.oid = $1
    UNION
-  SELECT con.oid,
-         'pg_constraint'::regclass,
+  SELECT con.oid,'pg_constraint'::regclass,
          con.conname as name,
          c.relname as namespace,
          null as owner,
@@ -152,8 +145,7 @@ AS $function$
          ) as tt on tt.column1 = con.contype
    WHERE con.oid = $1
    UNION
-  SELECT t.oid,
-         'pg_trigger'::regclass,
+  SELECT t.oid,'pg_trigger'::regclass,
          t.tgname as name,
          c.relname as namespace,
          null as owner,
@@ -163,8 +155,7 @@ AS $function$
     FROM pg_trigger t join pg_class c on (t.tgrelid=c.oid)
    WHERE t.oid = $1
    UNION
-  SELECT ad.oid,
-         'pg_attrdef'::regclass,
+  SELECT ad.oid,'pg_attrdef'::regclass,
          a.attname as name,
          c.relname as namespace,
          null as owner,
@@ -176,8 +167,7 @@ AS $function$
     JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
    WHERE ad.oid = $1
    UNION
-  SELECT op.oid,
-         'pg_operator'::regclass,
+  SELECT op.oid,'pg_operator'::regclass,
          op.oprname as name,
          n.nspname as namespace,
          pg_get_userbyid(op.oprowner) as owner,
@@ -187,8 +177,7 @@ AS $function$
     FROM pg_operator op JOIN pg_namespace n ON n.oid=op.oprnamespace
    WHERE op.oid = $1
    UNION
-  SELECT cfg.oid,
-         'pg_ts_config'::regclass,
+  SELECT cfg.oid,'pg_ts_config'::regclass,
          cfg.cfgname as name,
          n.nspname as namespace,
          pg_get_userbyid(cfg.cfgowner) as owner,
@@ -198,8 +187,7 @@ AS $function$
     FROM pg_ts_config cfg JOIN pg_namespace n ON n.oid=cfg.cfgnamespace
    WHERE cfg.oid = $1
    UNION
-  SELECT dict.oid,
-         'pg_ts_dict'::regclass,
+  SELECT dict.oid,'pg_ts_dict'::regclass,
          dict.dictname as name,
          n.nspname as namespace,
          pg_get_userbyid(dict.dictowner) as owner,
@@ -209,8 +197,7 @@ AS $function$
     FROM pg_ts_dict dict JOIN pg_namespace n ON n.oid=dict.dictnamespace
    WHERE dict.oid = $1
    UNION
-  SELECT prs.oid,
-         'pg_ts_parser'::regclass,
+  SELECT prs.oid,'pg_ts_parser'::regclass,
          prs.prsname as name,
          n.nspname as namespace,
          null as owner,
@@ -222,8 +209,7 @@ AS $function$
     FROM pg_ts_parser prs JOIN pg_namespace n ON n.oid=prs.prsnamespace
    WHERE prs.oid = $1
    UNION
-  SELECT tmpl.oid,
-         'pg_ts_template'::regclass,
+  SELECT tmpl.oid,'pg_ts_template'::regclass,
          tmpl.tmplname as name,
          n.nspname as namespace,
          null as owner,
@@ -236,8 +222,7 @@ AS $function$
    WHERE tmpl.oid = $1
 #if 9.3
    UNION
-  SELECT evt.oid,
-         'pg_event_trigger'::regclass,
+  SELECT evt.oid,'pg_event_trigger'::regclass,
          evt.evtname as name,
          null as namespace,
          pg_get_userbyid(evt.evtowner) as owner,
@@ -248,8 +233,7 @@ AS $function$
    WHERE evt.oid = $1
 #end
    UNION
-  SELECT fdw.oid,
-         'pg_foreign_data_wrapper'::regclass,
+  SELECT fdw.oid,'pg_foreign_data_wrapper'::regclass,
          fdw.fdwname as name,
          null as namespace,
          pg_get_userbyid(fdw.fdwowner) as owner,
@@ -259,8 +243,7 @@ AS $function$
     FROM pg_foreign_data_wrapper fdw
    WHERE fdw.oid = $1
    UNION
-  SELECT srv.oid,
-         'pg_foreign_server'::regclass,
+  SELECT srv.oid,'pg_foreign_server'::regclass,
          srv.srvname as name,
          null as namespace,
          pg_get_userbyid(srv.srvowner) as owner,
@@ -270,8 +253,7 @@ AS $function$
     FROM pg_foreign_server srv
    WHERE srv.oid = $1
    UNION
-  SELECT ums.umid,
-         'pg_user_mapping'::regclass,
+  SELECT ums.umid,'pg_user_mapping'::regclass,
          null as name,
          null as namespace,
          null as owner,
@@ -282,8 +264,7 @@ AS $function$
     FROM pg_user_mappings ums
    WHERE ums.umid = $1
    UNION
-  SELECT ca.oid,
-         'pg_cast'::regclass,
+  SELECT ca.oid,'pg_cast'::regclass,
          null as name,
          null as namespace,
          null as owner,
@@ -295,8 +276,7 @@ AS $function$
     FROM pg_cast ca
    WHERE ca.oid = $1
    UNION
-  SELECT co.oid,
-         'pg_collation'::regclass,
+  SELECT co.oid,'pg_collation'::regclass,
          co.collname as name,
          n.nspname as namespace,
          pg_get_userbyid(co.collowner) as owner,
@@ -308,8 +288,7 @@ AS $function$
     FROM pg_collation co JOIN pg_namespace n ON n.oid=co.collnamespace
    WHERE co.oid = $1
    UNION
-  SELECT co.oid,
-         'pg_conversion'::regclass,
+  SELECT co.oid,'pg_conversion'::regclass,
          co.conname as name,
          n.nspname as namespace,
          pg_get_userbyid(co.conowner) as owner,
@@ -321,8 +300,7 @@ AS $function$
     FROM pg_conversion co JOIN pg_namespace n ON n.oid=co.connamespace
    WHERE co.oid = $1
    UNION
-  SELECT lan.oid,
-         'pg_language'::regclass,
+  SELECT lan.oid,'pg_language'::regclass,
          lan.lanname as name,
          null as namespace,
          pg_get_userbyid(lan.lanowner) as owner,
@@ -333,8 +311,7 @@ AS $function$
    WHERE lan.oid = $1
 #if 9.5
    UNION
-  SELECT pol.oid,
-         'pg_policy'::regclass,
+  SELECT pol.oid,'pg_policy'::regclass,
          pol.polname as name,
          null as namespace,
          null as owner,
@@ -347,8 +324,7 @@ AS $function$
     FROM pg_policy pol JOIN pg_class c on (c.oid=pol.polrelid)
    WHERE pol.oid = $1
    UNION
-  SELECT trf.oid,
-         'pg_transform'::regclass,
+  SELECT trf.oid,'pg_transform'::regclass,
          null as name,
          null as namespace,
          null as owner,
@@ -360,8 +336,7 @@ AS $function$
     FROM pg_transform trf JOIN pg_language l on (l.oid=trf.trflang)
    WHERE trf.oid = $1
    UNION
-  SELECT am.oid,
-         'pg_am'::regclass,
+  SELECT am.oid,'pg_am'::regclass,
          am.amname as name,
          NULL as namespace,
          NULL as owner,
@@ -372,8 +347,7 @@ AS $function$
    WHERE am.oid = $1
 #end
    UNION
-  SELECT opf.oid,
-         'pg_opfamily'::regclass,
+  SELECT opf.oid,'pg_opfamily'::regclass,
          opf.opfname as name,
          n.nspname as namespace,
          pg_get_userbyid(opf.opfowner) as owner,
@@ -388,8 +362,7 @@ AS $function$
     JOIN pg_am am on (am.oid=opf.opfmethod)
    WHERE opf.oid = $1
    UNION
-  SELECT dat.oid,
-         'pg_database'::regclass,
+  SELECT dat.oid,'pg_database'::regclass,
          dat.datname as name,
          null as namespace,
          pg_get_userbyid(dat.datdba) as owner,
@@ -399,8 +372,7 @@ AS $function$
     FROM pg_database dat
    WHERE dat.oid = $1
    UNION
-  SELECT spc.oid,
-         'pg_tablespace'::regclass,
+  SELECT spc.oid,'pg_tablespace'::regclass,
          spc.spcname as name,
          null as namespace,
          pg_get_userbyid(spc.spcowner) as owner,
@@ -410,8 +382,7 @@ AS $function$
     FROM pg_tablespace spc
    WHERE spc.oid = $1
    UNION
-  SELECT opc.oid,
-         'pg_opclass'::regclass,
+  SELECT opc.oid,'pg_opclass'::regclass,
          opcname as name,
          n.nspname as namespace,
          pg_get_userbyid(opc.opcowner) as owner,
@@ -427,8 +398,7 @@ AS $function$
    WHERE opc.oid = $1
 #if 9.3
    UNION
-  SELECT amproc.oid,
-         'pg_amproc'::regclass,
+  SELECT amproc.oid,'pg_amproc'::regclass,
          'FUNCTION '||amprocnum,
          null as namespace,
          null as owner,
@@ -441,8 +411,7 @@ AS $function$
     FROM pg_amproc amproc
    WHERE amproc.oid = $1
    UNION
-  SELECT amop.oid,
-         'pg_amop'::regclass,
+  SELECT amop.oid,'pg_amop'::regclass,
          'OPERATOR '||amopstrategy,
          null as namespace,
          null as owner,
@@ -457,8 +426,7 @@ AS $function$
 #end
 #if 10
    UNION
-  SELECT stx.oid,
-         'pg_statistic_ext'::regclass,
+  SELECT stx.oid,'pg_statistic_ext'::regclass,
          stx.stxname,
          n.nspname as namespace,
          pg_get_userbyid(stx.stxowner) as owner,
@@ -469,8 +437,7 @@ AS $function$
     FROM pg_statistic_ext stx join pg_namespace n on (n.oid=stxnamespace)
    WHERE stx.oid = $1
    UNION
-  SELECT pub.oid,
-         'pg_publication'::regclass,
+  SELECT pub.oid,'pg_publication'::regclass,
          pub.pubname,
          NULL as namespace,
          pg_get_userbyid(pub.pubowner) as owner,
@@ -480,8 +447,7 @@ AS $function$
     FROM pg_publication pub
    WHERE pub.oid = $1
    UNION
-  SELECT sub.oid,
-         'pg_subscription'::regclass,
+  SELECT sub.oid,'pg_subscription'::regclass,
          sub.subname,
          NULL as namespace,
          pg_get_userbyid(sub.subowner) as owner,
@@ -2031,18 +1997,18 @@ a as (
    left join pg_roles r2 on (r2.oid = e.grantee)
 ),
 b as (
-select format('GRANT %s ON %s %s TO %s%s',
+select format('GRANT %s ON %s %s TO %s%s;',
               privilege_type,
               case obj.sql_kind
               when 'SERVER' then 'FOREIGN SERVER'
               else obj.sql_kind end,
               obj.sql_identifier,
-              grantee,grant_option)
+              grantee,grant_option,grantor)
        as dcl
   from obj,a
- order by grantor,grantee,privilege_type
+ order by grantor,lower(grantee),privilege_type
 )
-select coalesce(string_agg(dcl,E';\n')||E';\n','')
+select coalesce(string_agg(dcl,E'\n')||E'\n','')
   from b
 $function$  strict;
 
@@ -2127,7 +2093,7 @@ select depth,classid,objid
 $$ language sql;
 
 ---------------------------------------------------
---  Search function bodies
+--  Search query bodies
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_apropos(
@@ -2842,87 +2808,51 @@ AS $function$
   with obj as (select * from ddlx_identify($1)),
   def as (
   select case obj.classid
-    when 'pg_class'::regclass 
-    then ddlx_create(oid::regclass)
-    when 'pg_proc'::regclass 
-    then ddlx_create(oid::regproc)
-    when 'pg_type'::regclass 
-    then ddlx_create(oid::regtype)
-    when 'pg_operator'::regclass 
-    then ddlx_create(oid::regoper)
-    when 'pg_opfamily'::regclass 
-    then ddlx_create_operator_family(oid)
-    when 'pg_rewrite'::regclass 
-    then ddlx_create_rule(oid)
-    when 'pg_ts_config'::regclass 
-    then ddlx_create(oid::regconfig)
-    when 'pg_ts_dict'::regclass 
-    then ddlx_create(oid::regdictionary)
-    when 'pg_ts_parser'::regclass 
-    then ddlx_create_text_search_parser(oid)
-    when 'pg_ts_template'::regclass 
-    then ddlx_create_text_search_template(oid)
-    when 'pg_database'::regclass 
-    then ddlx_create_database(oid)
-    when 'pg_constraint'::regclass 
-    then ddlx_create_constraint(oid)
-    when 'pg_trigger'::regclass 
-    then ddlx_create_trigger(oid)
-    when 'pg_attrdef'::regclass 
-    then ddlx_create_default(oid)
-    when 'pg_foreign_data_wrapper'::regclass 
-    then ddlx_create_foreign_data_wrapper(oid)
-    when 'pg_foreign_server'::regclass 
-    then ddlx_create_server(oid)
-    when 'pg_user_mapping'::regclass 
-    then ddlx_create_user_mapping(oid)
-    when 'pg_cast'::regclass 
-    then ddlx_create_cast(oid)
-    when 'pg_collation'::regclass 
-    then ddlx_create_collation(oid)
-    when 'pg_conversion'::regclass 
-    then ddlx_create_conversion(oid)
-    when 'pg_language'::regclass 
-    then ddlx_create_language(oid)
-    when 'pg_opclass'::regclass 
-    then ddlx_create_operator_class(oid)
+    when 'pg_class'::regclass          then ddlx_create(oid::regclass)
+    when 'pg_proc'::regclass           then ddlx_create(oid::regproc)
+    when 'pg_type'::regclass           then ddlx_create(oid::regtype)
+    when 'pg_operator'::regclass       then ddlx_create(oid::regoper)
+    when 'pg_opfamily'::regclass       then ddlx_create_operator_family(oid)
+    when 'pg_rewrite'::regclass        then ddlx_create_rule(oid)
+    when 'pg_ts_config'::regclass      then ddlx_create(oid::regconfig)
+    when 'pg_ts_dict'::regclass        then ddlx_create(oid::regdictionary)
+    when 'pg_ts_parser'::regclass      then ddlx_create_text_search_parser(oid)
+    when 'pg_ts_template'::regclass    then ddlx_create_text_search_template(oid)
+    when 'pg_database'::regclass       then ddlx_create_database(oid)
+    when 'pg_constraint'::regclass     then ddlx_create_constraint(oid)
+    when 'pg_trigger'::regclass        then ddlx_create_trigger(oid)
+    when 'pg_attrdef'::regclass        then ddlx_create_default(oid)
+    when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid)
+    when 'pg_foreign_server'::regclass then ddlx_create_server(oid)
+    when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid)
+    when 'pg_cast'::regclass           then ddlx_create_cast(oid)
+    when 'pg_collation'::regclass      then ddlx_create_collation(oid)
+    when 'pg_conversion'::regclass     then ddlx_create_conversion(oid)
+    when 'pg_language'::regclass       then ddlx_create_language(oid)
+    when 'pg_opclass'::regclass        then ddlx_create_operator_class(oid)
 #if 9.5
-    when 'pg_roles'::regclass 
-    then ddlx_create(oid::regrole)
-    when 'pg_namespace'::regclass 
-    then ddlx_create(oid::regnamespace)
+    when 'pg_roles'::regclass          then ddlx_create(oid::regrole)
+    when 'pg_namespace'::regclass      then ddlx_create(oid::regnamespace)
 #else
-    when 'pg_roles'::regclass 
-    then ddlx_create_role(oid)
-    when 'pg_namespace'::regclass 
-    then ddlx_create_schema(oid)
+    when 'pg_roles'::regclass          then ddlx_create_role(oid)
+    when 'pg_namespace'::regclass      then ddlx_create_schema(oid)
 #end
 #if 9.2
-    when 'pg_tablespace'::regclass 
-    then ddlx_create_tablespace(oid)
+    when 'pg_tablespace'::regclass     then ddlx_create_tablespace(oid)
 #if 9.3
-    when 'pg_event_trigger'::regclass 
-    then ddlx_create_event_trigger(oid)
-    when 'pg_amproc'::regclass 
-    then ddlx_create_amproc(oid)
-    when 'pg_amop'::regclass 
-    then ddlx_create_amop(oid)
+    when 'pg_event_trigger'::regclass  then ddlx_create_event_trigger(oid)
+    when 'pg_amproc'::regclass         then ddlx_create_amproc(oid)
+    when 'pg_amop'::regclass           then ddlx_create_amop(oid)
 #if 9.5
-    when 'pg_policy'::regclass 
-    then ddlx_create_policy(oid)
-    when 'pg_transform'::regclass 
-    then ddlx_create_transform(oid)
+    when 'pg_policy'::regclass         then ddlx_create_policy(oid)
+    when 'pg_transform'::regclass      then ddlx_create_transform(oid)
 #if 9.6
-    when 'pg_am'::regclass 
-    then ddlx_create_access_method(oid)
+    when 'pg_am'::regclass             then ddlx_create_access_method(oid)
 #if 10
     when 'pg_statistic_ext'::regclass
-    then pg_get_statisticsobjdef(oid)||E';\n'||
-         ddlx_alter_owner(oid)
-    when 'pg_publication'::regclass 
-    then ddlx_create_publication(oid)
-    when 'pg_subscription'::regclass 
-    then ddlx_create_subscription(oid)
+    then pg_get_statisticsobjdef(oid)||E';\n'||ddlx_alter_owner(oid)
+    when 'pg_publication'::regclass    then ddlx_create_publication(oid)
+    when 'pg_subscription'::regclass   then ddlx_create_subscription(oid)
 #end
     else
       case

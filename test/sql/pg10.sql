@@ -75,7 +75,6 @@ select ddlx_create(oid),ddlx_drop(oid) from pg_publication where pubname='ddlx_t
 commit;
 -- drop publication ddlx_test_pub;
 
-/*
 create subscription ddlx_test_sub
   connection 'dbname=contrib_regression'
   publication ddlx_test_pub
@@ -83,8 +82,11 @@ create subscription ddlx_test_sub
 
 select ddlx_create(oid),ddlx_drop(oid) from pg_subscription where subname='ddlx_test_sub';
 
+alter subscription ddlx_test_sub set ( slot_name=none );
+
+select ddlx_create(oid),ddlx_drop(oid) from pg_subscription where subname='ddlx_test_sub';
+
 drop subscription ddlx_test_sub;
-*/
 
 
 

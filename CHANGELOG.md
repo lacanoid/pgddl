@@ -5,6 +5,7 @@ Version 0.15alpha
 - added ddlx_apropos(pattern) function to search queries (functions and views) matching a pattern
 - support for ALTER TABLE ENABLE/FORCE ROW LEVEL SECURITY
 - support for publications and subscriptions
+- pg12 test fixes
 
 Version 0.14
 ------------
