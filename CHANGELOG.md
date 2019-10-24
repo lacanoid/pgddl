@@ -1,5 +1,5 @@
-Version 0.15alpha
------------------
+Version 0.15
+------------
 - added parameter ddlx_options text[] to a bunch of functions
 - bug fixes WRT dropped attributes
 - added ddlx_apropos(pattern) function to search queries (functions and views) matching a pattern
