@@ -24,7 +24,6 @@ Tasks
 Support for other postgres objects:
 - pg_amop, pg_amproc
 - extensions
-- PG 10: publication, subscription
 
 Support for other missing options:
 - PG 10+: partitions (subpartitions)
