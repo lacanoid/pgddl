@@ -1,3 +1,7 @@
+Version 0.16alpha
+-----------------
+- support for GENERATED columns
+
 Version 0.15
 ------------
 - added parameter ddlx_options text[] to a bunch of functions

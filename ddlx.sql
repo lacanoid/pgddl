@@ -466,6 +466,7 @@ CREATE OR REPLACE FUNCTION ddlx_describe(
   OUT ord smallint,
   OUT name name, OUT type text, OUT size integer, OUT not_null boolean,
   OUT "default" text,
+  OUT ident text, OUT gen text,
   OUT comment text, OUT primary_key name,
   OUT is_local boolean, OUT storage text, OUT collation text, 
   OUT namespace name, OUT class_name name, OUT sql_identifier text,
@@ -483,6 +484,16 @@ SELECT  a.attnum AS ord,
         END AS size,
         a.attnotnull AS not_null,
         pg_get_expr(def.adbin,def.adrelid) AS "default",
+#if 10
+	nullif(a.attidentity::text,''),
+#else
+	null::text,
+#end
+#if 12
+	nullif(a.attgenerated::text,''),
+#else
+	null::text,
+#end
         col_description(c.oid, a.attnum::integer) AS comment,
         con.conname AS primary_key,
         a.attislocal AS is_local,
@@ -505,7 +516,7 @@ SELECT  a.attnum AS ord,
 #else
         attoptions as options,
 #end
-	format('%I %s%s%s%s',
+	format('%I %s%s%s%s%s%s',
          a.attname::text,
 	 format_type(t.oid, a.atttypmod),
 #if 9.2
@@ -523,10 +534,35 @@ SELECT  a.attnum AS ord,
          CASE
            WHEN length(col.collcollate) > 0
            THEN ' COLLATE ' || quote_ident(col.collcollate::text)
-         END,
-         CASE
-              WHEN a.attnotnull THEN ' NOT NULL'
-         END)
+         END
+	 ,
+#if 10	
+	 case when a.attnotnull and attidentity not in ('a','d') then ' NOT NULL' end
+#else
+	 case when a.attnotnull THEN ' NOT NULL' end
+#end
+	 ,
+#if 10
+	case when attidentity in ('a','d')
+	     then format(' GENERATED %s AS IDENTITY',
+	       case attidentity
+	       when 'a' then 'ALWAYS'
+	       when 'd' then 'BY DEFAULT'
+	       end)
+	     end
+#else
+	 null::text
+#end
+	,
+#if 12
+	case when a.attgenerated = 's'
+	     then format(' GENERATED ALWAYS AS %s STORED', 
+	     	         pg_get_expr(def.adbin,def.adrelid))
+	end
+#else
+         null::text
+#end
+	 )
         AS definition,
         pg_get_serial_sequence(c.oid::regclass::text,a.attname)::regclass as sequence	
    FROM pg_class c
@@ -1170,7 +1206,7 @@ def as (
     '') as ddl
    from ddlx_describe($1)
   where "default" is not null
-    and "sequence" is null
+    and "sequence" is null and gen is null
 ),
 seq as (
  select 
@@ -1181,7 +1217,7 @@ seq as (
         E'\n') || E'\n\n', 
     '') as ddl
    from ddlx_describe($1)
-  where "sequence" is not null
+  where "sequence" is not null and ident is null
 )
 select def.ddl || seq.ddl
   from def,seq
