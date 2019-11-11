@@ -1,5 +1,5 @@
-Version 0.16alpha
------------------
+Version 0.16
+------------
 - support for GENERATED columns
 
 Version 0.15
