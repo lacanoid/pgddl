@@ -516,7 +516,7 @@ SELECT  a.attnum AS ord,
   WHERE c.relkind IN ('r','v','c','f','p') AND a.attnum > 0 AND NOT a.attisdropped
     AND has_table_privilege(c.oid, 'select') AND has_schema_privilege(s.oid, 'usage')
     AND c.oid = $1
-  ORDER BY s.nspname, c.relname, a.attnum;
+  ORDER BY s.nspname, c.relname, a.attname;
 $function$ strict;
 
 ---------------------------------------------------
@@ -1190,7 +1190,7 @@ ob as (
    from pg_options_to_table(att.attoptions)) as ddl
    from pg_attribute att, obj
   where attnum>0 and att.attrelid=$1 and attoptions is not null and not attisdropped
-  order by attnum
+  order by att.attname
  ) as a
 ),
 os as (
@@ -1202,7 +1202,7 @@ os as (
 	         attstattarget) as ddl
    from pg_attribute att, obj
   where attnum>0 and att.attrelid=$1 and attstattarget>=0 and not attisdropped
-  order by attnum
+  order by att.attname
  ) as a2
 ),
 ts as (
@@ -1261,7 +1261,7 @@ AS $function$
    ' ADD CONSTRAINT ' || quote_ident(constraint_name) || 
    E'\n  ' || constraint_definition as sql
     from ddlx_get_constraints($1)
-   order by constraint_type desc, sysid
+   order by constraint_type desc, constraint_name
  )
  select coalesce(string_agg(sql,E';\n') || E';\n\n','')
    from cs
@@ -1861,7 +1861,7 @@ select attrelid::regclass,attname,
        (aclexplode(attacl)).* 
   from pg_attribute 
  where attrelid=$1 and not attisdropped
- order by privilege_type,attnum
+ order by privilege_type,attname
 ),
 a as (
  select attname,
@@ -1881,7 +1881,7 @@ select format('GRANT %s (%s) ON %s TO %s%s',
               grantee,grant_option)
        as dcl
   from obj,a
- order by grantor,grantee,privilege_type
+ order by grantor,grantee,privilege_type,attname
 )
 select coalesce(string_agg(dcl,E';\n')||E';\n','')
   from b
@@ -1898,7 +1898,7 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass)
  a   as (
  select
    coalesce(
-    string_agg(format(
+    format(
         E'GRANT %s ON %s TO %s%s;\n',
         privilege_type, 
         cast($1 as text),
@@ -1909,15 +1909,16 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass)
         case is_grantable  
           when 'YES' then ' WITH GRANT OPTION' 
           else '' 
-        end), ''),
+        end),
     '') as ddl
- FROM information_schema.table_privileges g 
+ FROM information_schema.table_privileges g
  join obj on (true)
  WHERE table_schema=obj.namespace 
    AND table_name=obj.name
    AND grantee<>obj.owner
+ ORDER BY privilege_type,obj.name,grantee
 )
-select coalesce(a.ddl,'')||
+select coalesce(string_agg(a.ddl, ''),'')||
        ddlx_grants_columns($1) from a
 $function$  strict;
 

@@ -68,9 +68,9 @@ DROP TYPE test_type_c;
 -- Type: TYPE ; Name: test_type_c; Owner: postgres
 
 CREATE TYPE test_type_c AS (
+    d test_type_d,
     i integer,
-    t text,
-    d test_type_d
+    t text
 );
 
 COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
@@ -92,9 +92,9 @@ DROP TYPE test_type_c;
 -- Type: TYPE ; Name: test_type_c; Owner: postgres
 
 CREATE TYPE test_type_c AS (
+    d test_type_d,
     i integer,
-    t text,
-    d test_type_d
+    t text
 );
 
 COMMENT ON COLUMN test_type_c.i IS 'my class class column i';

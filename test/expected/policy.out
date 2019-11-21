@@ -39,18 +39,18 @@ DROP TABLE items;
 -- Type: TABLE ; Name: items; Owner: postgres
 
 CREATE TABLE items (
-    id uuid NOT NULL,
-    value text,
     acl_read uuid[],
-    acl_write uuid[]
+    acl_write uuid[],
+    id uuid NOT NULL,
+    value text
 );
 
 COMMENT ON TABLE items IS NULL;
 ALTER TABLE items OWNER TO postgres;
 
-ALTER TABLE items ALTER id SET DEFAULT uuid_generate_v4();
 ALTER TABLE items ALTER acl_read SET DEFAULT ARRAY[]::uuid[];
 ALTER TABLE items ALTER acl_write SET DEFAULT ARRAY[]::uuid[];
+ALTER TABLE items ALTER id SET DEFAULT uuid_generate_v4();
 
 ALTER TABLE items ADD CONSTRAINT items_pkey
   PRIMARY KEY (id);
