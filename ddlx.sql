@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.16 lacanoid@ljudmila.org
+--  version 0.17 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 

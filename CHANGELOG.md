@@ -1,3 +1,7 @@
+Version 0.17
+------------
+- improved support for Postgres 13 (added missing test file)
+
 Version 0.16
 ------------
 - support for GENERATED columns
