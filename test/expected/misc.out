@@ -69,20 +69,20 @@ ddlx_drop
 DROP COLLATION "POSIX++";
 
 (1 row)
-CREATE DEFAULT CONVERSION "ascii_to_utf8++"
-  FOR 'SQL_ASCII' TO 'UTF8' FROM ascii_to_utf8;
-COMMENT ON CONVERSION "ascii_to_utf8++" IS 'conversion++ for SQL_ASCII to UTF8';
-select ddlx_create(oid) from pg_conversion where conname in ('ascii_to_utf8++') order by conname;
+CREATE DEFAULT CONVERSION "iso_8859_1_to_utf8++"
+  FOR 'LATIN1' TO 'UTF8' FROM iso8859_1_to_utf8;
+COMMENT ON CONVERSION "iso_8859_1_to_utf8++" IS 'conversion for LATIN1 to UTF8++';
+select ddlx_create(oid) from pg_conversion where conname in ('iso_8859_1_to_utf8++') order by conname;
 ddlx_create
-CREATE DEFAULT CONVERSION "ascii_to_utf8++"
-  FOR 'SQL_ASCII' TO 'UTF8' FROM ascii_to_utf8;
-COMMENT ON CONVERSION "ascii_to_utf8++" IS 'conversion++ for SQL_ASCII to UTF8';
-ALTER CONVERSION "ascii_to_utf8++" OWNER TO postgres;
+CREATE DEFAULT CONVERSION "iso_8859_1_to_utf8++"
+  FOR 'LATIN1' TO 'UTF8' FROM iso8859_1_to_utf8;
+COMMENT ON CONVERSION "iso_8859_1_to_utf8++" IS 'conversion for LATIN1 to UTF8++';
+ALTER CONVERSION "iso_8859_1_to_utf8++" OWNER TO postgres;
 
 (1 row)
-select ddlx_drop(oid) from pg_conversion where conname in ('ascii_to_utf8++') order by conname;
+select ddlx_drop(oid) from pg_conversion where conname in ('iso_8859_1_to_utf8++') order by conname;
 ddlx_drop
-DROP CONVERSION "ascii_to_utf8++";
+DROP CONVERSION "iso_8859_1_to_utf8++";
 
 (1 row)
 select ddlx_grants('test_class_r'::regclass::oid);

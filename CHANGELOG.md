@@ -1,6 +1,7 @@
 Version 0.17
 ------------
-- improved support for Postgres 13 (added missing test file)
+- improved support for Postgres 13 (added missing test files)
+- updated tests
 
 Version 0.16
 ------------

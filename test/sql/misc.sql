@@ -16,12 +16,12 @@ COMMENT ON COLLATION "POSIX++" IS 'standard POSIX++ collation';
 select ddlx_create(oid) from pg_collation where collname in ('POSIX++') order by collname;
 select ddlx_drop(oid) from pg_collation where collname in ('POSIX++') order by collname;
 
-CREATE DEFAULT CONVERSION "ascii_to_utf8++"
-  FOR 'SQL_ASCII' TO 'UTF8' FROM ascii_to_utf8;
-COMMENT ON CONVERSION "ascii_to_utf8++" IS 'conversion++ for SQL_ASCII to UTF8';
+CREATE DEFAULT CONVERSION "iso_8859_1_to_utf8++"
+  FOR 'LATIN1' TO 'UTF8' FROM iso8859_1_to_utf8;
+COMMENT ON CONVERSION "iso_8859_1_to_utf8++" IS 'conversion for LATIN1 to UTF8++';
 
-select ddlx_create(oid) from pg_conversion where conname in ('ascii_to_utf8++') order by conname;
-select ddlx_drop(oid) from pg_conversion where conname in ('ascii_to_utf8++') order by conname;
+select ddlx_create(oid) from pg_conversion where conname in ('iso_8859_1_to_utf8++') order by conname;
+select ddlx_drop(oid) from pg_conversion where conname in ('iso_8859_1_to_utf8++') order by conname;
 
 select ddlx_grants('test_class_r'::regclass::oid);
 
