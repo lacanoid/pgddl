@@ -55,9 +55,7 @@ AS $function$
    WHERE c.oid = $1
    UNION 
   SELECT p.oid,'pg_proc'::regclass,
-         p.proname AS name,
-         n.nspname AS namespace,
-         pg_get_userbyid(p.proowner) AS owner,
+         p.proname AS name, n.nspname AS namespace, pg_get_userbyid(p.proowner) AS owner,
 #if 11
          case p.prokind
            when 'f' then 'FUNCTION'
@@ -78,9 +76,7 @@ AS $function$
    WHERE p.oid = $1
    UNION 
   SELECT t.oid,'pg_type'::regclass,
-         t.typname AS name,
-         n.nspname AS namespace,
-         pg_get_userbyid(t.typowner) AS owner,
+         t.typname AS name, n.nspname AS namespace, pg_get_userbyid(t.typowner) AS owner,
          coalesce(cc.v,tt.v2,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier,
 #if 9.2
@@ -95,9 +91,7 @@ AS $function$
    WHERE t.oid = $1
    UNION
   SELECT r.oid,'pg_roles'::regclass,
-         r.rolname as name,
-         null as namespace,
-         null as owner,
+         r.rolname as name, null as namespace, null as owner,
          'ROLE' as sql_kind,
          quote_ident(r.rolname) as sql_identifier,
          null as acl
@@ -105,9 +99,7 @@ AS $function$
    WHERE r.oid = $1
    UNION
   SELECT r.oid,'pg_rewrite'::regclass,
-         r.rulename as name,
-         null as namespace,
-         null as owner,
+         r.rulename as name, null as namespace, null as owner,
          'RULE' as sql_kind,
          quote_ident(r.rulename)||' ON '|| 
            cast(c.oid::regclass as text) sql_identifier,
@@ -116,9 +108,7 @@ AS $function$
    WHERE r.oid = $1
    UNION
   SELECT n.oid,'pg_namespace'::regclass,
-         n.nspname as name,
-         current_database() as namespace,
-         pg_get_userbyid(n.nspowner) AS owner,
+         n.nspname as name, current_database() as namespace, pg_get_userbyid(n.nspowner) AS owner,
          'SCHEMA' as sql_kind,
          quote_ident(n.nspname) as sql_identifier,
          nspacl as acl
@@ -127,9 +117,7 @@ AS $function$
    UNION
   SELECT con.oid,'pg_constraint'::regclass,
          con.conname as name,
-         c.relname as namespace,
-         null as owner,
-         'CONSTRAINT' as sql_kind,
+         c.relname as namespace, null as owner, 'CONSTRAINT' as sql_kind,
          quote_ident(con.conname)
          ||coalesce(' ON '||cast(c.oid::regclass as text),'') as sql_identifier,
          null as acl
@@ -146,9 +134,7 @@ AS $function$
    WHERE con.oid = $1
    UNION
   SELECT t.oid,'pg_trigger'::regclass,
-         t.tgname as name,
-         c.relname as namespace,
-         null as owner,
+         t.tgname as name, c.relname as namespace, null as owner,
          'TRIGGER' as sql_kind,
          format('%I ON %s',t.tgname,cast(c.oid::regclass as text)) as sql_identifier,
          null as acl
@@ -156,9 +142,7 @@ AS $function$
    WHERE t.oid = $1
    UNION
   SELECT ad.oid,'pg_attrdef'::regclass,
-         a.attname as name,
-         c.relname as namespace,
-         null as owner,
+         a.attname as name, c.relname as namespace, null as owner,
          'DEFAULT' as sql_kind,
          format('%s.%I',cast(c.oid::regclass as text),a.attname) as sql_identifier,
          null as acl
@@ -168,9 +152,7 @@ AS $function$
    WHERE ad.oid = $1
    UNION
   SELECT op.oid,'pg_operator'::regclass,
-         op.oprname as name,
-         n.nspname as namespace,
-         pg_get_userbyid(op.oprowner) as owner,
+         op.oprname as name, n.nspname as namespace, pg_get_userbyid(op.oprowner) as owner,
          'OPERATOR' as sql_kind,
          cast(op.oid::regoperator as text) as sql_identifier,
          null as acl
@@ -178,9 +160,7 @@ AS $function$
    WHERE op.oid = $1
    UNION
   SELECT cfg.oid,'pg_ts_config'::regclass,
-         cfg.cfgname as name,
-         n.nspname as namespace,
-         pg_get_userbyid(cfg.cfgowner) as owner,
+         cfg.cfgname as name, n.nspname as namespace, pg_get_userbyid(cfg.cfgowner) as owner,
          'TEXT SEARCH CONFIGURATION' as sql_kind,
          cast(cfg.oid::regconfig as text) as sql_identifier,
          null as acl
@@ -188,9 +168,7 @@ AS $function$
    WHERE cfg.oid = $1
    UNION
   SELECT dict.oid,'pg_ts_dict'::regclass,
-         dict.dictname as name,
-         n.nspname as namespace,
-         pg_get_userbyid(dict.dictowner) as owner,
+         dict.dictname as name, n.nspname as namespace, pg_get_userbyid(dict.dictowner) as owner,
          'TEXT SEARCH DICTIONARY' as sql_kind,
          cast(dict.oid::regdictionary as text) as sql_identifier,
          null as acl
@@ -198,9 +176,7 @@ AS $function$
    WHERE dict.oid = $1
    UNION
   SELECT prs.oid,'pg_ts_parser'::regclass,
-         prs.prsname as name,
-         n.nspname as namespace,
-         null as owner,
+         prs.prsname as name, n.nspname as namespace, null as owner,
          'TEXT SEARCH PARSER' as sql_kind,
          format('%s%I',
            quote_ident(nullif(n.nspname,current_schema()))||'.',prs.prsname) 
@@ -210,9 +186,7 @@ AS $function$
    WHERE prs.oid = $1
    UNION
   SELECT tmpl.oid,'pg_ts_template'::regclass,
-         tmpl.tmplname as name,
-         n.nspname as namespace,
-         null as owner,
+         tmpl.tmplname as name, n.nspname as namespace, null as owner,
          'TEXT SEARCH TEMPLATE' as sql_kind,
          format('%s%I',
            quote_ident(nullif(n.nspname,current_schema()))||'.',tmpl.tmplname) 
@@ -223,9 +197,7 @@ AS $function$
 #if 9.3
    UNION
   SELECT evt.oid,'pg_event_trigger'::regclass,
-         evt.evtname as name,
-         null as namespace,
-         pg_get_userbyid(evt.evtowner) as owner,
+         evt.evtname as name, null as namespace, pg_get_userbyid(evt.evtowner) as owner,
          'EVENT TRIGGER' as sql_kind,
          quote_ident(evt.evtname) as sql_identifier,
          null as acl
@@ -234,9 +206,7 @@ AS $function$
 #end
    UNION
   SELECT fdw.oid,'pg_foreign_data_wrapper'::regclass,
-         fdw.fdwname as name,
-         null as namespace,
-         pg_get_userbyid(fdw.fdwowner) as owner,
+         fdw.fdwname as name, null as namespace, pg_get_userbyid(fdw.fdwowner) as owner,
          'FOREIGN DATA WRAPPER' as sql_kind,
          quote_ident(fdw.fdwname) as sql_identifier,
          fdwacl as acl
@@ -244,9 +214,7 @@ AS $function$
    WHERE fdw.oid = $1
    UNION
   SELECT srv.oid,'pg_foreign_server'::regclass,
-         srv.srvname as name,
-         null as namespace,
-         pg_get_userbyid(srv.srvowner) as owner,
+         srv.srvname as name, null as namespace, pg_get_userbyid(srv.srvowner) as owner,
          'SERVER' as sql_kind,
          quote_ident(srv.srvname) as sql_identifier,
          srvacl as acl
@@ -254,10 +222,7 @@ AS $function$
    WHERE srv.oid = $1
    UNION
   SELECT ums.umid,'pg_user_mapping'::regclass,
-         null as name,
-         null as namespace,
-         null as owner,
-         'USER MAPPING' as sql_kind,
+         null as name, null as namespace, null as owner, 'USER MAPPING' as sql_kind,
          'FOR '||quote_ident(ums.usename)||
          ' SERVER '||quote_ident(ums.srvname) as sql_identifier,
          null as acl
@@ -265,9 +230,7 @@ AS $function$
    WHERE ums.umid = $1
    UNION
   SELECT ca.oid,'pg_cast'::regclass,
-         null as name,
-         null as namespace,
-         null as owner,
+         null as name, null as namespace, null as owner,
          'CAST' as sql_kind,
          format('(%s AS %s)',
            format_type(ca.castsource,null),format_type(ca.casttarget,null))
@@ -277,9 +240,7 @@ AS $function$
    WHERE ca.oid = $1
    UNION
   SELECT co.oid,'pg_collation'::regclass,
-         co.collname as name,
-         n.nspname as namespace,
-         pg_get_userbyid(co.collowner) as owner,
+         co.collname as name, n.nspname as namespace, pg_get_userbyid(co.collowner) as owner,
          'COLLATION' as sql_kind,
          format('%s%I',
            quote_ident(nullif(n.nspname,current_schema()))||'.',co.collname) 
@@ -289,9 +250,7 @@ AS $function$
    WHERE co.oid = $1
    UNION
   SELECT co.oid,'pg_conversion'::regclass,
-         co.conname as name,
-         n.nspname as namespace,
-         pg_get_userbyid(co.conowner) as owner,
+         co.conname as name, n.nspname as namespace, pg_get_userbyid(co.conowner) as owner,
          'CONVERSION' as sql_kind,
          format('%s%I',
            quote_ident(nullif(n.nspname,current_schema()))||'.',co.conname) 
@@ -301,9 +260,7 @@ AS $function$
    WHERE co.oid = $1
    UNION
   SELECT lan.oid,'pg_language'::regclass,
-         lan.lanname as name,
-         null as namespace,
-         pg_get_userbyid(lan.lanowner) as owner,
+         lan.lanname as name, null as namespace, pg_get_userbyid(lan.lanowner) as owner,
          'LANGUAGE' as sql_kind,
          quote_ident(lan.lanname) as sql_identifier,
          lan.lanacl as acl
@@ -312,9 +269,7 @@ AS $function$
 #if 9.5
    UNION
   SELECT pol.oid,'pg_policy'::regclass,
-         pol.polname as name,
-         null as namespace,
-         null as owner,
+         pol.polname as name, null as namespace, null as owner,
          'POLICY' as sql_kind,
          format('%I ON %s',
                   polname,
@@ -325,9 +280,7 @@ AS $function$
    WHERE pol.oid = $1
    UNION
   SELECT trf.oid,'pg_transform'::regclass,
-         null as name,
-         null as namespace,
-         null as owner,
+         null as name, null as namespace, null as owner,
          'TRANSFORM' as sql_kind,
          format('FOR %s LANGUAGE %I',
                   format_type(trf.trftype,null),
@@ -337,9 +290,7 @@ AS $function$
    WHERE trf.oid = $1
    UNION
   SELECT am.oid,'pg_am'::regclass,
-         am.amname as name,
-         NULL as namespace,
-         NULL as owner,
+         am.amname as name, NULL as namespace, NULL as owner,
          'ACCESS METHOD' as sql_kind,
          quote_ident(amname) as sql_identifier,
          null as acl
@@ -348,9 +299,7 @@ AS $function$
 #end
    UNION
   SELECT opf.oid,'pg_opfamily'::regclass,
-         opf.opfname as name,
-         n.nspname as namespace,
-         pg_get_userbyid(opf.opfowner) as owner,
+         opf.opfname as name, n.nspname as namespace, pg_get_userbyid(opf.opfowner) as owner,
          'OPERATOR FAMILY' as sql_kind,
          format('%s%I USING %I',
            quote_ident(nullif(n.nspname,current_schema()))||'.',
@@ -363,9 +312,7 @@ AS $function$
    WHERE opf.oid = $1
    UNION
   SELECT dat.oid,'pg_database'::regclass,
-         dat.datname as name,
-         null as namespace,
-         pg_get_userbyid(dat.datdba) as owner,
+         dat.datname as name, null as namespace, pg_get_userbyid(dat.datdba) as owner,
          'DATABASE' as sql_kind,
          quote_ident(dat.datname) as sql_identifier,
          dat.datacl as acl
@@ -373,9 +320,7 @@ AS $function$
    WHERE dat.oid = $1
    UNION
   SELECT spc.oid,'pg_tablespace'::regclass,
-         spc.spcname as name,
-         null as namespace,
-         pg_get_userbyid(spc.spcowner) as owner,
+         spc.spcname as name, null as namespace, pg_get_userbyid(spc.spcowner) as owner,
          'TABLESPACE' as sql_kind,
          quote_ident(spc.spcname) as sql_identifier,
          spc.spcacl as acl
@@ -383,9 +328,7 @@ AS $function$
    WHERE spc.oid = $1
    UNION
   SELECT opc.oid,'pg_opclass'::regclass,
-         opcname as name,
-         n.nspname as namespace,
-         pg_get_userbyid(opc.opcowner) as owner,
+         opcname as name, n.nspname as namespace, pg_get_userbyid(opc.opcowner) as owner,
          'OPERATOR CLASS' as sql_kind,
          format('%s%I USING %I',
            quote_ident(nullif(n.nspname,current_schema()))||'.',
@@ -399,9 +342,7 @@ AS $function$
 #if 9.3
    UNION
   SELECT amproc.oid,'pg_amproc'::regclass,
-         'FUNCTION '||amprocnum,
-         null as namespace,
-         null as owner,
+         'FUNCTION '||amprocnum, null as namespace, null as owner,
          'AMPROC' as sql_kind,
          format('FUNCTION %s (%s)',
 	        amprocnum,
@@ -412,9 +353,7 @@ AS $function$
    WHERE amproc.oid = $1
    UNION
   SELECT amop.oid,'pg_amop'::regclass,
-         'OPERATOR '||amopstrategy,
-         null as namespace,
-         null as owner,
+         'OPERATOR '||amopstrategy, null as namespace, null as owner,
          'AMOP' as sql_kind,
          format('OPERATOR %s (%s)',
 	        amopstrategy,
@@ -427,9 +366,7 @@ AS $function$
 #if 10
    UNION
   SELECT stx.oid,'pg_statistic_ext'::regclass,
-         stx.stxname,
-         n.nspname as namespace,
-         pg_get_userbyid(stx.stxowner) as owner,
+         stx.stxname, n.nspname as namespace, pg_get_userbyid(stx.stxowner) as owner,
          'STATISTICS' as sql_kind,
          format('%s%I',quote_ident(nullif(n.nspname,current_schema()))||'.',stx.stxname) 
          as sql_identifier,
@@ -438,9 +375,7 @@ AS $function$
    WHERE stx.oid = $1
    UNION
   SELECT pub.oid,'pg_publication'::regclass,
-         pub.pubname,
-         NULL as namespace,
-         pg_get_userbyid(pub.pubowner) as owner,
+         pub.pubname, NULL as namespace, pg_get_userbyid(pub.pubowner) as owner,
          'PUBLICATION' as sql_kind,
          quote_ident(pub.pubname) as sql_identifier,
          null as acl
@@ -448,9 +383,7 @@ AS $function$
    WHERE pub.oid = $1
    UNION
   SELECT sub.oid,'pg_subscription'::regclass,
-         sub.subname,
-         NULL as namespace,
-         pg_get_userbyid(sub.subowner) as owner,
+         sub.subname, NULL as namespace, pg_get_userbyid(sub.subowner) as owner,
          'SUBSCRIPTION' as sql_kind,
          quote_ident(sub.subname) as sql_identifier,
          null as acl
