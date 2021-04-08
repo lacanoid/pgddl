@@ -3,6 +3,7 @@ Version 0.18
 - bug fix in create_event_trigger()
 - ddlx_identify() now more correctly identifies regtype vs regclass objects
 - exclude objects from extensions unless 'ext' option is specified
+- add .travis.yml file
 
 Version 0.17
 ------------
