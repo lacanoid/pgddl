@@ -1,3 +1,8 @@
+Version 0.18
+------------
+- bug fix in create_event_trigger
+
+
 Version 0.17
 ------------
 - improved support for Postgres 13 (added missing test files)

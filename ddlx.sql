@@ -1611,7 +1611,7 @@ AS $function$
  with obj as (select * from pg_event_trigger where oid = $1)
  select
     'CREATE EVENT TRIGGER ' || quote_ident(obj.evtname) ||
-    ' ON ' || obj.evtname || E'\n' ||
+    ' ON ' || obj.evtevent || E'\n' ||
     case 
     when obj.evttags is not null
     then '  WHEN tag IN ' || 
