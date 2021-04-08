@@ -2894,16 +2894,19 @@ AS $function$
 with 
 ddl as (
 select row_number() over() as n,
-       ddlx_drop(objid),
-       ddlx_create(objid,$2),
-       objid
-  from ddlx_get_dependants($1)
+       ddlx_drop(gd.objid),
+       ddlx_create(gd.objid,$2),
+       gd.objid
+  from ddlx_get_dependants($1) gd
+  left join pg_depend de
+       on de.objid=gd.objid and de.refclassid='pg_extension'::regclass
+ where 'ext' ilike any($2) or de.refclassid is null
 )
 select ddlx_create($1,$2) as ddl_create,
        ddlx_drop($1) as ddl_drop,
        string_agg(ddlx_create,E'\n' order by n) as ddl_create_deps,
        string_agg(ddlx_drop,'' order by n desc) as ddl_drop_deps
-  from ddl
+  from ddl 
 $function$ strict;
 
 ---------------------------------------------------
