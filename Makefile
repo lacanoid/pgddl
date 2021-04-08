@@ -7,7 +7,7 @@ VTESTS       = $(shell bin/tests ${VERSION})
 
 DATA_built   = ddlx--$(EXT_VERSION).sql
 
-REGRESS      = init manifest role type class fdw tsearch policy misc script ${VTESTS}
+REGRESS      = init role type class fdw tsearch policy misc script ${VTESTS}
 #REGRESS      = ($shell bin/tests)
 REGRESS_OPTS = --inputdir=test
 
