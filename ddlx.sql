@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.17 lacanoid@ljudmila.org
+--  version 0.18 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -43,14 +43,16 @@ AS $function$
                 ('p','PSEUDO','TYPE'),
                 ('r','RANGE','TYPE')
   )
-  SELECT c.oid,'pg_class'::regclass,
-         c.relname AS name,
-         n.nspname AS namespace,
+  SELECT coalesce(t.oid,c.oid),
+         case when t.oid is not null then 'pg_type'::regclass
+	 else 'pg_class'::regclass end,
+	 c.relname AS name, n.nspname AS namespace,
          pg_get_userbyid(c.relowner) AS owner,
          coalesce(cc.v,c.relkind::text) AS sql_kind,
          cast($1::regclass AS text) AS sql_identifier,
          relacl as acl
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+    LEFT JOIN pg_type t ON t.typrelid=c.oid AND t.typtype='c' AND c.relkind='c'
     LEFT JOIN rel_kind AS cc on cc.k = c.relkind
    WHERE c.oid = $1
    UNION 
@@ -75,7 +77,9 @@ AS $function$
     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
    WHERE p.oid = $1
    UNION 
-  SELECT t.oid,'pg_type'::regclass,
+  SELECT coalesce(c.oid,t.oid),
+         case when c.oid is not null then 'pg_class'::regclass
+	 else 'pg_type'::regclass end,
          t.typname AS name, n.nspname AS namespace, pg_get_userbyid(t.typowner) AS owner,
          coalesce(cc.v,tt.v2,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier,
@@ -85,8 +89,8 @@ AS $function$
          null as acl
 #end
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
-    LEFT JOIN typ_type AS tt ON tt.k = t.typtype
-    LEFT JOIN pg_class AS c ON c.oid = t.typrelid
+    LEFT JOIN typ_type AS tt ON tt.k = t.typtype 
+    LEFT JOIN pg_class AS c ON c.oid = t.typrelid AND t.typtype='c' AND c.relkind<>'c'
     LEFT JOIN rel_kind AS cc ON cc.k = c.relkind
    WHERE t.oid = $1
    UNION

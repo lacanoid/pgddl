@@ -15,6 +15,8 @@ select ddlx_script('test_type_d'::regtype);
 create type test_type_c as (i integer, t text, d test_type_d);
 comment on type test_type_c is 'my class type';
 comment on column test_type_c.i is 'my class class column i';
+select classid::regclass, sql_kind, sql_identifier from ddlx_identify('test_type_c'::regtype);
+select classid::regclass, sql_kind, sql_identifier from ddlx_identify('test_type_c'::regclass);
 select ddlx_script('test_type_c'::regtype);
 select ddlx_script('test_type_c'::regclass);
 

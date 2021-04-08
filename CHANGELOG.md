@@ -1,6 +1,7 @@
 Version 0.18
 ------------
-- bug fix in create_event_trigger
+- bug fix in create_event_trigger()
+- ddlx_identify() now more correctly identifies regtype vs regclass objects
 
 
 Version 0.17
