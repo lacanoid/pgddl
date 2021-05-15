@@ -35,7 +35,7 @@ Advantages over using other tools like `psql` or `pg_dump` include:
   just use SELECT and hairy SQL instead!
 - It is entrely made out of **plain SQL functions** so you don't have to install any extra
   languages, not even PL/PgSQL! It runs on plain vanilla Postgres.
-  
+
 Some disadvantages:
 
 - Not all Postgres objects and all options are supported yet. Postgres is huge. 

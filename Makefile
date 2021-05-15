@@ -2,12 +2,13 @@ PG_CONFIG    = pg_config
 PKG_CONFIG   = pkg-config
 
 EXTENSION    = ddlx
-EXT_VERSION  = 0.17
+EXT_VERSION  = 0.18
 VTESTS       = $(shell bin/tests ${VERSION})
 
 DATA_built   = ddlx--$(EXT_VERSION).sql
 
-REGRESS      = init manifest role type class fdw tsearch policy misc script ${VTESTS}
+#REGRESS      = init manifest role type class fdw tsearch policy misc script ${VTESTS}
+REGRESS      = init role type class fdw tsearch policy misc script ${VTESTS}
 #REGRESS      = ($shell bin/tests)
 REGRESS_OPTS = --inputdir=test
 
@@ -17,3 +18,4 @@ include $(PGXS)
 $(DATA_built): ddlx.sql
 	@echo "Building extension version" $(EXT_VERSION) "for Postgres version" $(VERSION)
 	VERSION=${VERSION} ./bin/pgsqlpp $^ >$@
+

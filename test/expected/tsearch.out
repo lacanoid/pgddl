@@ -20,7 +20,7 @@ select ddlx_create((
 select oid from pg_event_trigger
  where evtname = 'ddlx_test_event_trigger'));
 ddlx_create
-CREATE EVENT TRIGGER ddlx_test_event_trigger ON ddlx_test_event_trigger
+CREATE EVENT TRIGGER ddlx_test_event_trigger ON ddl_command_start
   WHEN tag IN ('CREATE TABLE')
   EXECUTE PROCEDURE abort_any_command();
 COMMENT ON EVENT TRIGGER ddlx_test_event_trigger IS 'Test event trigger';

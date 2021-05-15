@@ -1,3 +1,10 @@
+Version 0.18
+------------
+- bug fix in create_event_trigger()
+- ddlx_identify() now more correctly identifies regtype vs regclass objects
+- exclude objects from extensions unless 'ext' option is specified
+- added .travis.yml
+
 Version 0.17
 ------------
 - improved support for Postgres 13 (added missing test files)

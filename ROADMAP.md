@@ -26,8 +26,6 @@ Support for other postgres objects:
 - extensions
 
 Support for other missing options:
-- PG 10+: partitions (subpartitions)
-- PG 10+: generated
 - comments on all objects
 - ownership of all objects 
 - grants on all objects
@@ -40,6 +38,8 @@ Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
 - use ONLY when appropriate
 - move not nulls to constraints section
+- move storage setting to pre-data section
+- group column alters together by column name
 - improve support for non superusers (more testing, etc)
 - improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
@@ -56,22 +56,20 @@ Options
 
 Some options as to what and how to dump stuff might be required:
 
-    CREATE TYPE pg_ddl_options AS (
-      ddldrop  boolean, -- generate DROP statements
-      ddlalter boolean, -- prefer ALTER to CREATE
-      ddldcl   boolean, -- include DCL (GRANTS)
-      ddlcor   boolean, -- CREATE OR REPLACE 
-      ddline   boolean, -- IF NOT EXISTS
-      ddlie    boolean, -- IF EXISTS
-      ddlwrap  boolean, -- wrap in BEGIN / END
-      ddldep   boolean, -- output objects which depend on this object too
-      ddldata  boolean  -- add statements preserve / copy table data
-    );
-
-Also, consider pre and post data DDL.
+* `DROP` - generate DROP statements
+* `ALTER` - prefer ALTER to CREATE, implies 'INE' and 'IE'
+* `DCL` - include DCL (GRANTS)
+* `COR` - use CREATE OR REPLACE where possible 
+* `INE` - use IF NOT EXISTS where possible
+* `IE` - use IF EXISTS where possible
+* `WRAP` - wrap in BEGIN / END
+* `DEP` - output objects which depend on this object too
+* `DATA` - add statements preserve / copy table data
 
 These might be passed as optional second arg to extractor functions
 Perhaps as a text array? JSON?
+
+Also, consider how to choose pre and post data DDL.
 
 Perhaps there are other ways to implement some of this?
 

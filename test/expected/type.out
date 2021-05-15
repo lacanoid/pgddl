@@ -49,6 +49,14 @@ END;
 create type test_type_c as (i integer, t text, d test_type_d);
 comment on type test_type_c is 'my class type';
 comment on column test_type_c.i is 'my class class column i';
+select classid::regclass, sql_kind, sql_identifier from ddlx_identify('test_type_c'::regtype);
+classid|sql_kind|sql_identifier
+pg_type|TYPE|test_type_c
+(1 row)
+select classid::regclass, sql_kind, sql_identifier from ddlx_identify('test_type_c'::regclass);
+classid|sql_kind|sql_identifier
+pg_type|TYPE|test_type_c
+(1 row)
 select ddlx_script('test_type_c'::regtype);
 ddlx_script
 BEGIN;
