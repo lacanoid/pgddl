@@ -1,2 +1,2 @@
 *.out   -whitespace
-*.sql   linguist-detectable=false
+*.sql   linguist-language=SQL
