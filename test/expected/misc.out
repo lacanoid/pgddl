@@ -217,7 +217,7 @@ GRANT USAGE ON SCHEMA ddlx_test_schema1 TO PUBLIC;
 (1 row)
 -- apropos
 select classid, sql_kind, sql_identifier
-  from ddlx_apropos('%test_class%');
+  from ddlx_apropos('test_class');
 classid|sql_kind|sql_identifier
 pg_class|SEQUENCE|test_class_r_a_seq
 pg_class|TABLE|test_class_r

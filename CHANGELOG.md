@@ -1,6 +1,7 @@
 Version 0.19
 ------------
-- new function internal `ddlx_create_parts()` to return different parts
+- new internal function `ddlx_create_parts()` to return different parts
+- `ddlx_apropos()` now uses POSIX instead of SQL regular expressions
 
 Version 0.18
 ------------

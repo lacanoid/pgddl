@@ -2132,9 +2132,9 @@ select	'pg_proc'::regclass as classid,
    JOIN pg_roles u ON p.proowner = u.oid
 #end
   WHERE ($1 is null
-         OR p.oid::regprocedure::text similar to $1
-         OR p.prosrc similar to $1
-         OR obj_description(p.oid) similar to $1)
+         OR p.oid::regprocedure::text ~ $1
+         OR p.prosrc ~ $1
+         OR obj_description(p.oid) ~ $1)
     AND has_schema_privilege(s.oid, 'usage')
     AND has_function_privilege(p.oid, 'execute')
 UNION
@@ -2159,9 +2159,9 @@ UNION
    JOIN pg_roles u ON c.relowner = u.oid
 #end
   WHERE ($1 is null
-         OR c.oid::regclass::text similar to $1
-         OR pg_get_viewdef(c.oid,true) similar to $1
-         OR obj_description(c.oid) similar to $1)
+         OR c.oid::regclass::text ~ $1
+         OR pg_get_viewdef(c.oid,true) ~ $1
+         OR obj_description(c.oid) ~ $1)
     AND
 #if 9.5
         s.oid<>'pg_toast'::regnamespace

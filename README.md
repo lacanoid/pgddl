@@ -229,9 +229,9 @@ Nevertheless, some of them are:
 
     Return GRANT statements for an object
 
-- `ddlx_apropos(pattern) returns setof record`
+- `ddlx_apropos(regexp) returns setof record`
 
-    Search query bodies (functions and view definitions) for a pattern.
+    Search query bodies (functions and view definitions) matching POSIX regular expression.
 
 ```sql
 SELECT ddlx_create(objid) FROM ddlx_apropos('%users%');

@@ -61,7 +61,7 @@ select ddlx_create(oid) from pg_namespace where nspname='ddlx_test_schema1';
 
 -- apropos
 select classid, sql_kind, sql_identifier
-  from ddlx_apropos('%test_class%');
+  from ddlx_apropos('test_class');
 
 select namespace,sql_kind, count(*)
   from ddlx_apropos()
