@@ -757,37 +757,15 @@ GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO postgres WITH GRANT OPTION;
 END;
 
 (1 row)
+/*
 CREATE AGGREGATE test_proc_agg_2(anyelement) (
     SFUNC = array_append,
     STYPE = anyarray,
     INITCOND = '{}'
 );
+
 select ddlx_script('test_proc_agg_2'::regproc);
-ddlx_script
-BEGIN;
-
-/*
-DROP AGGREGATE test_proc_agg_2(anyelement);
 */
-
--- Type: AGGREGATE ; Name: test_proc_agg_2(anyelement); Owner: postgres
-
-CREATE AGGREGATE test_proc_agg_2(anyelement) (
-  SFUNC = array_append,
-  STYPE = anyarray,
-  INITCOND = '{}'
-);
-
-COMMENT ON AGGREGATE test_proc_agg_2(anyelement) IS NULL;
-
-ALTER AGGREGATE test_proc_agg_2(anyelement) OWNER TO postgres;
-REVOKE ALL ON FUNCTION test_proc_agg_2(anyelement) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_agg_2(anyelement) TO postgres WITH GRANT OPTION;
-
-END;
-
-(1 row)
 -----
 create table test_parent ( i serial );
 create table test_child () inherits (test_parent);

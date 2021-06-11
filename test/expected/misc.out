@@ -240,7 +240,7 @@ select namespace,sql_kind, count(*)
  group by 1,2
  order by 1,2;
 namespace|sql_kind|count
-public|AGGREGATE|2
+public|AGGREGATE|1
 public|FOREIGN TABLE|1
 public|INDEX|7
 public|MATERIALIZED VIEW|1

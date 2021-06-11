@@ -124,6 +124,7 @@ CREATE AGGREGATE test_proc_agg_1(text) (
 
 select ddlx_script('test_proc_agg_1'::regproc);
 
+/*
 CREATE AGGREGATE test_proc_agg_2(anyelement) (
     SFUNC = array_append,
     STYPE = anyarray,
@@ -131,6 +132,7 @@ CREATE AGGREGATE test_proc_agg_2(anyelement) (
 );
 
 select ddlx_script('test_proc_agg_2'::regproc);
+*/
 
 -----
 create table test_parent ( i serial );
