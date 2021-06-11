@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.18 lacanoid@ljudmila.org
+--  version 0.19 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -2774,8 +2774,17 @@ COMMENT ON FUNCTION ddlx_create(regtype)
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(oid,options text[] default '{}')
- RETURNS text
+CREATE OR REPLACE FUNCTION ddlx_create_parts(
+    oid,
+    options text[] default '{}',
+    out oid oid, 
+    out sql_kind text, 
+    out sql_identifier text,
+    out ddl text,
+    out dcl text,
+    out comment text,
+    out owner text
+ ) RETURNS record
  LANGUAGE sql
 AS $function$
   with obj as (select * from ddlx_identify($1)),
@@ -2835,15 +2844,26 @@ AS $function$
        end
      end 
      as ddl,
+     ddlx_comment(obj.oid) as comment,
      case when obj.owner is not null
-          then ddlx_alter_owner(obj.oid) else '' end ||
+          then ddlx_alter_owner(obj.oid) else '' end
+     as owner,
      case when obj.acl is not null
           then ddlx_grants(obj.oid) else '' end
      as dcl
     from obj
    )
-   select ddl from def
+   select obj.oid, obj.sql_kind, obj.sql_identifier,
+          def.ddl, def.dcl, def.comment, def.owner
+     from def, obj
 $function$  strict;
+
+CREATE OR REPLACE FUNCTION ddlx_create(oid,options text[] default '{}')
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+select ddl from ddlx_create_parts($1,$2)
+$function$ strict;
 
 COMMENT ON FUNCTION ddlx_create(oid, text[]) 
      IS 'Get SQL CREATE statement for a generic object by object id';

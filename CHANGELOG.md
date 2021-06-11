@@ -1,3 +1,7 @@
+Version 0.19
+------------
+- new function internal `ddlx_create_parts()` to return different parts
+
 Version 0.18
 ------------
 - bug fix in create_event_trigger()
