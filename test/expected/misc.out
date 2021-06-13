@@ -87,20 +87,13 @@ DROP CONVERSION "iso_8859_1_to_utf8++";
 (1 row)
 select ddlx_grants('test_class_r'::regclass::oid);
 ddlx_grants
-GRANT DELETE ON TABLE test_class_r TO postgres;
-GRANT INSERT ON TABLE test_class_r TO postgres;
-GRANT REFERENCES ON TABLE test_class_r TO postgres;
-GRANT SELECT ON TABLE test_class_r TO postgres;
-GRANT TRIGGER ON TABLE test_class_r TO postgres;
-GRANT TRUNCATE ON TABLE test_class_r TO postgres;
-GRANT UPDATE ON TABLE test_class_r TO postgres;
-GRANT DELETE ON TABLE test_class_r TO PUBLIC;
 GRANT INSERT ON TABLE test_class_r TO PUBLIC;
-GRANT REFERENCES ON TABLE test_class_r TO PUBLIC;
 GRANT SELECT ON TABLE test_class_r TO PUBLIC;
-GRANT TRIGGER ON TABLE test_class_r TO PUBLIC;
-GRANT TRUNCATE ON TABLE test_class_r TO PUBLIC;
 GRANT UPDATE ON TABLE test_class_r TO PUBLIC;
+GRANT DELETE ON TABLE test_class_r TO PUBLIC;
+GRANT TRUNCATE ON TABLE test_class_r TO PUBLIC;
+GRANT REFERENCES ON TABLE test_class_r TO PUBLIC;
+GRANT TRIGGER ON TABLE test_class_r TO PUBLIC;
 
 (1 row)
 create operator family opf1 using btree;
@@ -176,12 +169,9 @@ ALTER DATABASE ddlx_testdb SET TABLESPACE pg_default;
 ALTER DATABASE ddlx_testdb SET standard_conforming_strings=true;
 
 ALTER DATABASE ddlx_testdb OWNER TO postgres;
-GRANT CREATE ON DATABASE ddlx_testdb TO ddlx_test_user4 WITH GRANT OPTION;
-GRANT CONNECT ON DATABASE ddlx_testdb TO postgres;
-GRANT CREATE ON DATABASE ddlx_testdb TO postgres;
-GRANT TEMPORARY ON DATABASE ddlx_testdb TO postgres;
-GRANT CONNECT ON DATABASE ddlx_testdb TO PUBLIC;
 GRANT TEMPORARY ON DATABASE ddlx_testdb TO PUBLIC;
+GRANT CONNECT ON DATABASE ddlx_testdb TO PUBLIC;
+GRANT CREATE ON DATABASE ddlx_testdb TO ddlx_test_user4 WITH GRANT OPTION;
 
 (1 row)
 abort;
@@ -210,8 +200,6 @@ ddlx_create
 CREATE SCHEMA ddlx_test_schema1;
 COMMENT ON SCHEMA ddlx_test_schema1 IS 'DDLX Test Schema';
 ALTER SCHEMA ddlx_test_schema1 OWNER TO postgres;
-GRANT CREATE ON SCHEMA ddlx_test_schema1 TO postgres;
-GRANT USAGE ON SCHEMA ddlx_test_schema1 TO postgres;
 GRANT USAGE ON SCHEMA ddlx_test_schema1 TO PUBLIC;
 
 (1 row)

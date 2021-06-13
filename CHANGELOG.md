@@ -1,7 +1,11 @@
-Version 0.19
+Version 0.20
 ------------
 - new internal function `ddlx_create_parts()` to return different parts
+
+Version 0.19
+------------
 - `ddlx_apropos()` now uses POSIX instead of SQL regular expressions
+- Postgres 14 test fail fix
 
 Version 0.18
 ------------

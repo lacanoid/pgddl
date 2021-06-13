@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.19 lacanoid@ljudmila.org
+--  version 0.20 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -1979,7 +1979,8 @@ select format('GRANT %s ON %s %s TO %s%s;',
               grantee,grant_option,grantor)
        as dcl
   from obj,a
- order by grantor,lower(grantee),privilege_type
+ where grantee<>obj.owner
+-- order by grantor,lower(grantee),privilege_type
 )
 select coalesce(string_agg(dcl,E'\n')||E'\n','')
   from b

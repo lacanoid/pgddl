@@ -60,7 +60,6 @@ SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='file_
    VALIDATOR file_fdw_validator;                            +
  COMMENT ON FOREIGN DATA WRAPPER file_fdw IS 'File wrapper';+
  ALTER FOREIGN DATA WRAPPER file_fdw OWNER TO postgres;     +
- GRANT USAGE ON FOREIGN DATA WRAPPER file_fdw TO postgres;  +
  GRANT USAGE ON FOREIGN DATA WRAPPER file_fdw TO PUBLIC;    +
  
 (1 row)
@@ -78,7 +77,6 @@ SELECT ddlx_create((select oid from pg_foreign_server where srvname='serv'));
  CREATE SERVER serv FOREIGN DATA WRAPPER file_fdw;+
  COMMENT ON SERVER serv IS 'File server';         +
  ALTER SERVER serv OWNER TO postgres;             +
- GRANT USAGE ON FOREIGN SERVER serv TO postgres;  +
  GRANT USAGE ON FOREIGN SERVER serv TO PUBLIC;    +
  
 (1 row)
