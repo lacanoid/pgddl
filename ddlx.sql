@@ -2209,23 +2209,48 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass)
- RETURNS text
+CREATE OR REPLACE FUNCTION ddlx_alter_class_parts(
+   in regclass,
+   out defaults text,
+   out storage text,
+   out constraints text,
+   out indexes text,
+   out triggers text,
+   out rules text,
+   out rls text,
+   out owner text,
+   out grants text
+)
+ RETURNS record
  LANGUAGE sql
 AS $function$
 with obj as (select * from ddlx_identify($1))
   select 
-     ddlx_alter_table_defaults($1) 
-     || ddlx_alter_table_storage($1) 
-     || ddlx_create_constraints($1) 
-     || ddlx_create_indexes($1) 
-     || ddlx_create_triggers($1) 
-     || ddlx_create_rules($1)
+     ddlx_alter_table_defaults($1) as defaults,
+     ddlx_alter_table_storage($1) as storage,
+     ddlx_create_constraints($1) as constraints,
+     ddlx_create_indexes($1) as indexes,
+     ddlx_create_triggers($1) as triggers,
+     ddlx_create_rules($1) as rules,
 #if 9.5
-     || ddlx_alter_table_rls($1)
+     ddlx_alter_table_rls($1) as rls,
+#else
+     null as rls,
 #end
-     || case when obj.sql_kind is distinct from 'TABLE' then ddlx_alter_owner($1) else '' end
-     || ddlx_grants($1)
+     case when obj.sql_kind is distinct from 'TABLE' then ddlx_alter_owner($1) else '' end as owner,
+     ddlx_grants($1) as grants
+    from obj
+$function$  strict;
+
+
+CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_alter_class_parts($1))
+  select array_to_string( array[
+            defaults,storage,constraints,indexes,triggers,rules,rls,owner,grants
+         ],'')
     from obj
 $function$  strict;
 
