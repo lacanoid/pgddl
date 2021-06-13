@@ -63,6 +63,7 @@ Some options as to what and how to dump stuff might be required:
 * `INE` - use IF NOT EXISTS where possible
 * `IE` - use IF EXISTS where possible
 * `WRAP` - wrap in BEGIN / END
+* `EXT` - include objects from extensions. Normally, these are omitted.
 * `DEP` - output objects which depend on this object too
 * `DATA` - add statements preserve / copy table data
 
