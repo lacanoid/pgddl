@@ -1,6 +1,8 @@
 Version 0.20
 ------------
-- new internal function `ddlx_create_parts()` to return different parts
+- new internal function `ddlx_create_parts()` to return different create parts
+- new internal function `ddlx_alter_class_parts()` to return different alter parts
+
 
 Version 0.19
 ------------

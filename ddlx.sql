@@ -2802,7 +2802,7 @@ COMMENT ON FUNCTION ddlx_create(regtype)
 
 CREATE OR REPLACE FUNCTION ddlx_create_parts(
     oid,
-    options text[] default '{}',
+    ddlx_options text[] default '{}',
     out oid oid, 
     out sql_kind text, 
     out sql_identifier text,
@@ -2884,7 +2884,7 @@ AS $function$
      from def, obj
 $function$  strict;
 
-CREATE OR REPLACE FUNCTION ddlx_create(oid,options text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_create(oid,ddlx_options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
