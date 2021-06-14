@@ -1662,7 +1662,6 @@ AS $function$
     ,'') || E';\n' 
     || ddlx_comment($1)
     || ddlx_alter_owner($1) 
---    || ddlx_grants($1) 
    from obj;
 $function$  strict;
 
@@ -1689,7 +1688,6 @@ AS $function$
     ,'') || E';\n' 
     || ddlx_comment($1)
     || ddlx_alter_owner($1) 
---    || ddlx_grants($1) 
    from obj;
 $function$  strict;
 
@@ -2019,7 +2017,6 @@ AS $function$
         )
     || ddlx_comment($1)
     || ddlx_alter_owner($1)
---    || ddlx_grants($1)
    from obj;
 $function$  strict;
 
@@ -2268,7 +2265,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass, text[] default '{}')
 AS $function$
 with obj as (select * from ddlx_alter_parts($1,$2))
   select array_to_string( array[
-            defaults,storage,constraints,indexes,triggers,rules,rls,owner -- ,grants
+            defaults,storage,constraints,indexes,triggers,rules,rls,owner
          ],'')
     from obj
 $function$  strict;
@@ -2294,7 +2291,6 @@ $function$  strict;
 COMMENT ON FUNCTION ddlx_create(regclass, text[]) 
      IS 'Get SQL CREATE statement for a table, view, sequence or index';
 
-
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_proc(regproc)
@@ -2306,21 +2302,6 @@ AS $function$
      || ddlx_alter_owner($1) 
 --     || ddlx_grants($1)
 $function$  strict;
-
-/*
-COMMENT ON FUNCTION ddlx_create(regproc) 
-     IS 'Get SQL CREATE statement for a routine';
-
-CREATE OR REPLACE FUNCTION ddlx_create_proc(regprocedure)
- RETURNS text
- LANGUAGE sql
-AS $function$
-   select ddlx_create($1::regproc)
-$function$  strict;
-
-COMMENT ON FUNCTION ddlx_create(regprocedure) 
-     IS 'Get SQL CREATE statement for a routine';
-*/
 
 ---------------------------------------------------
 
@@ -2356,10 +2337,6 @@ select format(
   from pg_operator o,obj
  where o.oid = $1
 $function$  strict;
-/*
-COMMENT ON FUNCTION ddlx_create_operator(regoper) 
-     IS 'Get SQL CREATE statement for an operator';
-*/
 
 CREATE OR REPLACE FUNCTION ddlx_create_operator(regoperator)
  RETURNS text
@@ -2367,10 +2344,6 @@ CREATE OR REPLACE FUNCTION ddlx_create_operator(regoperator)
 AS $function$
    select ddlx_create_operator($1::regoper)
 $function$  strict;
-/*
-COMMENT ON FUNCTION ddlx_create_operator(regoperator) 
-     IS 'Get SQL CREATE statement for an operator';
-*/
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_config(regconfig)
@@ -2390,11 +2363,6 @@ select format(E'CREATE TEXT SEARCH CONFIGURATION %s ( PARSER = %s );\n',
        || ddlx_alter_owner($1) 
   from prs;
 $function$  strict;
-
-/*
-COMMENT ON FUNCTION ddlx_create_text_search_config(regconfig) 
-     IS 'Get SQL CREATE statement for a text search configuration';
-*/
 
 ---------------------------------------------------
 
@@ -2416,11 +2384,6 @@ select format(E'CREATE TEXT SEARCH DICTIONARY %s\n  ( TEMPLATE = %s%s );\n',
        || ddlx_alter_owner($1) 
   from dict,tmpl;
 $function$  strict;
-
-/*
-COMMENT ON FUNCTION ddlx_create_text_search_dict(regdictionary) 
-     IS 'Get SQL CREATE statement for a text search dictionary';
-*/
 
 ---------------------------------------------------
 
@@ -2708,7 +2671,6 @@ select format(E'ALTER OPERATOR FAMILY %s DROP %s;\n',
   from a,f,obj
 $function$  strict;
 
-
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_amop(oid)
@@ -2780,13 +2742,6 @@ select format(E'CREATE SCHEMA %I;\n',n.nspname)
  where oid = $1
 $function$  strict;
 
-/*
-#if 9.5
-COMMENT ON FUNCTION ddlx_create_schema(regnamespace) 
-     IS 'Get SQL CREATE statement for a schema';
-#end
-*/
-
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create(regtype)
@@ -2816,15 +2771,9 @@ AS $function$
           end 
           || ddlx_comment(t.oid)
           || ddlx_alter_owner(t.oid) 
-/*
-#if 9.2
-          || ddlx_grants(t.oid) 
-#end
-*/
      from pg_type t
     where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;
-
 
 COMMENT ON FUNCTION ddlx_create(regtype) 
      IS 'Get SQL CREATE statement for a user defined data type';
