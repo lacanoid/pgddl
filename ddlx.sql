@@ -1989,11 +1989,12 @@ c as (
     from b
 )
 select case obj.classid
+       when 'pg_class'::regclass then ddlx_grants(obj.oid::regclass)
        when 'pg_proc'::regclass then ddlx_grants(obj.oid::regproc)
        when 'pg_roles'::regclass then ddlx_grants(obj.oid::regrole)
        else c.grants
        end
-  from obj,c
+  from obj full join c on true
 $function$  strict;
 
 ---------------------------------------------------
