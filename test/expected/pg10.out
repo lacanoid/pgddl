@@ -230,8 +230,8 @@ ddlx_create|ddlx_drop
 CREATE PUBLICATION ddlx_test_pub
   FOR TABLE customer_ind, customer_jap
   WITH ( publish='insert,delete' );
-ALTER PUBLICATION ddlx_test_pub OWNER TO postgres;
 COMMENT ON PUBLICATION ddlx_test_pub IS NULL;
+ALTER PUBLICATION ddlx_test_pub OWNER TO postgres;
 |DROP PUBLICATION ddlx_test_pub;
 
 (1 row)
@@ -251,8 +251,8 @@ CREATE SUBSCRIPTION ddlx_test_sub
     connect='false'
     slot_name='ddlx_test_sub'
     synchronous_commit='off' );
-ALTER SUBSCRIPTION ddlx_test_sub OWNER TO postgres;
 COMMENT ON SUBSCRIPTION ddlx_test_sub IS NULL;
+ALTER SUBSCRIPTION ddlx_test_sub OWNER TO postgres;
 |DROP SUBSCRIPTION ddlx_test_sub;
 
 (1 row)
@@ -265,8 +265,8 @@ CREATE SUBSCRIPTION ddlx_test_sub
   WITH (
     connect='false'
     synchronous_commit='off' );
-ALTER SUBSCRIPTION ddlx_test_sub OWNER TO postgres;
 COMMENT ON SUBSCRIPTION ddlx_test_sub IS NULL;
+ALTER SUBSCRIPTION ddlx_test_sub OWNER TO postgres;
 |DROP SUBSCRIPTION ddlx_test_sub;
 
 (1 row)
