@@ -3,7 +3,7 @@ Version 0.20
 - new internal function `ddlx_create_parts()` to return different create parts
 - new internal function `ddlx_alter_parts()` to return different alter parts
 - demoted a bunch of overloaded `ddlx_create()` functions.
-- `ddlx_grants(oid)` now consistent with other versions
+- `ddlx_grants(oid)` now consistent
 
 Version 0.19
 ------------
