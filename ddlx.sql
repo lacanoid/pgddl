@@ -1591,12 +1591,15 @@ q2 as (
   ) as generate_series(i)
  where oid = $1
  ) 
-select ddl||coalesce(ddl_config||E'\n','')||
+select ddl||coalesce(ddl_config||E'\n','')
+/*
+   ||
 #if 9.5
    ddlx_grants($1::regrole)
 #else
    ddlx_grants_to_role($1)
 #end
+*/
   from q1,q2; 
 $function$  strict
 set datestyle = iso;
@@ -1659,7 +1662,7 @@ AS $function$
     ,'') || E';\n' 
     || ddlx_comment($1)
     || ddlx_alter_owner($1) 
-    || ddlx_grants($1) 
+--    || ddlx_grants($1) 
    from obj;
 $function$  strict;
 
@@ -1686,7 +1689,7 @@ AS $function$
     ,'') || E';\n' 
     || ddlx_comment($1)
     || ddlx_alter_owner($1) 
-    || ddlx_grants($1) 
+--    || ddlx_grants($1) 
    from obj;
 $function$  strict;
 
@@ -2016,7 +2019,7 @@ AS $function$
         )
     || ddlx_comment($1)
     || ddlx_alter_owner($1)
-    || ddlx_grants($1)
+--    || ddlx_grants($1)
    from obj;
 $function$  strict;
 
@@ -2265,7 +2268,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass, text[] default '{}')
 AS $function$
 with obj as (select * from ddlx_alter_parts($1,$2))
   select array_to_string( array[
-            defaults,storage,constraints,indexes,triggers,rules,rls,owner,grants
+            defaults,storage,constraints,indexes,triggers,rules,rls,owner -- ,grants
          ],'')
     from obj
 $function$  strict;
@@ -2301,7 +2304,7 @@ AS $function$
    select 
      ddlx_create_function($1) 
      || ddlx_alter_owner($1) 
-     || ddlx_grants($1)
+--     || ddlx_grants($1)
 $function$  strict;
 
 /*
@@ -2544,7 +2547,7 @@ select format(E'CREATE TABLESPACE %s%s;\n',
          ))
         || ddlx_comment($1)
         || ddlx_alter_owner($1)
-        || ddlx_grants($1)
+--        || ddlx_grants($1)
   from pg_tablespace as t, obj
  where t.oid = $1
 $function$  strict;
@@ -2586,7 +2589,7 @@ select format(E'CREATE DATABASE %s WITH\n  %s;\n\n',
 	                where setdatabase = $1 and setrole = 0::oid)) as cfg
        )
        || ddlx_alter_owner($1) 
-       || ddlx_grants($1)
+--       || ddlx_grants($1)
   from pg_database as d 
   left join pg_tablespace s on (s.oid=d.dattablespace), obj
  where d.oid = $1
@@ -2772,7 +2775,7 @@ AS $function$
 select format(E'CREATE SCHEMA %I;\n',n.nspname)
        || ddlx_comment($1)
        || ddlx_alter_owner($1) 
-       || ddlx_grants($1)
+--       || ddlx_grants($1)
   from pg_namespace n
  where oid = $1
 $function$  strict;
@@ -2813,9 +2816,11 @@ AS $function$
           end 
           || ddlx_comment(t.oid)
           || ddlx_alter_owner(t.oid) 
+/*
 #if 9.2
           || ddlx_grants(t.oid) 
 #end
+*/
      from pg_type t
     where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;
@@ -2912,7 +2917,10 @@ CREATE OR REPLACE FUNCTION ddlx_create(oid,ddlx_options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
-select ddl from ddlx_create_parts($1,$2)
+select array_to_string(array[
+         ddl,dcl
+       ],'')
+  from ddlx_create_parts($1,$2)
 $function$ strict;
 
 COMMENT ON FUNCTION ddlx_create(oid, text[]) 
