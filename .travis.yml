@@ -9,16 +9,13 @@ addons:
     packages:
       - liburiparser-dev
 env:
-  - PGVERSION=9.1
-  - PGVERSION=9.2
-  - PGVERSION=9.3
-  - PGVERSION=9.4
   - PGVERSION=9.5
   - PGVERSION=9.6
   - PGVERSION=10
   - PGVERSION=11
   - PGVERSION=12
   - PGVERSION=13
+  - PGVERSION=14
 script: |
   set -e
   PATH=/usr/lib/postgresql/$PGVERSION/bin:$PATH
