@@ -43,9 +43,9 @@ SELECT ddlx_script('test_class_f'::regclass);
      format 'text'                                           +
  );                                                          +
                                                              +
- COMMENT ON FOREIGN TABLE test_class_f IS 'A Foreign table'; +
  COMMENT ON COLUMN test_class_f.line IS 'A Line of text';    +
                                                              +
+ COMMENT ON FOREIGN TABLE test_class_f IS 'A Foreign table'; +
  ALTER FOREIGN TABLE test_class_f OWNER TO postgres;         +
                                                              +
  END;                                                        +

@@ -45,7 +45,6 @@ CREATE TABLE items (
     acl_write uuid[]
 );
 
-COMMENT ON TABLE items IS NULL;
 ALTER TABLE items OWNER TO postgres;
 
 ALTER TABLE items ALTER id SET DEFAULT uuid_generate_v4();
@@ -57,6 +56,7 @@ ALTER TABLE items ADD CONSTRAINT items_pkey
 
 ALTER TABLE items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE items FORCE ROW LEVEL SECURITY;
+COMMENT ON TABLE items IS NULL;
 
 -- DEPENDANTS
 

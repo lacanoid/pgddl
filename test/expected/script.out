@@ -25,8 +25,8 @@ CREATE OR REPLACE VIEW test_class_v AS
     test_class_r.v
    FROM test_class_r;
 
-COMMENT ON VIEW test_class_v IS NULL;
 
+COMMENT ON VIEW test_class_v IS NULL;
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 
@@ -46,8 +46,8 @@ CREATE OR REPLACE VIEW test_class_v2 AS
     test_class_v.v
    FROM test_class_v;
 
-COMMENT ON VIEW test_class_v2 IS NULL;
 
+COMMENT ON VIEW test_class_v2 IS NULL;
 ALTER VIEW test_class_v2 OWNER TO postgres;
 GRANT SELECT (a) ON test_class_v2 TO PUBLIC;
 GRANT SELECT (b) ON test_class_v2 TO PUBLIC;
@@ -68,10 +68,10 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
    FROM test_class_v
   ORDER BY test_class_v.a;
 
-COMMENT ON VIEW test_class_v_opt2 IS NULL;
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
+COMMENT ON VIEW test_class_v_opt2 IS NULL;
 ALTER VIEW test_class_v_opt2 OWNER TO postgres;
 
 END;

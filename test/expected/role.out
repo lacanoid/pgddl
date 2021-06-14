@@ -29,6 +29,7 @@ ALTER ROLE pgddl_test_user VALID UNTIL '2100-01-01 00:00:00-08';
 
 ALTER ROLE pgddl_test_user SET standard_conforming_strings=true;
 
+COMMENT ON ROLE pgddl_test_user IS NULL;
 GRANT pgddl_test_user2 TO pgddl_test_user;
 GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 
@@ -47,6 +48,7 @@ ALTER ROLE pgddl_test_user3 WITH
 
 ALTER ROLE pgddl_test_user3 VALID UNTIL 'infinity';
 
+COMMENT ON ROLE pgddl_test_user3 IS NULL;
 GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 
 
@@ -64,6 +66,7 @@ ALTER ROLE pgddl_test_user2 WITH
 
 ALTER ROLE pgddl_test_user2 CONNECTION LIMIT 100;
 
+COMMENT ON ROLE pgddl_test_user2 IS NULL;
 GRANT pgddl_test_user2 TO pgddl_test_user;
 
 

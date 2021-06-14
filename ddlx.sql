@@ -1114,8 +1114,9 @@ AS $function$
   else '-- UNSUPPORTED CLASS: '||obj.sql_kind
  end 
   || E'\n' ||
-  case when obj.sql_kind not in ('TYPE') then ddlx_comment($1) else '' end
+/*  case when obj.sql_kind not in ('TYPE') then ddlx_comment($1) else '' end
   ||
+*/
   case when obj.sql_kind = ('TABLE') then ddlx_alter_owner($1) else '' end
   ||
   coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'')
@@ -1482,7 +1483,6 @@ AS $function$
     when 'AGGREGATE' then ddlx_create_aggregate($1)
     else trim(trailing E'\n' from pg_get_functiondef($1)) || E';\n'
    end || E'\n' 
-    || ddlx_comment($1) || E'\n'
    from obj
 $function$  strict;
 
@@ -1498,13 +1498,8 @@ CREATE OR REPLACE FUNCTION ddlx_grants_to_role(oid)
  AS $function$
 with 
 q as (
- select format(E'GRANT %I TO %I%s;\n',
-               r1.rolname,
-               r2.rolname,
-               case
-                 when admin_option then ' WITH ADMIN OPTION'
-                 else ''
-                end)
+ select format(E'GRANT %I TO %I%s;\n',r1.rolname, r2.rolname,
+               case when admin_option then ' WITH ADMIN OPTION' end)
         as ddl1
    from pg_auth_members m
    join pg_roles r1 on (r1.oid=m.roleid)
@@ -1615,7 +1610,6 @@ AS $function$
     else ''
     end ||
     '  EXECUTE PROCEDURE ' || cast(obj.evtfoid as regprocedure) || E';\n'
-    || ddlx_comment($1)
    from obj;
 $function$  strict;
 #end
@@ -1644,7 +1638,6 @@ AS $function$
               E',\n')
          from pg_options_to_table(obj.fdwoptions))||E'\n)'
     ,'') || E';\n' 
-    || ddlx_comment($1)
    from obj;
 $function$  strict;
 
@@ -1669,7 +1662,6 @@ AS $function$
               E',\n')
          from pg_options_to_table(obj.srvoptions))||E'\n)'
     ,'') || E';\n' 
-    || ddlx_comment($1)
    from obj;
 $function$  strict;
 
@@ -1747,7 +1739,6 @@ select format(
              'WITH CHECK ('||p.with_check||')'
              ],E'\n  ')
              )
-    || ddlx_comment($1)
    from obj join pol1 p using (oid);
 $function$  strict;
 #end
@@ -1770,7 +1761,6 @@ AS $function$
             cast(obj.trffromsql::regprocedure as text),
             cast(obj.trftosql::regprocedure as text)
         )
-    || ddlx_comment($1)
    from obj join pg_language l on (l.oid=obj.trflang);
 $function$  strict;
 #end
@@ -1802,7 +1792,6 @@ AS $function$
 #if 10
 	    ],',')
 	   )
-    || ddlx_comment($1)
    from obj
 $function$  strict;
 
@@ -1824,7 +1813,6 @@ AS $function$
 		'synchronous_commit='||quote_literal(obj.subsynccommit)
 	   ],E'\n    ')	   
 	   )
-    || ddlx_comment($1)
    from obj
 $function$  strict;
 #end
@@ -1995,7 +1983,6 @@ AS $function$
             'VALIDATOR ' || nullif(lanvalidator,0)::regproc::text
            ],' '),'')
         )
-    || ddlx_comment($1)
    from obj;
 $function$  strict;
 
@@ -2168,16 +2155,8 @@ $function$;
 ---------------------------------------------------
 --  Main script generating functions
 ---------------------------------------------------
-/*
-CREATE OR REPLACE FUNCTION ddlx_create(regtype)
- RETURNS text
- LANGUAGE sql
-AS $function$ select null::text $function$;
--- will be redefined later
-*/
-#if 9.5
----------------------------------------------------
 
+#if 9.5
 CREATE OR REPLACE FUNCTION ddlx_alter_table_rls(regclass)
  RETURNS text
  LANGUAGE sql
@@ -2299,7 +2278,6 @@ select format(
          case when o.oprcanmerge 
               then E',\n  MERGES' end
         )
-     || ddlx_comment($1)
   from pg_operator o,obj
  where o.oid = $1
 $function$  strict;
@@ -2325,7 +2303,6 @@ with cfg as (select * from pg_ts_config where oid = $1),
 select format(E'CREATE TEXT SEARCH CONFIGURATION %s ( PARSER = %s );\n',
               cast($1 as text),
               prs.sql_identifier)
-       || ddlx_comment($1)
   from prs;
 $function$  strict;
 
@@ -2345,7 +2322,6 @@ select format(E'CREATE TEXT SEARCH DICTIONARY %s\n  ( TEMPLATE = %s%s );\n',
        cast($1 as text),
        tmpl.sql_identifier,
        ', '||dict.dictinitoption)
-       || ddlx_comment($1)
   from dict,tmpl;
 $function$  strict;
 
@@ -2365,7 +2341,6 @@ select format(E'CREATE TEXT SEARCH PARSER %s (\n  %s\n);\n',obj.sql_identifier,
            'HEADLINE = ' || cast(nullif(p.prsheadline,0)::regproc as text)
            ],E',\n  ')
         )
-        || ddlx_comment($1)
   from pg_ts_parser as p, obj
  where p.oid = $1
 $function$  strict;
@@ -2383,7 +2358,6 @@ select format(E'CREATE TEXT SEARCH TEMPLATE %s (\n  %s\n);\n',obj.sql_identifier
            'LEXIZE = ' || cast(nullif(t.tmpllexize,0)::regproc as text) 
            ],E',\n  ')
         )
-        || ddlx_comment($1)
   from pg_ts_template as t, obj
  where t.oid = $1
 $function$  strict;
@@ -2409,7 +2383,6 @@ select format(E'CREATE CAST %s\n  ',obj.sql_identifier)
            else ''
            end
         || E';\n'
-        || ddlx_comment($1)
   from pg_cast as c, obj
  where c.oid = $1
 $function$  strict;
@@ -2427,7 +2400,6 @@ select format(E'CREATE COLLATION %s (\n  %s\n);\n',obj.sql_identifier,
            'LC_CTYPE = '  || quote_nullable(collctype)
            ],E',\n  ')
         )
-        || ddlx_comment($1)
   from pg_collation as c, obj
  where c.oid = $1
 $function$  strict;
@@ -2446,7 +2418,6 @@ select format(E'CREATE %sCONVERSION %s\n  FOR %L TO %L FROM %s;\n',
         pg_encoding_to_char(c.contoencoding),
         cast(c.conproc::regproc as text)
        )
-        || ddlx_comment($1)
   from pg_conversion as c, obj
  where c.oid = $1
 $function$  strict;
@@ -2470,7 +2441,6 @@ select format(E'CREATE TABLESPACE %s%s;\n',
           E'\n') as ss
      from pg_options_to_table(t.spcoptions)
          ))
-        || ddlx_comment($1)
   from pg_tablespace as t, obj
  where t.oid = $1
 $function$  strict;
@@ -2491,7 +2461,7 @@ select format(E'CREATE DATABASE %s WITH\n  %s;\n\n',
                'LC_CTYPE = '||quote_ident(d.datctype)
               ],E'\n  ')
               )
-       || ddlx_comment($1) || E'\n' ||
+       || E'\n' ||
        format(E'ALTER DATABASE %s WITH ALLOW_CONNECTIONS %s;\n',
               obj.sql_identifier, d.datallowconn::text) ||
        case when d.datconnlimit>0 then
@@ -2535,7 +2505,6 @@ select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
 #else
 select format(E'-- CREATE ACCESS METHOD %I;\n\n',amname)
 #end
-        || ddlx_comment($1)
   from pg_am as am, obj
  where am.oid = $1
 $function$  strict;
@@ -2558,7 +2527,6 @@ select format(E'CREATE OPERATOR CLASS %s %sFOR TYPE %s USING %I%s AS STORAGE %s;
              else '' end,
         format_type(opc.opcintype,null)
        )
-        || ddlx_comment($1)
   from pg_opclass as opc join pg_am am on (am.oid=opc.opcmethod)
   left join pg_opfamily opf on (opf.oid=opc.opcfamily), 
        obj
@@ -2576,7 +2544,6 @@ select format(E'CREATE OPERATOR FAMILY %s;\n',
         obj.sql_identifier,
         amname
        )
-        || ddlx_comment($1)
   from pg_opfamily as opf join pg_am am on (am.oid=opf.opfmethod), 
        obj
  where opf.oid = $1
@@ -2691,7 +2658,6 @@ CREATE OR REPLACE FUNCTION ddlx_create_schema(oid)
  LANGUAGE sql
 AS $function$
 select format(E'CREATE SCHEMA %I;\n',n.nspname)
-       || ddlx_comment($1)
   from pg_namespace n
  where oid = $1
 $function$  strict;
@@ -2703,7 +2669,6 @@ CREATE OR REPLACE FUNCTION ddlx_create_type(regtype)
  LANGUAGE sql
 AS $function$
    select ddlx_create_class(c.oid::regclass) -- type
-          || ddlx_comment(t.oid)
      from pg_type t
      join pg_class c on (c.oid=t.typrelid)
     where t.oid = $1 and t.typtype = 'c' and c.relkind = 'c'
@@ -2722,7 +2687,6 @@ AS $function$
 #end
           else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
           end 
-          || ddlx_comment(t.oid)
      from pg_type t
     where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;
@@ -2821,6 +2785,7 @@ AS $function$
 with obj as (select * from ddlx_identify($1))
 select array_to_string(array[
          ddl,
+         case when obj.sql_kind is distinct from 'DEFAULT' then comment end,
          case when obj.sql_kind is distinct from 'TABLE' then p.owner end,
          dcl
        ],'')
