@@ -2272,16 +2272,6 @@ COMMENT ON FUNCTION ddlx_create(regclass, text[])
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_proc(regproc)
- RETURNS text
- LANGUAGE sql
-AS $function$
-   select 
-     ddlx_create_function($1) 
-$function$  strict;
-
----------------------------------------------------
-
 CREATE OR REPLACE FUNCTION ddlx_create_operator(regoper)
  RETURNS text
  LANGUAGE sql
@@ -2760,7 +2750,7 @@ AS $function$
   select case obj.classid
     when 'pg_class'::regclass          then ddlx_create(oid::regclass)
     when 'pg_type'::regclass           then ddlx_create_type(oid::regtype)
-    when 'pg_proc'::regclass           then ddlx_create_proc(oid::regproc)
+    when 'pg_proc'::regclass           then ddlx_create_function(oid::regproc)
     when 'pg_operator'::regclass       then ddlx_create_operator(oid::regoper)
     when 'pg_opfamily'::regclass       then ddlx_create_operator_family(oid)
     when 'pg_rewrite'::regclass        then ddlx_create_rule(oid)
