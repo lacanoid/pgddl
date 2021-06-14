@@ -8,7 +8,6 @@ select * from a
 ;
  ddlx_create(oid,text[])                     | Get SQL CREATE statement for a generic object by object id
  ddlx_create(regclass,text[])                | Get SQL CREATE statement for a table, view, sequence or index
- ddlx_create(regtype)                        | Get SQL CREATE statement for a user defined data type
  ddlx_drop(oid)                              | Get SQL DROP statement for an object by object id
  ddlx_script(oid,text[])                     | Get SQL DDL script for an object and dependants by object id
  ddlx_script(text,text[])                    | Get SQL DDL script for an object and dependants by object name
@@ -65,6 +64,7 @@ select * from a
  ddlx_create_transform(oid)                  | 
  ddlx_create_trigger(oid)                    | 
  ddlx_create_triggers(regclass)              | 
+ ddlx_create_type(regtype)                   | 
  ddlx_create_type_base(regtype)              | 
  ddlx_create_type_domain(regtype)            | 
  ddlx_create_type_enum(regtype)              | 

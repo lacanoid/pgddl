@@ -1631,7 +1631,6 @@ AS $function$
     end ||
     '  EXECUTE PROCEDURE ' || cast(obj.evtfoid as regprocedure) || E';\n'
     || ddlx_comment($1)
-    || ddlx_alter_owner($1) 
    from obj;
 $function$  strict;
 #end
@@ -1661,7 +1660,6 @@ AS $function$
          from pg_options_to_table(obj.fdwoptions))||E'\n)'
     ,'') || E';\n' 
     || ddlx_comment($1)
-    || ddlx_alter_owner($1) 
    from obj;
 $function$  strict;
 
@@ -1687,7 +1685,6 @@ AS $function$
          from pg_options_to_table(obj.srvoptions))||E'\n)'
     ,'') || E';\n' 
     || ddlx_comment($1)
-    || ddlx_alter_owner($1) 
    from obj;
 $function$  strict;
 
@@ -1820,7 +1817,6 @@ AS $function$
 #if 10
 	    ],',')
 	   )
-    || ddlx_alter_owner($1)
     || ddlx_comment($1)
    from obj
 $function$  strict;
@@ -1843,7 +1839,6 @@ AS $function$
 		'synchronous_commit='||quote_literal(obj.subsynccommit)
 	   ],E'\n    ')	   
 	   )
-    || ddlx_alter_owner($1)
     || ddlx_comment($1)
    from obj
 $function$  strict;
@@ -2016,7 +2011,6 @@ AS $function$
            ],' '),'')
         )
     || ddlx_comment($1)
-    || ddlx_alter_owner($1)
    from obj;
 $function$  strict;
 
@@ -2189,13 +2183,13 @@ $function$;
 ---------------------------------------------------
 --  Main script generating functions
 ---------------------------------------------------
-
+/*
 CREATE OR REPLACE FUNCTION ddlx_create(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$ select null::text $function$;
 -- will be redefined later
-
+*/
 #if 9.5
 ---------------------------------------------------
 
@@ -2253,7 +2247,7 @@ with obj as (select * from ddlx_identify($1))
 #else
      null as rls,
 #end
-     case when obj.sql_kind is distinct from 'TABLE' then ddlx_alter_owner($1) else '' end as owner,
+     ddlx_alter_owner($1) as owner,
      ddlx_grants($1) as grants
     from obj
 $function$  strict;
@@ -2265,7 +2259,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass, text[] default '{}')
 AS $function$
 with obj as (select * from ddlx_alter_parts($1,$2))
   select array_to_string( array[
-            defaults,storage,constraints,indexes,triggers,rules,rls,owner
+            defaults,storage,constraints,indexes,triggers,rules,rls
          ],'')
     from obj
 $function$  strict;
@@ -2282,7 +2276,7 @@ AS $function$
     from pg_class c
    where c.oid = $1 and c.relkind <> 'c'
    union 
-  select ddlx_create(t.oid::regtype)
+  select ddlx_create_type(t.oid::regtype)
     from pg_class c
     left join pg_type t on (c.oid=t.typrelid)
    where c.oid = $1 and c.relkind = 'c'
@@ -2299,8 +2293,6 @@ CREATE OR REPLACE FUNCTION ddlx_create_proc(regproc)
 AS $function$
    select 
      ddlx_create_function($1) 
-     || ddlx_alter_owner($1) 
---     || ddlx_grants($1)
 $function$  strict;
 
 ---------------------------------------------------
@@ -2333,7 +2325,6 @@ select format(
               then E',\n  MERGES' end
         )
      || ddlx_comment($1)
-     || ddlx_alter_owner($1) 
   from pg_operator o,obj
  where o.oid = $1
 $function$  strict;
@@ -2360,7 +2351,6 @@ select format(E'CREATE TEXT SEARCH CONFIGURATION %s ( PARSER = %s );\n',
               cast($1 as text),
               prs.sql_identifier)
        || ddlx_comment($1)
-       || ddlx_alter_owner($1) 
   from prs;
 $function$  strict;
 
@@ -2381,7 +2371,6 @@ select format(E'CREATE TEXT SEARCH DICTIONARY %s\n  ( TEMPLATE = %s%s );\n',
        tmpl.sql_identifier,
        ', '||dict.dictinitoption)
        || ddlx_comment($1)
-       || ddlx_alter_owner($1) 
   from dict,tmpl;
 $function$  strict;
 
@@ -2464,7 +2453,6 @@ select format(E'CREATE COLLATION %s (\n  %s\n);\n',obj.sql_identifier,
            ],E',\n  ')
         )
         || ddlx_comment($1)
-        || ddlx_alter_owner($1)
   from pg_collation as c, obj
  where c.oid = $1
 $function$  strict;
@@ -2484,7 +2472,6 @@ select format(E'CREATE %sCONVERSION %s\n  FOR %L TO %L FROM %s;\n',
         cast(c.conproc::regproc as text)
        )
         || ddlx_comment($1)
-        || ddlx_alter_owner($1)
   from pg_conversion as c, obj
  where c.oid = $1
 $function$  strict;
@@ -2509,8 +2496,6 @@ select format(E'CREATE TABLESPACE %s%s;\n',
      from pg_options_to_table(t.spcoptions)
          ))
         || ddlx_comment($1)
-        || ddlx_alter_owner($1)
---        || ddlx_grants($1)
   from pg_tablespace as t, obj
  where t.oid = $1
 $function$  strict;
@@ -2551,8 +2536,6 @@ select format(E'CREATE DATABASE %s WITH\n  %s;\n\n',
           from unnest((select setconfig from pg_db_role_setting
 	                where setdatabase = $1 and setrole = 0::oid)) as cfg
        )
-       || ddlx_alter_owner($1) 
---       || ddlx_grants($1)
   from pg_database as d 
   left join pg_tablespace s on (s.oid=d.dattablespace), obj
  where d.oid = $1
@@ -2601,7 +2584,6 @@ select format(E'CREATE OPERATOR CLASS %s %sFOR TYPE %s USING %I%s AS STORAGE %s;
         format_type(opc.opcintype,null)
        )
         || ddlx_comment($1)
-        || ddlx_alter_owner($1)
   from pg_opclass as opc join pg_am am on (am.oid=opc.opcmethod)
   left join pg_opfamily opf on (opf.oid=opc.opcfamily), 
        obj
@@ -2620,7 +2602,6 @@ select format(E'CREATE OPERATOR FAMILY %s;\n',
         amname
        )
         || ddlx_comment($1)
-        || ddlx_alter_owner($1)
   from pg_opfamily as opf join pg_am am on (am.oid=opf.opfmethod), 
        obj
  where opf.oid = $1
@@ -2736,21 +2717,18 @@ CREATE OR REPLACE FUNCTION ddlx_create_schema(oid)
 AS $function$
 select format(E'CREATE SCHEMA %I;\n',n.nspname)
        || ddlx_comment($1)
-       || ddlx_alter_owner($1) 
---       || ddlx_grants($1)
   from pg_namespace n
  where oid = $1
 $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(regtype)
+CREATE OR REPLACE FUNCTION ddlx_create_type(regtype)
  RETURNS text
  LANGUAGE sql
 AS $function$
    select ddlx_create_class(c.oid::regclass) -- type
           || ddlx_comment(t.oid)
-          || ddlx_alter_owner(t.oid) 
      from pg_type t
      join pg_class c on (c.oid=t.typrelid)
     where t.oid = $1 and t.typtype = 'c' and c.relkind = 'c'
@@ -2770,14 +2748,13 @@ AS $function$
           else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
           end 
           || ddlx_comment(t.oid)
-          || ddlx_alter_owner(t.oid) 
      from pg_type t
     where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;
-
-COMMENT ON FUNCTION ddlx_create(regtype) 
+/*
+COMMENT ON FUNCTION ddlx_create_type(regtype) 
      IS 'Get SQL CREATE statement for a user defined data type';
-
+*/
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_parts(
@@ -2797,7 +2774,7 @@ AS $function$
   def as (
   select case obj.classid
     when 'pg_class'::regclass          then ddlx_create(oid::regclass)
-    when 'pg_type'::regclass           then ddlx_create(oid::regtype)
+    when 'pg_type'::regclass           then ddlx_create_type(oid::regtype)
     when 'pg_proc'::regclass           then ddlx_create_proc(oid::regproc)
     when 'pg_operator'::regclass       then ddlx_create_operator(oid::regoper)
     when 'pg_opfamily'::regclass       then ddlx_create_operator_family(oid)
@@ -2838,7 +2815,7 @@ AS $function$
     when 'pg_am'::regclass             then ddlx_create_access_method(oid)
 #if 10
     when 'pg_statistic_ext'::regclass
-    then pg_get_statisticsobjdef(oid)||E';\n'||ddlx_alter_owner(oid)
+    then pg_get_statisticsobjdef(oid)||E';\n' 
     when 'pg_publication'::regclass    then ddlx_create_publication(oid)
     when 'pg_subscription'::regclass   then ddlx_create_subscription(oid)
 #end
@@ -2866,10 +2843,13 @@ CREATE OR REPLACE FUNCTION ddlx_create(oid,ddlx_options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
+with obj as (select * from ddlx_identify($1))
 select array_to_string(array[
-         ddl,dcl
+         ddl,
+         case when obj.sql_kind is distinct from 'TABLE' then p.owner end,
+         dcl
        ],'')
-  from ddlx_create_parts($1,$2)
+  from obj,ddlx_create_parts($1,$2) p
 $function$ strict;
 
 COMMENT ON FUNCTION ddlx_create(oid, text[]) 

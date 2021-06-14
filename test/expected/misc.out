@@ -130,17 +130,14 @@ ddlx_create_language
 CREATE OR REPLACE LANGUAGE c
   VALIDATOR fmgr_c_validator;
 COMMENT ON LANGUAGE c IS 'dynamically-loaded C functions';
-ALTER LANGUAGE c OWNER TO postgres;
 
 CREATE OR REPLACE LANGUAGE internal
   VALIDATOR fmgr_internal_validator;
 COMMENT ON LANGUAGE internal IS 'built-in functions';
-ALTER LANGUAGE internal OWNER TO postgres;
 
 CREATE OR REPLACE TRUSTED LANGUAGE sql
   VALIDATOR fmgr_sql_validator;
 COMMENT ON LANGUAGE sql IS 'SQL-language functions';
-ALTER LANGUAGE sql OWNER TO postgres;
 
 (3 rows)
 -- database
