@@ -1532,7 +1532,7 @@ AS $function$
 $function$  strict;
 
 #if 9.5
-CREATE OR REPLACE FUNCTION ddlx_create(regrole)
+CREATE OR REPLACE FUNCTION ddlx_create_role(regrole)
 #else
 CREATE OR REPLACE FUNCTION ddlx_create_role(oid)
 #end
@@ -1601,10 +1601,12 @@ select ddl||coalesce(ddl_config||E'\n','')||
 $function$  strict
 set datestyle = iso;
 
+/*
 #if 9.5
-COMMENT ON FUNCTION ddlx_create(regrole) 
+COMMENT ON FUNCTION ddlx_create_role(regrole) 
      IS 'Get SQL CREATE statement for a role';
 #end
+*/
 
 ---------------------------------------------------
 #if 9.3
@@ -1981,9 +1983,17 @@ select format('GRANT %s ON %s %s TO %s%s;',
   from obj,a
  where grantee<>obj.owner
 -- order by grantor,lower(grantee),privilege_type
+),
+c as (
+  select coalesce(string_agg(dcl,E'\n')||E'\n','') as grants
+    from b
 )
-select coalesce(string_agg(dcl,E'\n')||E'\n','')
-  from b
+select case obj.classid
+       when 'pg_proc'::regclass then ddlx_grants(obj.oid::regproc)
+       when 'pg_roles'::regclass then ddlx_grants(obj.oid::regrole)
+       else c.grants
+       end
+  from obj,c
 $function$  strict;
 
 ---------------------------------------------------
@@ -2209,8 +2219,10 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_class_parts(
+CREATE OR REPLACE FUNCTION ddlx_alter_parts(
    in regclass,
+   in options text[] default '{}',
+   out comment text,
    out defaults text,
    out storage text,
    out constraints text,
@@ -2226,6 +2238,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_class_parts(
 AS $function$
 with obj as (select * from ddlx_identify($1))
   select 
+     ddlx_comment($1) as comment,
      ddlx_alter_table_defaults($1) as defaults,
      ddlx_alter_table_storage($1) as storage,
      ddlx_create_constraints($1) as constraints,
@@ -2243,11 +2256,11 @@ with obj as (select * from ddlx_identify($1))
 $function$  strict;
 
 
-CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass)
+CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
-with obj as (select * from ddlx_alter_class_parts($1))
+with obj as (select * from ddlx_alter_parts($1,$2))
   select array_to_string( array[
             defaults,storage,constraints,indexes,triggers,rules,rls,owner,grants
          ],'')
@@ -2256,7 +2269,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(regclass)
+CREATE OR REPLACE FUNCTION ddlx_create(regclass, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2272,13 +2285,13 @@ AS $function$
    where c.oid = $1 and c.relkind = 'c'
 $function$  strict;
 
-COMMENT ON FUNCTION ddlx_create(regclass) 
+COMMENT ON FUNCTION ddlx_create(regclass, text[]) 
      IS 'Get SQL CREATE statement for a table, view, sequence or index';
 
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(regproc)
+CREATE OR REPLACE FUNCTION ddlx_create_proc(regproc)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2288,10 +2301,11 @@ AS $function$
      || ddlx_grants($1)
 $function$  strict;
 
+/*
 COMMENT ON FUNCTION ddlx_create(regproc) 
      IS 'Get SQL CREATE statement for a routine';
 
-CREATE OR REPLACE FUNCTION ddlx_create(regprocedure)
+CREATE OR REPLACE FUNCTION ddlx_create_proc(regprocedure)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2300,10 +2314,11 @@ $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regprocedure) 
      IS 'Get SQL CREATE statement for a routine';
+*/
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(regoper)
+CREATE OR REPLACE FUNCTION ddlx_create_operator(regoper)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2335,23 +2350,24 @@ select format(
   from pg_operator o,obj
  where o.oid = $1
 $function$  strict;
-
-COMMENT ON FUNCTION ddlx_create(regoper) 
+/*
+COMMENT ON FUNCTION ddlx_create_operator(regoper) 
      IS 'Get SQL CREATE statement for an operator';
+*/
 
-CREATE OR REPLACE FUNCTION ddlx_create(regoperator)
+CREATE OR REPLACE FUNCTION ddlx_create_operator(regoperator)
  RETURNS text
  LANGUAGE sql
 AS $function$
-   select ddlx_create($1::regoper)
+   select ddlx_create_operator($1::regoper)
 $function$  strict;
-
-COMMENT ON FUNCTION ddlx_create(regoperator) 
+/*
+COMMENT ON FUNCTION ddlx_create_operator(regoperator) 
      IS 'Get SQL CREATE statement for an operator';
-
+*/
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(regconfig)
+CREATE OR REPLACE FUNCTION ddlx_create_text_search_config(regconfig)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2369,12 +2385,14 @@ select format(E'CREATE TEXT SEARCH CONFIGURATION %s ( PARSER = %s );\n',
   from prs;
 $function$  strict;
 
-COMMENT ON FUNCTION ddlx_create(regconfig) 
+/*
+COMMENT ON FUNCTION ddlx_create_text_search_config(regconfig) 
      IS 'Get SQL CREATE statement for a text search configuration';
+*/
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(regdictionary)
+CREATE OR REPLACE FUNCTION ddlx_create_text_search_dict(regdictionary)
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2393,8 +2411,10 @@ select format(E'CREATE TEXT SEARCH DICTIONARY %s\n  ( TEMPLATE = %s%s );\n',
   from dict,tmpl;
 $function$  strict;
 
-COMMENT ON FUNCTION ddlx_create(regdictionary) 
+/*
+COMMENT ON FUNCTION ddlx_create_text_search_dict(regdictionary) 
      IS 'Get SQL CREATE statement for a text search dictionary';
+*/
 
 ---------------------------------------------------
 
@@ -2739,7 +2759,7 @@ $function$  strict;
 ---------------------------------------------------
 
 #if 9.5
-CREATE OR REPLACE FUNCTION ddlx_create(regnamespace)
+CREATE OR REPLACE FUNCTION ddlx_create_schema(regnamespace)
 #else
 CREATE OR REPLACE FUNCTION ddlx_create_schema(oid)
 #end
@@ -2754,10 +2774,12 @@ select format(E'CREATE SCHEMA %I;\n',n.nspname)
  where oid = $1
 $function$  strict;
 
+/*
 #if 9.5
-COMMENT ON FUNCTION ddlx_create(regnamespace) 
+COMMENT ON FUNCTION ddlx_create_schema(regnamespace) 
      IS 'Get SQL CREATE statement for a schema';
 #end
+*/
 
 ---------------------------------------------------
 
@@ -2795,6 +2817,7 @@ AS $function$
     where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;
 
+
 COMMENT ON FUNCTION ddlx_create(regtype) 
      IS 'Get SQL CREATE statement for a user defined data type';
 
@@ -2807,9 +2830,9 @@ CREATE OR REPLACE FUNCTION ddlx_create_parts(
     out sql_kind text, 
     out sql_identifier text,
     out ddl text,
-    out dcl text,
     out comment text,
-    out owner text
+    out owner text,
+    out dcl text
  ) RETURNS record
  LANGUAGE sql
 AS $function$
@@ -2817,13 +2840,13 @@ AS $function$
   def as (
   select case obj.classid
     when 'pg_class'::regclass          then ddlx_create(oid::regclass)
-    when 'pg_proc'::regclass           then ddlx_create(oid::regproc)
     when 'pg_type'::regclass           then ddlx_create(oid::regtype)
-    when 'pg_operator'::regclass       then ddlx_create(oid::regoper)
+    when 'pg_proc'::regclass           then ddlx_create_proc(oid::regproc)
+    when 'pg_operator'::regclass       then ddlx_create_operator(oid::regoper)
     when 'pg_opfamily'::regclass       then ddlx_create_operator_family(oid)
     when 'pg_rewrite'::regclass        then ddlx_create_rule(oid)
-    when 'pg_ts_config'::regclass      then ddlx_create(oid::regconfig)
-    when 'pg_ts_dict'::regclass        then ddlx_create(oid::regdictionary)
+    when 'pg_ts_config'::regclass      then ddlx_create_text_search_config(oid::regconfig)
+    when 'pg_ts_dict'::regclass        then ddlx_create_text_search_dict(oid::regdictionary)
     when 'pg_ts_parser'::regclass      then ddlx_create_text_search_parser(oid)
     when 'pg_ts_template'::regclass    then ddlx_create_text_search_template(oid)
     when 'pg_database'::regclass       then ddlx_create_database(oid)
@@ -2839,8 +2862,8 @@ AS $function$
     when 'pg_language'::regclass       then ddlx_create_language(oid)
     when 'pg_opclass'::regclass        then ddlx_create_operator_class(oid)
 #if 9.5
-    when 'pg_roles'::regclass          then ddlx_create(oid::regrole)
-    when 'pg_namespace'::regclass      then ddlx_create(oid::regnamespace)
+    when 'pg_roles'::regclass          then ddlx_create_role(oid::regrole)
+    when 'pg_namespace'::regclass      then ddlx_create_schema(oid::regnamespace)
 #else
     when 'pg_roles'::regclass          then ddlx_create_role(oid)
     when 'pg_namespace'::regclass      then ddlx_create_schema(oid)
@@ -2874,13 +2897,11 @@ AS $function$
      case when obj.owner is not null
           then ddlx_alter_owner(obj.oid) else '' end
      as owner,
-     case when obj.acl is not null
-          then ddlx_grants(obj.oid) else '' end
-     as dcl
+     ddlx_grants(obj.oid) as dcl
     from obj
    )
    select obj.oid, obj.sql_kind, obj.sql_identifier,
-          def.ddl, def.dcl, def.comment, def.owner
+          def.ddl, def.comment, def.owner, def.dcl
      from def, obj
 $function$  strict;
 
