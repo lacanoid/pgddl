@@ -1592,24 +1592,9 @@ q2 as (
  where oid = $1
  ) 
 select ddl||coalesce(ddl_config||E'\n','')
-/*
-   ||
-#if 9.5
-   ddlx_grants($1::regrole)
-#else
-   ddlx_grants_to_role($1)
-#end
-*/
   from q1,q2; 
 $function$  strict
 set datestyle = iso;
-
-/*
-#if 9.5
-COMMENT ON FUNCTION ddlx_create_role(regrole) 
-     IS 'Get SQL CREATE statement for a role';
-#end
-*/
 
 ---------------------------------------------------
 #if 9.3
@@ -1896,7 +1881,7 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass)
  a   as (
  select
    coalesce(
-    string_agg(format(
+    format(
         E'GRANT %s ON %s TO %s%s;\n',
         privilege_type, 
         cast($1 as text),
@@ -1907,7 +1892,7 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass)
         case is_grantable  
           when 'YES' then ' WITH GRANT OPTION' 
           else '' 
-        end), ''),
+        end), 
     '') as ddl
  FROM information_schema.table_privileges g 
  join obj on (true)
@@ -1915,7 +1900,7 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass)
    AND table_name=obj.name
    AND grantee<>obj.owner
 )
-select coalesce(a.ddl,'')||
+select coalesce(string_agg(a.ddl,''),'')||
        ddlx_grants_columns($1) from a
 $function$  strict;
 
