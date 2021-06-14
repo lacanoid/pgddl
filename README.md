@@ -234,7 +234,7 @@ Nevertheless, some of them are:
     Search query bodies (functions and view definitions) matching POSIX regular expression.
 
 ```sql
-SELECT ddlx_create(objid) FROM ddlx_apropos('%users%');
+SELECT ddlx_create(objid) FROM ddlx_apropos('users');
 ```
 
 See file [ddlx.sql](ddlx.sql) and [full list of functions](test/expected/manifest.out) for additional details.

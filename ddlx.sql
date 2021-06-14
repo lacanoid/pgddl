@@ -1982,7 +1982,7 @@ select format('GRANT %s ON %s %s TO %s%s;',
        as dcl
   from obj,a
  where grantee<>obj.owner
--- order by grantor,lower(grantee),privilege_type
+ order by grantor,lower(grantee),privilege_type
 ),
 c as (
   select coalesce(string_agg(dcl,E'\n')||E'\n','') as grants
