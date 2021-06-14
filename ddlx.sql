@@ -2223,6 +2223,7 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_alter_parts(
    in regclass,
    in options text[] default '{}',
+   out base text,
    out comment text,
    out defaults text,
    out storage text,
@@ -2239,6 +2240,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_parts(
 AS $function$
 with obj as (select * from ddlx_identify($1))
   select 
+     ddlx_create_class($1),
      ddlx_comment($1) as comment,
      ddlx_alter_table_defaults($1) as defaults,
      ddlx_alter_table_storage($1) as storage,
