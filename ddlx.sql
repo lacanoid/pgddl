@@ -1181,6 +1181,26 @@ cs as (
    from d, obj
   where storage is not null
 ),
+ts as (
+  select case when s.oid is not null then
+         format(E'ALTER %s %s SET TABLESPACE %I;\n\n',
+                obj.sql_kind, obj.sql_identifier, s.spcname) 
+         else '' end as ddl
+    from obj, pg_class c 
+    left join pg_tablespace s on (s.oid=c.reltablespace)
+   where c.oid = $1
+)
+select cs.ddl || ts.ddl
+  from cs,ts
+$function$ strict;
+
+CREATE OR REPLACE FUNCTION ddlx_alter_table_settings(regclass)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with 
+obj as (select * from ddlx_identify($1)),
+d as (select * from ddlx_describe($1)),
 ob as (
  select coalesce(string_agg(a.ddl, E'\n') || E'\n\n', '')
         as ddl
@@ -1206,18 +1226,9 @@ os as (
   where attnum>0 and att.attrelid=$1 and attstattarget>=0 and not attisdropped
   order by attnum
  ) as a2
-),
-ts as (
-  select case when s.oid is not null then
-         format(E'ALTER %s %s SET TABLESPACE %I;\n\n',
-                obj.sql_kind, obj.sql_identifier, s.spcname) 
-         else '' end as ddl
-    from obj, pg_class c 
-    left join pg_tablespace s on (s.oid=c.reltablespace)
-   where c.oid = $1
 )
-select cs.ddl || ob.ddl || os.ddl || ts.ddl
-  from cs,ob,os,ts
+select ob.ddl || os.ddl
+  from ob,os
 $function$ strict;
 
 ---------------------------------------------------
@@ -2183,10 +2194,11 @@ CREATE OR REPLACE FUNCTION ddlx_alter_parts(
    in regclass,
    in options text[] default '{}',
    out base text,
+   out storage text,
    out owner text,
    out comment text,
    out defaults text,
-   out storage text,
+   out settings text,
    out constraints text,
    out indexes text,
    out triggers text,
@@ -2199,11 +2211,12 @@ CREATE OR REPLACE FUNCTION ddlx_alter_parts(
 AS $function$
 with obj as (select * from ddlx_identify($1))
   select 
-     ddlx_create_class($1),
+     ddlx_create_class($1) as base,
+     ddlx_alter_table_storage($1) as storage,
      ddlx_alter_owner($1) as owner,
      ddlx_comment($1) as comment,
      ddlx_alter_table_defaults($1) as defaults,
-     ddlx_alter_table_storage($1) as storage,
+     ddlx_alter_table_settings($1) as settings,
      ddlx_create_constraints($1) as constraints,
      ddlx_create_indexes($1) as indexes,
      ddlx_create_triggers($1) as triggers,
@@ -2226,8 +2239,9 @@ with
 obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_alter_parts($1,$2))
   select array_to_string( array[
+           storage,
            case when obj.sql_kind='TABLE' then parts.owner end || e'\n',
-           storage,defaults,constraints,indexes,triggers,rules,rls
+           defaults,settings,constraints,indexes,triggers,rules,rls
          ],'')
     from obj,parts
 $function$  strict;

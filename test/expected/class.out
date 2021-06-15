@@ -67,19 +67,19 @@ CREATE TABLE test_class_r (
     v tsvector
 );
 
-ALTER TABLE test_class_r OWNER TO postgres;
-
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
-ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
-ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
-
-ALTER TABLE test_class_r ALTER h SET STATISTICS 50;
+ALTER TABLE test_class_r OWNER TO postgres;
 
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
 
 ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
+
+ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
+ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
+
+ALTER TABLE test_class_r ALTER h SET STATISTICS 50;
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key
   UNIQUE (b);
@@ -142,19 +142,19 @@ CREATE TABLE test_class_r (
     v tsvector
 );
 
-ALTER TABLE test_class_r OWNER TO postgres;
-
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
-ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
-ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
-
-ALTER TABLE test_class_r ALTER h SET STATISTICS 50;
+ALTER TABLE test_class_r OWNER TO postgres;
 
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
 
 ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
+
+ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
+ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
+
+ALTER TABLE test_class_r ALTER h SET STATISTICS 50;
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key
   UNIQUE (b);
