@@ -46,6 +46,7 @@ SELECT ddlx_script('test_class_f'::regclass);
  COMMENT ON COLUMN test_class_f.line IS 'A Line of text';    +
                                                              +
  COMMENT ON FOREIGN TABLE test_class_f IS 'A Foreign table'; +
+                                                             +
  ALTER FOREIGN TABLE test_class_f OWNER TO postgres;         +
                                                              +
  END;                                                        +
@@ -59,6 +60,7 @@ SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='file_
    HANDLER file_fdw_handler                                 +
    VALIDATOR file_fdw_validator;                            +
  COMMENT ON FOREIGN DATA WRAPPER file_fdw IS 'File wrapper';+
+                                                            +
  ALTER FOREIGN DATA WRAPPER file_fdw OWNER TO postgres;     +
  GRANT USAGE ON FOREIGN DATA WRAPPER file_fdw TO PUBLIC;    +
  
@@ -76,6 +78,7 @@ SELECT ddlx_create((select oid from pg_foreign_server where srvname='serv'));
 ---------------------------------------------------
  CREATE SERVER serv FOREIGN DATA WRAPPER file_fdw;+
  COMMENT ON SERVER serv IS 'File server';         +
+                                                  +
  ALTER SERVER serv OWNER TO postgres;             +
  GRANT USAGE ON FOREIGN SERVER serv TO PUBLIC;    +
  

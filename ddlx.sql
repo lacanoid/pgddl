@@ -2235,8 +2235,7 @@ CREATE OR REPLACE FUNCTION ddlx_create(regclass, text[] default '{}')
  LANGUAGE sql
 AS $function$
    select 
-     ddlx_create_class($1) ||
-     ddlx_alter_class($1)
+     ddlx_create_class($1) || ddlx_alter_class($1)
     from pg_class c
    where c.oid = $1 and c.relkind <> 'c'
    union 
@@ -2703,6 +2702,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_parts(
     out sql_kind text, 
     out sql_identifier text,
     out ddl text,
+    out alter text,
     out comment text,
     out owner text,
     out dcl text
@@ -2712,7 +2712,7 @@ AS $function$
   with obj as (select * from ddlx_identify($1)),
   def as (
   select case obj.classid
-    when 'pg_class'::regclass          then ddlx_create(oid::regclass)
+    when 'pg_class'::regclass          then ddlx_create_class(oid::regclass)
     when 'pg_type'::regclass           then ddlx_create_type(oid::regtype)
     when 'pg_proc'::regclass           then ddlx_create_function(oid::regproc)
     when 'pg_operator'::regclass       then ddlx_create_operator(oid::regoper)
@@ -2764,8 +2764,10 @@ AS $function$
         then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
         else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))
        end
-     end 
-     as ddl,
+     end as ddl,
+     case obj.classid
+       when 'pg_class'::regclass then ddlx_alter_class(obj.oid::regclass) 
+     end as alter,
      ddlx_comment(obj.oid) as comment,
      case when obj.owner is not null
           then ddlx_alter_owner(obj.oid) else '' end
@@ -2774,7 +2776,7 @@ AS $function$
     from obj
    )
    select obj.oid, obj.sql_kind, obj.sql_identifier,
-          def.ddl, def.comment, def.owner, def.dcl
+          def.ddl, def.alter, def.comment, def.owner, def.dcl
      from def, obj
 $function$  strict;
 
@@ -2784,8 +2786,8 @@ CREATE OR REPLACE FUNCTION ddlx_create(oid,ddlx_options text[] default '{}')
 AS $function$
 with obj as (select * from ddlx_identify($1))
 select array_to_string(array[
-         ddl,
-         case when obj.sql_kind is distinct from 'DEFAULT' then comment end,
+         ddl,alter,
+         case when obj.sql_kind is distinct from 'DEFAULT' then comment end || e'\n',
          case when obj.sql_kind is distinct from 'TABLE' then p.owner end,
          dcl
        ],'')

@@ -58,6 +58,7 @@ ALTER TABLE items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE items FORCE ROW LEVEL SECURITY;
 COMMENT ON TABLE items IS NULL;
 
+
 -- DEPENDANTS
 
 CREATE POLICY item_owner ON items
@@ -66,6 +67,7 @@ CREATE POLICY item_owner ON items
   USING (acl_read && regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text)::uuid[] OR acl_write && regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text)::uuid[])
   WITH CHECK (acl_write && regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text)::uuid[]);
 COMMENT ON POLICY item_owner ON items IS NULL;
+
 
 END;
 

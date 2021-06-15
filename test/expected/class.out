@@ -98,6 +98,7 @@ CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DI
 ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
 
 COMMENT ON TABLE test_class_r IS 'Comment1';
+
 GRANT INSERT ON test_class_r TO PUBLIC;
 GRANT SELECT ON test_class_r TO PUBLIC;
 GRANT UPDATE ON test_class_r TO PUBLIC;
@@ -111,6 +112,7 @@ GRANT TRIGGER ON test_class_r TO PUBLIC;
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
   CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
 COMMENT ON CONSTRAINT test_class_r_c_check ON test_class_r IS NULL;
+
 
 ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 
@@ -171,6 +173,7 @@ CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DI
 ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
 
 COMMENT ON TABLE test_class_r IS 'Comment1';
+
 GRANT INSERT ON test_class_r TO PUBLIC;
 GRANT SELECT ON test_class_r TO PUBLIC;
 GRANT UPDATE ON test_class_r TO PUBLIC;
@@ -197,6 +200,7 @@ CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b 
 
 COMMENT ON INDEX idx1 IS NULL;
 
+
 END;
 
 (1 row)
@@ -214,6 +218,7 @@ CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 
 
 COMMENT ON INDEX idx2 IS NULL;
+
 
 END;
 
@@ -259,6 +264,7 @@ ALTER TABLE test_class_r2 ADD CONSTRAINT blah2
 
 COMMENT ON TABLE test_class_r2 IS NULL;
 
+
 -- DEPENDANTS
 
 ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
@@ -293,6 +299,7 @@ CREATE OR REPLACE VIEW test_class_v AS
 
 
 COMMENT ON VIEW test_class_v IS NULL;
+
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 
@@ -323,6 +330,7 @@ CREATE OR REPLACE VIEW test_class_v AS
 
 
 COMMENT ON VIEW test_class_v IS NULL;
+
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 
@@ -358,6 +366,7 @@ CREATE OR REPLACE VIEW test_class_v AS
 
 
 COMMENT ON VIEW test_class_v IS NULL;
+
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 
@@ -379,6 +388,7 @@ CREATE OR REPLACE VIEW test_class_v2 AS
 
 
 COMMENT ON VIEW test_class_v2 IS NULL;
+
 ALTER VIEW test_class_v2 OWNER TO postgres;
 GRANT SELECT (a) ON test_class_v2 TO PUBLIC;
 GRANT SELECT (b) ON test_class_v2 TO PUBLIC;
@@ -416,6 +426,7 @@ CREATE MATERIALIZED VIEW test_class_m AS
 CREATE UNIQUE INDEX test_class_mi ON public.test_class_m USING btree (a);
 
 COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;
+
 ALTER MATERIALIZED VIEW test_class_m OWNER TO postgres;
 
 END;
@@ -452,6 +463,7 @@ CREATE OR REPLACE FUNCTION public.funfun(a integer, b text DEFAULT NULL::text, O
 AS $function$ select 3.14, 'now'::text $function$;
 
 COMMENT ON FUNCTION funfun(integer,text) IS 'Use more comments!';
+
 ALTER FUNCTION funfun(integer,text) OWNER TO postgres;
 REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;
@@ -478,6 +490,7 @@ CREATE OR REPLACE FUNCTION public.funfun(a integer, b text DEFAULT NULL::text, O
 AS $function$ select 3.14, 'now'::text $function$;
 
 COMMENT ON FUNCTION funfun(integer,text) IS 'Use more comments!';
+
 ALTER FUNCTION funfun(integer,text) OWNER TO postgres;
 REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;
@@ -508,6 +521,7 @@ ALTER SEQUENCE test_type_s
 
 
 COMMENT ON SEQUENCE test_type_s IS 'interleave';
+
 ALTER SEQUENCE test_type_s OWNER TO postgres;
 
 END;
@@ -541,6 +555,7 @@ ALTER TABLE test_collation OWNER TO postgres;
 ALTER SEQUENCE test_collation_id_seq OWNED BY test_collation.id;
 
 COMMENT ON TABLE test_collation IS NULL;
+
 
 -- DEPENDANTS
 
@@ -579,6 +594,7 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 COMMENT ON VIEW test_class_v_opt2 IS NULL;
+
 ALTER VIEW test_class_v_opt2 OWNER TO postgres;
 
 END;
@@ -611,6 +627,7 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 COMMENT ON VIEW test_class_v_opt2 IS NULL;
+
 ALTER VIEW test_class_v_opt2 OWNER TO postgres;
 
 END;
@@ -643,6 +660,7 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 COMMENT ON VIEW test_class_v_opt2 IS NULL;
+
 ALTER VIEW test_class_v_opt2 OWNER TO postgres;
 
 END;
@@ -668,6 +686,7 @@ CREATE OR REPLACE FUNCTION public.test_proc_1()
 AS $function$ select 'Hello, world!'::text $function$;
 
 COMMENT ON FUNCTION test_proc_1() IS NULL;
+
 ALTER FUNCTION test_proc_1() OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
@@ -692,6 +711,7 @@ CREATE OR REPLACE FUNCTION public.test_proc_1()
 AS $function$ select 'Hello, world!'::text $function$;
 
 COMMENT ON FUNCTION test_proc_1() IS NULL;
+
 ALTER FUNCTION test_proc_1() OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
@@ -716,6 +736,7 @@ CREATE OR REPLACE FUNCTION public.test_proc_1()
 AS $function$ select 'Hello, world!'::text $function$;
 
 COMMENT ON FUNCTION test_proc_1() IS NULL;
+
 ALTER FUNCTION test_proc_1() OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
@@ -744,6 +765,7 @@ CREATE AGGREGATE test_proc_agg_1(text) (
 );
 
 COMMENT ON AGGREGATE test_proc_agg_1(text) IS NULL;
+
 ALTER AGGREGATE test_proc_agg_1(text) OWNER TO postgres;
 REVOKE ALL ON FUNCTION test_proc_agg_1(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO PUBLIC;

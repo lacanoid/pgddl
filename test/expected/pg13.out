@@ -40,6 +40,7 @@ ALTER SEQUENCE tab_generated_e_seq OWNED BY tab_generated.e;
 
 COMMENT ON TABLE tab_generated IS NULL;
 
+
 -- DEPENDANTS
 
 ALTER TABLE tab_generated ALTER e SET DEFAULT nextval('tab_generated_e_seq'::regclass);
