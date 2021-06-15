@@ -69,17 +69,17 @@ CREATE TABLE test_class_r (
 
 ALTER TABLE test_class_r OWNER TO postgres;
 
-ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
-'::text;
-
-ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
-
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
 ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
 
 ALTER TABLE test_class_r ALTER h SET STATISTICS 50;
+
+ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
+'::text;
+
+ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key
   UNIQUE (b);
@@ -144,17 +144,17 @@ CREATE TABLE test_class_r (
 
 ALTER TABLE test_class_r OWNER TO postgres;
 
-ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
-'::text;
-
-ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
-
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
 ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
 
 ALTER TABLE test_class_r ALTER h SET STATISTICS 50;
+
+ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
+'::text;
+
+ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key
   UNIQUE (b);
@@ -197,7 +197,6 @@ DROP INDEX idx1;
 
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 
-
 COMMENT ON INDEX idx1 IS NULL;
 
 
@@ -215,7 +214,6 @@ DROP INDEX idx2;
 -- Type: INDEX ; Name: idx2; Owner: postgres
 
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);
-
 
 COMMENT ON INDEX idx2 IS NULL;
 
@@ -297,7 +295,6 @@ CREATE OR REPLACE VIEW test_class_v AS
     test_class_r.v
    FROM test_class_r;
 
-
 COMMENT ON VIEW test_class_v IS NULL;
 
 ALTER VIEW test_class_v OWNER TO postgres;
@@ -327,7 +324,6 @@ CREATE OR REPLACE VIEW test_class_v AS
     test_class_r.h,
     test_class_r.v
    FROM test_class_r;
-
 
 COMMENT ON VIEW test_class_v IS NULL;
 
@@ -364,7 +360,6 @@ CREATE OR REPLACE VIEW test_class_v AS
     test_class_r.v
    FROM test_class_r;
 
-
 COMMENT ON VIEW test_class_v IS NULL;
 
 ALTER VIEW test_class_v OWNER TO postgres;
@@ -385,7 +380,6 @@ CREATE OR REPLACE VIEW test_class_v2 AS
     test_class_v.h,
     test_class_v.v
    FROM test_class_v;
-
 
 COMMENT ON VIEW test_class_v2 IS NULL;
 
@@ -421,7 +415,6 @@ CREATE MATERIALIZED VIEW test_class_m AS
     test_class_r.h,
     test_class_r.v
    FROM test_class_r;
-
 
 CREATE UNIQUE INDEX test_class_mi ON public.test_class_m USING btree (a);
 
@@ -519,7 +512,6 @@ ALTER SEQUENCE test_type_s
  START WITH 2
  NO CYCLE;
 
-
 COMMENT ON SEQUENCE test_type_s IS 'interleave';
 
 ALTER SEQUENCE test_type_s OWNER TO postgres;
@@ -590,7 +582,6 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
    FROM test_class_v
   ORDER BY test_class_v.a;
 
-
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 COMMENT ON VIEW test_class_v_opt2 IS NULL;
@@ -623,7 +614,6 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
    FROM test_class_v
   ORDER BY test_class_v.a;
 
-
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
 COMMENT ON VIEW test_class_v_opt2 IS NULL;
@@ -655,7 +645,6 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
     test_class_v.v
    FROM test_class_v
   ORDER BY test_class_v.a;
-
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 

@@ -1113,11 +1113,12 @@ AS $function$
   when obj.sql_kind in ('INDEX') then ddlx_create_index($1)
   else '-- UNSUPPORTED CLASS: '||obj.sql_kind
  end 
+/*
   || E'\n' ||
-/*  case when obj.sql_kind not in ('TYPE') then ddlx_comment($1) else '' end
+  case when obj.sql_kind not in ('TYPE') then ddlx_comment($1) else '' end
   ||
-*/
   case when obj.sql_kind = ('TABLE') then ddlx_alter_owner($1) else '' end
+*/
   ||
   coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'')
   ||
@@ -2182,6 +2183,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_parts(
    in regclass,
    in options text[] default '{}',
    out base text,
+   out owner text,
    out comment text,
    out defaults text,
    out storage text,
@@ -2190,7 +2192,6 @@ CREATE OR REPLACE FUNCTION ddlx_alter_parts(
    out triggers text,
    out rules text,
    out rls text,
-   out owner text,
    out grants text
 )
  RETURNS record
@@ -2199,6 +2200,7 @@ AS $function$
 with obj as (select * from ddlx_identify($1))
   select 
      ddlx_create_class($1),
+     ddlx_alter_owner($1) as owner,
      ddlx_comment($1) as comment,
      ddlx_alter_table_defaults($1) as defaults,
      ddlx_alter_table_storage($1) as storage,
@@ -2211,7 +2213,6 @@ with obj as (select * from ddlx_identify($1))
 #else
      null as rls,
 #end
-     ddlx_alter_owner($1) as owner,
      ddlx_grants($1) as grants
     from obj
 $function$  strict;
@@ -2221,11 +2222,14 @@ CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
-with obj as (select * from ddlx_alter_parts($1,$2))
+with 
+obj as (select * from ddlx_identify($1)),
+parts as (select * from ddlx_alter_parts($1,$2))
   select array_to_string( array[
-            defaults,storage,constraints,indexes,triggers,rules,rls
+           case when obj.sql_kind='TABLE' then parts.owner end || e'\n',
+           storage,defaults,constraints,indexes,triggers,rules,rls
          ],'')
-    from obj
+    from obj,parts
 $function$  strict;
 
 ---------------------------------------------------
@@ -2701,8 +2705,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_parts(
     out oid oid, 
     out sql_kind text, 
     out sql_identifier text,
-    out ddl text,
-    out alter text,
+    out ddl_create text,
+    out ddl_alter text,
     out comment text,
     out owner text,
     out dcl text
@@ -2764,10 +2768,10 @@ AS $function$
         then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
         else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))
        end
-     end as ddl,
+     end as ddl_create,
      case obj.classid
        when 'pg_class'::regclass then ddlx_alter_class(obj.oid::regclass) 
-     end as alter,
+     end as ddl_alter,
      ddlx_comment(obj.oid) as comment,
      case when obj.owner is not null
           then ddlx_alter_owner(obj.oid) else '' end
@@ -2776,7 +2780,7 @@ AS $function$
     from obj
    )
    select obj.oid, obj.sql_kind, obj.sql_identifier,
-          def.ddl, def.alter, def.comment, def.owner, def.dcl
+          def.ddl_create, def.ddl_alter, def.comment, def.owner, def.dcl
      from def, obj
 $function$  strict;
 
@@ -2786,7 +2790,7 @@ CREATE OR REPLACE FUNCTION ddlx_create(oid,ddlx_options text[] default '{}')
 AS $function$
 with obj as (select * from ddlx_identify($1))
 select array_to_string(array[
-         ddl,alter,
+         ddl_create, ddl_alter,
          case when obj.sql_kind is distinct from 'DEFAULT' then comment end || e'\n',
          case when obj.sql_kind is distinct from 'TABLE' then p.owner end,
          dcl

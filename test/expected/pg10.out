@@ -25,7 +25,6 @@ CREATE TABLE options (
     regtype regtype NOT NULL
 );
 
-COMMENT ON TABLE options IS NULL;
 ALTER TABLE options OWNER TO postgres;
 
 ALTER TABLE options SET (parallel_workers='2');
@@ -34,6 +33,8 @@ ALTER TABLE options ALTER regtype SET DEFAULT 'text'::regtype;
 
 ALTER TABLE options ADD CONSTRAINT options_pkey
   PRIMARY KEY (name);
+
+COMMENT ON TABLE options IS NULL;
 
 
 END;
@@ -70,8 +71,9 @@ CREATE TABLE measurement (
 )
   PARTITION BY RANGE (logdate);
 
-COMMENT ON TABLE measurement IS NULL;
 ALTER TABLE measurement OWNER TO postgres;
+
+COMMENT ON TABLE measurement IS NULL;
 
 
 END;
@@ -115,8 +117,9 @@ CREATE TABLE customers (
 )
   PARTITION BY LIST (cust_country);
 
-COMMENT ON TABLE customers IS NULL;
 ALTER TABLE customers OWNER TO postgres;
+
+COMMENT ON TABLE customers IS NULL;
 
 
 END;
@@ -135,8 +138,9 @@ DROP TABLE customer_jap;
 CREATE TABLE customer_jap PARTITION OF customers
   FOR VALUES IN ('jap');
 
-COMMENT ON TABLE customer_jap IS NULL;
 ALTER TABLE customer_jap OWNER TO postgres;
+
+COMMENT ON TABLE customer_jap IS NULL;
 
 
 END;
@@ -171,8 +175,9 @@ CREATE TABLE log (
 )
   PARTITION BY RANGE (code, date_trunc('month'::text, ts), t COLLATE "C", a, (((code % 100) / 100)));
 
-COMMENT ON TABLE log IS NULL;
 ALTER TABLE log OWNER TO postgres;
+
+COMMENT ON TABLE log IS NULL;
 
 
 END;
@@ -187,6 +192,8 @@ CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
 \x
 select ddlx_create(oid),ddlx_drop(oid) from pg_statistic_ext where stxname='test_stat1';
 ddlx_create|CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
+COMMENT ON STATISTICS test_stat1 IS NULL;
+
 ALTER STATISTICS test_stat1 OWNER TO postgres;
 
 ddlx_drop|DROP STATISTICS test_stat1;
@@ -207,14 +214,17 @@ CREATE TABLE test_stat (
     b integer
 );
 
-COMMENT ON TABLE test_stat IS NULL;
 ALTER TABLE test_stat OWNER TO postgres;
 
 ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
   PRIMARY KEY (a);
 
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
+COMMENT ON STATISTICS test_stat1 IS NULL;
+
 ALTER STATISTICS test_stat1 OWNER TO postgres;
+
+COMMENT ON TABLE test_stat IS NULL;
 
 
 END;
@@ -231,6 +241,7 @@ CREATE PUBLICATION ddlx_test_pub
   FOR TABLE customer_ind, customer_jap
   WITH ( publish='insert,delete' );
 COMMENT ON PUBLICATION ddlx_test_pub IS NULL;
+
 ALTER PUBLICATION ddlx_test_pub OWNER TO postgres;
 |DROP PUBLICATION ddlx_test_pub;
 
@@ -252,6 +263,7 @@ CREATE SUBSCRIPTION ddlx_test_sub
     slot_name='ddlx_test_sub'
     synchronous_commit='off' );
 COMMENT ON SUBSCRIPTION ddlx_test_sub IS NULL;
+
 ALTER SUBSCRIPTION ddlx_test_sub OWNER TO postgres;
 |DROP SUBSCRIPTION ddlx_test_sub;
 
@@ -266,6 +278,7 @@ CREATE SUBSCRIPTION ddlx_test_sub
     connect='false'
     synchronous_commit='off' );
 COMMENT ON SUBSCRIPTION ddlx_test_sub IS NULL;
+
 ALTER SUBSCRIPTION ddlx_test_sub OWNER TO postgres;
 |DROP SUBSCRIPTION ddlx_test_sub;
 
@@ -299,12 +312,13 @@ CREATE TABLE tab_generated (
     f integer
 );
 
-COMMENT ON TABLE tab_generated IS NULL;
 ALTER TABLE tab_generated OWNER TO postgres;
 
 ALTER TABLE tab_generated ALTER d SET DEFAULT 42;
 
 ALTER SEQUENCE tab_generated_e_seq OWNED BY tab_generated.e;
+
+COMMENT ON TABLE tab_generated IS NULL;
 
 
 -- DEPENDANTS

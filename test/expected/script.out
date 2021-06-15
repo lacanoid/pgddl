@@ -25,7 +25,6 @@ CREATE OR REPLACE VIEW test_class_v AS
     test_class_r.v
    FROM test_class_r;
 
-
 COMMENT ON VIEW test_class_v IS NULL;
 
 ALTER VIEW test_class_v OWNER TO postgres;
@@ -46,7 +45,6 @@ CREATE OR REPLACE VIEW test_class_v2 AS
     test_class_v.h,
     test_class_v.v
    FROM test_class_v;
-
 
 COMMENT ON VIEW test_class_v2 IS NULL;
 
@@ -69,7 +67,6 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
     test_class_v.v
    FROM test_class_v
   ORDER BY test_class_v.a;
-
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 

@@ -42,7 +42,6 @@ SELECT ddlx_script('test_class_f'::regclass);
      filename 'pgddltest.tmp',                               +
      format 'text'                                           +
  );                                                          +
-                                                             +
  COMMENT ON COLUMN test_class_f.line IS 'A Line of text';    +
                                                              +
  COMMENT ON FOREIGN TABLE test_class_f IS 'A Foreign table'; +
