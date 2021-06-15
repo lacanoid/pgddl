@@ -1057,7 +1057,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_index(regclass)
+CREATE OR REPLACE FUNCTION ddlx_create_index(regclass,ddlx_options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -1078,7 +1078,12 @@ AS $function$
   WHERE i.oid = $1
     -- AND c.relkind in ('r','m','p') AND i.relkind = 'i'::"char"  
 )
- SELECT indexdef || E';\n'
+ SELECT case 
+        when 'ine' ilike any($2) 
+        then regexp_replace(indexdef,'^CREATE ([\w ]*)?INDEX','CREATE \1INDEX IF NOT EXISTS')
+        else indexdef 
+        end
+        || E';\n'
    FROM ii
 $function$  strict;
 
@@ -1397,14 +1402,14 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass)
+CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass,ddlx_options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
  with
  ii as (select * from ddlx_get_indexes($1) order by name),
  a as (
-  select coalesce(string_agg(ddlx_create_index(oid),'') || E'\n' , E'') as ddl_idx
+  select coalesce(string_agg(ddlx_create_index(oid,$2),'') || E'\n' , E'') as ddl_idx
     from ii where constraint_name is null
  ),
  c as (
@@ -2191,9 +2196,9 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_parts(
-   in regclass,
+   in oid,
    in options text[] default '{}',
-   out base text,
+   out bare text,
    out storage text,
    out owner text,
    out comment text,
@@ -2211,22 +2216,69 @@ CREATE OR REPLACE FUNCTION ddlx_alter_parts(
 AS $function$
 with obj as (select * from ddlx_identify($1))
   select 
-     ddlx_create_class($1) as base,
-     ddlx_alter_table_storage($1) as storage,
-     ddlx_alter_owner($1) as owner,
-     ddlx_comment($1) as comment,
-     ddlx_alter_table_defaults($1) as defaults,
-     ddlx_alter_table_settings($1) as settings,
-     ddlx_create_constraints($1) as constraints,
-     ddlx_create_indexes($1) as indexes,
-     ddlx_create_triggers($1) as triggers,
-     ddlx_create_rules($1) as rules,
+    case obj.classid
+    when 'pg_class'::regclass          then ddlx_create_class(oid::regclass)
+    when 'pg_type'::regclass           then ddlx_create_type(oid::regtype)
+    when 'pg_proc'::regclass           then ddlx_create_function(oid::regproc)
+    when 'pg_operator'::regclass       then ddlx_create_operator(oid::regoper)
+    when 'pg_opfamily'::regclass       then ddlx_create_operator_family(oid)
+    when 'pg_rewrite'::regclass        then ddlx_create_rule(oid)
+    when 'pg_ts_config'::regclass      then ddlx_create_text_search_config(oid::regconfig)
+    when 'pg_ts_dict'::regclass        then ddlx_create_text_search_dict(oid::regdictionary)
+    when 'pg_ts_parser'::regclass      then ddlx_create_text_search_parser(oid)
+    when 'pg_ts_template'::regclass    then ddlx_create_text_search_template(oid)
+    when 'pg_database'::regclass       then ddlx_create_database(oid)
+    when 'pg_constraint'::regclass     then ddlx_create_constraint(oid)
+    when 'pg_trigger'::regclass        then ddlx_create_trigger(oid)
+    when 'pg_attrdef'::regclass        then ddlx_create_default(oid)
+    when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid)
+    when 'pg_foreign_server'::regclass then ddlx_create_server(oid)
+    when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid)
+    when 'pg_cast'::regclass           then ddlx_create_cast(oid)
+    when 'pg_collation'::regclass      then ddlx_create_collation(oid)
+    when 'pg_conversion'::regclass     then ddlx_create_conversion(oid)
+    when 'pg_language'::regclass       then ddlx_create_language(oid)
+    when 'pg_opclass'::regclass        then ddlx_create_operator_class(oid)
 #if 9.5
-     ddlx_alter_table_rls($1) as rls,
+    when 'pg_roles'::regclass          then ddlx_create_role(oid::regrole)
+    when 'pg_namespace'::regclass      then ddlx_create_schema(oid::regnamespace)
+#else
+    when 'pg_roles'::regclass          then ddlx_create_role(oid)
+    when 'pg_namespace'::regclass      then ddlx_create_schema(oid)
+#end
+#if 9.2
+    when 'pg_tablespace'::regclass     then ddlx_create_tablespace(oid)
+#if 9.3
+    when 'pg_event_trigger'::regclass  then ddlx_create_event_trigger(oid)
+    when 'pg_amproc'::regclass         then ddlx_create_amproc(oid)
+    when 'pg_amop'::regclass           then ddlx_create_amop(oid)
+#if 9.5
+    when 'pg_policy'::regclass         then ddlx_create_policy(oid)
+    when 'pg_transform'::regclass      then ddlx_create_transform(oid)
+#if 9.6
+    when 'pg_am'::regclass             then ddlx_create_access_method(oid)
+#if 10
+    when 'pg_statistic_ext'::regclass
+    then pg_get_statisticsobjdef(oid)||E';\n' 
+    when 'pg_publication'::regclass    then ddlx_create_publication(oid)
+    when 'pg_subscription'::regclass   then ddlx_create_subscription(oid)
+#end
+    end as bare,
+    ddlx_alter_table_storage(oid) as storage,
+    ddlx_alter_owner(oid) as owner,
+    ddlx_comment(oid) as comment,
+    ddlx_alter_table_defaults(oid) as defaults,
+    ddlx_alter_table_settings(oid) as settings,
+    ddlx_create_constraints(oid) as constraints,
+    ddlx_create_indexes(oid, options) as indexes,
+    ddlx_create_triggers(oid) as triggers,
+    ddlx_create_rules(oid) as rules,
+#if 9.5
+     ddlx_alter_table_rls(oid) as rls,
 #else
      null as rls,
 #end
-     ddlx_grants($1) as grants
+     ddlx_grants(oid) as grants
     from obj
 $function$  strict;
 
@@ -2780,18 +2832,18 @@ AS $function$
       case
         when obj.sql_kind is not null
         then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
-        else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))
-       end
-     end as ddl_create,
-     case obj.classid
-       when 'pg_class'::regclass then ddlx_alter_class(obj.oid::regclass) 
-     end as ddl_alter,
-     ddlx_comment(obj.oid) as comment,
-     case when obj.owner is not null
-          then ddlx_alter_owner(obj.oid) else '' end
-     as owner,
-     ddlx_grants(obj.oid) as dcl
-    from obj
+        else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))      
+      end
+    end as ddl_create,
+    case obj.classid
+      when 'pg_class'::regclass then ddlx_alter_class(obj.oid::regclass) 
+      end as ddl_alter,
+      ddlx_comment(obj.oid) as comment,
+      case when obj.owner is not null
+           then ddlx_alter_owner(obj.oid) else '' end
+      as owner,
+      ddlx_grants(obj.oid) as dcl
+ from obj
    )
    select obj.oid, obj.sql_kind, obj.sql_identifier,
           def.ddl_create, def.ddl_alter, def.comment, def.owner, def.dcl
@@ -2817,7 +2869,7 @@ COMMENT ON FUNCTION ddlx_create(oid, text[])
      
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_drop(oid) 
+CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}') 
  RETURNS text
  LANGUAGE sql
  AS $function$
@@ -2846,7 +2898,7 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid)
    from obj
 $function$  strict;
 
-COMMENT ON FUNCTION ddlx_drop(oid) 
+COMMENT ON FUNCTION ddlx_drop(oid,text[]) 
      IS 'Get SQL DROP statement for an object by object id';
      
 ---------------------------------------------------
