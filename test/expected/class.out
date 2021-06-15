@@ -67,9 +67,10 @@ CREATE TABLE test_class_r (
     v tsvector
 );
 
-ALTER TABLE test_class_r ALTER h SET STORAGE external;
+COMMENT ON TABLE test_class_r IS 'Comment1';
 
 ALTER TABLE test_class_r OWNER TO postgres;
+ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
@@ -96,8 +97,6 @@ CLUSTER test_class_r USING idx3;
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
-
-COMMENT ON TABLE test_class_r IS 'Comment1';
 
 GRANT INSERT ON test_class_r TO PUBLIC;
 GRANT SELECT ON test_class_r TO PUBLIC;
@@ -142,9 +141,10 @@ CREATE TABLE test_class_r (
     v tsvector
 );
 
-ALTER TABLE test_class_r ALTER h SET STORAGE external;
+COMMENT ON TABLE test_class_r IS 'Comment1';
 
 ALTER TABLE test_class_r OWNER TO postgres;
+ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
@@ -171,8 +171,6 @@ CLUSTER test_class_r USING test_class_r_pkey;
 
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
-
-COMMENT ON TABLE test_class_r IS 'Comment1';
 
 GRANT INSERT ON test_class_r TO PUBLIC;
 GRANT SELECT ON test_class_r TO PUBLIC;
@@ -251,16 +249,15 @@ CREATE UNLOGGED TABLE test_class_r2 (
     n numeric(10,2)
 );
 
-ALTER TABLE test_class_r2 OWNER TO postgres;
+COMMENT ON TABLE test_class_r2 IS NULL;
 
+ALTER TABLE test_class_r2 OWNER TO postgres;
 ALTER SEQUENCE test_class_r2_i_seq OWNED BY test_class_r2.i;
 
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah
   FOREIGN KEY (a) REFERENCES test_class_r(a);
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah2
   FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED NOT VALID;
-
-COMMENT ON TABLE test_class_r2 IS NULL;
 
 
 -- DEPENDANTS
@@ -416,11 +413,11 @@ CREATE MATERIALIZED VIEW test_class_m AS
     test_class_r.v
    FROM test_class_r;
 
-CREATE UNIQUE INDEX test_class_mi ON public.test_class_m USING btree (a);
-
 COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;
 
 ALTER MATERIALIZED VIEW test_class_m OWNER TO postgres;
+CREATE UNIQUE INDEX test_class_mi ON public.test_class_m USING btree (a);
+
 
 END;
 
@@ -542,11 +539,10 @@ CREATE TABLE test_collation (
     t text
 );
 
-ALTER TABLE test_collation OWNER TO postgres;
-
-ALTER SEQUENCE test_collation_id_seq OWNED BY test_collation.id;
-
 COMMENT ON TABLE test_collation IS NULL;
+
+ALTER TABLE test_collation OWNER TO postgres;
+ALTER SEQUENCE test_collation_id_seq OWNED BY test_collation.id;
 
 
 -- DEPENDANTS

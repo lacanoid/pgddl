@@ -1,7 +1,6 @@
 Version 0.20
 ------------
-- new internal function `ddlx_create_parts()` to return different create parts
-- new internal function `ddlx_alter_parts()` to return different alter parts
+- new internal function `ddlx_definitions()` to return different parts of object definition
 - demoted a bunch of overloaded `ddlx_create()` functions.
 - `ddlx_grants(oid)` now consistent
 - refactored DCL generation 

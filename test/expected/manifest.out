@@ -8,16 +8,16 @@ select * from a
 ;
  ddlx_create(oid,text[])                     | Get SQL CREATE statement for a generic object by object id
  ddlx_create(regclass,text[])                | Get SQL CREATE statement for a table, view, sequence or index
- ddlx_drop(oid)                              | Get SQL DROP statement for an object by object id
+ ddlx_drop(oid,text[])                       | Get SQL DROP statement for an object by object id
  ddlx_script(oid,text[])                     | Get SQL DDL script for an object and dependants by object id
  ddlx_script(text,text[])                    | Get SQL DDL script for an object and dependants by object name
  ddlx_alter_class(regclass,text[])           | 
  ddlx_alter_owner(oid)                       | 
- ddlx_alter_parts(regclass,text[])           | 
  ddlx_alter_role_auth(oid)                   | 
  ddlx_alter_sequence(regclass)               | 
  ddlx_alter_table_defaults(regclass)         | 
  ddlx_alter_table_rls(regclass)              | 
+ ddlx_alter_table_settings(regclass)         | 
  ddlx_alter_table_storage(regclass)          | 
  ddlx_apropos(text)                          | 
  ddlx_banner(text,text,text,text,text)       | 
@@ -27,7 +27,7 @@ select * from a
  ddlx_create_amop(oid)                       | 
  ddlx_create_amproc(oid)                     | 
  ddlx_create_cast(oid)                       | 
- ddlx_create_class(regclass)                 | 
+ ddlx_create_class(regclass,text[])          | 
  ddlx_create_collation(oid)                  | 
  ddlx_create_constraint(oid)                 | 
  ddlx_create_constraints(regclass)           | 
@@ -37,24 +37,23 @@ select * from a
  ddlx_create_event_trigger(oid)              | 
  ddlx_create_foreign_data_wrapper(oid)       | 
  ddlx_create_function(regproc)               | 
- ddlx_create_index(regclass)                 | 
- ddlx_create_indexes(regclass)               | 
+ ddlx_create_index(regclass,text[])          | 
+ ddlx_create_indexes(regclass,text[])        | 
  ddlx_create_language(oid)                   | 
  ddlx_create_operator(regoper)               | 
  ddlx_create_operator(regoperator)           | 
  ddlx_create_operator_class(oid)             | 
  ddlx_create_operator_family(oid)            | 
- ddlx_create_parts(oid,text[])               | 
  ddlx_create_policy(oid)                     | 
  ddlx_create_publication(oid)                | 
  ddlx_create_role(regrole)                   | 
  ddlx_create_rule(oid)                       | 
  ddlx_create_rules(regclass)                 | 
  ddlx_create_schema(regnamespace)            | 
- ddlx_create_sequence(regclass)              | 
+ ddlx_create_sequence(regclass,text[])       | 
  ddlx_create_server(oid)                     | 
  ddlx_create_subscription(oid)               | 
- ddlx_create_table(regclass)                 | 
+ ddlx_create_table(regclass,text[])          | 
  ddlx_create_tablespace(oid)                 | 
  ddlx_create_text_search_config(regconfig)   | 
  ddlx_create_text_search_dict(regdictionary) | 
@@ -71,6 +70,7 @@ select * from a
  ddlx_create_type_shell(regtype)             | 
  ddlx_create_user_mapping(oid)               | 
  ddlx_create_view(regclass)                  | 
+ ddlx_definitions(oid,text[])                | 
  ddlx_describe(regclass)                     | 
  ddlx_drop_amop(oid)                         | 
  ddlx_drop_amproc(oid)                       | 

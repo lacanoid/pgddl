@@ -2199,13 +2199,17 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_parts(
+CREATE OR REPLACE FUNCTION ddlx_definitions(
    in oid,
    in options text[] default '{}',
+   out oid oid,
+   out classid regclass,
+   out sql_kind text,
+   out sql_identifier text,
    out bare text,
-   out storage text,
-   out owner text,
    out comment text,
+   out owner text,
+   out storage text,
    out defaults text,
    out settings text,
    out constraints text,
@@ -2220,6 +2224,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_parts(
 AS $function$
 with obj as (select * from ddlx_identify($1))
   select 
+    obj.oid, obj.classid, obj.sql_kind, obj.sql_identifier,
     case obj.classid
     when 'pg_class'::regclass          then ddlx_create_class(oid::regclass,$2)
     when 'pg_type'::regclass           then ddlx_create_type(oid::regtype)
@@ -2262,15 +2267,14 @@ with obj as (select * from ddlx_identify($1))
 #if 9.6
     when 'pg_am'::regclass             then ddlx_create_access_method(oid)
 #if 10
-    when 'pg_statistic_ext'::regclass
-    then pg_get_statisticsobjdef(oid)||E';\n' 
+    when 'pg_statistic_ext'::regclass  then pg_get_statisticsobjdef(oid)||E';\n' 
     when 'pg_publication'::regclass    then ddlx_create_publication(oid)
     when 'pg_subscription'::regclass   then ddlx_create_subscription(oid)
 #end
     end as bare,
-    ddlx_alter_table_storage(oid) as storage,
-    ddlx_alter_owner(oid) as owner,
     ddlx_comment(oid) as comment,
+    ddlx_alter_owner(oid) as owner,
+    ddlx_alter_table_storage(oid) as storage,
     ddlx_alter_table_defaults(oid) as defaults,
     ddlx_alter_table_settings(oid) as settings,
     ddlx_create_constraints(oid) as constraints,
@@ -2293,7 +2297,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass, text[] default '{}')
 AS $function$
 with 
 obj as (select * from ddlx_identify($1)),
-parts as (select * from ddlx_alter_parts($1,$2))
+parts as (select * from ddlx_definitions($1,$2))
   select array_to_string( array[
            storage,
            case when obj.sql_kind='TABLE' then parts.owner end || e'\n',
@@ -2763,12 +2767,8 @@ AS $function$
      from pg_type t
     where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;
-/*
-COMMENT ON FUNCTION ddlx_create_type(regtype) 
-     IS 'Get SQL CREATE statement for a user defined data type';
-*/
 ---------------------------------------------------
-
+/*
 CREATE OR REPLACE FUNCTION ddlx_create_parts(
     oid,
     ddlx_options text[] default '{}',
@@ -2854,7 +2854,7 @@ AS $function$
      from def, obj
 $function$  strict;
 
-CREATE OR REPLACE FUNCTION ddlx_create(oid,ddlx_options text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_create0(oid,ddlx_options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2867,19 +2867,21 @@ select array_to_string(array[
        ],'')
   from obj,ddlx_create_parts($1,$2) p
 $function$ strict;
+*/
 
-CREATE OR REPLACE FUNCTION ddlx_create1(oid,ddlx_options text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_create(oid,ddlx_options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
 with 
 obj as (select * from ddlx_identify($1)),
-parts as (select * from ddlx_alter_parts($1,$2))
+parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         bare,           
         case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n',
-        case when obj.sql_kind='TABLE' then parts.owner end || e'\n',
-        storage,defaults,settings,constraints,indexes,triggers,rules,rls,
+        parts.owner,
+        storage,
+        defaults,settings,constraints,indexes,triggers,rules,rls,
         grants
        ],'')
   from obj,parts
