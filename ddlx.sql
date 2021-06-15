@@ -778,23 +778,25 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_table(regclass)
+CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
   with obj as (select * from ddlx_identify($1))
   select   
     array_to_string(array[
-    'CREATE '||
-  case relpersistence
-    when 'u' then 'UNLOGGED '
-    when 't' then 'TEMPORARY '
-    else ''
-  end
-  || obj.sql_kind || ' ' || obj.sql_identifier
-  || case when reloftype>0 then ' OF '||cast(reloftype::regtype as text) else '' end
-  || case obj.sql_kind when 'TYPE' then ' AS' else '' end 
-  ||
+      'CREATE '||
+      case relpersistence
+        when 'u' then 'UNLOGGED '
+        when 't' then 'TEMPORARY '
+        else ''
+      end
+      || obj.sql_kind || ' ' 
+      || case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end
+      || obj.sql_identifier
+      || case when reloftype>0 then ' OF '||cast(reloftype::regtype as text) else '' end
+      || case obj.sql_kind when 'TYPE' then ' AS' else '' end 
+      ||
 #if 10
   case
   when c.relispartition
@@ -908,7 +910,7 @@ AS $function$
    AND obj.sql_kind = 'SEQUENCE'
 $function$  strict;
 
-CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass)
+CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -921,7 +923,9 @@ AS $function$
    where relkind='S' and sc.oid = $1
  )
  select 
- 'CREATE SEQUENCE '||(obj.oid::regclass::text) || E';\n'
+ 'CREATE SEQUENCE '
+ || case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end
+ ||(obj.oid::regclass::text) || E';\n'
  || ddlx_alter_sequence($1)
    from obj;
 $function$  strict;
@@ -1089,7 +1093,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_class(regclass)
+CREATE OR REPLACE FUNCTION ddlx_create_class(regclass, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -1113,9 +1117,9 @@ AS $function$
   ||
  case 
   when obj.sql_kind in ('VIEW','MATERIALIZED VIEW') then ddlx_create_view($1)  
-  when obj.sql_kind in ('TABLE','TYPE','FOREIGN TABLE') then ddlx_create_table($1)
-  when obj.sql_kind in ('SEQUENCE') then ddlx_create_sequence($1)
-  when obj.sql_kind in ('INDEX') then ddlx_create_index($1)
+  when obj.sql_kind in ('TABLE','TYPE','FOREIGN TABLE') then ddlx_create_table($1,$2)
+  when obj.sql_kind in ('SEQUENCE') then ddlx_create_sequence($1,$2)
+  when obj.sql_kind in ('INDEX') then ddlx_create_index($1,$2)
   else '-- UNSUPPORTED CLASS: '||obj.sql_kind
  end 
 /*
@@ -2217,7 +2221,7 @@ AS $function$
 with obj as (select * from ddlx_identify($1))
   select 
     case obj.classid
-    when 'pg_class'::regclass          then ddlx_create_class(oid::regclass)
+    when 'pg_class'::regclass          then ddlx_create_class(oid::regclass,$2)
     when 'pg_type'::regclass           then ddlx_create_type(oid::regtype)
     when 'pg_proc'::regclass           then ddlx_create_function(oid::regproc)
     when 'pg_operator'::regclass       then ddlx_create_operator(oid::regoper)
@@ -2305,7 +2309,7 @@ CREATE OR REPLACE FUNCTION ddlx_create(regclass, text[] default '{}')
  LANGUAGE sql
 AS $function$
    select 
-     ddlx_create_class($1) || ddlx_alter_class($1)
+     ddlx_create_class($1,$2) || ddlx_alter_class($1,$2)
     from pg_class c
    where c.oid = $1 and c.relkind <> 'c'
    union 
@@ -2782,7 +2786,7 @@ AS $function$
   with obj as (select * from ddlx_identify($1)),
   def as (
   select case obj.classid
-    when 'pg_class'::regclass          then ddlx_create_class(oid::regclass)
+    when 'pg_class'::regclass          then ddlx_create_class(oid::regclass,$2)
     when 'pg_type'::regclass           then ddlx_create_type(oid::regtype)
     when 'pg_proc'::regclass           then ddlx_create_function(oid::regproc)
     when 'pg_operator'::regclass       then ddlx_create_operator(oid::regoper)
@@ -2836,7 +2840,7 @@ AS $function$
       end
     end as ddl_create,
     case obj.classid
-      when 'pg_class'::regclass then ddlx_alter_class(obj.oid::regclass) 
+      when 'pg_class'::regclass then ddlx_alter_class(obj.oid::regclass,$2) 
       end as ddl_alter,
       ddlx_comment(obj.oid) as comment,
       case when obj.owner is not null
@@ -2862,6 +2866,23 @@ select array_to_string(array[
          dcl
        ],'')
   from obj,ddlx_create_parts($1,$2) p
+$function$ strict;
+
+CREATE OR REPLACE FUNCTION ddlx_create1(oid,ddlx_options text[] default '{}')
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with 
+obj as (select * from ddlx_identify($1)),
+parts as (select * from ddlx_alter_parts($1,$2))
+select array_to_string(array[
+        bare,           
+        case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n',
+        case when obj.sql_kind='TABLE' then parts.owner end || e'\n',
+        storage,defaults,settings,constraints,indexes,triggers,rules,rls,
+        grants
+       ],'')
+  from obj,parts
 $function$ strict;
 
 COMMENT ON FUNCTION ddlx_create(oid, text[]) 
