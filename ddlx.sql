@@ -2823,7 +2823,10 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
        when obj.sql_kind = 'SEQUENCE'
        then format(E'DROP %s IF EXISTS %s;\n',obj.sql_kind, obj.sql_identifier)
        when obj.sql_kind is not null
-       then format(E'DROP %s %s;\n',obj.sql_kind, obj.sql_identifier)
+       then format(E'DROP %s %s%s;\n',
+                   obj.sql_kind, 
+                   case when 'ie' ilike any($2) then 'IF EXISTS ' end,
+                   obj.sql_identifier)
        else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
       end
     end 
@@ -2846,7 +2849,7 @@ AS $function$
 with 
 ddl as (
 select row_number() over() as n,
-       ddlx_drop(gd.objid),
+       ddlx_drop(gd.objid,$2),
        ddlx_create(gd.objid,$2),
        gd.objid
   from ddlx_get_dependants($1) gd
@@ -2855,7 +2858,7 @@ select row_number() over() as n,
  where 'ext' ilike any($2) or de.refclassid is null
 )
 select ddlx_create($1,$2) as ddl_create,
-       ddlx_drop($1) as ddl_drop,
+       ddlx_drop($1,$2) as ddl_drop,
        string_agg(ddlx_create,E'\n' order by n) as ddl_create_deps,
        string_agg(ddlx_drop,'' order by n desc) as ddl_drop_deps
   from ddl 
@@ -2896,7 +2899,7 @@ AS $function$
            from pg_type t 
            left join pg_class c on (c.oid=t.typrelid and t.typtype = 'c' and c.relkind <> 'c') 
           where t.oid = cast($1 as regtype)::oid
-         ))
+         ),$2)
      end
 $function$  strict;
 
