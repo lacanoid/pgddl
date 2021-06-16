@@ -2269,10 +2269,10 @@ with obj as (select * from ddlx_identify($1))
     when 'pg_opclass'::regclass        then ddlx_create_operator_class(oid)
 #if 9.5
     when 'pg_roles'::regclass          then ddlx_create_role(oid::regrole)
-    when 'pg_namespace'::regclass      then ddlx_create_schema(oid::regnamespace)
+    when 'pg_namespace'::regclass      then ddlx_create_schema(oid::regnamespace,$2)
 #else
     when 'pg_roles'::regclass          then ddlx_create_role(oid)
-    when 'pg_namespace'::regclass      then ddlx_create_schema(oid)
+    when 'pg_namespace'::regclass      then ddlx_create_schema(oid,$2)
 #end
 #if 9.2
     when 'pg_tablespace'::regclass     then ddlx_create_tablespace(oid)
@@ -2746,14 +2746,16 @@ $function$  strict;
 ---------------------------------------------------
 
 #if 9.5
-CREATE OR REPLACE FUNCTION ddlx_create_schema(regnamespace)
+CREATE OR REPLACE FUNCTION ddlx_create_schema(regnamespace, text[] default '{}')
 #else
-CREATE OR REPLACE FUNCTION ddlx_create_schema(oid)
+CREATE OR REPLACE FUNCTION ddlx_create_schema(oid, text[] default '{}')
 #end
  RETURNS text
  LANGUAGE sql
 AS $function$
-select format(E'CREATE SCHEMA %I;\n',n.nspname)
+select format(E'CREATE SCHEMA %s%I;\n',
+              case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end,
+              n.nspname)
   from pg_namespace n
  where oid = $1
 $function$  strict;
