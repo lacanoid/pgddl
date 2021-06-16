@@ -1,10 +1,10 @@
 Version 0.20
 ------------
 - new internal function `ddlx_definitions()` to return different parts of object definition
-' implemented option `ine` in some places for IF NOT EXISTS
-- demoted a bunch of overloaded `ddlx_create()` functions.
-- `ddlx_grants(oid)` now consistent
-- refactored DCL generation 
+- `ddlx_create()` now uses this
+- implemented option `ine` in some places for `IF NOT EXISTS`
+- demoted a bunch of overloaded `ddlx_create()` functions, now it all goes through `ddlx_create(oid)`
+- `ddlx_grants()` now consistent
 
 Version 0.19
 ------------
