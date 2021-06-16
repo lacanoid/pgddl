@@ -132,16 +132,9 @@ All object identifier types are supported:
 
 - `regoper`,`regoperator` - SQL DDL source of operator `regpoper`.
 
-- `regconfig`,`regdictionary` - Generates SQL DDL source for text search.
+- `regconfig`,`regdictionary` - SQL DDL source for text search.
 
-There is also a convenience function to use `oid` directly, without casting:
-
-- `ddlx_create(oid) returns text`
-
-    Generates SQL DDL source for object ID, `oid`. 
-	This is the most general-purpose function of the bunch.
-	It also works for objects other than `reg*` types specified above.
-	
+Drop statements are created with `ddlx_drop()` function.	
 
 - `ddlx_drop(oid) returns text`
 

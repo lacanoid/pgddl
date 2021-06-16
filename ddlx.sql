@@ -2311,7 +2311,7 @@ parts as (select * from ddlx_definitions($1,$2))
          ],'')
     from obj,parts
 $function$  strict;
-
+/*
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create(regclass, text[] default '{}')
@@ -2331,7 +2331,7 @@ $function$  strict;
 
 COMMENT ON FUNCTION ddlx_create(regclass, text[]) 
      IS 'Get SQL CREATE statement for a table, view, sequence or index';
-
+*/
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_operator(regoper)

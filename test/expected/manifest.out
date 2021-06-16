@@ -7,7 +7,6 @@ a as (
 select * from a
 ;
  ddlx_create(oid,text[])                     | Get SQL CREATE statement for a generic object by object id
- ddlx_create(regclass,text[])                | Get SQL CREATE statement for a table, view, sequence or index
  ddlx_drop(oid,text[])                       | Get SQL DROP statement for an object by object id
  ddlx_script(oid,text[])                     | Get SQL DDL script for an object and dependants by object id
  ddlx_script(text,text[])                    | Get SQL DDL script for an object and dependants by object name

@@ -779,8 +779,9 @@ CREATE TABLE test_parent (
     i integer NOT NULL
 );
 
-ALTER TABLE test_parent OWNER TO postgres;
+COMMENT ON TABLE test_parent IS NULL;
 
+ALTER TABLE test_parent OWNER TO postgres;
 ALTER SEQUENCE test_parent_i_seq OWNED BY test_parent.i;
 
 
@@ -792,8 +793,9 @@ ddlx_create
 CREATE TABLE test_child ()
   INHERITS(test_parent);
 
-ALTER TABLE test_child OWNER TO postgres;
+COMMENT ON TABLE test_child IS NULL;
 
+ALTER TABLE test_child OWNER TO postgres;
 ALTER TABLE test_child ALTER i SET DEFAULT nextval('test_parent_i_seq'::regclass);
 
 
