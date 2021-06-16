@@ -2303,6 +2303,7 @@ with obj as (select * from ddlx_identify($1))
     ddlx_alter_table_defaults(oid) as defaults,
     case obj.classid
       when 'pg_roles'::regclass THEN  ddlx_alter_role(oid)
+      when 'pg_database'::regclass THEN  ddlx_alter_database(oid)
       else ddlx_alter_table_settings(oid)
     end as settings,
 --    ddlx_alter_table_settings(oid) as settings,
@@ -2546,24 +2547,33 @@ select format(E'CREATE DATABASE %s WITH\n  %s;\n\n',
                'LC_COLLATE = '||quote_ident(d.datcollate),
                'LC_CTYPE = '||quote_ident(d.datctype)
               ],E'\n  ')
-              )
-       || E'\n' ||
-       format(E'ALTER DATABASE %s WITH ALLOW_CONNECTIONS %s;\n',
+              ) ||
+       case when s.oid is not null then
+       format(E'ALTER DATABASE %s SET TABLESPACE %I;\n\n',
+              obj.sql_identifier, s.spcname) 
+       else '' end 
+  from pg_database as d 
+  left join pg_tablespace s on (s.oid=d.dattablespace), obj
+ where d.oid = $1
+$function$  strict;
+
+CREATE OR REPLACE FUNCTION ddlx_alter_database(oid)
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+select format(E'ALTER DATABASE %s WITH ALLOW_CONNECTIONS %s;\n',
               obj.sql_identifier, d.datallowconn::text) ||
        case when d.datconnlimit>0 then
        format(E'ALTER DATABASE %s WITH CONNECTION LIMIT %s;\n',
               obj.sql_identifier, d.datconnlimit) 
        else '' end ||
        format(E'ALTER DATABASE %s WITH IS_TEMPLATE %s;\n',
-              obj.sql_identifier, d.datistemplate::text) || 
-       case when s.oid is not null then
-       format(E'ALTER DATABASE %s SET TABLESPACE %I;\n\n',
-              obj.sql_identifier, s.spcname) 
-       else '' end 
+              obj.sql_identifier, d.datistemplate::text)
        ||
-       (  select coalesce(string_agg(
+       (  select coalesce(e'\n'||string_agg(
                    'ALTER DATABASE '||obj.sql_identifier||' SET '||cfg||';',E'\n'
-		 ) || E'\n\n', '')
+		   ) || E'\n', '')
           from unnest((select setconfig from pg_db_role_setting
 	                where setdatabase = $1 and setrole = 0::oid)) as cfg
        )

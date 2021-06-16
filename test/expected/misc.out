@@ -172,17 +172,16 @@ CREATE DATABASE ddlx_testdb WITH
   LC_COLLATE = "C"
   LC_CTYPE = "C";
 
-
-ALTER DATABASE ddlx_testdb WITH ALLOW_CONNECTIONS true;
-ALTER DATABASE ddlx_testdb WITH CONNECTION LIMIT 1234;
-ALTER DATABASE ddlx_testdb WITH IS_TEMPLATE false;
 ALTER DATABASE ddlx_testdb SET TABLESPACE pg_default;
-
-ALTER DATABASE ddlx_testdb SET standard_conforming_strings=true;
 
 COMMENT ON DATABASE ddlx_testdb IS 'DDLX Test Database';
 
 ALTER DATABASE ddlx_testdb OWNER TO postgres;
+ALTER DATABASE ddlx_testdb WITH ALLOW_CONNECTIONS true;
+ALTER DATABASE ddlx_testdb WITH CONNECTION LIMIT 1234;
+ALTER DATABASE ddlx_testdb WITH IS_TEMPLATE false;
+
+ALTER DATABASE ddlx_testdb SET standard_conforming_strings=true;
 GRANT CREATE ON DATABASE ddlx_testdb TO ddlx_test_user4 WITH GRANT OPTION;
 GRANT CONNECT ON DATABASE ddlx_testdb TO PUBLIC;
 GRANT TEMPORARY ON DATABASE ddlx_testdb TO PUBLIC;

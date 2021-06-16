@@ -11,7 +11,9 @@ select * from a
  ddlx_script(oid,text[])                     | Get SQL DDL script for an object and dependants by object id
  ddlx_script(text,text[])                    | Get SQL DDL script for an object and dependants by object name
  ddlx_alter_class(regclass,text[])           | 
+ ddlx_alter_database(oid)                    | 
  ddlx_alter_owner(oid)                       | 
+ ddlx_alter_role(regrole)                    | 
  ddlx_alter_role_auth(oid)                   | 
  ddlx_alter_sequence(regclass)               | 
  ddlx_alter_table_defaults(regclass)         | 
