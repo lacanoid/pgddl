@@ -112,29 +112,16 @@ You can use them simply by casting object name (or oid) to some `reg*` type:
 
     SELECT ddlx_create('+(int,int)'::regoperator);
 
+All object identifier types are supported:
+`regclass`,`regtype`,`regrole`,`regnamespace`,`regproc`,`regprocedure`,
+`regoper`,`regoperator`,`regconfig`,`regdictionary`
+
 For objects without object identifier types, you have to find object ID `oid` first.
 You can use something like:
 
     SELECT ddlx_create(oid) FROM pg_foreign_data_wrapper WHERE fdwname='postgres_fdw';
 
     SELECT ddlx_create(oid) FROM pg_database WHERE datname=current_database();
-
-All object identifier types are supported:
-
-- `regclass` -
-    SQL DDL source of a class (table or view).
-    This also includes all associated comments, ownership, constraints, 
-    indexes, triggers, rules, grants, etc...
-
-- `regtype` - SQL DDL source for user defined type.
-
-- `regrole` - SQL DDL source for a role (user or group).
-
-- `regproc`,`regprocedure` - SQL DDL source of a routine.
-
-- `regoper`,`regoperator` - SQL DDL source of operator.
-
-- `regconfig`,`regdictionary` - SQL DDL source for text search.
 
 Drop statements are created with `ddlx_drop()` function.	
 
