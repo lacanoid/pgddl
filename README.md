@@ -97,23 +97,28 @@ The API provides three public user functions:
 - `ddlx_drop(oid)` - builds SQL DDL drop statements
 - `ddlx_script(oid)` - builds SQL DDL scripts of entire dependancy trees
 
-These are overloaded for use with various `reg*` types supported by Postgres.
-You can use these simply by casting object name (or oid) to some `reg*` type:
-```sql
-SELECT ddlx_create('my_table'::regclass);
-```
+These are useful with various `reg*` types supported by Postgres, which are
+then automatically cast to `oid`.
+
+You can use them simply by casting object name (or oid) to some `reg*` type:
+
+    SELECT ddlx_create('my_table'::regclass);
+    
+    SELECT ddlx_create('my_type'::regtype);
+
+    SELECT ddlx_create('my_function'::regproc);
 
 All `reg*` types are supported:
-
-- `ddlx_create(regtype) returns text`
-
-    Generates SQL DDL source for type `regtype`.
 
 - `ddlx_create(regclass) returns text`
 
     Generates SQL DDL source of a class (table or view) `regclass`.
     This also includes all associated comments, ownership, constraints, 
     indexes, triggers, rules, grants, etc...
+
+- `ddlx_create(regtype) returns text`
+
+    Generates SQL DDL source for type `regtype`.
 
 - `ddlx_create(regproc) returns text`
 - `ddlx_create(regprocedure) returns text`
@@ -213,6 +218,11 @@ Nevertheless, some of them are:
 - `ddlx_describe(regclass) returns setof record`
 
     Get columns of a class.
+
+- `ddlx_definitions(oid) returns record`
+
+    Get individual parts of of objects' definition, 
+    such as: bare, comment, owner, storage, defaults, settings, constraints, indexes, triggers, rules, rls, grants.
 
 - `ddlx_create_class(regclass) returns text`
 
