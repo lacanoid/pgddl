@@ -119,37 +119,20 @@ You can use something like:
 
 All object identifier types are supported:
 
-- `regclass`
-
-    Generates SQL DDL source of a class (table or view) `regclass`.
+- `regclass` -
+    SQL DDL source of a class (table or view) `regclass`.
     This also includes all associated comments, ownership, constraints, 
     indexes, triggers, rules, grants, etc...
 
-- `regtype`
+- `regtype` - SQL DDL source for type `regtype`.
 
-    Generates SQL DDL source for type `regtype`.
+- `regrole` - SQL DDL source for role (user or group) `regrole`.
 
-- `regproc`,`regprocedure`
+- `regproc`,`regprocedure` - SQL DDL source of function/procedure `regproc`.
 
-    Generates SQL DDL source of function/procedure `regproc`.
+- `regoper`,`regoperator` - SQL DDL source of operator `regpoper`.
 
-- `regoper`
-- `regoperator`
-
-    Generates SQL DDL source of operator `regpoper`.
-
-- `regrole`
-
-    Generates SQL DDL source for role (user or group) `regrole`.
-    
-- `regconfig`
-
-    Generates SQL DDL source for text search configuration `regconfig`.
-    
-- `regdictionary`
-
-    Generates SQL DDL source for text search dictionary `regdictionary`.
-    
+- `regconfig`,`regdictionary` - Generates SQL DDL source for text search.
 
 There is also a convenience function to use `oid` directly, without casting:
 
