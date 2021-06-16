@@ -61,13 +61,16 @@ Some tests might fail on older versions.
 Installation
 ------------
 
-To build and install this module:
+To build this module:
 
     make
+
+This builds extension for your particular version of Postgres in a file like `ddlx--0.20.sql`.
+
     make install
     make install installcheck
 
-or selecting a specific PostgreSQL installation:
+You can select a specific PostgreSQL installation:
 
     make PG_CONFIG=/some/where/bin/pg_config
     make PG_CONFIG=/some/where/bin/pg_config install
@@ -87,6 +90,11 @@ set appropriately for the extension to work. To make it work with any value of
     CREATE EXTENSION ddlx SCHEMA pg_catalog;
 
 This of course requires superuser privileges.
+
+If for some reason you are unable to use this as an extension, you can simply load generated SQL file
+into your database by any regular means:
+
+    $ psql my_database -1 -f ddlx--0.20.sql
 
 Using
 -----

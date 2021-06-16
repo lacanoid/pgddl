@@ -755,8 +755,10 @@ $function$ strict;
 -- forward declarations, will be redefined later
 ---------------------------------------------------
 
+/*
 CREATE OR REPLACE FUNCTION ddlx_grants(oid) RETURNS text
   LANGUAGE sql AS $function$ select null::text $function$;
+*/
 CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}') RETURNS text
   LANGUAGE sql AS $function$ select null::text $function$;
 
@@ -2218,126 +2220,6 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_definitions(
-   in oid,
-   in options text[] default '{}',
-   out oid oid,
-   out classid regclass,
-   out sql_kind text,
-   out sql_identifier text,
-   out bare text,
-   out comment text,
-   out owner text,
-   out storage text,
-   out defaults text,
-   out settings text,
-   out constraints text,
-   out indexes text,
-   out triggers text,
-   out rules text,
-   out rls text,
-   out grants text
-)
- RETURNS record
- LANGUAGE sql
-AS $function$
-with obj as (select * from ddlx_identify($1))
-  select 
-    obj.oid, obj.classid, obj.sql_kind, obj.sql_identifier,
-    case obj.classid
-    when 'pg_class'::regclass          then ddlx_create_class(oid::regclass,$2)
-    when 'pg_type'::regclass           then ddlx_create_type(oid::regtype)
-    when 'pg_proc'::regclass           then ddlx_create_function(oid::regproc)
-    when 'pg_operator'::regclass       then ddlx_create_operator(oid::regoper)
-    when 'pg_opfamily'::regclass       then ddlx_create_operator_family(oid)
-    when 'pg_rewrite'::regclass        then ddlx_create_rule(oid)
-    when 'pg_ts_config'::regclass      then ddlx_create_text_search_config(oid::regconfig)
-    when 'pg_ts_dict'::regclass        then ddlx_create_text_search_dict(oid::regdictionary)
-    when 'pg_ts_parser'::regclass      then ddlx_create_text_search_parser(oid)
-    when 'pg_ts_template'::regclass    then ddlx_create_text_search_template(oid)
-    when 'pg_database'::regclass       then ddlx_create_database(oid)
-    when 'pg_constraint'::regclass     then ddlx_create_constraint(oid)
-    when 'pg_trigger'::regclass        then ddlx_create_trigger(oid)
-    when 'pg_attrdef'::regclass        then ddlx_create_default(oid)
-    when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid)
-    when 'pg_foreign_server'::regclass then ddlx_create_server(oid)
-    when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid)
-    when 'pg_cast'::regclass           then ddlx_create_cast(oid)
-    when 'pg_collation'::regclass      then ddlx_create_collation(oid)
-    when 'pg_conversion'::regclass     then ddlx_create_conversion(oid)
-    when 'pg_language'::regclass       then ddlx_create_language(oid)
-    when 'pg_opclass'::regclass        then ddlx_create_operator_class(oid)
-#if 9.5
-    when 'pg_roles'::regclass          then ddlx_create_role(oid::regrole)
-    when 'pg_namespace'::regclass      then ddlx_create_schema(oid::regnamespace,$2)
-#else
-    when 'pg_roles'::regclass          then ddlx_create_role(oid)
-    when 'pg_namespace'::regclass      then ddlx_create_schema(oid,$2)
-#end
-#if 9.2
-    when 'pg_tablespace'::regclass     then ddlx_create_tablespace(oid)
-#if 9.3
-    when 'pg_event_trigger'::regclass  then ddlx_create_event_trigger(oid)
-    when 'pg_amproc'::regclass         then ddlx_create_amproc(oid)
-    when 'pg_amop'::regclass           then ddlx_create_amop(oid)
-#if 9.5
-    when 'pg_policy'::regclass         then ddlx_create_policy(oid)
-    when 'pg_transform'::regclass      then ddlx_create_transform(oid)
-#if 9.6
-    when 'pg_am'::regclass             then ddlx_create_access_method(oid)
-#if 10
-    when 'pg_statistic_ext'::regclass  then pg_get_statisticsobjdef(oid)||E';\n' 
-    when 'pg_publication'::regclass    then ddlx_create_publication(oid)
-    when 'pg_subscription'::regclass   then ddlx_create_subscription(oid)
-#end
-    else
-      case
-        when obj.sql_kind is not null
-        then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
-        else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))      
-      end
-    end as bare,
-    ddlx_comment(oid) as comment,
-    ddlx_alter_owner(oid) as owner,
-    ddlx_alter_table_storage(oid) as storage,
-    ddlx_alter_table_defaults(oid) as defaults,
-    case obj.classid
-      when 'pg_roles'::regclass THEN  ddlx_alter_role(oid)
-      when 'pg_database'::regclass THEN  ddlx_alter_database(oid)
-      else ddlx_alter_table_settings(oid)
-    end as settings,
---    ddlx_alter_table_settings(oid) as settings,
-    ddlx_create_constraints(oid) as constraints,
-    ddlx_create_indexes(oid, options) as indexes,
-    ddlx_create_triggers(oid) as triggers,
-    ddlx_create_rules(oid) as rules,
-#if 9.5
-     ddlx_alter_table_rls(oid) as rls,
-#else
-     null as rls,
-#end
-     ddlx_grants(oid) as grants
-    from obj
-$function$  strict;
-
-
-CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
-with 
-obj as (select * from ddlx_identify($1)),
-parts as (select * from ddlx_definitions($1,$2))
-  select array_to_string( array[
-           storage,
-           case when obj.sql_kind='TABLE' then parts.owner end || e'\n',
-           defaults,settings,constraints,indexes,triggers,rules,rls
-         ],'')
-    from obj,parts
-$function$  strict;
-
----------------------------------------------------
-
 CREATE OR REPLACE FUNCTION ddlx_create_operator(regoper)
  RETURNS text
  LANGUAGE sql
@@ -2762,16 +2644,16 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_type(regtype)
+CREATE OR REPLACE FUNCTION ddlx_create_type(regtype, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
-   select ddlx_create_class(c.oid::regclass) -- type
+   select ddlx_create_class(c.oid::regclass,$2) -- type
      from pg_type t
      join pg_class c on (c.oid=t.typrelid)
     where t.oid = $1 and t.typtype = 'c' and c.relkind = 'c'
     union
-   select ddlx_create(c.oid::regclass) -- table, etc
+   select ddlx_create(c.oid::regclass, $2) -- table, etc
      from pg_type t
      join pg_class c on (c.oid=t.typrelid)
     where t.oid = $1 and t.typtype = 'c' and c.relkind <> 'c'
@@ -2791,7 +2673,128 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(oid,ddlx_options text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_definitions(
+   in oid,
+   in options text[] default '{}',
+   out oid oid,
+   out classid regclass,
+   out sql_kind text,
+   out sql_identifier text,
+   out bare text,
+   out comment text,
+   out owner text,
+   out storage text,
+   out defaults text,
+   out settings text,
+   out constraints text,
+   out indexes text,
+   out triggers text,
+   out rules text,
+   out rls text,
+   out grants text
+)
+ RETURNS record
+ LANGUAGE sql
+AS $function$
+with obj as (select * from ddlx_identify($1))
+  select 
+    obj.oid, obj.classid, obj.sql_kind, obj.sql_identifier,
+    case obj.classid
+    when 'pg_class'::regclass          then ddlx_create_class(oid::regclass,$2)
+    when 'pg_type'::regclass           then ddlx_create_type(oid::regtype,$2)
+    when 'pg_proc'::regclass           then ddlx_create_function(oid::regproc)
+    when 'pg_operator'::regclass       then ddlx_create_operator(oid::regoper)
+    when 'pg_opfamily'::regclass       then ddlx_create_operator_family(oid)
+    when 'pg_rewrite'::regclass        then ddlx_create_rule(oid)
+    when 'pg_ts_config'::regclass      then ddlx_create_text_search_config(oid::regconfig)
+    when 'pg_ts_dict'::regclass        then ddlx_create_text_search_dict(oid::regdictionary)
+    when 'pg_ts_parser'::regclass      then ddlx_create_text_search_parser(oid)
+    when 'pg_ts_template'::regclass    then ddlx_create_text_search_template(oid)
+    when 'pg_database'::regclass       then ddlx_create_database(oid)
+    when 'pg_constraint'::regclass     then ddlx_create_constraint(oid)
+    when 'pg_trigger'::regclass        then ddlx_create_trigger(oid)
+    when 'pg_attrdef'::regclass        then ddlx_create_default(oid)
+    when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid)
+    when 'pg_foreign_server'::regclass then ddlx_create_server(oid)
+    when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid)
+    when 'pg_cast'::regclass           then ddlx_create_cast(oid)
+    when 'pg_collation'::regclass      then ddlx_create_collation(oid)
+    when 'pg_conversion'::regclass     then ddlx_create_conversion(oid)
+    when 'pg_language'::regclass       then ddlx_create_language(oid)
+    when 'pg_opclass'::regclass        then ddlx_create_operator_class(oid)
+#if 9.5
+    when 'pg_roles'::regclass          then ddlx_create_role(oid::regrole)
+    when 'pg_namespace'::regclass      then ddlx_create_schema(oid::regnamespace,$2)
+#else
+    when 'pg_roles'::regclass          then ddlx_create_role(oid)
+    when 'pg_namespace'::regclass      then ddlx_create_schema(oid,$2)
+#end
+#if 9.2
+    when 'pg_tablespace'::regclass     then ddlx_create_tablespace(oid)
+#if 9.3
+    when 'pg_event_trigger'::regclass  then ddlx_create_event_trigger(oid)
+    when 'pg_amproc'::regclass         then ddlx_create_amproc(oid)
+    when 'pg_amop'::regclass           then ddlx_create_amop(oid)
+#if 9.5
+    when 'pg_policy'::regclass         then ddlx_create_policy(oid)
+    when 'pg_transform'::regclass      then ddlx_create_transform(oid)
+#if 9.6
+    when 'pg_am'::regclass             then ddlx_create_access_method(oid)
+#if 10
+    when 'pg_statistic_ext'::regclass  then pg_get_statisticsobjdef(oid)||E';\n' 
+    when 'pg_publication'::regclass    then ddlx_create_publication(oid)
+    when 'pg_subscription'::regclass   then ddlx_create_subscription(oid)
+#end
+    else
+      case
+        when obj.sql_kind is not null
+        then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
+        else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))      
+      end
+    end as bare,
+    ddlx_comment(oid) as comment,
+    ddlx_alter_owner(oid) as owner,
+    ddlx_alter_table_storage(oid) as storage,
+    ddlx_alter_table_defaults(oid) as defaults,
+    case obj.classid
+      when 'pg_roles'::regclass THEN  ddlx_alter_role(oid)
+      when 'pg_database'::regclass THEN  ddlx_alter_database(oid)
+      else ddlx_alter_table_settings(oid)
+    end as settings,
+--    ddlx_alter_table_settings(oid) as settings,
+    ddlx_create_constraints(oid) as constraints,
+    ddlx_create_indexes(oid, options) as indexes,
+    ddlx_create_triggers(oid) as triggers,
+    ddlx_create_rules(oid) as rules,
+#if 9.5
+     ddlx_alter_table_rls(oid) as rls,
+#else
+     null as rls,
+#end
+     ddlx_grants(oid) as grants
+    from obj
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass, text[] default '{}')
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+with 
+obj as (select * from ddlx_identify($1)),
+parts as (select * from ddlx_definitions($1,$2))
+  select array_to_string( array[
+           storage,
+           case when obj.sql_kind='TABLE' then parts.owner end || e'\n',
+           defaults,settings,constraints,indexes,triggers,rules,rls
+         ],'')
+    from obj,parts
+$function$  strict;
+
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
