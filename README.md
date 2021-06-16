@@ -97,8 +97,8 @@ The API provides three public user functions:
 - `ddlx_drop(oid)` - builds SQL DDL drop statements
 - `ddlx_script(oid)` - builds SQL DDL scripts of entire dependancy trees
 
-These are useful with various `reg*` types supported by Postgres, which are
-then automatically cast to `oid`.
+These are useful with various `reg*` [object identifier types](https://www.postgresql.org/docs/current/datatype-oid.html) 
+supported by Postgres, which are then automatically cast to `oid`.
 
 You can use them simply by casting object name (or oid) to some `reg*` type:
 
@@ -108,7 +108,16 @@ You can use them simply by casting object name (or oid) to some `reg*` type:
 
     SELECT ddlx_create('my_function'::regproc);
 
-All `reg*` types are supported:
+    SELECT ddlx_create(current_role::regrole);
+
+For objects without object identifier types, you have to find object id (oid) first.
+You can use something like:
+
+    SELECT ddlx_create(oid) FROM pg_foreign_data_wrapper WHERE fdwname='postgres_fdw';
+
+    SELECT ddlx_create(oid) FROM pg_database where datname=current_database();
+
+All object identifier types are supported:
 
 - `ddlx_create(regclass) returns text`
 
@@ -151,10 +160,6 @@ There is also a convenience function to use `oid` directly, without casting:
 	This is the most general-purpose function of the bunch.
 	It also works for objects other than `reg*` types specified above.
 	
-	For those, you can use something like:
-```sql
-SELECT ddlx_create(oid) FROM pg_foreign_data_wrapper WHERE fdwname='postgres_fdw';
-```
 
 - `ddlx_drop(oid) returns text`
 

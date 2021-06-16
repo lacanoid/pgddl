@@ -2271,6 +2271,12 @@ with obj as (select * from ddlx_identify($1))
     when 'pg_publication'::regclass    then ddlx_create_publication(oid)
     when 'pg_subscription'::regclass   then ddlx_create_subscription(oid)
 #end
+    else
+      case
+        when obj.sql_kind is not null
+        then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
+        else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))      
+      end
     end as bare,
     ddlx_comment(oid) as comment,
     ddlx_alter_owner(oid) as owner,
