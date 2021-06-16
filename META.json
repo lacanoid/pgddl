@@ -1,4 +1,4 @@
-Me{
+{
    "name": "ddlx",
    "abstract": "DDL eXtractor Functions",
    "description": "A set of SQL only functions for recreating DDL for objects in a database",

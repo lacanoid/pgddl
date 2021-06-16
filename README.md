@@ -157,21 +157,18 @@ Scripts might be more useful for rebuilding layers of functions and views and su
 
 For example:
 
-```sql
-CREATE TABLE users (
-    id int PRIMARY KEY,
-    name text
-);
+    CREATE TABLE users (
+        id int PRIMARY KEY,
+        name text
+    );
 
-SELECT ddlx_script('users');
+    SELECT ddlx_script('users');
 
-CREATE TYPE my_enum AS ENUM ('foo','bar');
+    CREATE TYPE my_enum AS ENUM ('foo','bar');
 
-SELECT ddlx_script('my_enum');
+    SELECT ddlx_script('my_enum');
 
-SELECT ddlx_script(current_role::regrole);
-
-```
+    SELECT ddlx_script(current_role::regrole);
 
 A number of other functions are provided to extract more specific objects.
 Their names all begin with `ddlx_`. They are used internally by the extension 
