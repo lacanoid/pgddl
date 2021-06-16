@@ -110,12 +110,12 @@ You can use them simply by casting object name (or oid) to some `reg*` type:
 
     SELECT ddlx_create(current_role::regrole);
 
-For objects without object identifier types, you have to find object id (oid) first.
+For objects without object identifier types, you have to find object id `oid` first.
 You can use something like:
 
     SELECT ddlx_create(oid) FROM pg_foreign_data_wrapper WHERE fdwname='postgres_fdw';
 
-    SELECT ddlx_create(oid) FROM pg_database where datname=current_database();
+    SELECT ddlx_create(oid) FROM pg_database WHERE datname=current_database();
 
 All object identifier types are supported:
 
