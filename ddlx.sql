@@ -2807,7 +2807,8 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
  LANGUAGE sql
  AS $function$
  with obj as (select * from ddlx_identify($1))
- select case obj.classid
+ select 
+   case obj.classid
    when 'pg_constraint'::regclass 
    then ddlx_drop_constraint(oid)
    when 'pg_trigger'::regclass 
@@ -2823,10 +2824,12 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
        when obj.sql_kind = 'SEQUENCE'
        then format(E'DROP %s IF EXISTS %s;\n',obj.sql_kind, obj.sql_identifier)
        when obj.sql_kind is not null
-       then format(E'DROP %s %s%s;\n',
+       then format(E'DROP %s %s%s;%s\n',
                    obj.sql_kind, 
                    case when 'ie' ilike any($2) then 'IF EXISTS ' end,
-                   obj.sql_identifier)
+                   obj.sql_identifier,
+                   case when obj_kind = 'TABLE' then '-- WARNING!' end
+                   )
        else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
       end
     end 
