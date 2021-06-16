@@ -5,7 +5,7 @@ Version 0.20
 - implemented option `ine` in some places for `IF NOT EXISTS`
 - implemented option `ie` in some places for `IF EXISTS`
 - demoted a bunch of overloaded `ddlx_create()` functions, now it all goes through `ddlx_create(oid)`
-- `ddlx_grants()` now consistent
+- `ddlx_grants()` is now consistent
 
 Version 0.19
 ------------
