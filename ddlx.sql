@@ -1559,7 +1559,26 @@ with
 q1 as (
  select format(E'CREATE %s %I;\n',
                 case when rolcanlogin then 'USER' else 'GROUP' end,
-                rolname) ||
+                rolname) as ddl
+   from pg_roles a
+   left join pg_shdescription d on d.objoid=a.oid
+  where a.oid = $1
+ )
+select ddl
+  from q1; 
+$function$  strict;
+
+#if 9.5
+CREATE OR REPLACE FUNCTION ddlx_alter_role(regrole)
+#else
+CREATE OR REPLACE FUNCTION ddlx_alter_role(oid)
+#end
+ RETURNS text
+ LANGUAGE sql
+AS $function$ 
+with 
+q1 as (
+ select 
         format(E'ALTER ROLE %I WITH\n  %s;\n\n',rolname,
                 array_to_string(array[
    case when rolcanlogin then 'LOGIN' else 'NOLOGIN' end,
@@ -2282,7 +2301,11 @@ with obj as (select * from ddlx_identify($1))
     ddlx_alter_owner(oid) as owner,
     ddlx_alter_table_storage(oid) as storage,
     ddlx_alter_table_defaults(oid) as defaults,
-    ddlx_alter_table_settings(oid) as settings,
+    case obj.classid
+      when 'pg_roles'::regclass THEN  ddlx_alter_role(oid)
+      else ddlx_alter_table_settings(oid)
+    end as settings,
+--    ddlx_alter_table_settings(oid) as settings,
     ddlx_create_constraints(oid) as constraints,
     ddlx_create_indexes(oid, options) as indexes,
     ddlx_create_triggers(oid) as triggers,

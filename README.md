@@ -214,7 +214,7 @@ Nevertheless, some of them are:
 - `ddlx_alter_class(regclass) returns text`
 
     Get additional (post-data) SQL DDL ALTER statements for class object.
-    This includes dafaults, storage parametes, constraints, indexes, triggers, rules,
+    This includes defaults, storage parametes, constraints, indexes, triggers, rules,
     owner and grants
 
 - `ddlx_grants(oid) returns text`

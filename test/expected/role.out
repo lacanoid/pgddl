@@ -15,6 +15,8 @@ grant pgddl_test_user3 to pgddl_test_user with admin option;
 select ddlx_create(oid) from pg_roles where rolname='pgddl_test_user';
 ddlx_create
 CREATE GROUP pgddl_test_user;
+COMMENT ON ROLE pgddl_test_user IS NULL;
+
 ALTER ROLE pgddl_test_user WITH
   NOLOGIN
   NOSUPERUSER
@@ -29,8 +31,6 @@ ALTER ROLE pgddl_test_user VALID UNTIL '2100-01-01 00:00:00-08';
 
 ALTER ROLE pgddl_test_user SET standard_conforming_strings=true;
 
-COMMENT ON ROLE pgddl_test_user IS NULL;
-
 GRANT pgddl_test_user2 TO pgddl_test_user;
 GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 
@@ -39,6 +39,8 @@ GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 select ddlx_create(oid) from pg_roles where rolname='pgddl_test_user3';
 ddlx_create
 CREATE GROUP pgddl_test_user3;
+COMMENT ON ROLE pgddl_test_user3 IS NULL;
+
 ALTER ROLE pgddl_test_user3 WITH
   NOLOGIN
   NOSUPERUSER
@@ -49,8 +51,6 @@ ALTER ROLE pgddl_test_user3 WITH
 
 ALTER ROLE pgddl_test_user3 VALID UNTIL 'infinity';
 
-COMMENT ON ROLE pgddl_test_user3 IS NULL;
-
 GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 
 
@@ -58,6 +58,8 @@ GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 select ddlx_create(oid) from pg_roles where rolname='pgddl_test_user2';
 ddlx_create
 CREATE USER pgddl_test_user2;
+COMMENT ON ROLE pgddl_test_user2 IS NULL;
+
 ALTER ROLE pgddl_test_user2 WITH
   LOGIN
   NOSUPERUSER
@@ -67,8 +69,6 @@ ALTER ROLE pgddl_test_user2 WITH
   NOREPLICATION;
 
 ALTER ROLE pgddl_test_user2 CONNECTION LIMIT 100;
-
-COMMENT ON ROLE pgddl_test_user2 IS NULL;
 
 GRANT pgddl_test_user2 TO pgddl_test_user;
 
