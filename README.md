@@ -119,35 +119,34 @@ You can use something like:
 
 All object identifier types are supported:
 
-- `ddlx_create(regclass) returns text`
+- `regclass`
 
     Generates SQL DDL source of a class (table or view) `regclass`.
     This also includes all associated comments, ownership, constraints, 
     indexes, triggers, rules, grants, etc...
 
-- `ddlx_create(regtype) returns text`
+- `regtype`
 
     Generates SQL DDL source for type `regtype`.
 
-- `ddlx_create(regproc) returns text`
-- `ddlx_create(regprocedure) returns text`
+- `regproc`,`regprocedure`
 
     Generates SQL DDL source of function/procedure `regproc`.
 
-- `ddlx_create(regoper) returns text`
-- `ddlx_create(regoperator) returns text`
+- `regoper`
+- `regoperator`
 
     Generates SQL DDL source of operator `regpoper`.
 
-- `ddlx_create(regrole) returns text`
+- `regrole`
 
     Generates SQL DDL source for role (user or group) `regrole`.
     
-- `ddlx_create(regconfig) returns text`
+- `regconfig`
 
     Generates SQL DDL source for text search configuration `regconfig`.
     
-- `ddlx_create(regdictionary) returns text`
+- `regdictionary`
 
     Generates SQL DDL source for text search dictionary `regdictionary`.
     
