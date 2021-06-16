@@ -9,6 +9,7 @@ CREATE ACCESS METHOD btree
 
 COMMENT ON ACCESS METHOD btree IS 'b-tree index access method';
 
+
 (1 row)
 select ddlx_drop(oid) from pg_am where amname = 'btree';
 ddlx_drop

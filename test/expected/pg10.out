@@ -25,16 +25,15 @@ CREATE TABLE options (
     regtype regtype NOT NULL
 );
 
-ALTER TABLE options OWNER TO postgres;
-
 ALTER TABLE options SET (parallel_workers='2');
 
+COMMENT ON TABLE options IS NULL;
+
+ALTER TABLE options OWNER TO postgres;
 ALTER TABLE options ALTER regtype SET DEFAULT 'text'::regtype;
 
 ALTER TABLE options ADD CONSTRAINT options_pkey
   PRIMARY KEY (name);
-
-COMMENT ON TABLE options IS NULL;
 
 
 END;
@@ -71,10 +70,9 @@ CREATE TABLE measurement (
 )
   PARTITION BY RANGE (logdate);
 
-ALTER TABLE measurement OWNER TO postgres;
-
 COMMENT ON TABLE measurement IS NULL;
 
+ALTER TABLE measurement OWNER TO postgres;
 
 END;
 
@@ -117,10 +115,9 @@ CREATE TABLE customers (
 )
   PARTITION BY LIST (cust_country);
 
-ALTER TABLE customers OWNER TO postgres;
-
 COMMENT ON TABLE customers IS NULL;
 
+ALTER TABLE customers OWNER TO postgres;
 
 END;
 
@@ -138,10 +135,9 @@ DROP TABLE customer_jap;
 CREATE TABLE customer_jap PARTITION OF customers
   FOR VALUES IN ('jap');
 
-ALTER TABLE customer_jap OWNER TO postgres;
-
 COMMENT ON TABLE customer_jap IS NULL;
 
+ALTER TABLE customer_jap OWNER TO postgres;
 
 END;
 
@@ -175,10 +171,9 @@ CREATE TABLE log (
 )
   PARTITION BY RANGE (code, date_trunc('month'::text, ts), t COLLATE "C", a, (((code % 100) / 100)));
 
-ALTER TABLE log OWNER TO postgres;
-
 COMMENT ON TABLE log IS NULL;
 
+ALTER TABLE log OWNER TO postgres;
 
 END;
 
@@ -214,8 +209,9 @@ CREATE TABLE test_stat (
     b integer
 );
 
-ALTER TABLE test_stat OWNER TO postgres;
+COMMENT ON TABLE test_stat IS NULL;
 
+ALTER TABLE test_stat OWNER TO postgres;
 ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
   PRIMARY KEY (a);
 
@@ -223,8 +219,6 @@ CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
 COMMENT ON STATISTICS test_stat1 IS NULL;
 
 ALTER STATISTICS test_stat1 OWNER TO postgres;
-
-COMMENT ON TABLE test_stat IS NULL;
 
 
 END;
@@ -312,13 +306,12 @@ CREATE TABLE tab_generated (
     f integer
 );
 
-ALTER TABLE tab_generated OWNER TO postgres;
+COMMENT ON TABLE tab_generated IS NULL;
 
+ALTER TABLE tab_generated OWNER TO postgres;
 ALTER TABLE tab_generated ALTER d SET DEFAULT 42;
 
 ALTER SEQUENCE tab_generated_e_seq OWNED BY tab_generated.e;
-
-COMMENT ON TABLE tab_generated IS NULL;
 
 
 -- DEPENDANTS

@@ -15,6 +15,7 @@ CREATE FOREIGN DATA WRAPPER postgres_fdw
   HANDLER postgres_fdw_handler
   VALIDATOR postgres_fdw_validator;
 COMMENT ON FOREIGN DATA WRAPPER postgres_fdw IS NULL;
+
 ALTER FOREIGN DATA WRAPPER postgres_fdw OWNER TO postgres;
 
 (1 row)
@@ -25,6 +26,7 @@ OPTIONS (
     host 'localhost'
 );
 COMMENT ON SERVER serv2 IS NULL;
+
 ALTER SERVER serv2 OWNER TO postgres;
 
 (1 row)
@@ -34,6 +36,8 @@ CREATE USER MAPPING FOR public SERVER serv2
 OPTIONS (
     "user" 'foo'
 );
+COMMENT ON USER MAPPING FOR public SERVER serv2 IS NULL;
+
 
 (1 row)
 SELECT ddlx_drop((select umid from pg_user_mappings where srvname='serv2' and usename='public'));
@@ -68,9 +72,9 @@ CREATE OR REPLACE VIEW test_class_v_co1 AS
     test_class_v.v
    FROM test_class_v;
 
-COMMENT ON VIEW test_class_v_co1 IS NULL;
-
 ALTER VIEW test_class_v_co1 SET (check_option='cascaded');
+
+COMMENT ON VIEW test_class_v_co1 IS NULL;
 
 ALTER VIEW test_class_v_co1 OWNER TO postgres;
 GRANT SELECT ON test_class_v_co1 TO PUBLIC;
@@ -100,9 +104,9 @@ CREATE OR REPLACE VIEW test_class_v_co1 AS
     test_class_v.v
    FROM test_class_v;
 
-COMMENT ON VIEW test_class_v_co1 IS NULL;
-
 ALTER VIEW test_class_v_co1 SET (check_option='cascaded');
+
+COMMENT ON VIEW test_class_v_co1 IS NULL;
 
 ALTER VIEW test_class_v_co1 OWNER TO postgres;
 GRANT SELECT ON test_class_v_co1 TO PUBLIC;
@@ -136,9 +140,9 @@ CREATE OR REPLACE VIEW test_class_v_co2 AS
     test_class_v.v
    FROM test_class_v;
 
-COMMENT ON VIEW test_class_v_co2 IS NULL;
-
 ALTER VIEW test_class_v_co2 SET (check_option='cascaded');
+
+COMMENT ON VIEW test_class_v_co2 IS NULL;
 
 ALTER VIEW test_class_v_co2 OWNER TO postgres;
 GRANT SELECT ON test_class_v_co2 TO PUBLIC;
@@ -168,9 +172,9 @@ CREATE OR REPLACE VIEW test_class_v_co2 AS
     test_class_v.v
    FROM test_class_v;
 
-COMMENT ON VIEW test_class_v_co2 IS NULL;
-
 ALTER VIEW test_class_v_co2 SET (check_option='cascaded');
+
+COMMENT ON VIEW test_class_v_co2 IS NULL;
 
 ALTER VIEW test_class_v_co2 OWNER TO postgres;
 GRANT SELECT ON test_class_v_co2 TO PUBLIC;

@@ -122,17 +122,17 @@ You can use something like:
 All object identifier types are supported:
 
 - `regclass` -
-    SQL DDL source of a class (table or view) `regclass`.
+    SQL DDL source of a class (table or view).
     This also includes all associated comments, ownership, constraints, 
     indexes, triggers, rules, grants, etc...
 
-- `regtype` - SQL DDL source for type `regtype`.
+- `regtype` - SQL DDL source for user defined type.
 
-- `regrole` - SQL DDL source for role (user or group) `regrole`.
+- `regrole` - SQL DDL source for a role (user or group).
 
-- `regproc`,`regprocedure` - SQL DDL source of function/procedure `regproc`.
+- `regproc`,`regprocedure` - SQL DDL source of a routine.
 
-- `regoper`,`regoperator` - SQL DDL source of operator `regpoper`.
+- `regoper`,`regoperator` - SQL DDL source of operator.
 
 - `regconfig`,`regdictionary` - SQL DDL source for text search.
 
