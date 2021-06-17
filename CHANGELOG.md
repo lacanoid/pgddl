@@ -4,6 +4,7 @@ Version 0.20
 - `ddlx_create()` now uses this
 - implemented option `ine` in some places for `IF NOT EXISTS`
 - implemented option `ie` in some places for `IF EXISTS`
+- implemented option 'drop' to include drop statements in a script.
 - demoted a bunch of overloaded `ddlx_create()` functions, now it all goes through `ddlx_create(oid)`
 - `ddlx_grants()` is now consistent
 

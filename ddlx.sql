@@ -2891,7 +2891,11 @@ CREATE OR REPLACE FUNCTION ddlx_script(oid, ddlx_options text[] default '{}')
 AS $function$
 select E'BEGIN;\n\n'||
        format(
-         E'/*\n%s%s*/\n\n%s%s',
+         case
+           when 'drop' ilike any($2)
+           then E'%s%s\n%s%s'
+           else E'/*\n%s%s*/\n\n%s%s'
+         end,
          ddl_drop_deps||E'\n',
          ddl_drop,
          ddl_create,
