@@ -502,16 +502,16 @@ DROP SEQUENCE IF EXISTS test_type_s;
 -- Type: SEQUENCE ; Name: test_type_s; Owner: postgres
 
 CREATE SEQUENCE test_type_s;
+
+COMMENT ON SEQUENCE test_type_s IS 'interleave';
+
+ALTER SEQUENCE test_type_s OWNER TO postgres;
 ALTER SEQUENCE test_type_s
  INCREMENT BY 4
  MINVALUE 1
  MAXVALUE 9223372036854775807
  START WITH 2
  NO CYCLE;
-
-COMMENT ON SEQUENCE test_type_s IS 'interleave';
-
-ALTER SEQUENCE test_type_s OWNER TO postgres;
 
 END;
 

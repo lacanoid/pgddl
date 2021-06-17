@@ -928,7 +928,7 @@ AS $function$
  'CREATE SEQUENCE '
  || case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end
  ||(obj.oid::regclass::text) || E';\n'
- || ddlx_alter_sequence($1)
+-- || ddlx_alter_sequence($1)
    from obj;
 $function$  strict;
 
@@ -2758,9 +2758,10 @@ with obj as (select * from ddlx_identify($1))
     ddlx_alter_owner(oid) as owner,
     ddlx_alter_table_storage(oid) as storage,
     ddlx_alter_table_defaults(oid) as defaults,
-    case obj.classid
-      when 'pg_roles'::regclass THEN  ddlx_alter_role(oid)
-      when 'pg_database'::regclass THEN  ddlx_alter_database(oid)
+    case obj.sql_kind
+      when 'ROLE' THEN ddlx_alter_role(oid)
+      when 'DATABASE' THEN  ddlx_alter_database(oid)
+      when 'SEQUENCE' THEN ddlx_alter_sequence(oid)
       else ddlx_alter_table_settings(oid)
     end as settings,
 --    ddlx_alter_table_settings(oid) as settings,
