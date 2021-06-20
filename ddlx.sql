@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.20 lacanoid@ljudmila.org
+--  version 0.21 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -2360,15 +2360,32 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_collation(oid)
+CREATE OR REPLACE FUNCTION ddlx_create_collation(oid, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
 with obj as (select * from ddlx_identify($1))
-select format(E'CREATE COLLATION %s (\n  %s\n);\n',obj.sql_identifier,
+select format(E'CREATE COLLATION %s%s (\n  %s\n);\n',
+         case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end,
+         obj.sql_identifier,
          array_to_string(array[
            'LC_COLLATE = '|| quote_nullable(collcollate), 
            'LC_CTYPE = '  || quote_nullable(collctype)
+#if 10
+           ,'PROVIDER = ' || 
+           case collprovider
+           when 'i' then 'icu'
+--           when 'c' then 'libc'
+           when 'd' then 'default'
+           end                 
+#end
+#if 12
+           ,'DETERMINISTIC = ' || 
+           case when not collisdeterministic then 'false' end
+#end
+#if 10
+           ,'VERSION = ' || quote_literal(collversion)
+#end
            ],E',\n  ')
         )
   from pg_collation as c, obj
@@ -2720,7 +2737,7 @@ with obj as (select * from ddlx_identify($1))
     when 'pg_foreign_server'::regclass then ddlx_create_server(oid)
     when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid)
     when 'pg_cast'::regclass           then ddlx_create_cast(oid)
-    when 'pg_collation'::regclass      then ddlx_create_collation(oid)
+    when 'pg_collation'::regclass      then ddlx_create_collation(oid,$2)
     when 'pg_conversion'::regclass     then ddlx_create_conversion(oid)
     when 'pg_language'::regclass       then ddlx_create_language(oid)
     when 'pg_opclass'::regclass        then ddlx_create_operator_class(oid)

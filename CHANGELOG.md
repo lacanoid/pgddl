@@ -1,3 +1,7 @@
+Version 0.21
+------------
+- improvements to `ddlx_create_collation`
+
 Version 0.20
 ------------
 - new internal function `ddlx_definitions()` to return different parts of object definition
