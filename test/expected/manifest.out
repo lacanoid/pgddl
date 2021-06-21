@@ -29,7 +29,7 @@ select * from a
  ddlx_create_amproc(oid)                     | 
  ddlx_create_cast(oid)                       | 
  ddlx_create_class(regclass,text[])          | 
- ddlx_create_collation(oid)                  | 
+ ddlx_create_collation(oid,text[])           | 
  ddlx_create_constraint(oid)                 | 
  ddlx_create_constraints(regclass)           | 
  ddlx_create_conversion(oid)                 | 
@@ -50,9 +50,9 @@ select * from a
  ddlx_create_role(regrole)                   | 
  ddlx_create_rule(oid)                       | 
  ddlx_create_rules(regclass)                 | 
- ddlx_create_schema(regnamespace)            | 
+ ddlx_create_schema(regnamespace,text[])     | 
  ddlx_create_sequence(regclass,text[])       | 
- ddlx_create_server(oid)                     | 
+ ddlx_create_server(oid,text[])              | 
  ddlx_create_subscription(oid)               | 
  ddlx_create_table(regclass,text[])          | 
  ddlx_create_tablespace(oid)                 | 
@@ -63,13 +63,13 @@ select * from a
  ddlx_create_transform(oid)                  | 
  ddlx_create_trigger(oid)                    | 
  ddlx_create_triggers(regclass)              | 
- ddlx_create_type(regtype)                   | 
+ ddlx_create_type(regtype,text[])            | 
  ddlx_create_type_base(regtype)              | 
  ddlx_create_type_domain(regtype)            | 
  ddlx_create_type_enum(regtype)              | 
  ddlx_create_type_range(regtype)             | 
  ddlx_create_type_shell(regtype)             | 
- ddlx_create_user_mapping(oid)               | 
+ ddlx_create_user_mapping(oid,text[])        | 
  ddlx_create_view(regclass)                  | 
  ddlx_definitions(oid,text[])                | 
  ddlx_describe(regclass)                     | 
