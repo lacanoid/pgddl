@@ -2828,10 +2828,16 @@ parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         bare,           
         case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n',
-        parts.owner,
-        storage,
-        defaults,settings,constraints,indexes,triggers,rules,rls,
-        grants
+        case when 'noalter' ilike any($2) or 'nodcl' ilike any($2) or 'noowner' ilike any($2) then null
+        else parts.owner end,
+        case when 'noalter' ilike any($2) then null
+        else storage end,
+        case when 'noalter' ilike any($2) then null
+        else array_to_string(array[
+          defaults,settings,constraints,indexes,triggers,rules,rls
+        ],'') end,
+        case when 'noalter' ilike any($2) or 'nodcl' ilike any($2) or 'nogrants' ilike any($2) then null
+        else grants end
        ],'')
   from obj,parts
 $function$ strict;
