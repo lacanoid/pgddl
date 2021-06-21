@@ -1,6 +1,7 @@
 Version 0.21
 ------------
 - improvements to `ddlx_create_collation`
+- added IF NOT EXISTS in a few more places
 
 Version 0.20
 ------------

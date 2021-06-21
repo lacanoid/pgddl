@@ -1686,20 +1686,22 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_server(oid)
+CREATE OR REPLACE FUNCTION ddlx_create_server(oid, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$ 
  with obj as (select * from pg_foreign_server where oid = $1)
  select
-    'CREATE SERVER ' || quote_ident(obj.srvname) ||
-    coalesce(E'\nTYPE ' || quote_literal(obj.srvtype),'') ||
-    coalesce(E'\nVERSION ' || quote_literal(obj.srvversion),'') ||
-    E' FOREIGN DATA WRAPPER ' || 
+    'CREATE SERVER ' ||
+     case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end  ||
+     quote_ident(obj.srvname) ||
+     coalesce(E'\nTYPE ' || quote_literal(obj.srvtype),'') ||
+     coalesce(E'\nVERSION ' || quote_literal(obj.srvversion),'') ||
+     E' FOREIGN DATA WRAPPER ' || 
       (select quote_ident(fdwname)
          from pg_foreign_data_wrapper
         where oid = obj.srvfdw) ||
-    coalesce(E'\nOPTIONS (\n'||
+     coalesce(E'\nOPTIONS (\n'||
       (select string_agg(
               '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
               E',\n')
@@ -1710,13 +1712,15 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_user_mapping(oid)
+CREATE OR REPLACE FUNCTION ddlx_create_user_mapping(oid, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$ 
  with obj as (select * from ddlx_identify($1))
  select
-    'CREATE USER MAPPING ' || obj.sql_identifier ||
+    'CREATE USER MAPPING '
+    || case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end 
+    || obj.sql_identifier ||
     coalesce(E'\nOPTIONS (\n'||
       (select string_agg(
               '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
@@ -2734,8 +2738,8 @@ with obj as (select * from ddlx_identify($1))
     when 'pg_trigger'::regclass        then ddlx_create_trigger(oid)
     when 'pg_attrdef'::regclass        then ddlx_create_default(oid)
     when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid)
-    when 'pg_foreign_server'::regclass then ddlx_create_server(oid)
-    when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid)
+    when 'pg_foreign_server'::regclass then ddlx_create_server(oid,$2)
+    when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid,$2)
     when 'pg_cast'::regclass           then ddlx_create_cast(oid)
     when 'pg_collation'::regclass      then ddlx_create_collation(oid,$2)
     when 'pg_conversion'::regclass     then ddlx_create_conversion(oid)
