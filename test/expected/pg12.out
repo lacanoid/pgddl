@@ -34,7 +34,6 @@ CREATE TABLE tab_generated (
 
 COMMENT ON TABLE tab_generated IS NULL;
 
-ALTER TABLE tab_generated OWNER TO postgres;
 ALTER TABLE tab_generated ALTER d SET DEFAULT 42;
 
 ALTER SEQUENCE tab_generated_e_seq OWNED BY tab_generated.e;

@@ -40,11 +40,11 @@ create index idx2 on test_class_r using gin (v);
 create index idx3 on test_class_r(g) with (fillfactor=50);
 cluster test_class_r using idx3;
 
-SELECT replace(ddlx_script('test_class_r'::regclass),'FUNCTION','PROCEDURE') as ddlx_script;
+SELECT replace(ddlx_script('test_class_r'::regclass,'{owner}'),'FUNCTION','PROCEDURE') as ddlx_script;
 cluster test_class_r using test_class_r_pkey;
-SELECT replace(ddlx_script('test_class_r'::regtype),'FUNCTION','PROCEDURE') as ddlx_script;
-SELECT ddlx_script('idx1'::regclass);
-SELECT ddlx_script('idx2'::regclass);
+SELECT replace(ddlx_script('test_class_r'::regtype,'{owner}'),'FUNCTION','PROCEDURE') as ddlx_script;
+SELECT ddlx_script('idx1'::regclass,'{owner}');
+SELECT ddlx_script('idx2'::regclass,'{owner}');
 
 CREATE UNLOGGED TABLE test_class_r2 (
   i  serial, 
@@ -61,19 +61,19 @@ SELECT ddlx_script('test_class_r2'::regclass);
 CREATE VIEW test_class_v AS
 SELECT * FROM test_class_r;
 grant select on test_class_v to public;
-SELECT ddlx_script('test_class_v'::regclass);
-SELECT ddlx_script('test_class_v'::regtype);
+SELECT ddlx_script('test_class_v'::regclass,'{owner}');
+SELECT ddlx_script('test_class_v'::regtype,'{owner}');
 
 CREATE VIEW test_class_v2 AS
 SELECT * FROM test_class_v;
 grant select (a,b,c) on test_class_v2 to public;
-SELECT ddlx_script('test_class_v'::regclass);
+SELECT ddlx_script('test_class_v'::regclass,'{owner}');
 
 CREATE MATERIALIZED VIEW test_class_m AS
 SELECT * FROM test_class_r;
 create unique index test_class_mi ON test_class_m (a);
 
-SELECT ddlx_script('test_class_m'::regclass);
+SELECT ddlx_script('test_class_m'::regclass,'{owner}');
 
 select sql_kind, sql_identifier from ddlx_identify('ddlx_identify(oid)'::regprocedure);
 
@@ -85,7 +85,7 @@ comment on function funfun(int,text) is 'Use more comments!';
 
 select * from funfun(1);
 SELECT ddlx_script('funfun'::regproc);
-SELECT ddlx_script('funfun(int,text)'::regprocedure);
+SELECT ddlx_script('funfun(int,text)'::regprocedure,'{owner}');
 
 create sequence test_type_S increment 4 start 2;
 comment on sequence test_type_S is 'interleave';

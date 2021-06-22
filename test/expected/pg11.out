@@ -41,7 +41,6 @@ CREATE TABLE customers (
 
 COMMENT ON TABLE customers IS NULL;
 
-ALTER TABLE customers OWNER TO postgres;
 
 END;
 
@@ -61,7 +60,6 @@ CREATE TABLE customer_jap PARTITION OF customers
 
 COMMENT ON TABLE customer_jap IS NULL;
 
-ALTER TABLE customer_jap OWNER TO postgres;
 
 END;
 
@@ -81,7 +79,6 @@ CREATE TABLE customer_def PARTITION OF customers
 
 COMMENT ON TABLE customer_def IS NULL;
 
-ALTER TABLE customer_def OWNER TO postgres;
 
 END;
 
@@ -97,7 +94,6 @@ ddlx_create
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
 COMMENT ON STATISTICS test_stat1 IS NULL;
 
-ALTER STATISTICS test_stat1 OWNER TO postgres;
 
 (1 row)
 select ddlx_script('test_stat');
@@ -117,14 +113,12 @@ CREATE TABLE test_stat (
 
 COMMENT ON TABLE test_stat IS NULL;
 
-ALTER TABLE test_stat OWNER TO postgres;
 ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
   PRIMARY KEY (a);
 
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
 COMMENT ON STATISTICS test_stat1 IS NULL;
 
-ALTER STATISTICS test_stat1 OWNER TO postgres;
 
 
 END;
@@ -159,7 +153,6 @@ CREATE TABLE dept (
 
 COMMENT ON TABLE dept IS NULL;
 
-ALTER TABLE dept OWNER TO postgres;
 ALTER TABLE dept ADD CONSTRAINT dept_pkey
   PRIMARY KEY (id);
 
@@ -182,7 +175,6 @@ CREATE TABLE dept_7 PARTITION OF dept
 
 COMMENT ON TABLE dept_7 IS NULL;
 
-ALTER TABLE dept_7 OWNER TO postgres;
 ALTER TABLE dept_7 ADD CONSTRAINT dept_7_pkey
   PRIMARY KEY (id);
 
@@ -222,7 +214,6 @@ $procedure$;
 
 COMMENT ON PROCEDURE procedure1(text) IS NULL;
 
-ALTER PROCEDURE procedure1(text) OWNER TO postgres;
 REVOKE ALL ON FUNCTION procedure1(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION procedure1(text) TO PUBLIC;
 GRANT EXECUTE ON FUNCTION procedure1(text) TO postgres WITH GRANT OPTION;

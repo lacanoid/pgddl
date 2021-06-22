@@ -29,11 +29,11 @@ REVOKE ALL ON test_class_f FROM PUBLIC;
 
 SELECT ddlx_script('test_class_f'::regclass);
 
-SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
+SELECT ddlx_create((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'),'{owner}');
 
 SELECT ddlx_drop((select oid from pg_foreign_data_wrapper where fdwname='file_fdw'));
 
-SELECT ddlx_create((select oid from pg_foreign_server where srvname='serv'));
+SELECT ddlx_create((select oid from pg_foreign_server where srvname='serv'),'{owner}');
 
 SELECT ddlx_drop((select oid from pg_foreign_server where srvname='serv'));
 

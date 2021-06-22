@@ -6,11 +6,11 @@ SET ROLE postgres;
 
 create type test_type_e as enum ('foo','bar','baz','qux');
 comment on type test_type_e is 'my enum';
-select ddlx_script('test_type_e'::regtype);
+select ddlx_script('test_type_e'::regtype,'{owner}');
 
 create domain test_type_d numeric(10,2) check(value is not null) check(value>6) default 7;
 comment on type test_type_d is 'my domain';
-select ddlx_script('test_type_d'::regtype);
+select ddlx_script('test_type_d'::regtype,'{owner}');
 
 create type test_type_c as (i integer, t text, d test_type_d);
 comment on type test_type_c is 'my class type';

@@ -29,4 +29,4 @@ with check (
 -- create index write_permissions_index on items using gin(acl_write);
 alter table items enable row level security;
 alter table items force row level security;
-select ddlx_script('items');
+select ddlx_script('items','{owner}');
