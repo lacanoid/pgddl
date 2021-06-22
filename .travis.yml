@@ -17,7 +17,6 @@ env:
   - PGVERSION=13
 script: |
   set -e
-  pwd
   PATH=/usr/lib/postgresql/$PGVERSION/bin:$PATH
   sudo apt-get install postgresql-$PGVERSION postgresql-server-dev-$PGVERSION
   sudo pg_createcluster --start $PGVERSION test -p 55435 -- -A trust
