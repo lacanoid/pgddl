@@ -10,11 +10,11 @@ Version 0.20
 ------------
 - new internal function `ddlx_definitions()` to return different parts of object definition
 - `ddlx_create()` now uses this
-- implemented option `ine` in some places for `IF NOT EXISTS`
-- implemented option `ie` in some places for `IF EXISTS`
+- implemented option `ine` for adding `IF NOT EXISTS` in some places
+- implemented option `ie` for adding `IF EXISTS` in some places 
 - implemented option `drop` to include drop statements in a script.
 - demoted a bunch of overloaded `ddlx_create()` functions, now it all goes through `ddlx_create(oid)`
-- `ddlx_grants()` is now consistent
+- `ddlx_grants()` is now more consistent
 
 Version 0.19
 ------------
@@ -25,7 +25,7 @@ Version 0.18
 ------------
 - bug fix in create_event_trigger()
 - ddlx_identify() now more correctly identifies regtype vs regclass objects
-- exclude objects from extensions unless 'ext' option is specified
+- exclude objects from extensions unless `ext` option is specified
 - added .travis.yml
 
 Version 0.17
