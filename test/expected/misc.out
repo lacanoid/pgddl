@@ -261,8 +261,7 @@ select classid,objid,ddlx_identify(objid) as obj
  where (a.obj).sql_kind is null group by classid
  order by 2 desc, cast(classid::regclass as text) ;
 classid|count
-pg_extension|3
-(1 row)
+(0 rows)
  -- schema 2
 create schema ddlx_test_schema2;
 comment on schema ddlx_test_schema2 is 'DDLX Test Schema 2';
@@ -280,5 +279,4 @@ select classid,objid,ddlx_identify(objid) as obj
  where (a.obj).sql_kind is null group by classid
  order by 2 desc, cast(classid::regclass as text) ;
 classid|count
-pg_extension|1
-(1 row)
+(0 rows)

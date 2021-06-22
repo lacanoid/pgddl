@@ -3,6 +3,7 @@ Version 0.21
 - improvements to `ddlx_create_collation`
 - added `IF NOT EXISTS` in a few more places
 - new options `nodcl`,`noowner`,`nogrants`,`noalter`
+- `ddlx_identify` now identifies extensions
 
 Version 0.20
 ------------
