@@ -17,9 +17,11 @@ env:
   - PGVERSION=13
 script: |
   set -e
+  pwd
   PATH=/usr/lib/postgresql/$PGVERSION/bin:$PATH
   sudo apt-get install postgresql-$PGVERSION postgresql-server-dev-$PGVERSION
   sudo pg_createcluster --start $PGVERSION test -p 55435 -- -A trust
   make all
   sudo make install PG_CONFIG=/usr/lib/postgresql/$PGVERSION/bin/pg_config
   PGPORT=55435 make installcheck PGUSER=postgres
+  if [ -f regression.diff ] ; then cat regression.diff ; fi
