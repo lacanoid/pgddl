@@ -875,7 +875,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_view(regclass)
+CREATE OR REPLACE FUNCTION ddlx_create_view(regclass, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -883,7 +883,8 @@ AS $function$
  'CREATE '||
   case relkind 
     when 'v' THEN 'OR REPLACE VIEW ' 
-    when 'm' THEN 'MATERIALIZED VIEW '
+    when 'm' THEN 'MATERIALIZED VIEW ' ||
+      case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end
   end || (oid::regclass::text) || E' AS\n' ||
   trim(';' from pg_catalog.pg_get_viewdef(oid,true)) ||
 #if 9.3
@@ -1125,7 +1126,7 @@ AS $function$
  select ddlx_banner(obj.name,obj.sql_kind,obj.namespace,obj.owner) 
   ||
  case 
-  when obj.sql_kind in ('VIEW','MATERIALIZED VIEW') then ddlx_create_view($1)  
+  when obj.sql_kind in ('VIEW','MATERIALIZED VIEW') then ddlx_create_view($1,$2)  
   when obj.sql_kind in ('TABLE','TYPE','FOREIGN TABLE') then ddlx_create_table($1,$2)
   when obj.sql_kind in ('SEQUENCE') then ddlx_create_sequence($1,$2)
   when obj.sql_kind in ('INDEX') then ddlx_create_index($1,$2)
@@ -2835,16 +2836,17 @@ parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         bare,           
         case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n',
-        case when 'noalter' ilike any($2) or 'nodcl' ilike any($2) or 'noowner' ilike any($2) then null
-        else parts.owner end,
-        case when 'noalter' ilike any($2) then null
-        else storage end,
         case when 'noalter' ilike any($2) then null
         else array_to_string(array[
-          defaults,settings,constraints,indexes,triggers,rules,rls
-        ],'') end,
-        case when 'noalter' ilike any($2) or 'nodcl' ilike any($2) or 'nogrants' ilike any($2) then null
-        else grants end
+          case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) then null
+          else parts.owner end,
+          storage,
+          array_to_string(array[
+            defaults,settings,constraints,indexes,triggers,rules,rls
+          ],''),
+          case when 'nodcl' ilike any($2) or 'nogrants' ilike any($2) then null
+          else grants end
+        ],'') end
        ],'')
   from obj,parts
 $function$ strict;
