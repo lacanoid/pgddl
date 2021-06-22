@@ -2839,7 +2839,10 @@ select array_to_string(array[
         case when 'noalter' ilike any($2) then null
         else array_to_string(array[
           case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) then null
-          else parts.owner end,
+          else case 
+            when 'owner' ilike any($2) or obj.owner is distinct from current_role
+            then parts.owner end
+          end,
           storage,
           array_to_string(array[
             defaults,settings,constraints,indexes,triggers,rules,rls
