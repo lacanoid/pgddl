@@ -1,7 +1,7 @@
-[![Build Status][build-image]][build-link]
-
 DDL eXtractor functions  for PostgreSQL
 =======================================
+
+[![Build Status][build-image]][build-link]
 
 This is an SQL-only extension for PostgreSQL that provides uniform functions for generating 
 SQL Data Definition Language (DDL) scripts for objects created in a database. 
