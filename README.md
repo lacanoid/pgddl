@@ -1,3 +1,5 @@
+[![Build Status][build-image]][build-link]
+
 DDL eXtractor functions  for PostgreSQL
 =======================================
 
