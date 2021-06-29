@@ -4,6 +4,7 @@ Version 0.21
 - added `IF NOT EXISTS` in a few more places
 - new options `nodcl`,`noowner`,`nogrants`,`noalter`
 - `ddlx_identify` now identifies extensions
+- addded `ddlx_create_extension()` function
 - owner now dumped only if distinct from current role or option `owner` is specified
 
 Version 0.20

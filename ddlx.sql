@@ -2675,6 +2675,22 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_create_extension(oid, text[] default '{}')
+#end
+ RETURNS text
+ LANGUAGE sql
+AS $function$
+select format(E'CREATE EXTENSION %s%I%s VERSION %s;\n',
+              case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end,
+              e.extname,
+              ' SCHEMA '||quote_ident(nullif(e.extnamespace::regnamespace::text,current_schema())),
+              quote_nullable(e.extversion))
+  from pg_extension e
+ where oid = $1
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_type(regtype, text[] default '{}')
  RETURNS text
  LANGUAGE sql

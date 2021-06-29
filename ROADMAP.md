@@ -34,6 +34,7 @@ Support for other missing options:
 - materialized view tablespace & storage parameters
 - table of type (not null)
 - SET STATISTICS on indexes
+- pg_subscription not readable by non superuser
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
