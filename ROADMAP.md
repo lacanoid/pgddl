@@ -26,6 +26,7 @@ Support for other postgres objects:
 - extensions
 
 Support for other missing options:
+- PG14 SET COMPRESSION
 - comments on all objects
 - ownership of all objects 
 - grants on all objects
