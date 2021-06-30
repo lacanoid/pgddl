@@ -96,3 +96,6 @@ select classid,objid,ddlx_identify(objid) as obj
 ) a
  where (a.obj).sql_kind is null group by classid
  order by 2 desc, cast(classid::regclass as text) ;
+
+select * from ddlx_identify(0);
+select * from ddlx_identify(1);

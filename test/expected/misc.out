@@ -270,3 +270,11 @@ select classid,objid,ddlx_identify(objid) as obj
  order by 2 desc, cast(classid::regclass as text) ;
 classid|count
 (0 rows)
+select * from ddlx_identify(0);
+oid|classid|name|namespace|owner|sql_kind|sql_identifier|acl
+_null_|_null_|_null_|_null_|_null_|_null_|_null_|_null_
+(1 row)
+select * from ddlx_identify(1);
+oid|classid|name|namespace|owner|sql_kind|sql_identifier|acl
+1|pg_database|template1|_null_|postgres|DATABASE|template1|{=c/postgres,postgres=CTc/postgres}
+(1 row)

@@ -395,11 +395,12 @@ AS $function$
    WHERE sub.oid = $1
    UNION ALL
   SELECT e.oid, 'pg_extension'::regclass,
-    e.extname AS name, e.extnamespace::text AS namespace, pg_get_userbyid(e.extowner) AS owner,
-    'EXTENSION'::text AS sql_kind,
-    e.extname AS sql_identifier,
-    NULL::aclitem[] AS acl
-   FROM pg_extension e;   
+         e.extname AS name, e.extnamespace::text AS namespace, pg_get_userbyid(e.extowner) AS owner,
+         'EXTENSION'::text AS sql_kind,
+         e.extname AS sql_identifier,
+         NULL::aclitem[] AS acl
+    FROM pg_extension e
+   WHERE e.oid = $1   
 #end
 $function$  strict;
 
@@ -2769,6 +2770,7 @@ with obj as (select * from ddlx_identify($1))
     when 'pg_conversion'::regclass     then ddlx_create_conversion(oid)
     when 'pg_language'::regclass       then ddlx_create_language(oid)
     when 'pg_opclass'::regclass        then ddlx_create_operator_class(oid)
+    when 'pg_extension'::regclass      then ddlx_create_extension(oid,$2)
 #if 9.5
     when 'pg_roles'::regclass          then ddlx_create_role(oid::regrole)
     when 'pg_namespace'::regclass      then ddlx_create_schema(oid::regnamespace,$2)
