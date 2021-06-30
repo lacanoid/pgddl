@@ -101,9 +101,9 @@ Using
 
 The API provides three public user functions:
 
-- `ddlx_create(oid)` - builds SQL DDL create statements
-- `ddlx_drop(oid)` - builds SQL DDL drop statements
-- `ddlx_script(oid)` - builds SQL DDL scripts of entire dependancy trees
+- `ddlx_create(oid, options)` - builds SQL DDL create statements
+- `ddlx_drop(oid, options)`   - builds SQL DDL drop statements
+- `ddlx_script(oid, options)` - builds SQL DDL scripts of entire dependancy trees
 
 These are useful with various `reg*` [object identifier types](https://www.postgresql.org/docs/current/datatype-oid.html) 
 supported by Postgres, which are then automatically cast to `oid`.
@@ -130,6 +130,8 @@ You can use something like:
     SELECT ddlx_create(oid) FROM pg_foreign_data_wrapper WHERE fdwname='postgres_fdw';
 
     SELECT ddlx_create(oid) FROM pg_database WHERE datname=current_database();
+
+Options are optional and are passed as text array, for example `{ine,nodcl}`. They specify extra options on how things DDL should be.
 
 Drop statements are created with `ddlx_drop()` function.	
 

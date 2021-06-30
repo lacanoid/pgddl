@@ -239,8 +239,8 @@ create subscription ddlx_test_sub
   publication ddlx_test_pub
   with ( connect=false );
 WARNING:  tables were not subscribed, you will have to run ALTER SUBSCRIPTION ... REFRESH PUBLICATION to subscribe the tables
-select ddlx_create(oid),ddlx_drop(oid) from pg_subscription where subname='ddlx_test_sub';
-ddlx_create|ddlx_drop
+select ddlx_create_subscription(oid) from pg_subscription where subname='ddlx_test_sub';
+ddlx_create_subscription
 CREATE SUBSCRIPTION ddlx_test_sub
   CONNECTION 'dbname=contrib_regression'
   PUBLICATION ddlx_test_pub
@@ -248,23 +248,17 @@ CREATE SUBSCRIPTION ddlx_test_sub
     connect='false'
     slot_name='ddlx_test_sub'
     synchronous_commit='off' );
-COMMENT ON SUBSCRIPTION ddlx_test_sub IS NULL;
-
-|DROP SUBSCRIPTION ddlx_test_sub;
 
 (1 row)
 alter subscription ddlx_test_sub set ( slot_name=none );
-select ddlx_create(oid),ddlx_drop(oid) from pg_subscription where subname='ddlx_test_sub';
-ddlx_create|ddlx_drop
+select ddlx_create_subscription(oid) from pg_subscription where subname='ddlx_test_sub';
+ddlx_create_subscription
 CREATE SUBSCRIPTION ddlx_test_sub
   CONNECTION 'dbname=contrib_regression'
   PUBLICATION ddlx_test_pub
   WITH (
     connect='false'
     synchronous_commit='off' );
-COMMENT ON SUBSCRIPTION ddlx_test_sub IS NULL;
-
-|DROP SUBSCRIPTION ddlx_test_sub;
 
 (1 row)
 drop subscription ddlx_test_sub;

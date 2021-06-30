@@ -80,11 +80,11 @@ create subscription ddlx_test_sub
   publication ddlx_test_pub
   with ( connect=false );
 
-select ddlx_create(oid),ddlx_drop(oid) from pg_subscription where subname='ddlx_test_sub';
+select ddlx_create_subscription(oid) from pg_subscription where subname='ddlx_test_sub';
 
 alter subscription ddlx_test_sub set ( slot_name=none );
 
-select ddlx_create(oid),ddlx_drop(oid) from pg_subscription where subname='ddlx_test_sub';
+select ddlx_create_subscription(oid) from pg_subscription where subname='ddlx_test_sub';
 
 drop subscription ddlx_test_sub;
 

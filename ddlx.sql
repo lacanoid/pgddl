@@ -386,6 +386,7 @@ AS $function$
     FROM pg_publication pub
    WHERE pub.oid = $1
    UNION ALL
+/*
   SELECT sub.oid,'pg_subscription'::regclass,
          sub.subname, NULL as namespace, pg_get_userbyid(sub.subowner) as owner,
          'SUBSCRIPTION' as sql_kind,
@@ -394,6 +395,7 @@ AS $function$
     FROM pg_subscription sub
    WHERE sub.oid = $1
    UNION ALL
+*/
   SELECT e.oid, 'pg_extension'::regclass,
          e.extname AS name, e.extnamespace::text AS namespace, pg_get_userbyid(e.extowner) AS owner,
          'EXTENSION'::text AS sql_kind,

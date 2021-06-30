@@ -42,6 +42,7 @@ Other:
 - move not nulls to constraints section
 - move storage setting to pre-data section
 - group column alters together by column name
+- add `ddlx_alter()` and `ddlx_alter_column()` functions
 - improve support for non superusers (more testing, etc)
 - improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
