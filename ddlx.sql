@@ -2218,16 +2218,12 @@ CREATE OR REPLACE FUNCTION ddlx_alter_table_rls(regclass)
  RETURNS text
  LANGUAGE sql
 AS $function$
-  select case
-         when c.relrowsecurity
-	 then 'ALTER TABLE '||cast($1 as text)||E' ENABLE ROW LEVEL SECURITY;\n'
-	 else ''
-	 end ||
-	 case
-         when c.relforcerowsecurity
-	 then 'ALTER TABLE '||cast($1 as text)||E' FORCE ROW LEVEL SECURITY;\n'
-	 else ''
-	 end
+  select case when c.relrowsecurity
+	       then 'ALTER TABLE '||cast($1 as text)||E' ENABLE ROW LEVEL SECURITY;\n'
+	       else '' end ||
+	       case when c.relforcerowsecurity
+	       then 'ALTER TABLE '||cast($1 as text)||E' FORCE ROW LEVEL SECURITY;\n'
+	       else '' end
     from pg_class c 
    where oid = $1
 $function$  strict;

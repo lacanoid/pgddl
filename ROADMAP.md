@@ -23,7 +23,7 @@ Tasks
 
 Support for other postgres objects:
 - pg_amop, pg_amproc
-- extensions
+- ✔︎ extensions
 
 Support for other missing options:
 - PG14 SET COMPRESSION
@@ -46,7 +46,7 @@ Other:
 - improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
 - handle dependancies for types better (use shell types)
-- do not emit ALTER OWNER for objects owned by current role
+- ✔︎ do not emit ALTER OWNER for objects owned by current role
 - improve and add to simple tests
 - make some tests to test if what we output actually runs, test execute them
 - make some tests which compare to output of pg_dump;
