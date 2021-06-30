@@ -36,6 +36,7 @@ select * from a
  ddlx_create_database(oid)                   | 
  ddlx_create_default(oid)                    | 
  ddlx_create_event_trigger(oid)              | 
+ ddlx_create_extension(oid,text[])           | 
  ddlx_create_foreign_data_wrapper(oid)       | 
  ddlx_create_function(regproc)               | 
  ddlx_create_index(regclass,text[])          | 
@@ -70,7 +71,7 @@ select * from a
  ddlx_create_type_range(regtype)             | 
  ddlx_create_type_shell(regtype)             | 
  ddlx_create_user_mapping(oid,text[])        | 
- ddlx_create_view(regclass)                  | 
+ ddlx_create_view(regclass,text[])           | 
  ddlx_definitions(oid,text[])                | 
  ddlx_describe(regclass)                     | 
  ddlx_drop_amop(oid)                         | 
