@@ -198,16 +198,6 @@ AS $function$
          null as acl
     FROM pg_ts_template tmpl JOIN pg_namespace n ON n.oid=tmpl.tmplnamespace
    WHERE tmpl.oid = $1
-#if 9.3
-   UNION ALL
-  SELECT evt.oid,'pg_event_trigger'::regclass,
-         evt.evtname as name, null as namespace, pg_get_userbyid(evt.evtowner) as owner,
-         'EVENT TRIGGER' as sql_kind,
-         quote_ident(evt.evtname) as sql_identifier,
-         null as acl
-    FROM pg_event_trigger evt
-   WHERE evt.oid = $1
-#end
    UNION ALL
   SELECT fdw.oid,'pg_foreign_data_wrapper'::regclass,
          fdw.fdwname as name, null as namespace, pg_get_userbyid(fdw.fdwowner) as owner,
@@ -270,37 +260,6 @@ AS $function$
          lan.lanacl as acl
     FROM pg_language lan
    WHERE lan.oid = $1
-#if 9.5
-   UNION ALL
-  SELECT pol.oid,'pg_policy'::regclass,
-         pol.polname as name, null as namespace, null as owner,
-         'POLICY' as sql_kind,
-         format('%I ON %s',
-                  polname,
-                  cast(c.oid::regclass as text)) 
-         as sql_identifier,
-         null as acl
-    FROM pg_policy pol JOIN pg_class c on (c.oid=pol.polrelid)
-   WHERE pol.oid = $1
-   UNION ALL
-  SELECT trf.oid,'pg_transform'::regclass,
-         null as name, null as namespace, null as owner,
-         'TRANSFORM' as sql_kind,
-         format('FOR %s LANGUAGE %I',
-                  format_type(trf.trftype,null),
-                  l.lanname) as sql_identifier,
-         null as acl
-    FROM pg_transform trf JOIN pg_language l on (l.oid=trf.trflang)
-   WHERE trf.oid = $1
-   UNION ALL
-  SELECT am.oid,'pg_am'::regclass,
-         am.amname as name, NULL as namespace, NULL as owner,
-         'ACCESS METHOD' as sql_kind,
-         quote_ident(amname) as sql_identifier,
-         null as acl
-    FROM pg_am am
-   WHERE am.oid = $1
-#end
    UNION ALL
   SELECT opf.oid,'pg_opfamily'::regclass,
          opf.opfname as name, n.nspname as namespace, pg_get_userbyid(opf.opfowner) as owner,
@@ -343,7 +302,23 @@ AS $function$
     FROM pg_opclass opc JOIN pg_namespace n ON n.oid=opc.opcnamespace
     JOIN pg_am am ON am.oid=opc.opcmethod
    WHERE opc.oid = $1
+   UNION ALL
+  SELECT e.oid, 'pg_extension'::regclass,
+         e.extname AS name, e.extnamespace::text AS namespace, pg_get_userbyid(e.extowner) AS owner,
+         'EXTENSION'::text AS sql_kind,
+         e.extname AS sql_identifier,
+         NULL::aclitem[] AS acl
+    FROM pg_extension e
+   WHERE e.oid = $1   
 #if 9.3
+   UNION ALL
+  SELECT evt.oid,'pg_event_trigger'::regclass,
+         evt.evtname as name, null as namespace, pg_get_userbyid(evt.evtowner) as owner,
+         'EVENT TRIGGER' as sql_kind,
+         quote_ident(evt.evtname) as sql_identifier,
+         null as acl
+    FROM pg_event_trigger evt
+   WHERE evt.oid = $1
    UNION ALL
   SELECT amproc.oid,'pg_amproc'::regclass,
          'FUNCTION '||amprocnum, null as namespace, null as owner,
@@ -366,7 +341,36 @@ AS $function$
          null as acl
     FROM pg_amop amop
    WHERE amop.oid = $1
-#end
+#if 9.5
+   UNION ALL
+  SELECT pol.oid,'pg_policy'::regclass,
+         pol.polname as name, null as namespace, null as owner,
+         'POLICY' as sql_kind,
+         format('%I ON %s',
+                  polname,
+                  cast(c.oid::regclass as text)) 
+         as sql_identifier,
+         null as acl
+    FROM pg_policy pol JOIN pg_class c on (c.oid=pol.polrelid)
+   WHERE pol.oid = $1
+   UNION ALL
+  SELECT trf.oid,'pg_transform'::regclass,
+         null as name, null as namespace, null as owner,
+         'TRANSFORM' as sql_kind,
+         format('FOR %s LANGUAGE %I',
+                  format_type(trf.trftype,null),
+                  l.lanname) as sql_identifier,
+         null as acl
+    FROM pg_transform trf JOIN pg_language l on (l.oid=trf.trflang)
+   WHERE trf.oid = $1
+   UNION ALL
+  SELECT am.oid,'pg_am'::regclass,
+         am.amname as name, NULL as namespace, NULL as owner,
+         'ACCESS METHOD' as sql_kind,
+         quote_ident(amname) as sql_identifier,
+         null as acl
+    FROM pg_am am
+   WHERE am.oid = $1
 #if 10
    UNION ALL
   SELECT stx.oid,'pg_statistic_ext'::regclass,
@@ -385,8 +389,8 @@ AS $function$
          null as acl
     FROM pg_publication pub
    WHERE pub.oid = $1
+#if 14
    UNION ALL
-/*
   SELECT sub.oid,'pg_subscription'::regclass,
          sub.subname, NULL as namespace, pg_get_userbyid(sub.subowner) as owner,
          'SUBSCRIPTION' as sql_kind,
@@ -394,15 +398,6 @@ AS $function$
          null as acl
     FROM pg_subscription sub
    WHERE sub.oid = $1
-   UNION ALL
-*/
-  SELECT e.oid, 'pg_extension'::regclass,
-         e.extname AS name, e.extnamespace::text AS namespace, pg_get_userbyid(e.extowner) AS owner,
-         'EXTENSION'::text AS sql_kind,
-         e.extname AS sql_identifier,
-         NULL::aclitem[] AS acl
-    FROM pg_extension e
-   WHERE e.oid = $1   
 #end
 $function$  strict;
 
@@ -1135,12 +1130,6 @@ AS $function$
   when obj.sql_kind in ('INDEX') then ddlx_create_index($1,$2)
   else '-- UNSUPPORTED CLASS: '||obj.sql_kind
  end 
-/*
-  || E'\n' ||
-  case when obj.sql_kind not in ('TYPE') then ddlx_comment($1) else '' end
-  ||
-  case when obj.sql_kind = ('TABLE') then ddlx_alter_owner($1) else '' end
-*/
   ||
   coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'')
   ||
@@ -2573,8 +2562,7 @@ a as (
 f as (select * from ddlx_identify((select amprocfamily from a)) ),
 obj as (select * from ddlx_identify($1))
 select format(E'ALTER OPERATOR FAMILY %s ADD %s %s;',
-        f.sql_identifier,
-        obj.sql_identifier,
+        f.sql_identifier, obj.sql_identifier,
 	cast(a.amproc::regprocedure as text)
        )
   from a,f,obj
@@ -2722,22 +2710,14 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_definitions(
    in oid,
    in options text[] default '{}',
-   out oid oid,
-   out classid regclass,
-   out sql_kind text,
-   out sql_identifier text,
-   out bare text,
-   out comment text,
-   out owner text,
-   out storage text,
-   out defaults text,
-   out settings text,
-   out constraints text,
-   out indexes text,
-   out triggers text,
-   out rules text,
-   out rls text,
-   out grants text
+   out oid oid, out classid regclass,
+   out sql_kind text, out sql_identifier text,
+   out bare text, out comment text,
+   out owner text, out storage text,
+   out defaults text, out settings text,
+   out constraints text, out indexes text,
+   out triggers text, out rules text,
+   out rls text, out grants text
 )
  RETURNS record
  LANGUAGE sql
@@ -2882,16 +2862,11 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
  with obj as (select * from ddlx_identify($1))
  select 
    case obj.classid
-   when 'pg_constraint'::regclass 
-   then ddlx_drop_constraint(oid)
-   when 'pg_trigger'::regclass 
-   then ddlx_drop_trigger(oid)
-   when 'pg_attrdef'::regclass 
-   then ddlx_drop_default(oid)
-   when 'pg_amproc'::regclass 
-   then ddlx_drop_amproc(oid)
-   when 'pg_amop'::regclass 
-   then ddlx_drop_amop(oid)
+   when 'pg_constraint'::regclass then ddlx_drop_constraint(oid)
+   when 'pg_trigger'::regclass    then ddlx_drop_trigger(oid)
+   when 'pg_attrdef'::regclass    then ddlx_drop_default(oid)
+   when 'pg_amproc'::regclass     then ddlx_drop_amproc(oid)
+   when 'pg_amop'::regclass       then ddlx_drop_amop(oid)
    else
      case
        when obj.sql_kind = 'SEQUENCE'
