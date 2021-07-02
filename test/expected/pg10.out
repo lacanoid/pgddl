@@ -90,10 +90,11 @@ cust_id|cust_name|cust_address|cust_country
 2039|Puja|Hyderabad|ind
 (1 row)
 UPDATE customers SET cust_country ='jap' WHERE cust_id=2039;
+ERROR:  new row for relation "customer_ind" violates partition constraint
+DETAIL:  Failing row contains (2039, Puja, Hyderabad, jap).
 SELECT * FROM customer_jap;
 cust_id|cust_name|cust_address|cust_country
-2039|Puja|Hyderabad|jap
-(1 row)
+(0 rows)
 select ddlx_script('customers');
 ddlx_script
 BEGIN;
@@ -220,8 +221,6 @@ begin;
 create publication ddlx_test_pub
    for table customer_ind, customer_jap
   with ( publish='insert,delete' );
-WARNING:  wal_level is insufficient to publish logical changes
-HINT:  Set wal_level to logical before creating subscriptions.
 select ddlx_create(oid),ddlx_drop(oid) from pg_publication where pubname='ddlx_test_pub';
 ddlx_create|ddlx_drop
 CREATE PUBLICATION ddlx_test_pub
