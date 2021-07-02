@@ -1,11 +1,11 @@
 Version 0.21
 ------------
-- extensions are now supported
+- support for extensions
 - improvements to `ddlx_create_collation`
 - added `IF NOT EXISTS` in a few more places
 - new options `nodcl`,`noowner`,`nogrants`,`noalter`
 - owner now dumped only if distinct from current role or option `owner` is specified
-- disabled subscriptions to make all of this usable to non superusers
+- disabled subscriptions on pg < 14 to make all of this usable to non superusers
 - one can still dump subscriptions with `ddlx_create_subscription()` function
 
 Version 0.20
