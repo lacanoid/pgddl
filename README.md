@@ -131,9 +131,7 @@ You can use something like:
 
     SELECT ddlx_create(oid) FROM pg_database WHERE datname=current_database();
 
-Options are optional and are passed as text array, for example `{ine,nodcl}`. They specify extra options on how things DDL should be.
-
-Currently supported options are:
+Options are optional and are passed as text array, for example `{ine,nodcl}`. They specify extra options on how things DDL should be. Currently supported options are:
 
 * `drop` - include DROP statements in a script. These are commented out by otherwise.
 * `noalter` - do not include alter or dcl statements
