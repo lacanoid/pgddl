@@ -133,6 +133,17 @@ You can use something like:
 
 Options are optional and are passed as text array, for example `{ine,nodcl}`. They specify extra options on how things DDL should be.
 
+Currently supported options are:
+
+* `drop` - include DROP statements in a script. These are commented out by otherwise.
+* `noalter` - do not include alter or dcl statements
+* `noowner` - do not include alter set owner
+* `nogrants` - do not include grants
+* `nodcl` - do not include alter set owner nor grants
+* `owner` - always include alter set owner. It is ommited when owner is current user otherwise.
+* `ine` - include if not exists in bunch of places
+* `ie` - include if exists in a bunch of places
+
 Drop statements are created with `ddlx_drop()` function.	
 
 - `ddlx_drop(oid) returns text`
