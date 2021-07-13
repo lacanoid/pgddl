@@ -106,7 +106,7 @@ The API provides three public user functions:
 - `ddlx_script(oid, options)` - builds SQL DDL scripts of entire dependancy trees
 
 These are useful with various `reg*` [object identifier types](https://www.postgresql.org/docs/current/datatype-oid.html) 
-supported by Postgres, which are then automatically cast to `oid`.
+supported by Postgres, which are then automatically cast to `oid`. Options can be ommited.
 
 You can use them simply by casting object name (or oid) to some `reg*` type:
 
@@ -122,7 +122,7 @@ You can use them simply by casting object name (or oid) to some `reg*` type:
 
 All object identifier types are supported:
 `regclass`,`regtype`,`regrole`,`regnamespace`,`regproc`,`regprocedure`,
-`regoper`,`regoperator`,`regconfig`,`regdictionary`
+`regoper`,`regoperator`,`regconfig`,`regdictionary`,`regcollation`
 
 For objects without object identifier types, you have to find object ID `oid` first.
 You can use something like:
@@ -131,16 +131,16 @@ You can use something like:
 
     SELECT ddlx_create(oid) FROM pg_database WHERE datname=current_database();
 
-Options are optional and are passed as text array, for example `{ine,nodcl}`. They specify extra options on how things DDL should be. Currently supported options are:
+Options are optional and are passed as text array, for example `{ine,nodcl}`. They specify extra options on how things in created DDL should be. Currently supported options are:
 
-* `drop` - include DROP statements in a script. These are commented out by otherwise.
-* `noalter` - do not include alter or dcl statements
-* `noowner` - do not include alter set owner
+* `drop` - include DROP statements in a script. These are otherwise commented out.
+* `noalter` - include neither `alter` nor DCL (grant) statements
+* `noowner` - do not include `alter set owner`
 * `nogrants` - do not include grants
-* `nodcl` - do not include alter set owner nor grants
-* `owner` - always include alter set owner. It is ommited when owner is current user otherwise.
-* `ine` - include if not exists in bunch of places
-* `ie` - include if exists in a bunch of places
+* `nodcl` - do not include `alter set owner` nor `grant`
+* `owner` - always include `alter set owner`. It is ommited when owner is current user otherwise.
+* `ine` - include `if not exists` in bunch of places
+* `ie` - include `if exists` in a bunch of places
 
 Drop statements are created with `ddlx_drop()` function.	
 
