@@ -1,3 +1,7 @@
+Version 0.22
+------------
+- pg_amproc and pg_amop now ommited from ddlx_script
+
 Version 0.21
 ------------
 - support for extensions
