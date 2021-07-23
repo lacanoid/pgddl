@@ -229,6 +229,10 @@ Nevertheless, some of them are:
     Search query bodies (functions and view definitions) matching POSIX regular expression.
 ```    
 SELECT ddlx_create(objid) FROM ddlx_apropos('users');
+
+SELECT * FROM ddlx_apropos('users') JOIN ddlx_identify(objid) ON true;
+
+SELECT * FROM ddlx_apropos('users') JOIN ddlx_definitions(objid) ON true;
 ```
 See file [ddlx.sql](ddlx.sql) and [full list of functions](test/expected/manifest.out) for additional details.
 Functions with comments are public API. The rest are intended for internal use, the purpose can
