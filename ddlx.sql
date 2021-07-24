@@ -2905,7 +2905,8 @@ select row_number() over() as n,
   from ddlx_get_dependants($1) gd
   left join pg_depend de
        on de.objid=gd.objid and de.refclassid='pg_extension'::regclass
- where ('ext' ilike any($2) or de.refclassid is null)
+ where (('ext' ilike any($2) and gd.classid is distinct from 'pg_extension'::regclass)
+        or de.refclassid is null)
        and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
 )
 select ddlx_create($1,$2) as ddl_create,
@@ -2921,19 +2922,19 @@ CREATE OR REPLACE FUNCTION ddlx_script(oid, ddlx_options text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
-select E'BEGIN;\n\n'||
+select array_to_string(array[
+       E'BEGIN;\n',
        format(
          case
            when 'drop' ilike any($2)
-           then E'%s%s\n%s%s'
-           else E'/*\n%s%s*/\n\n%s%s'
+           then E'%s%s' else E'/*\n%s%s*/\n'
          end,
          ddl_drop_deps||E'\n',
-         ddl_drop,
-         ddl_create,
-         E'\n-- DEPENDANTS\n\n'||ddl_create_deps
-       )||
-       E'\nEND;\n'
+         ddl_drop
+       ),
+       ddl_create,
+       E'-- DEPENDANTS\n\n'||ddl_create_deps,       
+       E'END;\n'],E'\n')
   from ddlx_script_parts($1,$2)
 $function$ strict;
 
