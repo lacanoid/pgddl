@@ -134,11 +134,12 @@ You can use something like:
 Options are optional and are passed as text array, for example `{ine,nodcl}`. They specify extra options on how things in created DDL should be. Currently supported options are:
 
 * `drop` - include DROP statements in a script. These are otherwise commented out.
-* `noalter` - include neither `alter` nor DCL (grant) statements
+* `nodrop` - omit DROP statements in a script entirely
 * `owner` - always include `alter set owner`. It is ommited when owner is current user otherwise.
 * `noowner` - do not include `alter set owner`
 * `nogrants` - do not include grants
 * `nodcl` - do not include `alter set owner` nor `grant`
+* `noalter` - include neither `alter` nor DCL (grant) statements
 * `ine` - add `if not exists` in bunch of places
 * `ie` - add `if exists` in a bunch of places
 

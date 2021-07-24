@@ -2924,6 +2924,7 @@ CREATE OR REPLACE FUNCTION ddlx_script(oid, ddlx_options text[] default '{}')
 AS $function$
 select array_to_string(array[
        E'BEGIN;\n',
+       case when 'nodrop' not ilike all($2) then
        format(
          case
            when 'drop' ilike any($2)
@@ -2931,7 +2932,7 @@ select array_to_string(array[
          end,
          ddl_drop_deps||E'\n',
          ddl_drop
-       ),
+       ) end,
        ddl_create,
        E'-- DEPENDANTS\n\n'||ddl_create_deps,       
        E'END;\n'],E'\n')

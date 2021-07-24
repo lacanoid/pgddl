@@ -1,6 +1,7 @@
 Version 0.22
 ------------
 - pg_amproc and pg_amop now ommited from ddlx_script
+- new option 'nodrop' to omit drop statements alltogether	
 
 Version 0.21
 ------------
