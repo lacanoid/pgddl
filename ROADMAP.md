@@ -47,6 +47,7 @@ Other:
 - improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
 - handle dependancies for types better (use shell types)
+- handle sequences better (create if not exists)
 - ✔︎ do not emit ALTER OWNER for objects owned by current role
 - improve and add to simple tests
 - make some tests to test if what we output actually runs, test execute them
