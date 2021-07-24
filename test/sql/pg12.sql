@@ -1,5 +1,7 @@
 \pset null _null_
 
+\i test/sql/pg11.sql
+
 SET client_min_messages = warning;
 SET ROLE postgres;
 
