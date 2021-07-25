@@ -42,10 +42,12 @@ Other:
 - move not nulls to constraints section
 - move storage setting to pre-data section
 - group column alters together by column name
-- add `ddlx_alter()` and `ddlx_alter_column()` functions
+- add `ddlx_alter(oid)`
+- add `ddlx_alter_column(regclass,name)`
 - improve support for non superusers (more testing, etc)
 - improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
+- mysterious duplicates in index section for partitioned tables (see table dept_1) 
 - handle dependancies for types better (use shell types)
 - handle sequences better (create if not exists)
 - ✔︎ do not emit ALTER OWNER for objects owned by current role
