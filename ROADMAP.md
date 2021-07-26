@@ -47,7 +47,8 @@ Other:
 - improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
 - exclude extensions when `ext` option is specified
-- mysterious duplicates in index section for partitioned tables (see table dept_1) 
+- ✔︎ mysterious duplicates in index section for partitioned tables (see table dept_1)
+- perhaps include table subpartitions in a script
 - handle dependancies for types better (use shell types)
 - handle sequences better (create if not exists)
 - ✔︎ do not emit ALTER OWNER for objects owned by current role

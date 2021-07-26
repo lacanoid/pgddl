@@ -666,8 +666,11 @@ AS $function$
    JOIN pg_namespace n ON n.oid = c.relnamespace
    JOIN pg_class i ON i.oid = x.indexrelid
    JOIN pg_depend d ON d.objid = x.indexrelid
-   LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
-  WHERE c.relkind in ('r','m','p') AND i.relkind in ('i','I')
+   LEFT JOIN pg_constraint cc
+        ON cc.oid = d.refobjid AND d.refclassid='pg_constraint'::regclass
+  WHERE c.relkind in ('r','m','p')
+    AND i.relkind in ('i','I')
+    AND d.deptype in ('i','a')
     AND ($1 IS NULL OR c.oid = $1)
 $function$;
 

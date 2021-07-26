@@ -1,7 +1,8 @@
 Version 0.22
 ------------
 - pg_amproc and pg_amop now ommited from ddlx_script
-- new option 'nodrop' to omit drop statements alltogether	
+- new option 'nodrop' to omit drop statements alltogether
+- bug fix - avoid duplicate indexes on partitioned tables
 
 Version 0.21
 ------------
@@ -18,7 +19,7 @@ Version 0.20
 - new internal function `ddlx_definitions()` to return different parts of object definition
 - `ddlx_create()` now uses this
 - implemented option `ine` for adding `IF NOT EXISTS` in some places
-- implemented option `ie` for adding `IF EXISTS` in some places 
+- implemented option `ie` for adding `IF EXISTS` in some places
 - implemented option `drop` to include drop statements in a script.
 - demoted a bunch of overloaded `ddlx_create()` functions, now it all goes through `ddlx_create(oid)`
 - `ddlx_grants()` is now more consistent
