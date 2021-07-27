@@ -1,9 +1,10 @@
 Version 0.22
 ------------
-- pg_amproc and pg_amop now ommited from ddlx_script
+- new function `ddlx_alter()` to create SQL ALTER statements
 - new option 'nodrop' to omit drop statements alltogether
 - bug fix - avoid duplicate indexes on partitioned tables
-- new function `ddlx_alter()` to create SQL ALTER statements
+- bug fix - omit inherited constraints from subpartitions
+- pg_amproc and pg_amop objects are now ommited from ddlx_script
 
 Version 0.21
 ------------

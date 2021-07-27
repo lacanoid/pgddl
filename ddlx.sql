@@ -536,7 +536,8 @@ CREATE OR REPLACE FUNCTION ddlx_get_constraints(
  OUT is_deferrable boolean, 
  OUT initially_deferred boolean, 
  OUT regclass oid, 
- OUT sysid oid)
+ OUT sysid oid,
+ OUT parent oid)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
@@ -555,11 +556,13 @@ AS $function$
         pg_get_constraintdef(c.oid,true) AS constraint_definition,
         c.condeferrable AS is_deferrable, 
         c.condeferred  AS initially_deferred, 
-        r.oid as regclass, c.oid AS sysid
+        r.oid as regclass, c.oid AS sysid,
+	d.refobjid AS parent
    FROM pg_constraint c
    JOIN pg_class r ON c.conrelid = r.oid
    JOIN pg_namespace nc ON nc.oid = c.connamespace
    JOIN pg_namespace nr ON nr.oid = r.relnamespace
+   LEFT JOIN pg_depend d ON d.objid = c.oid AND d.deptype='P'
   WHERE $1 IS NULL OR r.oid=$1
 $function$;
 
@@ -650,7 +653,7 @@ $function$;
 CREATE OR REPLACE FUNCTION ddlx_get_indexes(
   regclass default null,
   OUT oid oid, OUT namespace text, OUT class text, OUT name text, 
-  OUT tablespace text, OUT constraint_name text)
+  OUT tablespace text, OUT constraint_name text, OUT super regclass)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
@@ -660,12 +663,15 @@ AS $function$
         c.relname::text AS class, 
         i.relname::text AS name,
         NULL::text AS tablespace, 
-        cc.conname::text AS constraint_name
+        cc.conname::text AS constraint_name,
+	d2.refobjid::regclass AS super
    FROM pg_index x
    JOIN pg_class c ON c.oid = x.indrelid
    JOIN pg_namespace n ON n.oid = c.relnamespace
    JOIN pg_class i ON i.oid = x.indexrelid
    JOIN pg_depend d ON d.objid = x.indexrelid
+   LEFT JOIN pg_depend d2 ON d2.objid = x.indexrelid
+        AND d2.deptype='P' AND d2.refclassid='pg_class'::regclass
    LEFT JOIN pg_constraint cc
         ON cc.oid = d.refobjid AND d.refclassid='pg_constraint'::regclass
   WHERE c.relkind in ('r','m','p')
@@ -1289,6 +1295,7 @@ AS $function$
    ' ADD CONSTRAINT ' || quote_ident(constraint_name) || 
    E'\n  ' || constraint_definition as sql
     from ddlx_get_constraints($1)
+   where parent is null
    order by constraint_type desc, constraint_name
  )
  select coalesce(string_agg(sql,E';\n') || E';\n\n','')
