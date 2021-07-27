@@ -210,16 +210,11 @@ Nevertheless, some of them are:
     Get individual parts of of object definition, 
     such as: bare, comment, owner, storage, defaults, settings, constraints, indexes, triggers, rules, rls, grants.
 
-- `ddlx_create_class(regclass) returns text`
+- `ddlx_alter(oid) returns text`
 
-    Get bare-bones (pre-data) SQL DDL CREATE statement for class object.
-    This includes column definitions, not null and comments.
-
-- `ddlx_alter_class(regclass) returns text`
-
-    Get additional (post-data) SQL DDL ALTER statements for class object.
-    This includes defaults, storage parametes, constraints, indexes, triggers, rules,
-    owner and grants
+    Get additional SQL DDL ALTER statements for an object.
+    For classes, this includes defaults, storage parametes, constraints, indexes, triggers, rules,
+    owner and grants.
 
 - `ddlx_grants(oid) returns text`
 

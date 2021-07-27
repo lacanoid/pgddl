@@ -2808,7 +2808,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_class(regclass, text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_alter(oid, text[] default '{}')
  RETURNS text
  LANGUAGE sql
 AS $function$
@@ -2823,6 +2823,9 @@ parts as (select * from ddlx_definitions($1,$2))
     from obj,parts
 $function$  strict;
 
+COMMENT ON FUNCTION ddlx_alter(oid, text[]) 
+     IS 'Get SQL ALTER statement for a generic object by object id';
+     
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}')
