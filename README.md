@@ -27,7 +27,8 @@ Advantages over using other tools like `psql` or `pg_dump` include:
   This is useful for example, when one wishes to rename some columns in a view with dependants.
   This works particularly great with transactional DDL of Postgres.
 - Created scripts are somewhat more intended to be run and copy/pasted manually by the DBA
-  into other databases/scripts. This involves 
+  into other databases/scripts. It attempts to strike a balance between detail and clutter.
+  This involves 
    pretty printing,
    using **idempotent DDL** where possible (preferring ALTER to CREATE), 
    creating indexes which are part of a constraint with ADD CONSTRAINT and so on.
@@ -135,13 +136,14 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 
 * `drop` - include DROP statements in a script. These are otherwise commented out.
 * `nodrop` - omit DROP statements in a script entirely
-* `owner` - always include `alter set owner`. It is ommited when owner is current user otherwise.
+* `owner` - always include `alter set owner`. Otherwise this is ommited when object owner is current user.
 * `noowner` - do not include `alter set owner`
 * `nogrants` - do not include grants
 * `nodcl` - do not include `alter set owner` nor `grant`
 * `noalter` - include neither `alter` nor DCL (grant) statements
 * `ine` - add `if not exists` in bunch of places
 * `ie` - add `if exists` in a bunch of places
+* `ext` - include objects from extension. These otherwise are omitted.
 
 Drop statements are created with `ddlx_drop()` function.	
 

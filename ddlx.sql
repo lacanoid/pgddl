@@ -2918,8 +2918,9 @@ select row_number() over() as n,
   from ddlx_get_dependants($1) gd
   left join pg_depend de
        on de.objid=gd.objid and de.refclassid='pg_extension'::regclass
- where (('ext' ilike any($2) and gd.classid is distinct from 'pg_extension'::regclass)
-        or de.refclassid is null)
+ where case when 'ext' ilike any($2)
+            then gd.classid is distinct from 'pg_extension'::regclass
+	    else de.refclassid is null end
        and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
 )
 select ddlx_create($1,$2) as ddl_create,
