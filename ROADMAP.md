@@ -26,13 +26,13 @@ Support for other postgres objects:
 - ✔︎ extensions
 
 Support for other missing options:
-- PG14 SET COMPRESSION
-- comments on all objects
-- ownership of all objects 
-- grants on all objects
+- ✔︎ comments on all objects
+- ✔︎ ownership of all objects 
+- ✔︎ grants on all objects
 - grants vs current_role (who is grantor?)
 - materialized view tablespace & storage parameters
-- table of type (not null)
+- table of type not nulls
+- PG14 SET COMPRESSION
 - SET STATISTICS on indexes
 - ✔︎ pg_subscription not readable by non superuser
 
