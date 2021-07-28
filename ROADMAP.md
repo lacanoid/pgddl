@@ -41,7 +41,7 @@ Other:
 - move not nulls to constraints section
 - move storage setting to pre-data section
 - use ONLY when appropriate
-- add `ddlx_alter(oid)`
+- ✔︎ add `ddlx_alter(oid)`
 - add `ddlx_alter_column(regclass,name)`
 - group column alters together by column name
 - improve dumping of comments (be quiet on NULL comments)
