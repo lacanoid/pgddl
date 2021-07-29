@@ -5,6 +5,7 @@ Version 0.22
 - bug fix - avoid duplicate indexes on partitioned tables
 - bug fix - omit inherited constraints from subpartitions
 - pg_amproc and pg_amop objects are now ommited from ddlx_script
+- put 'ATTENTION' comment on `DROP TABLE` statements to make them more visible
 
 Version 0.21
 ------------
