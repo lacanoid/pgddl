@@ -2831,7 +2831,7 @@ parts as (select * from ddlx_definitions($1,$2))
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_alter(oid, text[]) 
-     IS 'Get SQL ALTER statement for a generic object by object id';
+     IS 'Get SQL ALTER statement for any object by object id';
      
 ---------------------------------------------------
 
@@ -2864,7 +2864,7 @@ select array_to_string(array[
 $function$ strict;
 
 COMMENT ON FUNCTION ddlx_create(oid, text[]) 
-     IS 'Get SQL CREATE statement for a generic object by object id';
+     IS 'Get SQL CREATE statement for any object by object id';
      
 ---------------------------------------------------
 
@@ -2898,7 +2898,7 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_drop(oid,text[]) 
-     IS 'Get SQL DROP statement for an object by object id';
+     IS 'Get SQL DROP statement for any object by object id';
      
 ---------------------------------------------------
 
@@ -2954,7 +2954,7 @@ select array_to_string(array[
 $function$ strict;
 
 COMMENT ON FUNCTION ddlx_script(oid, text[]) 
-     IS 'Get SQL DDL script for an object and dependants by object id';
+     IS 'Get SQL DDL script for any object and dependants by object id';
 
 ---------------------------------------------------
 
@@ -2975,5 +2975,5 @@ AS $function$
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_script(text, text[]) 
-     IS 'Get SQL DDL script for an object and dependants by object name';
+     IS 'Get SQL DDL script for any object and dependants by object name';
 

@@ -6,11 +6,11 @@ a as (
 )
 select * from a
 ;
- ddlx_alter(oid,text[])                      | Get SQL ALTER statement for a generic object by object id
- ddlx_create(oid,text[])                     | Get SQL CREATE statement for a generic object by object id
- ddlx_drop(oid,text[])                       | Get SQL DROP statement for an object by object id
- ddlx_script(oid,text[])                     | Get SQL DDL script for an object and dependants by object id
- ddlx_script(text,text[])                    | Get SQL DDL script for an object and dependants by object name
+ ddlx_alter(oid,text[])                      | Get SQL ALTER statement for any object by object id
+ ddlx_create(oid,text[])                     | Get SQL CREATE statement for any object by object id
+ ddlx_drop(oid,text[])                       | Get SQL DROP statement for any object by object id
+ ddlx_script(oid,text[])                     | Get SQL DDL script for any object and dependants by object id
+ ddlx_script(text,text[])                    | Get SQL DDL script for any object and dependants by object name
  ddlx_alter_database(oid)                    | 
  ddlx_alter_owner(oid)                       | 
  ddlx_alter_role(regrole)                    | 
