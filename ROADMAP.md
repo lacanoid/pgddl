@@ -46,7 +46,6 @@ Other:
 - group column alters together by column name
 - improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
-- exclude extensions when `ext` option is specified
 - ✔︎ mysterious duplicates in index section for partitioned tables (see table dept_1)
 - perhaps include table subpartitions in a script
 - handle dependancies for types better (use shell types)

@@ -136,14 +136,14 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 
 * `drop` - include DROP statements in a script. These are otherwise commented out.
 * `nodrop` - omit DROP statements in a script entirely
-* `owner` - always include `alter set owner`. Otherwise this is ommited when object owner is current user.
+* `owner` - always include `alter set owner`. Otherwise this is ommited when object owner is same as current user.
 * `noowner` - do not include `alter set owner`
 * `nogrants` - do not include grants
 * `nodcl` - do not include `alter set owner` nor `grant`
 * `noalter` - include neither `alter` nor DCL (grant) statements
 * `ine` - add `if not exists` in bunch of places
 * `ie` - add `if exists` in a bunch of places
-* `ext` - include objects from extension. These otherwise are omitted.
+* `ext` - include objects from extensions. These are otherwise omitted.
 
 Drop statements are created with `ddlx_drop()` function.	
 
