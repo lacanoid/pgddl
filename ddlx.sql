@@ -537,7 +537,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_constraints(
  OUT initially_deferred boolean, 
  OUT regclass oid, 
  OUT sysid oid,
- OUT parent oid)
+ OUT is_local boolean)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
@@ -557,7 +557,7 @@ AS $function$
         c.condeferrable AS is_deferrable, 
         c.condeferred  AS initially_deferred, 
         r.oid as regclass, c.oid AS sysid,
-	d.refobjid AS parent
+	d.refobjid is null AS is_local
    FROM pg_constraint c
    JOIN pg_class r ON c.conrelid = r.oid
    JOIN pg_namespace nc ON nc.oid = c.connamespace
@@ -653,7 +653,7 @@ $function$;
 CREATE OR REPLACE FUNCTION ddlx_get_indexes(
   regclass default null,
   OUT oid oid, OUT namespace text, OUT class text, OUT name text, 
-  OUT tablespace text, OUT constraint_name text, OUT super regclass)
+  OUT tablespace text, OUT constraint_name text, OUT is_local boolean)
  RETURNS SETOF record
  LANGUAGE sql
 AS $function$
@@ -664,7 +664,7 @@ AS $function$
         i.relname::text AS name,
         NULL::text AS tablespace, 
         cc.conname::text AS constraint_name,
-	d2.refobjid::regclass AS super
+	d2.refobjid IS NULL AS is_local
    FROM pg_index x
    JOIN pg_class c ON c.oid = x.indrelid
    JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -1295,7 +1295,7 @@ AS $function$
    ' ADD CONSTRAINT ' || quote_ident(constraint_name) || 
    E'\n  ' || constraint_definition as sql
     from ddlx_get_constraints($1)
-   where parent is null
+   where is_local
    order by constraint_type desc, constraint_name
  )
  select coalesce(string_agg(sql,E';\n') || E';\n\n','')
