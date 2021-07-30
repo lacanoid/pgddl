@@ -130,37 +130,6 @@ ddlx_drop
 DROP OPERATOR CLASS opc1 USING btree;
 
 (1 row)
-select ddlx_create(oid) from pg_opclass where opcname='circle_ops';
-ddlx_create
-CREATE OPERATOR CLASS pg_catalog.circle_ops
-  DEFAULT FOR TYPE circle USING gist AS 
-  OPERATOR 1 <<(circle,circle) FOR SEARCH,
-  OPERATOR 2 &<(circle,circle) FOR SEARCH,
-  OPERATOR 3 &&(circle,circle) FOR SEARCH,
-  OPERATOR 4 &>(circle,circle) FOR SEARCH,
-  OPERATOR 5 >>(circle,circle) FOR SEARCH,
-  OPERATOR 6 ~=(circle,circle) FOR SEARCH,
-  OPERATOR 7 @>(circle,circle) FOR SEARCH,
-  OPERATOR 8 <@(circle,circle) FOR SEARCH,
-  OPERATOR 9 &<|(circle,circle) FOR SEARCH,
-  OPERATOR 10 <<|(circle,circle) FOR SEARCH,
-  OPERATOR 11 |>>(circle,circle) FOR SEARCH,
-  OPERATOR 12 |&>(circle,circle) FOR SEARCH,
-  OPERATOR 13 ~(circle,circle) FOR SEARCH,
-  OPERATOR 14 @(circle,circle) FOR SEARCH,
-  OPERATOR 15 <->(circle,point) FOR ORDER BY float_ops,
-  FUNCTION 1 gist_circle_consistent(internal,circle,smallint,oid,internal),
-  FUNCTION 2 gist_box_union(internal,internal),
-  FUNCTION 3 gist_circle_compress(internal),
-  FUNCTION 5 gist_box_penalty(internal,internal,internal),
-  FUNCTION 6 gist_box_picksplit(internal,internal),
-  FUNCTION 7 gist_box_same(box,box,internal),
-  FUNCTION 8 gist_circle_distance(internal,circle,smallint,oid,internal),
-  STORAGE box;
-COMMENT ON OPERATOR CLASS pg_catalog.circle_ops USING gist IS NULL;
-
-
-(1 row)
 select ddlx_create(oid) from pg_language 
  where lanname in ('internal','c','sql') 
  order by lanname;
