@@ -18,9 +18,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
   OUT name name,  OUT namespace name,  
   OUT owner name, OUT sql_kind text, 
   OUT sql_identifier text, OUT acl aclitem[])
- RETURNS record
- LANGUAGE sql
-AS $function$
+ RETURNS record LANGUAGE sql AS $function$
   WITH 
   rel_kind(k,v) AS (
          VALUES ('r','TABLE'),
@@ -128,13 +126,9 @@ AS $function$
     FROM pg_constraint con 
     left JOIN pg_class c ON (con.conrelid=c.oid)
     LEFT join (
-         values ('f','FOREIGN KEY'),
-                ('c','CHECK'),
-                ('x','EXCLUDE'),
-                ('u','UNIQUE'),
-                ('p','PRIMARY KEY'),
-                ('t','TRIGGER')
-         ) as tt on tt.column1 = con.contype
+         values ('f','FOREIGN KEY'), ('c','CHECK'), ('x','EXCLUDE'),
+                ('u','UNIQUE'), ('p','PRIMARY KEY'), ('t','TRIGGER')) 
+             as tt on tt.column1 = con.contype
    WHERE con.oid = $1
    UNION ALL
   SELECT t.oid,'pg_trigger'::regclass,
@@ -414,9 +408,7 @@ CREATE OR REPLACE FUNCTION ddlx_describe(
   OUT namespace name, OUT class_name name, OUT sql_identifier text,
   OUT relid oid, OUT options text[], OUT definition text,
   OUT sequence regclass)
- RETURNS SETOF record
- LANGUAGE sql
-AS $function$
+ RETURNS SETOF record LANGUAGE sql AS $function$
 SELECT  a.attnum AS ord,
         a.attname AS name, 
         format_type(t.oid, NULL::integer) AS type,
@@ -538,9 +530,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_constraints(
  OUT regclass oid, 
  OUT sysid oid,
  OUT is_local boolean)
- RETURNS SETOF record
- LANGUAGE sql
-AS $function$
+ RETURNS SETOF record LANGUAGE sql AS $function$
  SELECT nc.nspname AS namespace, 
         r.relname AS class_name, 
         c.conname AS constraint_name, 
@@ -572,9 +562,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_rules(
   regclass default null,
   OUT namespace text, OUT class_name text, OUT rule_name text, OUT rule_event text, 
   OUT is_instead boolean, OUT rule_definition text, OUT regclass regclass)
- RETURNS SETOF record
- LANGUAGE sql
-AS $function$
+ RETURNS SETOF record LANGUAGE sql AS $function$
  SELECT n.nspname::text AS namespace, 
         c.relname::text AS class_name, 
         r.rulename::text AS rule_name, 
@@ -606,9 +594,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_triggers(
   OUT action_statement text, OUT action_orientation text,
   OUT trigger_definition text, OUT regclass regclass, OUT regprocedure regprocedure, 
   OUT event_object_schema text, OUT event_object_table text, OUT sql_identifier text)
- RETURNS SETOF record
- LANGUAGE sql
-AS $function$
+ RETURNS SETOF record LANGUAGE sql AS $function$
  SELECT t.oid,
         CASE t.tgisinternal
             WHEN true THEN 'CONSTRAINT'::text
@@ -654,9 +640,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_indexes(
   regclass default null,
   OUT oid oid, OUT namespace text, OUT class text, OUT name text, 
   OUT tablespace text, OUT constraint_name text, OUT is_local boolean)
- RETURNS SETOF record
- LANGUAGE sql
-AS $function$
+ RETURNS SETOF record LANGUAGE sql AS $function$
  SELECT DISTINCT
         i.oid AS oid, 
         n.nspname::text AS namespace, 
@@ -689,9 +673,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_functions(
   OUT retset boolean, OUT is_trigger boolean, OUT returns text, OUT arguments text, 
   OUT definition text, OUT security text, OUT is_strict text, OUT argtypes oidvector,
   OUT cost real, OUT rows real)
- RETURNS SETOF record
- LANGUAGE sql
-AS $function$
+ RETURNS SETOF record LANGUAGE sql AS $function$
  SELECT p.oid AS sysid, 
         s.nspname AS namespace, 
         p.proname AS name, 
@@ -737,9 +719,7 @@ $function$;
 CREATE OR REPLACE FUNCTION ddlx_banner(
    name text, kind text, namespace text, owner text, extra text default null
  )
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
   SELECT format(E'%s-- Type: %s ; Name: %s; Owner: %s\n\n',
                 E'--\n-- ' || $5 || E'\n',
                 $2,$1,$4)
@@ -748,9 +728,7 @@ $function$;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_comment(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1))
  select format(
           E'COMMENT ON %s %s IS %L;\n',
@@ -779,9 +757,7 @@ CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}') RETURNS text
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1))
  select
    case
@@ -795,9 +771,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
   with obj as (select * from ddlx_identify($1))
   select   
     array_to_string(array[
@@ -883,9 +857,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_view(regclass, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  select 
  'CREATE '||
   case relkind 
@@ -909,9 +881,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_sequence(regclass)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1))
  select 
     'ALTER SEQUENCE '||(oid::regclass::text) 
@@ -928,9 +898,7 @@ AS $function$
 $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1)),
  seq as (
   select sc.oid::regclass,d.refobjid::regclass,a.attname
@@ -950,9 +918,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_type_shell(regtype)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 select 'CREATE TYPE ' || format_type(oid,null) || ';\n'
   from pg_type t
  where oid = $1
@@ -961,9 +927,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_type_base(regtype)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
        array_to_string(array[ 
          'INPUT = '  || cast(t.typinput::regproc as text),  
@@ -1008,9 +972,7 @@ $function$  strict;
 ---------------------------------------------------
 #if 9.2
 CREATE OR REPLACE FUNCTION ddlx_create_type_range(regtype)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text  LANGUAGE sql AS $function$
 select 'CREATE TYPE ' || format_type($1,null) || E' AS RANGE (\n  ' ||
         array_to_string(array[
           'SUBTYPE = '  || format_type(r.rngsubtype,null),
@@ -1032,9 +994,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_type_enum(regtype)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with
 ee as (
  select 
@@ -1051,9 +1011,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_type_domain(regtype)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with
 cc as (
   select pg_get_constraintdef(oid) as definition
@@ -1079,9 +1037,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_index(regclass,ddlx_options text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with ii as (
  SELECT CASE d.refclassid
             WHEN 'pg_constraint'::regclass 
@@ -1111,9 +1067,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_class(regclass, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1)),
 
  comments as (
@@ -1151,9 +1105,7 @@ $function$ strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_table_defaults(regclass)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with
 def as (
  select 
@@ -1185,9 +1137,7 @@ $function$ strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_table_storage(regclass)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with 
 obj as (select * from ddlx_identify($1)),
 d as (select * from ddlx_describe($1) order by name),
@@ -1217,9 +1167,7 @@ $function$ strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_table_settings(regclass)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with 
 obj as (select * from ddlx_identify($1)),
 ob as (
@@ -1255,9 +1203,7 @@ $function$ strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_default(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
   select format(E'ALTER TABLE %s ALTER %I SET DEFAULT %s;\n',
             cast(c.oid::regclass as text),
             a.attname, 
@@ -1271,9 +1217,7 @@ $function$ strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_drop_default(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
   select format(E'ALTER TABLE %s ALTER %I DROP DEFAULT;\n',
             cast(c.oid::regclass as text),
             a.attname)
@@ -1286,9 +1230,7 @@ $function$ strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with cs as (
   select
    'ALTER TABLE ' || text(regclass(regclass)) ||  
@@ -1305,9 +1247,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_constraint(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  select format(
    E'ALTER %s %s ADD CONSTRAINT %I\n  %s;\n',
    case
@@ -1327,9 +1267,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_drop_constraint(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  select format(
    E'ALTER %s %s DROP CONSTRAINT %I;\n',
    case
@@ -1348,9 +1286,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_rules(regclass)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
   select coalesce(string_agg(rule_definition,E'\n')||E'\n\n','')
     from ddlx_get_rules()
    where regclass = $1
@@ -1360,9 +1296,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_rule(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
   select case
          when ev_type='1' and r.rulename='_RETURN'
          then ddlx_create_class(c.oid)
@@ -1375,9 +1309,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_trigger(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  select pg_get_triggerdef($1,true)||
         case when t.tgenabled = 'D' 
              then format(E';\nALTER TABLE %s DISABLE TRIGGER %I',
@@ -1391,9 +1323,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_triggers(regclass)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with tg as (
   select ddlx_create_trigger(oid) as sql 
  from ddlx_get_triggers($1) where is_constraint is null
@@ -1407,9 +1337,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_drop_trigger(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  select format(
           E'DROP TRIGGER %I ON %s;\n',
           t.tgname,cast(c.oid::regclass as text))
@@ -1420,9 +1348,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass,ddlx_options text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with
  ii as (select * from ddlx_get_indexes($1) order by name),
  a as (
@@ -1453,9 +1379,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_aggregate(regproc)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
   with obj as (select * from ddlx_identify($1))
 select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' || 
         array_to_string(array[
@@ -1507,9 +1431,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_function(regproc)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from ddlx_identify($1))
  select
   ddlx_banner(sql_identifier,obj.sql_kind,namespace,owner) ||
@@ -1527,9 +1449,7 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regrole)
 #else
 CREATE OR REPLACE FUNCTION ddlx_grants_to_role(oid) 
 #end
- RETURNS text
- LANGUAGE sql
- AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with 
 q as (
  select format(E'GRANT %I TO %I%s;\n',r1.rolname, r2.rolname,
@@ -1550,9 +1470,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_role_auth(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  select case when rolpassword is not null
 	     then 'ALTER ROLE '|| quote_ident(rolname)||
                   ' ENCRYPTED PASSWORD '||quote_literal(rolpassword)
@@ -1647,9 +1565,7 @@ set datestyle = iso;
 ---------------------------------------------------
 #if 9.3
 CREATE OR REPLACE FUNCTION ddlx_create_event_trigger(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from pg_event_trigger where oid = $1)
  select
     'CREATE EVENT TRIGGER ' || quote_ident(obj.evtname) ||
@@ -1669,9 +1585,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_foreign_data_wrapper(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from pg_foreign_data_wrapper where oid = $1)
  select
     'CREATE FOREIGN DATA WRAPPER ' || quote_ident(obj.fdwname) || E'\n' ||
@@ -1697,9 +1611,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_server(oid, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from pg_foreign_server where oid = $1)
  select
     'CREATE SERVER ' ||
@@ -1723,9 +1635,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_user_mapping(oid, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from ddlx_identify($1))
  select
     'CREATE USER MAPPING '
@@ -1745,9 +1655,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_policy(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from ddlx_identify($1)),
  pol1 as (
  SELECT
@@ -1804,9 +1712,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_transform(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from pg_transform where oid = $1)
  select format(
            E'CREATE OR REPLACE TRANSFORM %s (\n'||
@@ -1826,9 +1732,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_publication(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from pg_publication where oid = $1)
  select format(
            E'CREATE PUBLICATION %I\n  FOR %s\n  WITH ( publish=%L );\n',
@@ -1855,9 +1759,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from pg_subscription where oid = $1)
  select format(
            E'CREATE SUBSCRIPTION %I\n  CONNECTION %L\n  PUBLICATION %s\n  WITH (\n    %s );\n',
@@ -1879,9 +1781,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_grants_columns(regclass) 
- RETURNS text
- LANGUAGE sql
- AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with
 obj as (select * from ddlx_identify($1)),
 e as (
@@ -1918,9 +1818,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_grants(regclass) 
- RETURNS text
- LANGUAGE sql
- AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with 
  obj as (select * from ddlx_identify($1)),
  a   as (
@@ -1953,9 +1851,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_grants(regproc) 
- RETURNS text
- LANGUAGE sql
- AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1))
  select
    format(E'REVOKE ALL ON FUNCTION %s FROM PUBLIC;\n',
@@ -1983,9 +1879,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_grants(oid) 
- RETURNS text
- LANGUAGE sql
- AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1)),
 a as (
  select coalesce(quote_ident(r1.rolname),'PUBLIC') as grantor,
@@ -2027,9 +1921,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_language(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$ 
+ RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from pg_language where oid = $1)
  select format(
            E'CREATE OR REPLACE %sLANGUAGE %I%s;\n',
@@ -2117,22 +2009,12 @@ CREATE OR REPLACE FUNCTION ddlx_apropos(
   OUT retset boolean,
   OUT namespace name, OUT name name, 
   OUT source text)
- RETURNS SETOF record
- LANGUAGE sql
-AS $function$
+ RETURNS SETOF record LANGUAGE sql AS $function$
 with
   rel_kind(k,v) AS (
-         VALUES ('r','TABLE'),
-                ('p','TABLE'),
-                ('v','VIEW'),
-                ('i','INDEX'),
-                ('I','INDEX'),
-                ('S','SEQUENCE'),
-                ('m','MATERIALIZED VIEW'),
-                ('c','TYPE'),
-                ('f','FOREIGN TABLE')
+         VALUES ('r','TABLE'), ('p','TABLE'),('v','VIEW'), ('i','INDEX'), ('I','INDEX'),
+                ('S','SEQUENCE'), ('m','MATERIALIZED VIEW'), ('c','TYPE'), ('f','FOREIGN TABLE')
   )
-
 select	'pg_proc'::regclass as classid,
         p.oid AS objid, 
 	p.oid::regprocedure::text AS sql_identifier, 
@@ -2216,9 +2098,7 @@ $function$;
 
 #if 9.5
 CREATE OR REPLACE FUNCTION ddlx_alter_table_rls(regclass)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
   select case when c.relrowsecurity
 	       then 'ALTER TABLE '||cast($1 as text)||E' ENABLE ROW LEVEL SECURITY;\n'
 	       else '' end ||
@@ -2233,9 +2113,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_operator(regoper)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(
          E'CREATE OPERATOR %s%s (\n%s%s%s%s%s%s%s%s%s\n);\n\n',
@@ -2264,17 +2142,13 @@ select format(
 $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_operator(regoperator)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
    select ddlx_create_operator($1::regoper)
 $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_config(regconfig)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with cfg as (select * from pg_ts_config where oid = $1),
      prs as (select * from ddlx_identify(
               (select p.oid 
@@ -2290,9 +2164,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_dict(regdictionary)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with dict as (select * from pg_ts_dict where oid = $1),
      tmpl as (select * from ddlx_identify(
               (select t.oid 
@@ -2309,9 +2181,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_parser(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE TEXT SEARCH PARSER %s (\n  %s\n);\n',obj.sql_identifier,
          array_to_string(array[
@@ -2329,9 +2199,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_template(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE TEXT SEARCH TEMPLATE %s (\n  %s\n);\n',obj.sql_identifier,
          array_to_string(array[
@@ -2346,9 +2214,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_cast(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE CAST %s\n  ',obj.sql_identifier)
         || case
@@ -2371,9 +2237,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_collation(oid, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE COLLATION %s%s (\n  %s\n);\n',
          case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end,
@@ -2405,9 +2269,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_conversion(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE %sCONVERSION %s\n  FOR %L TO %L FROM %s;\n',
         case when c.condefault then 'DEFAULT ' end,
@@ -2424,9 +2286,7 @@ $function$  strict;
 
 #if 9.2
 CREATE OR REPLACE FUNCTION ddlx_create_tablespace(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE TABLESPACE %s%s;\n',
          obj.sql_identifier,
@@ -2447,9 +2307,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_database(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE DATABASE %s WITH\n  %s;\n\n',
               obj.sql_identifier,
@@ -2469,9 +2327,7 @@ select format(E'CREATE DATABASE %s WITH\n  %s;\n\n',
 $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_alter_database(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'ALTER DATABASE %s WITH ALLOW_CONNECTIONS %s;\n',
               obj.sql_identifier, d.datallowconn::text) ||
@@ -2496,9 +2352,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_access_method(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 #if 9.6
 select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
@@ -2519,10 +2373,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION pg_catalog.ddlx_create_operator_class(oid)
- RETURNS text
- LANGUAGE sql
- STRICT
-AS $function$
+ RETURNS text LANGUAGE sql STRICT AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n',
         format('%s%I',quote_ident(nullif(obj.namespace,current_schema()))||'.',
@@ -2562,9 +2413,7 @@ $function$;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_operator_family(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE OPERATOR FAMILY %s;\n',
         obj.sql_identifier,
@@ -2578,9 +2427,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_amproc(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with 
 a as (
  select *
@@ -2600,9 +2447,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_drop_amproc(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with 
 a as (
  select *
@@ -2622,9 +2467,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_amop(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with 
 a as (
  select *
@@ -2653,9 +2496,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_drop_amop(oid)
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with 
 a as (
  select *
@@ -2679,9 +2520,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_schema(regnamespace, text[] default '{}')
 #else
 CREATE OR REPLACE FUNCTION ddlx_create_schema(oid, text[] default '{}')
 #end
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 select format(E'CREATE SCHEMA %s%I;\n',
               case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end,
               n.nspname)
@@ -2693,9 +2532,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_extension(oid, text[] default '{}')
 #end
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 select format(E'CREATE EXTENSION %s%I%s VERSION %s;\n',
               case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end,
               e.extname,
@@ -2708,9 +2545,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_type(regtype, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
    select ddlx_create_class(c.oid::regclass,$2) -- type
      from pg_type t
      join pg_class c on (c.oid=t.typrelid)
@@ -2737,20 +2572,13 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_definitions(
-   in oid,
-   in options text[] default '{}',
-   out oid oid, out classid regclass,
-   out sql_kind text, out sql_identifier text,
-   out bare text, out comment text,
-   out owner text, out storage text,
-   out defaults text, out settings text,
-   out constraints text, out indexes text,
-   out triggers text, out rules text,
-   out rls text, out grants text
+   in oid, in options text[] default '{}',
+   out oid oid, out classid regclass, out sql_kind text, out sql_identifier text,
+   out bare text, out comment text, out owner text, out storage text, 
+   out defaults text, out settings text, out constraints text, out indexes text,
+   out triggers text, out rules text, out rls text, out grants text
 )
- RETURNS record
- LANGUAGE sql
-AS $function$
+ RETURNS record LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
   select 
     obj.oid, obj.classid, obj.sql_kind, obj.sql_identifier,
@@ -2835,9 +2663,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter(oid, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with 
 obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_definitions($1,$2))
@@ -2855,9 +2681,7 @@ COMMENT ON FUNCTION ddlx_alter(oid, text[])
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with 
 obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_definitions($1,$2))
@@ -2888,9 +2712,7 @@ COMMENT ON FUNCTION ddlx_create(oid, text[])
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}') 
- RETURNS text
- LANGUAGE sql
- AS $function$
+ RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1))
  select 
    case obj.classid
@@ -2926,9 +2748,7 @@ CREATE OR REPLACE FUNCTION ddlx_script_parts(
  IN oid, ddlx_options text[] default '{}',
  OUT ddl_create text, OUT ddl_drop text,
  OUT ddl_create_deps text, OUT ddl_drop_deps text)
- RETURNS record
- LANGUAGE sql
-AS $function$
+ RETURNS record LANGUAGE sql AS $function$
 with 
 ddl as (
 select row_number() over() as n,
@@ -2953,9 +2773,7 @@ $function$ strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_script(oid, ddlx_options text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 select array_to_string(array[
        E'BEGIN;\n',
        case when 'nodrop' not ilike all($2) then
@@ -2979,9 +2797,7 @@ COMMENT ON FUNCTION ddlx_script(oid, text[])
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_script(sql_identifier text, ddlx_options text[] default '{}')
- RETURNS text
- LANGUAGE sql
-AS $function$
+ RETURNS text LANGUAGE sql AS $function$
   select case
     when strpos($1,'(')>0 
     then ddlx_script(cast($1 as regprocedure)::oid, $2)
