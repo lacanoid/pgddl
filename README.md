@@ -22,7 +22,7 @@ Advantages over using other tools like `psql` or `pg_dump` include:
 
 - You can use it to extract DDL with **any client** which support running plain SQL queries
 - **Simple API** with just three functions. Just supply `oid`.
-- With SQL you can select things to dump by using usual SQL semantics (WHERE, etc)
+- With SQL you can select things to dump by using **usual SQL semantics** (WHERE, etc)
 - Special function for creating scripts, which drop and recreate entire **dependancy trees**.
   This is useful for example, when one wishes to rename some columns in a view with dependants.
   This works particularly great with transactional DDL of Postgres.
