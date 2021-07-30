@@ -41,20 +41,20 @@ Some disadvantages:
 
 - Not all Postgres objects and all options are supported yet. Postgres is huge. 
   This package provides support for basic user-level objects such as types, classes and functions.
-  All `reg*` objects and SQL standard compliant stuff is mostly supported,
-  with more fringe stuff still under constuction. 
-  The intention for version 1.0 is to support all Postgres objects. 
-  See [ROADMAP](ROADMAP.md) for some of what's still missing.
+  Currently all objects are at least somewhat supported but not all options are.
+  The intention is for version 1.0 is to support all objects objects and options. 
+  See [ROADMAP](ROADMAP.md) for some of what is still missing.
 - It is not very well tested. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
-  Do not run generated scripts on production databases without testing them first!
+  In fact, generated scripts might not run at all.
+  Do not run them on production databases without inspecting and testing first!
 - It is kind of slow-ish for complicated dependancy trees
 
 That said, it has still proven quite useful in a many situations
 and is being used with a number of production databases.
 Bug reports are welcome.
 
-Curently developed and tested on PostgreSQL 10. 
+Curently developed and tested on PostgreSQL 13. 
 Included preprocessor adapts the source to target PG version. 
 Tested to install on version 9.1 and later. 
 Some tests might fail on older versions. 
@@ -66,7 +66,7 @@ To build this module:
 
     make
 
-This builds extension for your particular version of Postgres in a file like `ddlx--0.20.sql`.
+This builds extension for your particular version of Postgres in a file like `ddlx--0.22.sql`.
 
     make install
     make install installcheck
@@ -95,7 +95,7 @@ This of course requires superuser privileges.
 If for some reason you are unable to use this as an extension, you can simply load generated SQL file
 into your database by any regular means:
 
-    $ psql my_database -1 -f ddlx--0.20.sql
+    $ psql my_database -1 -f ddlx--0.22.sql
 
 Using
 -----
@@ -134,8 +134,8 @@ You can use something like:
 
 Options are optional and are passed as text array, for example `{ine,nodcl}`. They specify extra options on how things in created DDL should be. Currently supported options are:
 
-* `drop` - include DROP statements in a script. These are otherwise commented out.
-* `nodrop` - omit DROP statements in a script entirely
+* `drop` - include `drop` statements in a script. These are otherwise commented out.
+* `nodrop` - omit `drop` statements from a script entirely
 * `owner` - always include `alter set owner`. Otherwise this is omitted when object owner is the same as the current user.
 * `noowner` - do not include `alter set owner` statements
 * `nogrants` - do not include `grant` statements
@@ -143,7 +143,7 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 * `noalter` - include neither `alter` nor DCL (grant) statements
 * `ine` - add `if not exists` in bunch of places
 * `ie` - add `if exists` in a bunch of places
-* `ext` - include objects from extensions. These are otherwise omitted.
+* `ext` - include extension contents instead of `create extension`.
 
 Drop statements are created with `ddlx_drop()` function.	
 
