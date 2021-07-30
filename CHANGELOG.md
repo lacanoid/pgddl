@@ -1,6 +1,6 @@
 Version 0.22
 ------------
-- new function `ddlx_alter()` to create SQL ALTER statements
+- new function `ddlx_alter()` to create SQL `ALTER` statements
 - new option `nodrop` to omit drop statements alltogether
 - bug fix - avoid duplicate indexes on partitioned tables
 - bug fix - omit inherited constraints from subpartitions
