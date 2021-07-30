@@ -34,6 +34,8 @@ create operator class opc1 for type text using btree family opf1 as storage text
 select ddlx_create(oid) from pg_opclass where opcname='opc1';
 select ddlx_drop(oid) from pg_opclass where opcname='opc1';
 
+select ddlx_create(oid) from pg_opclass where opcname='circle_ops';
+
 select ddlx_create(oid) from pg_language 
  where lanname in ('internal','c','sql') 
  order by lanname;

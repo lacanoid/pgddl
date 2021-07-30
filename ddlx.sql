@@ -2518,27 +2518,46 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_operator_class(oid)
+CREATE OR REPLACE FUNCTION pg_catalog.ddlx_create_operator_class(oid)
  RETURNS text
  LANGUAGE sql
+ STRICT
 AS $function$
 with obj as (select * from ddlx_identify($1))
-select format(E'CREATE OPERATOR CLASS %s %sFOR TYPE %s USING %I%s AS STORAGE %s;\n',
+select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n',
         format('%s%I',quote_ident(nullif(obj.namespace,current_schema()))||'.',
                 obj.name),
-        case when opcdefault then 'DEFAULT ' else '' end,
+        case when opcdefault then 'DEFAULT ' end,
         format_type(opc.opcintype,null),
         am.amname,
         case when opf.opfname is distinct from opc.opcname
              then format(' FAMILY %I',opf.opfname)
              else '' end,
-        format_type(opc.opcintype,null)
+             coalesce(e'\n  '||(select string_agg(l,e',\n  ') from (
+               select format('FUNCTION %s %s',amprocnum,amproc::regprocedure) as l, 1, amprocnum
+               from pg_amproc where amprocfamily = opc.opcfamily 
+               union all 
+               select format('OPERATOR %s %s %s',amopstrategy,amopopr::regoper::regoperator,
+                             case amoppurpose
+                             when 'o' then 'FOR ORDER BY '||
+                                           (select quote_ident(opfname)
+                                              from pg_opfamily f
+                                             where f.oid = amopsortfamily
+                                           )
+                             when 's' then 'FOR SEARCH'
+                             end
+                            ) as l, 0, amopstrategy
+               from pg_amop where amopfamily = opc.opcfamily 
+               union all 
+               select format('STORAGE %s',opc.opckeytype::regtype),2,0 where opc.opckeytype <> 0
+               order by 2,3
+            ) as item),'STORAGE '||format_type(opc.opcintype,null))
        )
   from pg_opclass as opc join pg_am am on (am.oid=opc.opcmethod)
   left join pg_opfamily opf on (opf.oid=opc.opcfamily), 
        obj
- where opc.oid = $1
-$function$  strict;
+ where opc.oid = obj.oid
+$function$;
 
 ---------------------------------------------------
 
@@ -2571,7 +2590,7 @@ a as (
   where amp.oid = $1),
 f as (select * from ddlx_identify((select amprocfamily from a)) ),
 obj as (select * from ddlx_identify($1))
-select format(E'ALTER OPERATOR FAMILY %s ADD %s %s;',
+select format(E'ALTER OPERATOR FAMILY %s ADD %s %s;\n',
         f.sql_identifier, obj.sql_identifier,
 	cast(a.amproc::regprocedure as text)
        )
@@ -2615,7 +2634,7 @@ a as (
   where amp.oid = $1),
 f as (select * from ddlx_identify((select amopfamily from a)) ),
 obj as (select * from ddlx_identify($1))
-select format(E'ALTER OPERATOR FAMILY %s ADD OPERATOR %s %s (%s) %s;',
+select format(E'ALTER OPERATOR FAMILY %s ADD OPERATOR %s %s (%s) %s;\n',
         f.sql_identifier,
 	amopstrategy,
 	amopopr::regoper::text,

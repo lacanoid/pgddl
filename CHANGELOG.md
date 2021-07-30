@@ -4,8 +4,9 @@ Version 0.22
 - new option 'nodrop' to omit drop statements alltogether
 - bug fix - avoid duplicate indexes on partitioned tables
 - bug fix - omit inherited constraints from subpartitions
-- pg_amproc and pg_amop objects are now ommited from ddlx_script
-- put 'ATTENTION' comment on `DROP TABLE` statements to make them more visible
+- pg_amproc and pg_amop objects are now ommited from ddlx_script depends
+- but they are now included in `ddlx_create_operator_class()`
+- put comment on `DROP TABLE` statements to make them stand out
 
 Version 0.21
 ------------

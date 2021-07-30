@@ -22,7 +22,7 @@ Tasks
 -----
 
 Support for other postgres objects:
-- pg_amop, pg_amproc
+- ✔︎ pg_amop, pg_amproc
 - ✔︎ extensions
 
 Support for other missing options:
