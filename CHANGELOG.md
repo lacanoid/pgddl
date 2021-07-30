@@ -11,7 +11,7 @@ Version 0.22
 Version 0.21
 ------------
 - support for extensions
-- improvements to `ddlx_create_collation`
+- improvements to `ddlx_create_collation()`
 - added `IF NOT EXISTS` in a few more places
 - new options `nodcl`,`noowner`,`nogrants`,`noalter`
 - owner now dumped only if distinct from current role or option `owner` is specified
