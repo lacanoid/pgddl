@@ -50,7 +50,7 @@ BEGIN;
 ALTER TABLE test_class_r ALTER a DROP DEFAULT;
 ALTER TABLE test_class_r DROP CONSTRAINT test_class_r_c_check;
 
-DROP TABLE test_class_r; -- ATTENTION!
+DROP TABLE test_class_r; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: test_class_r; Owner: postgres
@@ -124,7 +124,7 @@ ddlx_script
 BEGIN;
 
 /*
-DROP TABLE test_class_r; -- ATTENTION!
+DROP TABLE test_class_r; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: test_class_r; Owner: postgres
@@ -236,7 +236,7 @@ BEGIN;
 /*
 ALTER TABLE test_class_r2 ALTER i DROP DEFAULT;
 
-DROP TABLE test_class_r2; -- ATTENTION!
+DROP TABLE test_class_r2; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: test_class_r2; Owner: postgres
@@ -525,7 +525,7 @@ BEGIN;
 /*
 ALTER TABLE test_collation ALTER id DROP DEFAULT;
 
-DROP TABLE test_collation; -- ATTENTION!
+DROP TABLE test_collation; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: test_collation; Owner: postgres

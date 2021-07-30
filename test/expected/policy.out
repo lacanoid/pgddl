@@ -33,7 +33,7 @@ BEGIN;
 /*
 DROP POLICY item_owner ON items;
 
-DROP TABLE items; -- ATTENTION!
+DROP TABLE items; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: items; Owner: postgres

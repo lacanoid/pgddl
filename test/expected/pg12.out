@@ -28,7 +28,7 @@ ddlx_script
 BEGIN;
 
 /*
-DROP TABLE customers; -- ATTENTION!
+DROP TABLE customers; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: customers; Owner: postgres
@@ -52,7 +52,7 @@ ddlx_script
 BEGIN;
 
 /*
-DROP TABLE customer_jap; -- ATTENTION!
+DROP TABLE customer_jap; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: customer_jap; Owner: postgres
@@ -71,7 +71,7 @@ ddlx_script
 BEGIN;
 
 /*
-DROP TABLE customer_def; -- ATTENTION!
+DROP TABLE customer_def; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: customer_def; Owner: postgres
@@ -103,7 +103,7 @@ ddlx_script
 BEGIN;
 
 /*
-DROP TABLE test_stat; -- ATTENTION!
+DROP TABLE test_stat; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: test_stat; Owner: postgres
@@ -143,7 +143,7 @@ ddlx_script
 BEGIN;
 
 /*
-DROP TABLE dept; -- ATTENTION!
+DROP TABLE dept; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: dept; Owner: postgres
@@ -167,7 +167,7 @@ ddlx_script
 BEGIN;
 
 /*
-DROP TABLE dept_7; -- ATTENTION!
+DROP TABLE dept_7; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: dept_7; Owner: postgres
@@ -237,7 +237,7 @@ BEGIN;
 /*
 ALTER TABLE tab_generated12 ALTER e DROP DEFAULT;
 
-DROP TABLE tab_generated12; -- ATTENTION!
+DROP TABLE tab_generated12; -- !!!ATTENTION!!! --
 */
 
 -- Type: TABLE ; Name: tab_generated12; Owner: postgres

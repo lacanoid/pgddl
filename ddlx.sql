@@ -2730,7 +2730,7 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
                    obj.sql_kind, 
                    case when 'ie' ilike any($2) then 'IF EXISTS ' end,
                    obj.sql_identifier,
-		   case when obj.sql_kind = 'TABLE' then ' -- ATTENTION!' end
+		               case when obj.sql_kind = 'TABLE' then ' -- !!!ATTENTION!!! --' end
                    )
        else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
       end
