@@ -24,6 +24,11 @@ Tasks
 Support for other postgres objects:
 - ✔︎ pg_amop, pg_amproc
 - ✔︎ extensions
+- pg_default_acl
+- pg_largeobject_metadata
+- pg_statistic_ext
+- pg_publication_rel
+- pg_enum
 
 Support for other missing options:
 - ✔︎ comments on all objects
