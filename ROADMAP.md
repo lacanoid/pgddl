@@ -43,21 +43,22 @@ Support for other missing options:
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
+- handle sequences better (create if not exists)
+- improve dumping of comments (be quiet on NULL comments)
+- optimize grants on functions
 - move not nulls to constraints section
 - move storage setting to pre-data section
 - use ONLY when appropriate
 - ✔︎ add `ddlx_alter(oid)`
 - add `ddlx_alter_column(regclass,name)`
 - group column alters together by column name
-- improve dumping of comments (be quiet on NULL comments)
   Currently NULL comments are included, to encourage commenting.
 - ✔︎ mysterious duplicates in index section for partitioned tables (see table dept_1)
 - perhaps include table subpartitions in a script
 - handle dependancies for types better (use shell types)
-- handle sequences better (create if not exists)
 - ✔︎ do not emit ALTER OWNER for objects owned by current role
 - improve and add to simple tests
-- improve support for non superusers (more testing, etc)
+- improve support for non superusers (more testing)
 - make some tests to test if what we output actually runs, test execute them
 - make some tests which compare to output of pg_dump;
   make utility for any sql file to compare the dump by pg_dump and ddlx.
