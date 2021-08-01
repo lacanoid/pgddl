@@ -41,7 +41,7 @@ Some disadvantages:
 
 - Not all Postgres objects and all options are supported yet. Postgres is huge. 
   This package provides support for basic user-level objects such as types, classes and functions.
-  Currently all objects are at least somewhat supported but not all options are.
+  Currently most objects are at least somewhat supported but not all options are.
   The intention is for version 1.0 is to support all objects objects and options. 
   See [ROADMAP](ROADMAP.md) for some of what is still missing.
 - It is not very well tested. While it contains a number of regression tests, these can be
