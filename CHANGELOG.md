@@ -1,3 +1,6 @@
+Version 0.23
+------------
+
 Version 0.22
 ------------
 - new function `ddlx_alter()` to create SQL `ALTER` statements

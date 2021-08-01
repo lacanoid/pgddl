@@ -2,7 +2,7 @@ PG_CONFIG    = pg_config
 PKG_CONFIG   = pkg-config
 
 EXTENSION    = ddlx
-EXT_VERSION  = 0.22
+EXT_VERSION  = 0.23
 VTESTS       = $(shell bin/tests ${VERSION})
 
 DATA_built   = ddlx--$(EXT_VERSION).sql
