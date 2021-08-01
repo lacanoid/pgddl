@@ -2375,7 +2375,7 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION pg_catalog.ddlx_create_operator_class(oid)
  RETURNS text LANGUAGE sql STRICT AS $function$
 with obj as (select * from ddlx_identify($1))
-select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n',
+select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n\n',
         format('%s%I',quote_ident(nullif(obj.namespace,current_schema()))||'.',
                 obj.name),
         case when opcdefault then 'DEFAULT ' end,
@@ -2388,7 +2388,7 @@ select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n',
                select format('FUNCTION %s %s',amprocnum,amproc::regprocedure) as l, 1, amprocnum
                from pg_amproc where amprocfamily = opc.opcfamily 
                union all 
-               select format('OPERATOR %s %s %s',amopstrategy,amopopr::regoper::regoperator,
+               select format('OPERATOR %s %s %s',amopstrategy,amopopr::regoperator,
                              case amoppurpose
                              when 'o' then 'FOR ORDER BY '||
                                            (select quote_ident(opfname)
@@ -2730,7 +2730,7 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
                    obj.sql_kind, 
                    case when 'ie' ilike any($2) then 'IF EXISTS ' end,
                    obj.sql_identifier,
-		               case when obj.sql_kind = 'TABLE' then ' -- !!!ATTENTION!!! --' end
+		               case when obj.sql_kind = 'TABLE' then ' --==>> !!! ATTENTION !!! <<==--' end
                    )
        else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
       end

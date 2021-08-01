@@ -121,6 +121,7 @@ select ddlx_create(oid) from pg_opclass where opcname='opc1';
 ddlx_create
 CREATE OPERATOR CLASS opc1
   FOR TYPE text USING btree FAMILY opf1 AS STORAGE text;
+
 COMMENT ON OPERATOR CLASS opc1 USING btree IS NULL;
 
 
