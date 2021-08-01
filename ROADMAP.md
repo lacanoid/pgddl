@@ -26,7 +26,6 @@ Support for other postgres objects:
 - ✔︎ extensions
 - pg_default_acl
 - pg_largeobject_metadata
-- pg_statistic_ext
 - pg_publication_rel
 - pg_enum
 
@@ -52,7 +51,6 @@ Other:
 - ✔︎ add `ddlx_alter(oid)`
 - add `ddlx_alter_column(regclass,name)`
 - group column alters together by column name
-  Currently NULL comments are included, to encourage commenting.
 - ✔︎ mysterious duplicates in index section for partitioned tables (see table dept_1)
 - perhaps include table subpartitions in a script
 - handle dependancies for types better (use shell types)
