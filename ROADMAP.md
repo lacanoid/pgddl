@@ -15,7 +15,7 @@ but for any actual practical use decoding of PostgreSQL system catalogs is requi
 Querying pg_catalog can turn out to be quite complicated for a somewhat casual SQL user.
 This project attempts to collect many SQL snippets made over the years into a coherent extension.
 
-This will hopefully help to keep relevant SQL code for these things in one place.
+This will hopefully help to collect the relevant SQL code for these things in one place.
 Perhaps this can also be of some use to GUI tools builders and such in implementing "Extract DDL" functionality.
 
 Tasks
