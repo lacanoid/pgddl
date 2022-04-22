@@ -2751,7 +2751,7 @@ CREATE OR REPLACE FUNCTION ddlx_script_parts(
  RETURNS record LANGUAGE sql AS $function$
 with 
 ddl as (
-select row_number() over() as n,
+select row_number() over(order by depth, gd.objid) as n,
        ddlx_drop(gd.objid,$2),
        ddlx_create(gd.objid,$2),
        gd.objid
