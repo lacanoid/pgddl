@@ -37,6 +37,7 @@ Support for other missing options:
 - materialized view tablespace & storage parameters
 - table of type not nulls
 - PG14 SET COMPRESSION
+- PG15 UNIQUE NULL NOT DISTINCT
 - SET STATISTICS on indexes
 - ✔︎ pg_subscription not readable by non superuser
 
