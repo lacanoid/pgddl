@@ -26,7 +26,7 @@ Advantages over using other tools like `psql` or `pg_dump` include:
 - Special function for creating scripts, which drop and recreate entire **dependancy trees**.
   This is great when you need to edit a table, then a view, then a function that uses the view, 
   then a function that returns SETOF.
-  This works particularly well with the transactional DDL of Postgres.
+  It works particularly well with the transactional DDL of Postgres.
 - Created scripts are really intended to be run and copy/pasted manually by the DBA
   into other databases/scripts. It attempts to strike a balance between detail and clutter.
   This involves 
