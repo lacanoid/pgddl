@@ -24,9 +24,10 @@ Advantages over using other tools like `psql` or `pg_dump` include:
 - **Simple API** with just three functions. Just supply `oid`.
 - With SQL you can select things to dump by using **usual SQL semantics** (WHERE, etc)
 - Special function for creating scripts, which drop and recreate entire **dependancy trees**.
-  This is useful for example, when one wishes to rename some columns in a view with dependants.
-  This works particularly great with transactional DDL of Postgres.
-- Created scripts are somewhat more intended to be run and copy/pasted manually by the DBA
+  This is great when you need to edit a table, then a view, then a function that uses the view, 
+  then a function that returns SETOF.
+  This works particularly well with the transactional DDL of Postgres.
+- Created scripts are really intended to be run and copy/pasted manually by the DBA
   into other databases/scripts. It attempts to strike a balance between detail and clutter.
   This involves 
    pretty printing,
@@ -35,14 +36,14 @@ Advantages over using other tools like `psql` or `pg_dump` include:
 - **No shell access** or shell commands with hairy options required (for running pg_dump), 
   just use SELECT and hairy SQL instead!
 - It is entrely made out of **plain SQL functions** so you don't have to install any extra
-  languages, not even PL/PgSQL! It runs on plain vanilla Postgres.
+  languages, not even PL/PgSQL! It runs on plain vanilla Postgres. Of course you can borrow parts of it.
 
 Some disadvantages:
 
 - Not all Postgres objects and all options are supported yet. Postgres is huge. 
   This package provides support for basic user-level objects such as types, classes and functions.
   Currently most objects are at least somewhat supported but not all options are.
-  The intention is for version 1.0 is to support all objects objects and options. 
+  The intention is for version 1.0 is to support all objects and options. 
   See [ROADMAP](ROADMAP.md) for some of what is still missing.
 - It is not very well tested. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
