@@ -43,8 +43,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
   )
   SELECT coalesce(t.oid,c.oid),
          case when t.oid is not null then 'pg_type'::regclass
-	 else 'pg_class'::regclass end,
-	 c.relname AS name, n.nspname AS namespace,
+	            else 'pg_class'::regclass end,
+	       c.relname AS name, n.nspname AS namespace,
          pg_get_userbyid(c.relowner) AS owner,
          coalesce(cc.v,c.relkind::text) AS sql_kind,
          cast($1::regclass AS text) AS sql_identifier,
@@ -2372,7 +2372,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION pg_catalog.ddlx_create_operator_class(oid)
+CREATE OR REPLACE FUNCTION ddlx_create_operator_class(oid)
  RETURNS text LANGUAGE sql STRICT AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n\n',
