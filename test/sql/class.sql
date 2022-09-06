@@ -139,3 +139,11 @@ create table test_parent ( i serial );
 create table test_child () inherits (test_parent);
 select ddlx_create('test_parent'::regclass); 
 select ddlx_create('test_child'::regclass); 
+
+
+-----
+-- test pre-data and post-data functions
+
+select ddlx_createonly('test_class_r'::regclass);
+select ddlx_alter('test_class_r'::regclass);
+

@@ -2574,7 +2574,7 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_definitions(
    in oid, in options text[] default '{}',
    out oid oid, out classid regclass, out sql_kind text, out sql_identifier text,
-   out bare text, out comment text, out owner text, out storage text, 
+   out ddl text, out comment text, out owner text, out storage text, 
    out defaults text, out settings text, out constraints text, out indexes text,
    out triggers text, out rules text, out rls text, out grants text
 )
@@ -2635,7 +2635,7 @@ with obj as (select * from ddlx_identify($1))
         then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
         else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))      
       end
-    end as bare,
+    end as ddl,
     ddlx_comment(oid) as comment,
     ddlx_alter_owner(oid) as owner,
     ddlx_alter_table_storage(oid) as storage,
@@ -2676,8 +2676,33 @@ parts as (select * from ddlx_definitions($1,$2))
 $function$  strict;
 
 COMMENT ON FUNCTION ddlx_alter(oid, text[]) 
-     IS 'Get SQL ALTER statement for any object by object id';
+     IS 'Get SQL ALTER statement for any object by object id (post-data)';
      
+---------------------------------------------------
+
+CREATE OR REPLACE FUNCTION ddlx_createonly(oid, text[] default '{}')
+ RETURNS text LANGUAGE sql AS $function$
+with 
+obj as (select * from ddlx_identify($1)),
+parts as (select * from ddlx_definitions($1,$2))
+select array_to_string(array[
+        ddl,           
+        case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n',
+        case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) then null
+        else case 
+          when 'owner' ilike any($2) or obj.owner is distinct from current_role
+          then parts.owner end
+        end,
+        storage,
+        defaults,
+        settings
+        ],'')
+  from obj,parts
+$function$ strict;
+
+COMMENT ON FUNCTION ddlx_createonly(oid, text[]) 
+     IS 'Get SQL CREATE statement for any object by object id (pre-data)';
+
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}')
@@ -2686,7 +2711,7 @@ with
 obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
-        bare,           
+        ddl,           
         case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n',
         case when 'noalter' ilike any($2) then null
         else array_to_string(array[
@@ -2707,7 +2732,7 @@ select array_to_string(array[
 $function$ strict;
 
 COMMENT ON FUNCTION ddlx_create(oid, text[]) 
-     IS 'Get SQL CREATE statement for any object by object id';
+     IS 'Get SQL CREATE statement for any object by object id. Includes constraints, triggers, indexes...';
      
 ---------------------------------------------------
 

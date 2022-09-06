@@ -787,3 +787,71 @@ ALTER TABLE test_child ALTER i SET DEFAULT nextval('test_parent_i_seq'::regclass
 
 
 (1 row)
+-----
+-- test pre-data and post-data functions
+select ddlx_createonly('test_class_r'::regclass);
+ddlx_createonly
+-- Type: TABLE ; Name: test_class_r; Owner: postgres
+
+CREATE TABLE test_class_r (
+    a integer NOT NULL,
+    b text NOT NULL,
+    c timestamp without time zone,
+    d timestamp with time zone,
+    e numeric(30,0)[],
+    f numeric(10,2)[],
+    g character varying(10)[],
+    h character varying[],
+    v tsvector
+);
+
+COMMENT ON TABLE test_class_r IS 'Comment1';
+
+ALTER TABLE test_class_r ALTER h SET STORAGE external;
+
+ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
+'::text;
+
+ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
+
+ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
+ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
+
+ALTER TABLE test_class_r ALTER h SET STATISTICS 50;
+
+
+(1 row)
+select ddlx_alter('test_class_r'::regclass);
+ddlx_alter
+ALTER TABLE test_class_r ALTER h SET STORAGE external;
+
+ALTER TABLE test_class_r OWNER TO postgres;
+
+ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
+'::text;
+
+ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
+
+ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
+ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
+
+ALTER TABLE test_class_r ALTER h SET STATISTICS 50;
+
+ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key
+  UNIQUE (b);
+ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey
+  PRIMARY KEY (a);
+ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
+  CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
+
+CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
+CREATE INDEX idx2 ON public.test_class_r USING gin (v);
+CREATE INDEX idx3 ON public.test_class_r USING btree (g) WITH (fillfactor='50');
+
+CLUSTER test_class_r USING test_class_r_pkey;
+
+CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE FUNCTION trig('AAAA');
+ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
+
+
+(1 row)
