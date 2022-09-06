@@ -3,7 +3,7 @@ Introduction
 
 This started as a quick hack some years ago, when I broke my PostgreSQL database 
 (must have been version 7.3 or so) so that pg_dump wouldn't dump it anymore.
-Plus it couldn't handle dumping say only functions from certain schema. 
+Plus it couldn't handle dumping say only functions from a certain schema. 
 I have since then learned how to fix my database and pg_dump got options like --schema.
 
 But the idea of a database being able to dump itself more autonomously persisted.
@@ -43,19 +43,22 @@ Support for other missing options:
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
+- add `ddlx_create_only(oid)` for pre-data
+- ✔︎ add `ddlx_alter(oid)` for post-data
+- add `ddlx_alter_column(regclass,name)`
 - handle sequences better (create if not exists)
 - improve dumping of comments (be quiet on NULL comments)
 - optimize grants on functions
 - move not nulls to constraints section
 - move storage setting to pre-data section
 - use ONLY when appropriate
-- ✔︎ add `ddlx_alter(oid)`
-- add `ddlx_alter_column(regclass,name)`
 - group column alters together by column name
 - ✔︎ mysterious duplicates in index section for partitioned tables (see table dept_1)
 - perhaps include table subpartitions in a script
 - handle dependancies for types better (use shell types)
 - ✔︎ do not emit ALTER OWNER for objects owned by current role
+
+Build and tests:
 - improve and add to simple tests
 - improve support for non superusers (more testing)
 - make some tests to test if what we output actually runs, test execute them
@@ -68,14 +71,14 @@ Options
 
 Some options as to what and how to dump stuff might be required:
 
-* `DROP` - generate DROP statements
+* ✔︎ `DROP` - generate DROP statements
 * `ALTER` - prefer ALTER to CREATE, implies 'INE' and 'IE'
-* `DCL` - include DCL (GRANTS)
-* `COR` - use CREATE OR REPLACE where possible 
-* `INE` - use IF NOT EXISTS where possible
-* `IE` - use IF EXISTS where possible
+* ✔︎ `DCL` - include DCL (GRANTS)
+* ✔︎ `COR` - use CREATE OR REPLACE where possible 
+* ✔︎ `INE` - use IF NOT EXISTS where possible
+* ✔︎ `IE` - use IF EXISTS where possible
 * `WRAP` - wrap in BEGIN / END
-* `EXT` - include objects from extensions. Normally, these are omitted.
+* ✔︎ `EXT` - include objects from extensions. Normally, these are omitted.
 * `DEP` - output objects which depend on this object too
 * `DATA` - add statements preserve / copy table data
 
