@@ -145,5 +145,6 @@ select ddlx_create('test_child'::regclass);
 -- test pre-data and post-data functions
 
 select ddlx_createonly('test_class_r'::regclass);
-select ddlx_alter('test_class_r'::regclass);
+select replace(ddlx_alter('test_class_r'::regclass),'FUNCTION','PROCEDURE') as ddlx_alter;
+
 

@@ -2373,7 +2373,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_operator_class(oid)
- RETURNS text LANGUAGE sql STRICT AS $function$
+ RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n\n',
         format('%s%I',quote_ident(nullif(obj.namespace,current_schema()))||'.',
@@ -2408,7 +2408,7 @@ select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n\n'
   left join pg_opfamily opf on (opf.oid=opc.opcfamily), 
        obj
  where opc.oid = obj.oid
-$function$;
+$function$ strict;
 
 ---------------------------------------------------
 
@@ -2696,7 +2696,7 @@ select array_to_string(array[
         storage,
         defaults,
         settings
-        ],'')
+      ],'')
   from obj,parts
 $function$ strict;
 

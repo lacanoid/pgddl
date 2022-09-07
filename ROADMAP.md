@@ -43,19 +43,19 @@ Support for other missing options:
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
-- add `ddlx_create_only(oid)` for pre-data
+- ✔︎ add `ddlx_createonly(oid)` for pre-data
 - ✔︎ add `ddlx_alter(oid)` for post-data
 - add `ddlx_alter_column(regclass,name)`
+- group column alters together by column name
 - handle sequences better (create if not exists)
+- handle dependancies for types better (use shell types)
 - improve dumping of comments (be quiet on NULL comments)
 - optimize grants on functions
 - move not nulls to constraints section
 - move storage setting to pre-data section
 - use ONLY when appropriate
-- group column alters together by column name
 - ✔︎ mysterious duplicates in index section for partitioned tables (see table dept_1)
 - perhaps include table subpartitions in a script
-- handle dependancies for types better (use shell types)
 - ✔︎ do not emit ALTER OWNER for objects owned by current role
 
 Build and tests:
@@ -80,6 +80,7 @@ Some options as to what and how to dump stuff might be required:
 * `WRAP` - wrap in BEGIN / END
 * ✔︎ `EXT` - include objects from extensions. Normally, these are omitted.
 * `DEP` - output objects which depend on this object too
+* `SUB` - include subpartitions
 * `DATA` - add statements preserve / copy table data
 
 These might be passed as optional second arg to extractor functions
