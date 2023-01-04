@@ -38,6 +38,8 @@ Support for other missing options:
 - table of type not nulls
 - PG14 SET COMPRESSION
 - PG15 UNIQUE NULL NOT DISTINCT
+- PG16 MAINTAIN privilege
+- PG16 GRANT WITH INERIT, SET
 - SET STATISTICS on indexes
 - ✔︎ pg_subscription not readable by non superuser
 
