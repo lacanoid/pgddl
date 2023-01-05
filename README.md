@@ -211,11 +211,16 @@ Nevertheless, some of them are:
 - `ddlx_definitions(oid) returns record`
 
     Get individual parts of of object definition, 
-    such as: bare, comment, owner, storage, defaults, settings, constraints, indexes, triggers, rules, rls, grants.
+    such as: base ddl, comment, owner, storage, defaults, settings, constraints, indexes, triggers, rules, rls, grants.
 
-- `ddlx_alter(oid) returns text`
+- `ddlx_createonly(oid [,options]) returns text`
 
-    Get additional SQL DDL ALTER statements for an object.
+    Get SQL DDL statements to create an object, before data is loaded.
+    For classes, this includes base ddl, comments, owner, storage, defaults and settings.
+
+- `ddlx_alter(oid [,options]) returns text`
+
+    Get additional SQL DDL ALTER statements for an object, typically after data is loaded.
     For classes, this includes defaults, storage parametes, constraints, indexes, triggers, rules,
     owner and grants.
 
