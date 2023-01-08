@@ -84,13 +84,7 @@ Some options as to what and how to dump stuff might be required:
 * `DEP` - output objects which depend on this object too
 * `SUB` - include subpartitions
 * `DATA` - add statements preserve / copy table data
-
-These might be passed as optional second arg to extractor functions
-Perhaps as a text array? JSON?
-
-Also, consider how to choose pre and post data DDL.
-
-Perhaps there are other ways to implement some of this?
+* `NOSTORAGE` - exclude storage parameters settings
 
 Other DDL dumping tools
 -----------------------
