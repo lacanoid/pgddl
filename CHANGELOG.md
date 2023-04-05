@@ -4,6 +4,7 @@ Version 0.23
 This includes ddl, comments, storage, defaults, settings and owner
 bu not conststraints, indexes, triggers etc. 
 Use `ddlx_alter()` to create those after the data is loaded.
+- more use of explicit casts
 
 Version 0.22
 ------------
