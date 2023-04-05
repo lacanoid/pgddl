@@ -954,14 +954,14 @@ select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
             when 'm' then 'main'
             when 'x' then 'extended'
             end, 
-         'CATEGORY = ' || quote_nullable(t.typcategory),
+         'CATEGORY = ' || quote_nullable(t.typcategory::text),
          case when t.typispreferred then E'PREFERRED = true' end,
          case 
            when t.typdefault is not null 
            then E'DEFAULT = ' || quote_nullable(t.typdefault)
          end,
          case when t.typelem <> 0 then E'ELEMENT = ' || format_type(t.typelem,null) end,
-         'DELIMITER = ' || quote_nullable(t.typdelim),
+         'DELIMITER = ' || quote_nullable(t.typdelim::text),
          'COLLATABLE = ' ||  case when t.typcollation <> 0 then 'true' else 'false' end
          ], E',\n  ')
        || E'\n);\n\n'
@@ -1413,7 +1413,7 @@ select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' ||
             when 's' then 'SAFE'
             when 'r' then 'RESTRICTED'
             when 'u' then null -- 'UNSAFE', default
-            else quote_literal(p.proparallel)
+            else quote_literal(p.proparallel::text)
           end,
 #if 9.4
           case a.aggkind
@@ -2563,7 +2563,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_type(regtype, text[] default '{}')
 #if 9.2
           when 'r' then ddlx_create_type_range(t.oid)
 #end
-          else '-- UNSUPPORTED TYPE: ' || t.typtype || E'\n'
+          else format(E'-- UNSUPPORTED TYPE: %s\n', t.typtype)
           end 
      from pg_type t
     where t.oid = $1 and t.typtype <> 'c'
