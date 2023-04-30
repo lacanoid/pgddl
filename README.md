@@ -210,7 +210,7 @@ Nevertheless, some of them are:
 
 - `ddlx_definitions(oid) returns record`
 
-    Get individual parts of of object definition, 
+    Get individual parts of object definition, 
     such as: base ddl, comment, owner, storage, defaults, settings, constraints, indexes, triggers, rules, rls, grants.
 
 - `ddlx_createonly(oid [,options]) returns text`
