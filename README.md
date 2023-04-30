@@ -215,12 +215,12 @@ Nevertheless, some of them are:
 
 - `ddlx_createonly(oid [,options]) returns text`
 
-    Get SQL DDL statements to create an object, before data is loaded.
+    Get SQL DDL statements to create an object, typically before the data is loaded.
     For classes, this includes base ddl, comments, owner, storage, defaults and settings.
 
 - `ddlx_alter(oid [,options]) returns text`
 
-    Get additional SQL DDL ALTER statements for an object, typically after data is loaded.
+    Get additional SQL DDL ALTER statements for an object, typically after the data is loaded.
     For classes, this includes defaults, storage parametes, constraints, indexes, triggers, rules,
     owner and grants.
 
