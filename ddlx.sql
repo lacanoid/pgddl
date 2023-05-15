@@ -1311,9 +1311,13 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_create_trigger(oid)
  RETURNS text LANGUAGE sql AS $function$
  select pg_get_triggerdef($1,true)||
-        case when t.tgenabled = 'D' 
-             then format(E';\nALTER TABLE %s DISABLE TRIGGER %I',
-                         cast(t.tgrelid::regclass as text), t.tgname)
+        case t.tgenabled 
+             when 'D' then format(E';\nALTER TABLE %s DISABLE TRIGGER %I',
+                                  cast(t.tgrelid::regclass as text), t.tgname)
+             when 'R' then format(E';\nALTER TABLE %s ENABLE REPLICA TRIGGER %I', 
+                                  cast(t.tgrelid::regclass as text), t.tgname)
+             when 'A' then format(E';\nALTER TABLE %s ENABLE ALWAYS TRIGGER %I', 
+                                  cast(t.tgrelid::regclass as text), t.tgname)
              else ''
         end||E';\n'
    from pg_trigger t

@@ -22,6 +22,8 @@ Advantages over using other tools like `psql` or `pg_dump` include:
 
 - You can use it to extract DDL with **any client** which support running plain SQL queries
 - **Simple API** with just three functions. Just supply `oid`.
+- **No shell access** or shell commands with hairy options required (for running pg_dump), 
+  just use SELECT and hairy SQL instead!
 - With SQL you can select things to dump by using **usual SQL semantics** (WHERE, etc)
 - Special function for creating scripts, which drop and recreate entire **dependancy trees**.
   This is great when you need to edit a table, then a view, then a function that uses the view, 
@@ -33,8 +35,6 @@ Advantages over using other tools like `psql` or `pg_dump` include:
    pretty printing,
    using **idempotent DDL** where possible (preferring ALTER to CREATE), 
    creating indexes which are part of a constraint with ADD CONSTRAINT and so on.
-- **No shell access** or shell commands with hairy options required (for running pg_dump), 
-  just use SELECT and hairy SQL instead!
 - It is entrely made out of **plain SQL functions** so you don't have to install any extra
   languages, not even PL/PgSQL! It runs on plain vanilla Postgres. Of course you can borrow parts of it.
 

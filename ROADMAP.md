@@ -39,7 +39,7 @@ Support for other missing options:
 - PG14 SET COMPRESSION
 - PG15 UNIQUE NULL NOT DISTINCT
 - PG16 MAINTAIN privilege
-- PG16 GRANT WITH INERIT, SET
+- PG16 GRANT WITH INHERIT, SET
 - SET STATISTICS on indexes
 - ✔︎ pg_subscription not readable by non superuser
 
