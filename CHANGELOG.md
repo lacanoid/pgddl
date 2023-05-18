@@ -5,7 +5,7 @@ This includes ddl, comments, storage, defaults, settings and owner
 but not conststraints, indexes, triggers etc. 
 Use `ddlx_alter()` to create those after the data is loaded.
 - more use of explicit casts
-- `ddlx_create_trigger()` improvements by PegoraroF10, now with replica and allways triggers
+- `ddlx_create_trigger()` improvements by PegoraroF10, now with replica and always triggers
 
 Version 0.22
 ------------
