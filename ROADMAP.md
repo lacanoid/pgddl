@@ -38,6 +38,7 @@ Support for other missing options:
 - table of type not nulls
 - PG14 SET COMPRESSION
 - PG15 UNIQUE NULL NOT DISTINCT
+- PG15 publication columns and qualifiers
 - PG16 MAINTAIN privilege
 - PG16 GRANT WITH INHERIT, SET
 - SET STATISTICS on indexes
