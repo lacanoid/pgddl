@@ -7,6 +7,7 @@ Use `ddlx_alter()` to create those after the data is loaded.
 - more use of explicit casts
 - `ddlx_create_trigger()` improvements by [PegoraroF10](https://github.com/PegoraroF10), now with replica and always triggers
 - change `sysid` in some places to `oid`
+- include electric-sql build system
 
 Version 0.22
 ------------
