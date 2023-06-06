@@ -19,3 +19,13 @@ $(DATA_built): ddlx.sql
 	@echo "Building extension version" $(EXT_VERSION) "for Postgres version" $(VERSION)
 	VERSION=${VERSION} ./bin/pgsqlpp $^ >$@
 
+
+.PHONY: electric
+electric: ddlx.sql
+	@echo "Generating Electric extension SQL for Postgres version" $(VERSION)
+	$(eval tmpfile := $(shell mktemp --suffix=.sql))
+	$(eval outfile = electric-ddlx-${VERSION}.sql)
+	VERSION=${VERSION} ./bin/pgsqlpp $^ > $(tmpfile)
+	elixir ./bin/electric.exs --in ${tmpfile} --out $(outfile)
+	@echo "Extension file written to " $(outfile)
+

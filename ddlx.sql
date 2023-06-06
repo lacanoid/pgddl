@@ -528,7 +528,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_constraints(
  OUT is_deferrable boolean, 
  OUT initially_deferred boolean, 
  OUT regclass oid, 
- OUT sysid oid,
+ OUT oid oid,
  OUT is_local boolean)
  RETURNS SETOF record LANGUAGE sql AS $function$
  SELECT nc.nspname AS namespace, 
@@ -668,13 +668,13 @@ $function$;
 
 CREATE OR REPLACE FUNCTION ddlx_get_functions(
   regproc default null,
-  OUT sysid oid, OUT namespace name, OUT name name, OUT comment text, 
+  OUT oid oid, OUT namespace name, OUT name name, OUT comment text, 
   OUT owner name, OUT sql_identifier text, OUT language name, OUT attributes text, 
   OUT retset boolean, OUT is_trigger boolean, OUT returns text, OUT arguments text, 
   OUT definition text, OUT security text, OUT is_strict text, OUT argtypes oidvector,
   OUT cost real, OUT rows real)
  RETURNS SETOF record LANGUAGE sql AS $function$
- SELECT p.oid AS sysid, 
+ SELECT p.oid AS oid, 
         s.nspname AS namespace, 
         p.proname AS name, 
         pg_description.description AS comment, 
