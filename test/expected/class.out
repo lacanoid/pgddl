@@ -269,8 +269,8 @@ END;
 CREATE VIEW test_class_v AS
 SELECT * FROM test_class_r;
 grant select on test_class_v to public;
-SELECT ddlx_script('test_class_v'::regclass,'{owner}');
-ddlx_script
+SELECT replace(ddlx_script('test_class_v'::regclass,'{owner}'),'test_class_r.','');
+replace
 BEGIN;
 
 /*
@@ -280,15 +280,15 @@ DROP VIEW test_class_v;
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v AS
- SELECT test_class_r.a,
-    test_class_r.b,
-    test_class_r.c,
-    test_class_r.d,
-    test_class_r.e,
-    test_class_r.f,
-    test_class_r.g,
-    test_class_r.h,
-    test_class_r.v
+ SELECT a,
+    b,
+    c,
+    d,
+    e,
+    f,
+    g,
+    h,
+    v
    FROM test_class_r;
 
 COMMENT ON VIEW test_class_v IS NULL;
@@ -299,8 +299,8 @@ GRANT SELECT ON test_class_v TO PUBLIC;
 END;
 
 (1 row)
-SELECT ddlx_script('test_class_v'::regtype,'{owner}');
-ddlx_script
+SELECT replace(ddlx_script('test_class_v'::regtype,'{owner}'),'test_class_r.','');
+replace
 BEGIN;
 
 /*
@@ -310,15 +310,15 @@ DROP VIEW test_class_v;
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v AS
- SELECT test_class_r.a,
-    test_class_r.b,
-    test_class_r.c,
-    test_class_r.d,
-    test_class_r.e,
-    test_class_r.f,
-    test_class_r.g,
-    test_class_r.h,
-    test_class_r.v
+ SELECT a,
+    b,
+    c,
+    d,
+    e,
+    f,
+    g,
+    h,
+    v
    FROM test_class_r;
 
 COMMENT ON VIEW test_class_v IS NULL;
@@ -332,8 +332,8 @@ END;
 CREATE VIEW test_class_v2 AS
 SELECT * FROM test_class_v;
 grant select (a,b,c) on test_class_v2 to public;
-SELECT ddlx_script('test_class_v'::regclass,'{owner}');
-ddlx_script
+SELECT regexp_replace(ddlx_script('test_class_v'::regclass,'{owner}'),'test_class_[rv]\.','','g');
+regexp_replace
 BEGIN;
 
 /*
@@ -345,15 +345,15 @@ DROP VIEW test_class_v;
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v AS
- SELECT test_class_r.a,
-    test_class_r.b,
-    test_class_r.c,
-    test_class_r.d,
-    test_class_r.e,
-    test_class_r.f,
-    test_class_r.g,
-    test_class_r.h,
-    test_class_r.v
+ SELECT a,
+    b,
+    c,
+    d,
+    e,
+    f,
+    g,
+    h,
+    v
    FROM test_class_r;
 
 COMMENT ON VIEW test_class_v IS NULL;
@@ -366,15 +366,15 @@ GRANT SELECT ON test_class_v TO PUBLIC;
 -- Type: VIEW ; Name: test_class_v2; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v2 AS
- SELECT test_class_v.a,
-    test_class_v.b,
-    test_class_v.c,
-    test_class_v.d,
-    test_class_v.e,
-    test_class_v.f,
-    test_class_v.g,
-    test_class_v.h,
-    test_class_v.v
+ SELECT a,
+    b,
+    c,
+    d,
+    e,
+    f,
+    g,
+    h,
+    v
    FROM test_class_v;
 
 COMMENT ON VIEW test_class_v2 IS NULL;
@@ -390,8 +390,8 @@ END;
 CREATE MATERIALIZED VIEW test_class_m AS
 SELECT * FROM test_class_r;
 create unique index test_class_mi ON test_class_m (a);
-SELECT ddlx_script('test_class_m'::regclass,'{owner}');
-ddlx_script
+SELECT replace(ddlx_script('test_class_m'::regclass,'{owner}'),'test_class_r.','');;
+replace
 BEGIN;
 
 /*
@@ -401,15 +401,15 @@ DROP MATERIALIZED VIEW test_class_m;
 -- Type: MATERIALIZED VIEW ; Name: test_class_m; Owner: postgres
 
 CREATE MATERIALIZED VIEW test_class_m AS
- SELECT test_class_r.a,
-    test_class_r.b,
-    test_class_r.c,
-    test_class_r.d,
-    test_class_r.e,
-    test_class_r.f,
-    test_class_r.g,
-    test_class_r.h,
-    test_class_r.v
+ SELECT a,
+    b,
+    c,
+    d,
+    e,
+    f,
+    g,
+    h,
+    v
    FROM test_class_r;
 
 COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;
@@ -551,8 +551,8 @@ END;
 create view test_class_v_opt2 
 as select * from test_class_v order by 1;
 alter  view test_class_v_opt2 set (security_barrier='true');
-select ddlx_script('test_class_v_opt2'::regclass);
-ddlx_script
+select replace(ddlx_script('test_class_v_opt2'::regclass),'test_class_v.','');;
+replace
 BEGIN;
 
 /*
@@ -562,17 +562,17 @@ DROP VIEW test_class_v_opt2;
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
- SELECT test_class_v.a,
-    test_class_v.b,
-    test_class_v.c,
-    test_class_v.d,
-    test_class_v.e,
-    test_class_v.f,
-    test_class_v.g,
-    test_class_v.h,
-    test_class_v.v
+ SELECT a,
+    b,
+    c,
+    d,
+    e,
+    f,
+    g,
+    h,
+    v
    FROM test_class_v
-  ORDER BY test_class_v.a;
+  ORDER BY a;
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
@@ -582,8 +582,8 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 END;
 
 (1 row)
-select ddlx_script('test_class_v_opt2'::regclass::oid);
-ddlx_script
+select replace(ddlx_script('test_class_v_opt2'::regclass::oid),'test_class_v.','');;
+replace
 BEGIN;
 
 /*
@@ -593,17 +593,17 @@ DROP VIEW test_class_v_opt2;
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
- SELECT test_class_v.a,
-    test_class_v.b,
-    test_class_v.c,
-    test_class_v.d,
-    test_class_v.e,
-    test_class_v.f,
-    test_class_v.g,
-    test_class_v.h,
-    test_class_v.v
+ SELECT a,
+    b,
+    c,
+    d,
+    e,
+    f,
+    g,
+    h,
+    v
    FROM test_class_v
-  ORDER BY test_class_v.a;
+  ORDER BY a;
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
@@ -613,8 +613,8 @@ COMMENT ON VIEW test_class_v_opt2 IS NULL;
 END;
 
 (1 row)
-select ddlx_script('test_class_v_opt2');
-ddlx_script
+select replace(ddlx_script('test_class_v_opt2'),'test_class_v.','');;
+replace
 BEGIN;
 
 /*
@@ -624,17 +624,17 @@ DROP VIEW test_class_v_opt2;
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
- SELECT test_class_v.a,
-    test_class_v.b,
-    test_class_v.c,
-    test_class_v.d,
-    test_class_v.e,
-    test_class_v.f,
-    test_class_v.g,
-    test_class_v.h,
-    test_class_v.v
+ SELECT a,
+    b,
+    c,
+    d,
+    e,
+    f,
+    g,
+    h,
+    v
    FROM test_class_v
-  ORDER BY test_class_v.a;
+  ORDER BY a;
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 

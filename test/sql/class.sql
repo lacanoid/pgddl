@@ -61,19 +61,19 @@ SELECT ddlx_script('test_class_r2'::regclass);
 CREATE VIEW test_class_v AS
 SELECT * FROM test_class_r;
 grant select on test_class_v to public;
-SELECT ddlx_script('test_class_v'::regclass,'{owner}');
-SELECT ddlx_script('test_class_v'::regtype,'{owner}');
+SELECT replace(ddlx_script('test_class_v'::regclass,'{owner}'),'test_class_r.','');
+SELECT replace(ddlx_script('test_class_v'::regtype,'{owner}'),'test_class_r.','');
 
 CREATE VIEW test_class_v2 AS
 SELECT * FROM test_class_v;
 grant select (a,b,c) on test_class_v2 to public;
-SELECT ddlx_script('test_class_v'::regclass,'{owner}');
+SELECT regexp_replace(ddlx_script('test_class_v'::regclass,'{owner}'),'test_class_[rv]\.','','g');
 
 CREATE MATERIALIZED VIEW test_class_m AS
 SELECT * FROM test_class_r;
 create unique index test_class_mi ON test_class_m (a);
 
-SELECT ddlx_script('test_class_m'::regclass,'{owner}');
+SELECT replace(ddlx_script('test_class_m'::regclass,'{owner}'),'test_class_r.','');;
 
 select sql_kind, sql_identifier from ddlx_identify('ddlx_identify(oid)'::regprocedure);
 
@@ -102,10 +102,10 @@ create view test_class_v_opt2
 as select * from test_class_v order by 1;
 alter  view test_class_v_opt2 set (security_barrier='true');
 
-select ddlx_script('test_class_v_opt2'::regclass);
+select replace(ddlx_script('test_class_v_opt2'::regclass),'test_class_v.','');;
 
-select ddlx_script('test_class_v_opt2'::regclass::oid);
-select ddlx_script('test_class_v_opt2');
+select replace(ddlx_script('test_class_v_opt2'::regclass::oid),'test_class_v.','');;
+select replace(ddlx_script('test_class_v_opt2'),'test_class_v.','');;
 
 create or replace function test_proc_1() returns text as
 $$ select 'Hello, world!'::text $$ language sql;
