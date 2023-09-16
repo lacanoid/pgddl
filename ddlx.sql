@@ -130,7 +130,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
                 ('u','UNIQUE'), ('p','PRIMARY KEY'), ('t','TRIGGER')) 
              as tt on tt.column1 = con.contype
    WHERE con.oid = $1
-     AND NOT (c.relname like 'pg_%' or c.relnamespace = 'pg_catalog'::regnamespace)
+     AND NOT (c.relname like 'pg_%' or c.relnamespace = 'pg_catalog'::regnamespace) -- hack!
    UNION ALL
   SELECT t.oid,'pg_trigger'::regclass,
          t.tgname as name, c.relname as namespace, null as owner,
