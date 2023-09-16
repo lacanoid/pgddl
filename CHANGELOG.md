@@ -1,4 +1,4 @@
-Version 0.23
+Version 0.24
 ------------
 - updated tests
 
