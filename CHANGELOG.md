@@ -1,5 +1,9 @@
 Version 0.23
 ------------
+- updated tests
+
+Version 0.23
+------------
 - new function `ddlx_createonly()` to create pre-data stuff only. 
 This includes ddl, comments, storage, defaults, settings and owner
 but not conststraints, indexes, triggers etc. 

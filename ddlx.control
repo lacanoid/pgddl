@@ -1,5 +1,4 @@
 comment = 'DDL eXtractor functions'
-default_version = 0.23
-relocatable = true
+default_version = 0.24
 
 
