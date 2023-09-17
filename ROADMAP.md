@@ -86,6 +86,7 @@ Some options as to what and how to dump stuff might be required:
 * `SUB` - include subpartitions
 * `DATA` - add statements preserve / copy table data
 * `NOSTORAGE` - exclude storage parameters settings
+* `LITE` - better SQL standard compatibility (to export definitions for SQLite, for example). Moves constraints and defaults into create table section.
 
 Other DDL dumping tools
 -----------------------

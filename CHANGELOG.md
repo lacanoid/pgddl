@@ -1,3 +1,7 @@
+Version 0.25
+------------
+- 
+
 Version 0.24
 ------------
 - updated tests

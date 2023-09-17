@@ -96,7 +96,7 @@ This of course requires superuser privileges.
 If for some reason you are unable to use this as an extension, you can simply load generated SQL file
 into your database by any regular means:
 
-    $ psql my_database -1 -f ddlx--0.22.sql
+    $ psql my_database -1 -f ddlx--0.25.sql
 
 Using
 -----

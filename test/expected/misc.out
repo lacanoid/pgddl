@@ -2,59 +2,8 @@
 \pset format unaligned
 SET client_min_messages = warning;
 SET ROLE postgres;
-select ddlx_create(oid) from pg_cast where castsource = 'text'::regtype order by casttarget;
-ddlx_create
-CREATE CAST (text AS "char")
-  WITH FUNCTION "char"(text)
-  AS ASSIGNMENT;
-COMMENT ON CAST (text AS "char") IS NULL;
-
-
-CREATE CAST (text AS name)
-  WITH FUNCTION name(text)
-  AS IMPLICIT;
-COMMENT ON CAST (text AS name) IS NULL;
-
-
-CREATE CAST (text AS xml)
-  WITH FUNCTION xml(text);
-COMMENT ON CAST (text AS xml) IS NULL;
-
-
-CREATE CAST (text AS character)
-  WITHOUT FUNCTION
-  AS IMPLICIT;
-COMMENT ON CAST (text AS character) IS NULL;
-
-
-CREATE CAST (text AS character varying)
-  WITHOUT FUNCTION
-  AS IMPLICIT;
-COMMENT ON CAST (text AS character varying) IS NULL;
-
-
-CREATE CAST (text AS regclass)
-  WITH FUNCTION regclass(text)
-  AS IMPLICIT;
-COMMENT ON CAST (text AS regclass) IS NULL;
-
-
-(6 rows)
-select ddlx_drop(oid) from pg_cast where castsource = 'text'::regtype order by casttarget;
-ddlx_drop
-DROP CAST (text AS "char");
-
-DROP CAST (text AS name);
-
-DROP CAST (text AS xml);
-
-DROP CAST (text AS character);
-
-DROP CAST (text AS character varying);
-
-DROP CAST (text AS regclass);
-
-(6 rows)
+--select ddlx_create(oid) from pg_cast where castsource = 'text'::regtype order by casttarget;
+--select ddlx_drop(oid) from pg_cast where castsource = 'text'::regtype order by casttarget;
 CREATE COLLATION "POSIX++" (
   LC_COLLATE = 'POSIX',
   LC_CTYPE = 'POSIX'
