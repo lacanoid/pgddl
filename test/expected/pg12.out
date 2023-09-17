@@ -115,8 +115,7 @@ CREATE TABLE test_stat (
 
 COMMENT ON TABLE test_stat IS NULL;
 
-ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
-  PRIMARY KEY (a);
+ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey PRIMARY KEY (a);
 
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
 COMMENT ON STATISTICS test_stat1 IS NULL;
@@ -155,8 +154,7 @@ CREATE TABLE dept (
 
 COMMENT ON TABLE dept IS NULL;
 
-ALTER TABLE dept ADD CONSTRAINT dept_pkey
-  PRIMARY KEY (id);
+ALTER TABLE dept ADD CONSTRAINT dept_pkey PRIMARY KEY (id);
 
 
 END;

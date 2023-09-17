@@ -147,4 +147,8 @@ select ddlx_create('test_child'::regclass);
 select ddlx_createonly('test_class_r'::regclass);
 select replace(ddlx_alter('test_class_r'::regclass),'FUNCTION','PROCEDURE') as ddlx_alter;
 
+-----
+-- test 'lite' option
+select ddlx_create('test_class_r'::regclass,'{lite}');
+
 

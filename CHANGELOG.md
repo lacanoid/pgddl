@@ -1,6 +1,7 @@
 Version 0.25
 ------------
-- 
+- added new `lite` option, which moves defaults and constraints into `create table` section, as per patch by 
+[electric-sql](https://github.com/electric-sql/pgddl/commit/696d4d6d0a595f186f2540ba5eb79a8d0cbfa241)
 
 Version 0.24
 ------------

@@ -31,8 +31,7 @@ COMMENT ON TABLE options IS NULL;
 
 ALTER TABLE options ALTER regtype SET DEFAULT 'text'::regtype;
 
-ALTER TABLE options ADD CONSTRAINT options_pkey
-  PRIMARY KEY (name);
+ALTER TABLE options ADD CONSTRAINT options_pkey PRIMARY KEY (name);
 
 
 END;
@@ -205,8 +204,7 @@ CREATE TABLE test_stat (
 
 COMMENT ON TABLE test_stat IS NULL;
 
-ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey
-  PRIMARY KEY (a);
+ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey PRIMARY KEY (a);
 
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
 COMMENT ON STATISTICS test_stat1 IS NULL;

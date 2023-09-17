@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.24 lacanoid@ljudmila.org
+--  version 0.25 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -399,7 +399,7 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_describe(
-  IN regclass,
+  IN regclass, IN text[] default '{}',
   OUT ord smallint,
   OUT name name, OUT type text, OUT size integer, OUT not_null boolean,
   OUT "default" text,
@@ -451,9 +451,7 @@ SELECT  a.attnum AS ord,
 #else
         attoptions as options,
 #end
-	format('%I %s%s%s%s%s%s',
-         a.attname::text,
-	 format_type(t.oid, a.atttypmod),
+	format('%I %s%s%s%s%s%s%s',a.attname::text,format_type(t.oid, a.atttypmod),
 #if 9.2
          case
            when a.attfdwoptions is not null
@@ -477,6 +475,7 @@ SELECT  a.attnum AS ord,
 	 case when a.attnotnull THEN ' NOT NULL' end
 #end
 	 ,
+   case when 'lite' ilike any($2) then ' DEFAULT ' || pg_get_expr(def.adbin,def.adrelid) end,
 #if 10
 	case when attidentity in ('a','d')
 	     then format(' GENERATED %s AS IDENTITY',
@@ -800,8 +799,14 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
     then ''
     else
     ' (' ||coalesce(E'\n' ||
-      (SELECT string_agg('    '||definition,E',\n')
-         FROM ddlx_describe($1) WHERE is_local)||E'\n','') || ')'
+      array_to_string(array_cat(
+        (SELECT array_agg('    '||definition) FROM ddlx_describe($1,$2) WHERE is_local),
+        case when 'lite' ilike any($2) then
+          (SELECT array_agg('    '||sql) FROM
+            (select ('CONSTRAINT ' || quote_ident(constraint_name) || ' ' || constraint_definition) as sql
+               from ddlx_get_constraints($1) where is_local order by constraint_type desc, constraint_name) as a)
+        end
+      ), E',\n') || E'\n','') || ')'
     end
 #if 10
   end
@@ -1074,7 +1079,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_class(regclass, text[] default '{}')
  comments as (
    select 'COMMENT ON COLUMN ' || text($1) || '.' || quote_ident(name) ||
           ' IS ' || quote_nullable(comment) || ';' as cc
-     from ddlx_describe($1) 
+     from ddlx_describe($1,$2) 
     where comment IS NOT NULL 
  ),
 
@@ -1105,7 +1110,7 @@ $function$ strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_table_defaults(regclass)
+CREATE OR REPLACE FUNCTION ddlx_alter_table_defaults(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
 with
 def as (
@@ -1116,7 +1121,7 @@ def as (
                 text($1),name,"default"), 
         E'\n') || E'\n\n', 
     '') as ddl
-   from ddlx_describe($1)
+   from ddlx_describe($1,$2)
   where "default" is not null
     and "sequence" is null and gen is null
 ),
@@ -1128,20 +1133,22 @@ seq as (
                 "sequence",sql_identifier), 
         E'\n') || E'\n\n', 
     '') as ddl
-   from ddlx_describe($1)
+   from ddlx_describe($1,$2)
   where "sequence" is not null and ident is null
 )
-select def.ddl || seq.ddl
+select case when 'lite' ilike any($2) then ''
+       else def.ddl end 
+       || seq.ddl
   from def,seq
 $function$ strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_table_storage(regclass)
+CREATE OR REPLACE FUNCTION ddlx_alter_table_storage(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
 with 
 obj as (select * from ddlx_identify($1)),
-d as (select * from ddlx_describe($1) order by name),
+d as (select * from ddlx_describe($1,$2) order by name),
 cs as (
   select 
     coalesce(
@@ -1236,7 +1243,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass)
   select
    'ALTER TABLE ' || text(regclass(regclass)) ||  
    ' ADD CONSTRAINT ' || quote_ident(constraint_name) || 
-   E'\n  ' || constraint_definition as sql
+   E' ' || constraint_definition as sql
     from ddlx_get_constraints($1)
    where is_local
    order by constraint_type desc, constraint_name
@@ -2644,7 +2651,7 @@ with obj as (select * from ddlx_identify($1))
     ddlx_comment(oid) as comment,
     ddlx_alter_owner(oid) as owner,
     ddlx_alter_table_storage(oid) as storage,
-    ddlx_alter_table_defaults(oid) as defaults,
+    ddlx_alter_table_defaults(oid,$2) as defaults,
     case obj.sql_kind
       when 'ROLE' THEN ddlx_alter_role(oid)
       when 'DATABASE' THEN  ddlx_alter_database(oid)
@@ -2652,7 +2659,8 @@ with obj as (select * from ddlx_identify($1))
       else ddlx_alter_table_settings(oid)
     end as settings,
 --    ddlx_alter_table_settings(oid) as settings,
-    ddlx_create_constraints(oid) as constraints,
+    case when 'lite' ilike any($2) then ''
+         else ddlx_create_constraints(oid) end as constraints,
     ddlx_create_indexes(oid, options) as indexes,
     ddlx_create_triggers(oid) as triggers,
     ddlx_create_rules(oid) as rules,
