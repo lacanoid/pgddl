@@ -145,6 +145,7 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 * `ine` - add `if not exists` in bunch of places
 * `ie` - add `if exists` in a bunch of places
 * `ext` - include extension contents instead of `create extension`.
+* `lite` - move defaults and constraints into `create table` statement.
 
 Drop statements are created with `ddlx_drop()` function.	
 
@@ -155,11 +156,11 @@ Drop statements are created with `ddlx_drop()` function.
 There is also a higher level function to build entire DDL scripts. 
 Scripts include dependant objects and can get quite large.
 
-- `ddlx_script(oid) returns text`
+- `ddlx_script(oid[,options]) returns text`
 
     Generates SQL DDL script for object ID, `oid` and all it's dependants.
 
-- `ddlx_script(text) returns text`
+- `ddlx_script(text[,options]) returns text`
 
     Generates SQL DDL script for object identified by textual sql identifier
     and all it's dependants.
