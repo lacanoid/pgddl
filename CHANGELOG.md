@@ -1,3 +1,8 @@
+Version 0.26
+------------
+- more `lite` option improvements
+- `nowrap` option for scripts to omit begin/end
+
 Version 0.25
 ------------
 - added new `lite` option, which moves defaults and constraints into `create table` section, as per patch by 

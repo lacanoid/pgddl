@@ -80,13 +80,13 @@ Some options as to what and how to dump stuff might be required:
 * ✔︎ `COR` - use CREATE OR REPLACE where possible 
 * ✔︎ `INE` - use IF NOT EXISTS where possible
 * ✔︎ `IE` - use IF EXISTS where possible
-* `WRAP` - wrap in BEGIN / END
+* ✔︎ `NOWRAP` - do not wrap in BEGIN / END
 * ✔︎ `EXT` - include objects from extensions. Normally, these are omitted.
 * `DEP` - output objects which depend on this object too
 * `SUB` - include subpartitions
 * `DATA` - add statements preserve / copy table data
 * `NOSTORAGE` - exclude storage parameters settings
-* `LITE` - better SQL standard compatibility (to export definitions for SQLite, for example). Moves constraints and defaults into create table section.
+* ✔︎ `LITE` - better SQL standard compatibility (to export definitions for SQLite, for example). Moves constraints and defaults into create table section, omits a bunch of postgres specific stuff.
 
 Other DDL dumping tools
 -----------------------

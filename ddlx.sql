@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.25 lacanoid@ljudmila.org
+--  version 0.26 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -867,7 +867,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_view(regclass, text[] default '{}')
  select 
  'CREATE '||
   case relkind 
-    when 'v' THEN 'OR REPLACE VIEW ' 
+    when 'v' THEN case when 'lite' ilike any($2) then '' else 'OR REPLACE ' end || 'VIEW '
     when 'm' THEN 'MATERIALIZED VIEW ' ||
       case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end
   end || (oid::regclass::text) || E' AS\n' ||
@@ -1137,8 +1137,7 @@ seq as (
   where "sequence" is not null and ident is null
 )
 select case when 'lite' ilike any($2) then ''
-       else def.ddl end 
-       || seq.ddl
+            else array_to_string(array[def.ddl,seq.ddl],'') end
   from def,seq
 $function$ strict;
 
@@ -1382,7 +1381,9 @@ CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass,ddlx_options text[] defa
   select coalesce(string_agg(ddlx_create(oid),'' order by oid)||E'\n', '') as ddl_stx
     from pg_statistic_ext where stxrelid = $1
  )
-select ddl_idx || ddl_cluster || ddl_stx from a,b,c
+select ddl_idx || 
+       case when 'lite' ilike any($2) then '' else ddl_cluster end 
+       || ddl_stx from a,b,c
 #else
 select ddl_idx || ddl_cluster from a,c
 #end
@@ -2681,9 +2682,13 @@ with
 obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_definitions($1,$2))
   select array_to_string( array[
-           storage,
-           case when obj.sql_kind='TABLE' then parts.owner end || e'\n',
-           defaults,settings,constraints,indexes,triggers,rules,rls
+           case when 'lite' ilike any($2) then null else storage end,
+           case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
+                else case when obj.sql_kind='TABLE' then parts.owner end || e'\n' end,
+           defaults,
+           array_to_string(case when 'lite' ilike any($2) then null else array[settings,constraints] end,''),
+           indexes,
+           array_to_string(case when 'lite' ilike any($2) then null else array[triggers,rules,rls] end,'')
          ],'')
     from obj,parts
 $function$  strict;
@@ -2701,14 +2706,14 @@ parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         base_ddl,           
         case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n',
-        case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) then null
+        case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
         else case 
           when 'owner' ilike any($2) or obj.owner is distinct from current_role
           then parts.owner end
         end,
-        storage,
+        case when 'lite' ilike any($2) then null else storage end,
         defaults,
-        settings
+        case when 'lite' ilike any($2) then null else settings end
       ],'')
   from obj,parts
 $function$ strict;
@@ -2728,19 +2733,18 @@ select array_to_string(array[
         case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n',
         case when 'noalter' ilike any($2) then null
         else array_to_string(array[
-          case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) then null
-          else case 
-            when 'owner' ilike any($2) or obj.owner is distinct from current_role
-            then parts.owner end
+          case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
+               else case when 'owner' ilike any($2) or obj.owner is distinct from current_role then parts.owner end
           end,
-          storage,
-          array_to_string(array[
-            defaults,settings,constraints,indexes,triggers,rules,rls
-          ],''),
-          case when 'nodcl' ilike any($2) or 'nogrants' ilike any($2) then null
-          else grants end
-        ],'') end
-       ],'')
+          case when 'lite' ilike any($2) then null else storage end,
+          defaults,
+          case when 'lite' ilike any($2) then null else settings end,
+          constraints, indexes,
+          case when 'lite' ilike any($2) then null else triggers end,
+          rules, rls
+        ],'') end,
+        case when 'nodcl' ilike any($2) or 'nogrants' ilike any($2) then null else grants end
+        ],'')
   from obj,parts
 $function$ strict;
 
@@ -2813,7 +2817,7 @@ $function$ strict;
 CREATE OR REPLACE FUNCTION ddlx_script(oid, ddlx_options text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
 select array_to_string(array[
-       E'BEGIN;\n',
+       case when 'nowrap' ilike any($2) then null else E'BEGIN;\n' end,
        case when 'nodrop' not ilike all($2) then
        format(
          case
@@ -2825,7 +2829,8 @@ select array_to_string(array[
        ) end,
        ddl_create,
        E'-- DEPENDANTS\n\n'||ddl_create_deps,       
-       E'END;\n'],E'\n')
+       case when 'nowrap' ilike any($2) then null else E'END;\n' end
+       ],E'\n')
   from ddlx_script_parts($1,$2)
 $function$ strict;
 
