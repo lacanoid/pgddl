@@ -2689,7 +2689,9 @@ parts as (select * from ddlx_definitions($1,$2))
            case when 'lite' ilike any($2) or 'nosettings' ilike any($2) then null else settings end,
            case when 'lite' ilike any($2) or 'noconstraints' ilike any($2) then null else constraints end,
            indexes,
-           array_to_string(case when 'lite' ilike any($2) then null else array[triggers,rules,rls] end,'')
+           case when 'lite' ilike any($2) or 'notriggers' ilike any($2) then null else triggers end,
+           case when 'lite' ilike any($2) then null else rules end,
+           case when 'lite' ilike any($2) or 'nodcl' ilike any($2) then null else rls end
          ],'')
     from obj,parts
 $function$  strict;
@@ -2742,8 +2744,9 @@ select array_to_string(array[
           case when 'lite' ilike any($2) or 'nosettings' ilike any($2) then null else settings end,
           case when 'noconstraints' ilike any($2) then null else constraints end, 
           indexes,
-          case when 'lite' ilike any($2) or 'notriggers' ilike any($2) then null else triggers end,
-          rules, rls
+           case when 'lite' ilike any($2) or 'notriggers' ilike any($2) then null else triggers end,
+           case when 'lite' ilike any($2) then null else rules end,
+           case when 'lite' ilike any($2) or 'nodcl' ilike any($2) then null else rls end
         ],'') end,
         case when 'nodcl' ilike any($2) or 'nogrants' ilike any($2) then null else grants end
         ],'')
