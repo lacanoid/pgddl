@@ -1458,9 +1458,9 @@ $function$  strict;
 ---------------------------------------------------
 
 #if 9.5
-CREATE OR REPLACE FUNCTION ddlx_grants(regrole) 
+CREATE OR REPLACE FUNCTION ddlx_grants(regrole, text[] default '{}') 
 #else
-CREATE OR REPLACE FUNCTION ddlx_grants_to_role(oid) 
+CREATE OR REPLACE FUNCTION ddlx_grants_to_role(oid, text[] default '{}') 
 #end
  RETURNS text LANGUAGE sql AS $function$
 with 
@@ -1793,7 +1793,7 @@ $function$  strict;
 --  Grants
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_grants_columns(regclass) 
+CREATE OR REPLACE FUNCTION ddlx_grants_columns(regclass, text[] default '{}') 
  RETURNS text LANGUAGE sql AS $function$
 with
 obj as (select * from ddlx_identify($1)),
@@ -1830,7 +1830,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_grants(regclass) 
+CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}') 
  RETURNS text LANGUAGE sql AS $function$
  with 
  obj as (select * from ddlx_identify($1)),
@@ -1858,12 +1858,12 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass)
  ORDER BY grantee,privilege_type,obj.name
 )
 select coalesce(string_agg(a.ddl,''),'')||
-       ddlx_grants_columns($1) from a
+       ddlx_grants_columns($1,$2) from a
 $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_grants(regproc) 
+CREATE OR REPLACE FUNCTION ddlx_grants(regproc, text[] default '{}') 
  RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1))
  select
@@ -1891,7 +1891,7 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_grants(oid) 
+CREATE OR REPLACE FUNCTION ddlx_grants(oid, text[] default '{}') 
  RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1)),
 a as (
@@ -1923,9 +1923,9 @@ c as (
     from b
 )
 select case obj.classid
-       when 'pg_class'::regclass then ddlx_grants(obj.oid::regclass)
-       when 'pg_proc'::regclass then ddlx_grants(obj.oid::regproc)
-       when 'pg_roles'::regclass then ddlx_grants(obj.oid::regrole)
+       when 'pg_class'::regclass then ddlx_grants(obj.oid::regclass,$2)
+       when 'pg_proc'::regclass then ddlx_grants(obj.oid::regproc,$2)
+       when 'pg_roles'::regclass then ddlx_grants(obj.oid::regrole,$2)
        else c.grants
        end
   from obj full join c on true
@@ -2670,7 +2670,7 @@ with obj as (select * from ddlx_identify($1))
 #else
      null as rls,
 #end
-     ddlx_grants(oid) as grants
+     ddlx_grants(oid,$2) as grants
     from obj
 $function$  strict;
 
@@ -2682,11 +2682,12 @@ with
 obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_definitions($1,$2))
   select array_to_string( array[
-           case when 'lite' ilike any($2) then null else storage end,
+           case when 'lite' ilike any($2) or 'nostorage' ilike any($2) then null else storage end,
            case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
                 else case when obj.sql_kind='TABLE' then parts.owner end || e'\n' end,
            defaults,
-           array_to_string(case when 'lite' ilike any($2) then null else array[settings,constraints] end,''),
+           case when 'lite' ilike any($2) or 'nosettings' ilike any($2) then null else settings end,
+           case when 'lite' ilike any($2) or 'noconstraints' ilike any($2) then null else constraints end,
            indexes,
            array_to_string(case when 'lite' ilike any($2) then null else array[triggers,rules,rls] end,'')
          ],'')
@@ -2711,9 +2712,9 @@ select array_to_string(array[
           when 'owner' ilike any($2) or obj.owner is distinct from current_role
           then parts.owner end
         end,
-        case when 'lite' ilike any($2) then null else storage end,
+        case when 'lite' ilike any($2) or 'nostorage' ilike any($2) then null else storage end,
         defaults,
-        case when 'lite' ilike any($2) then null else settings end
+        case when 'lite' ilike any($2) or 'nosettings' ilike any($2) then null else settings end
       ],'')
   from obj,parts
 $function$ strict;
@@ -2736,11 +2737,12 @@ select array_to_string(array[
           case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
                else case when 'owner' ilike any($2) or obj.owner is distinct from current_role then parts.owner end
           end,
-          case when 'lite' ilike any($2) then null else storage end,
+          case when 'lite' ilike any($2) or 'nostorage' ilike any($2) then null else storage end,
           defaults,
-          case when 'lite' ilike any($2) then null else settings end,
-          constraints, indexes,
-          case when 'lite' ilike any($2) then null else triggers end,
+          case when 'lite' ilike any($2) or 'nosettings' ilike any($2) then null else settings end,
+          case when 'noconstraints' ilike any($2) then null else constraints end, 
+          indexes,
+          case when 'lite' ilike any($2) or 'notriggers' ilike any($2) then null else triggers end,
           rules, rls
         ],'') end,
         case when 'nodcl' ilike any($2) or 'nogrants' ilike any($2) then null else grants end
