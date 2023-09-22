@@ -23,6 +23,9 @@ AS $function$DECLARE
  $function$
 ;
 
+create role pgddl_test_user2 login connection limit 100;
+alter user pgddl_test_user2 password 'hello_world';
+
 do $_$
 declare ddl text;
 begin
@@ -32,6 +35,12 @@ begin
   perform public.execute(ddl);
   ddl := ddlx_createonly('test_class_r'::regclass,'{}');
   perform public.execute(ddl);
-end
-$_$ LANGUAGE plpgsql
 
+  ddl := ddlx_create('pgddl_test_user2'::regrole,'{}');
+  drop role pgddl_test_user2;
+  perform public.execute(ddl);
+
+end
+$_$ LANGUAGE plpgsql;
+
+drop role pgddl_test_user2;

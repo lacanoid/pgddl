@@ -85,7 +85,8 @@ Some options as to what and how to dump stuff might be required:
 * `DEP` - output objects which depend on this object too
 * `SUB` - include subpartitions
 * `DATA` - add statements preserve / copy table data
-* `NOSTORAGE` - exclude storage parameters settings
+* ✔︎ `NOSTORAGE` - exclude storage parameters settings
+* ✔︎ `NOSETTINGS` - exclude table settings
 * ✔︎ `LITE` - better SQL standard compatibility (to export definitions for SQLite, for example). Moves constraints and defaults into create table section, omits a bunch of postgres specific stuff.
 
 Other DDL dumping tools

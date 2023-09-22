@@ -1,16 +1,13 @@
 Version 0.26
 ------------
-- more `lite` option improvements
-- `nowrap` option for scripts to omit begin/end
-
-Version 0.25
-------------
 - added new `lite` option, which moves defaults and constraints into `create table` section, as per patch by 
 [electric-sql](https://github.com/electric-sql/pgddl/commit/696d4d6d0a595f186f2540ba5eb79a8d0cbfa241)
-
-Version 0.24
-------------
-- updated tests
+- more `lite` option improvements, remove some other postgres specific things (settings and storage)
+- `nowrap` option for scripts to omit begin/end
+- `nostorage` option to omit storage settings
+- `nosettings` option to omit settings
+- `notriggers` option to omit triggers
+- updated tests for postgres 16
 
 Version 0.23
 ------------
