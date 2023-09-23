@@ -51,7 +51,7 @@ Other:
 - add `ddlx_alter_column(regclass,name)`
 - group column alters together by column name
 - handle sequences better (create if not exists)
-- handle dependancies for types better (use shell types)
+- ✔︎ handle dependancies for types better (use shell types)
 - improve dumping of comments (be quiet on NULL comments)
 - optimize grants on functions
 - move not nulls to constraints section

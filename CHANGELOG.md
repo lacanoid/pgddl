@@ -7,7 +7,7 @@ Version 0.26
 - `nostorage` option to omit storage settings
 - `nosettings` option to omit settings
 - `notriggers` option to omit triggers
-- updated tests for postgres 16
+- updated tests for postgres 16 on others
 
 Version 0.23
 ------------

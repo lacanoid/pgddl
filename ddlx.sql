@@ -925,7 +925,9 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_type_shell(regtype)
  RETURNS text LANGUAGE sql AS $function$
-select 'CREATE TYPE ' || format_type(oid,null) || ';\n'
+select format('CREATE TYPE ' || format_type(oid,null) || e';\n\n') ||
+       (select string_agg(ddlx_create_function(u,'{compact}'),'')
+         from unnest(array[t.typinput,t.typoutput,t.typsend,t.typreceive]) as u)
   from pg_type t
  where oid = $1
 $function$  strict;
@@ -934,7 +936,8 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_type_base(regtype)
  RETURNS text LANGUAGE sql AS $function$
-select 'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
+select ddlx_create_type_shell($1) ||
+       'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
        array_to_string(array[ 
          'INPUT = '  || cast(t.typinput::regproc as text),  
          'OUTPUT = ' || cast(t.typoutput::regproc as text),
@@ -1129,7 +1132,11 @@ seq as (
  select 
     coalesce(
       string_agg(
-        format('ALTER SEQUENCE %s OWNED BY %s;',
+        format(e'CREATE SEQUENCE IF NOT EXISTS %s;\n'||
+               e'ALTER SEQUENCE %s OWNER TO %s;\n'||
+               e'ALTER SEQUENCE %s OWNED BY %s;',
+                "sequence",
+                "sequence",(select relowner from pg_class where oid=$1)::regrole::text,
                 "sequence",sql_identifier), 
         E'\n') || E'\n\n', 
     '') as ddl
@@ -1443,11 +1450,12 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_function(regproc)
+CREATE OR REPLACE FUNCTION ddlx_create_function(regproc, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from ddlx_identify($1))
  select
-  ddlx_banner(sql_identifier,obj.sql_kind,namespace,owner) ||
+  case when 'compact' ilike any($2) then '' else ddlx_banner(sql_identifier,obj.sql_kind,namespace,owner) end 
+  ||
   case obj.sql_kind
     when 'AGGREGATE' then ddlx_create_aggregate($1)
     else trim(trailing E'\n' from pg_get_functiondef($1)) || E';\n'

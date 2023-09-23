@@ -44,3 +44,22 @@ end
 $_$ LANGUAGE plpgsql;
 
 drop role pgddl_test_user2;
+
+do $_$
+declare ddl text;
+begin
+  ddl := replace(ddlx_script('public.int_t'::regtype,'{nowrap}'),'public.','');
+  perform public.execute(ddl);
+
+  ddl := ddlx_script('test_class_v'::regtype,'{nowrap}');
+  perform public.execute(ddl);
+
+  ddl := ddlx_script('test_class_v2'::regclass,'{nowrap}');
+--  raise warning 'DDLX: %', ddl;
+  perform public.execute(ddl);
+
+  ddl := ddlx_script('test_class_r'::regclass,'{nowrap,drop}');
+  execute ddl;
+
+end
+$_$ LANGUAGE plpgsql;

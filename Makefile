@@ -19,6 +19,8 @@ $(DATA_built): ddlx.sql
 	@echo "Building extension version" $(EXT_VERSION) "for Postgres version" $(VERSION)
 	VERSION=${VERSION} ./bin/pgsqlpp $^ >$@
 
+testall.sh:
+	pg_lsclusters -h | perl -ne '@_=split("\\s+",$$_); print "make PGPORT=$$_[2] PG_CONFIG=/usr/lib/postgresql/$$_[0]/bin/pg_config clean install installcheck\n";' > testall.sh
 
 .PHONY: electric
 electric: ddlx.sql
