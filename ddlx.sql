@@ -638,17 +638,18 @@ $function$;
 
 CREATE OR REPLACE FUNCTION ddlx_get_indexes(
   regclass default null,
-  OUT oid oid, OUT namespace text, OUT class text, OUT name text, 
-  OUT tablespace text, OUT constraint_name text, OUT is_local boolean)
+  OUT oid oid, OUT namespace text, OUT class regclass, OUT name text, 
+  OUT tablespace text, OUT constraint_name text, OUT is_local boolean, OUT is_clustered boolean)
  RETURNS SETOF record LANGUAGE sql AS $function$
  SELECT DISTINCT
         i.oid AS oid, 
         n.nspname::text AS namespace, 
-        c.relname::text AS class, 
+        c.oid AS class, 
         i.relname::text AS name,
         NULL::text AS tablespace, 
         cc.conname::text AS constraint_name,
-	d2.refobjid IS NULL AS is_local
+	      d2.refobjid IS NULL AS is_local,
+        x.indisclustered as is_clustered
    FROM pg_index x
    JOIN pg_class c ON c.oid = x.indrelid
    JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -1374,13 +1375,12 @@ CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass,ddlx_options text[] defa
     from ii where constraint_name is null
  ),
  c as (
-  select coalesce(string_agg(format(E'CLUSTER %s USING %I;\n\n',
-                                    indrelid::regclass::text,
-				    (select relname from pg_class c2 where c2.oid=i.indexrelid)),
-		  ''),'')
+  select coalesce(string_agg(format(E'CLUSTER %s USING %I;\n',
+                                    class::text,name),e'\n'),'')
          as ddl_cluster
-    from pg_index i
-   where i.indrelid = $1 and indisclustered
+    from ii
+   where ii.class = $1 and ii.is_clustered
+     and not (constraint_name is not null and 'noconstraints' ilike any($2))
  )
 #if 10
  ,
@@ -2815,7 +2815,7 @@ select row_number() over() as n,
        on de.objid=gd.objid and de.refclassid='pg_extension'::regclass
  where case when 'ext' ilike any($2)
             then gd.classid is distinct from 'pg_extension'::regclass
-	    else de.refclassid is null end
+	     else de.refclassid is null end
        and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
 )
 select ddlx_create($1,$2) as ddl_create,

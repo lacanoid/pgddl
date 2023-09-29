@@ -75,6 +75,8 @@ ALTER TABLE test_class_r ALTER h SET STORAGE external;
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
 
+CREATE SEQUENCE IF NOT EXISTS test_class_r_a_seq;
+ALTER SEQUENCE test_class_r_a_seq OWNER TO postgres;
 ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
@@ -91,7 +93,6 @@ CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 CREATE INDEX idx3 ON public.test_class_r USING btree (g) WITH (fillfactor='50');
 
 CLUSTER test_class_r USING idx3;
-
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
 
@@ -146,6 +147,8 @@ ALTER TABLE test_class_r ALTER h SET STORAGE external;
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
 
+CREATE SEQUENCE IF NOT EXISTS test_class_r_a_seq;
+ALTER SEQUENCE test_class_r_a_seq OWNER TO postgres;
 ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
@@ -162,7 +165,6 @@ CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 CREATE INDEX idx3 ON public.test_class_r USING btree (g) WITH (fillfactor='50');
 
 CLUSTER test_class_r USING test_class_r_pkey;
-
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
 
@@ -245,6 +247,8 @@ CREATE UNLOGGED TABLE test_class_r2 (
 
 COMMENT ON TABLE test_class_r2 IS NULL;
 
+CREATE SEQUENCE IF NOT EXISTS test_class_r2_i_seq;
+ALTER SEQUENCE test_class_r2_i_seq OWNER TO postgres;
 ALTER SEQUENCE test_class_r2_i_seq OWNED BY test_class_r2.i;
 
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah FOREIGN KEY (a) REFERENCES test_class_r(a);
@@ -530,6 +534,8 @@ CREATE TABLE test_collation (
 
 COMMENT ON TABLE test_collation IS NULL;
 
+CREATE SEQUENCE IF NOT EXISTS test_collation_id_seq;
+ALTER SEQUENCE test_collation_id_seq OWNER TO postgres;
 ALTER SEQUENCE test_collation_id_seq OWNED BY test_collation.id;
 
 
@@ -762,6 +768,8 @@ CREATE TABLE test_parent (
 
 COMMENT ON TABLE test_parent IS NULL;
 
+CREATE SEQUENCE IF NOT EXISTS test_parent_i_seq;
+ALTER SEQUENCE test_parent_i_seq OWNER TO postgres;
 ALTER SEQUENCE test_parent_i_seq OWNED BY test_parent.i;
 
 
@@ -804,6 +812,8 @@ ALTER TABLE test_class_r ALTER h SET STORAGE external;
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
 
+CREATE SEQUENCE IF NOT EXISTS test_class_r_a_seq;
+ALTER SEQUENCE test_class_r_a_seq OWNER TO postgres;
 ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
@@ -822,6 +832,8 @@ ALTER TABLE test_class_r OWNER TO postgres;
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
 
+CREATE SEQUENCE IF NOT EXISTS test_class_r_a_seq;
+ALTER SEQUENCE test_class_r_a_seq OWNER TO postgres;
 ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
@@ -838,7 +850,6 @@ CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 CREATE INDEX idx3 ON public.test_class_r USING btree (g) WITH (fillfactor='50');
 
 CLUSTER test_class_r USING test_class_r_pkey;
-
 CREATE TRIGGER aaaa BEFORE UPDATE ON test_class_r FOR EACH ROW WHEN (old.* IS DISTINCT FROM new.*) EXECUTE PROCEDURE trig('AAAA');
 ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
 

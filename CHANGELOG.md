@@ -8,6 +8,7 @@ Version 0.26
 - `nosettings` option to omit settings
 - `notriggers` option to omit triggers
 - updated tests for postgres 16 on others
+- added 'CREATE SEQUENCE' for owned sequences
 
 Version 0.23
 ------------
