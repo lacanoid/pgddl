@@ -1134,10 +1134,10 @@ seq as (
     coalesce(
       string_agg(
         format(e'CREATE SEQUENCE IF NOT EXISTS %s;\n'||
-               e'ALTER SEQUENCE %s OWNER TO %s;\n'||
-               e'ALTER SEQUENCE %s OWNED BY %s;',
+               e'ALTER SEQUENCE %s OWNER TO %s;\n',
                 "sequence",
-                "sequence",(select relowner from pg_class where oid=$1)::regrole::text,
+                "sequence",(select relowner from pg_class where oid=$1)::regrole::text) ||
+        format(e'ALTER SEQUENCE %s OWNED BY %s;',
                 "sequence",sql_identifier), 
         E'\n') || E'\n\n', 
     '') as ddl
@@ -2809,7 +2809,7 @@ with
 ddl as (
 select row_number() over() as n,
        ddlx_drop(gd.objid,$2||'{script}'),
-       ddlx_create(gd.objid,$2||'{acript}'),
+       ddlx_create(gd.objid,$2||'{script}'),
        gd.objid
   from ddlx_get_dependants($1) gd
   left join pg_depend de
