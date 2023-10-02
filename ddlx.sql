@@ -728,7 +728,7 @@ $function$;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_comment(oid)
+CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1))
  select format(
@@ -1244,7 +1244,7 @@ $function$ strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass)
+CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
  with cs as (
   select
@@ -1253,6 +1253,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass)
    E' ' || constraint_definition as sql
     from ddlx_get_constraints($1)
    where is_local
+     and (constraint_type not in ('FOREIGN KEY','CHECK') or not 'script' ilike any($2)) 
    order by constraint_type desc, constraint_name
  )
  select coalesce(string_agg(sql,E';\n') || E';\n\n','')
@@ -2657,7 +2658,7 @@ with obj as (select * from ddlx_identify($1))
         else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))      
       end
     end as base_ddl,
-    ddlx_comment(oid) as comment,
+    ddlx_comment(oid,$2) as comment,
     ddlx_alter_owner(oid) as owner,
     ddlx_alter_table_storage(oid) as storage,
     ddlx_alter_table_defaults(oid,$2) as defaults,
@@ -2669,7 +2670,7 @@ with obj as (select * from ddlx_identify($1))
     end as settings,
 --    ddlx_alter_table_settings(oid) as settings,
     case when 'lite' ilike any($2) then ''
-         else ddlx_create_constraints(oid) end as constraints,
+         else ddlx_create_constraints(oid,$2) end as constraints,
     ddlx_create_indexes(oid, options) as indexes,
     ddlx_create_triggers(oid) as triggers,
     ddlx_create_rules(oid) as rules,
@@ -2807,8 +2808,8 @@ CREATE OR REPLACE FUNCTION ddlx_script_parts(
 with 
 ddl as (
 select row_number() over() as n,
-       ddlx_drop(gd.objid,$2),
-       ddlx_create(gd.objid,$2),
+       ddlx_drop(gd.objid,$2||'{script}'),
+       ddlx_create(gd.objid,$2||'{acript}'),
        gd.objid
   from ddlx_get_dependants($1) gd
   left join pg_depend de
@@ -2818,8 +2819,8 @@ select row_number() over() as n,
 	     else de.refclassid is null end
        and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
 )
-select ddlx_create($1,$2) as ddl_create,
-       ddlx_drop($1,$2) as ddl_drop,
+select ddlx_create($1,$2||'{script}') as ddl_create,
+       ddlx_drop($1,$2||'{script}') as ddl_drop,
        string_agg(ddlx_create,E'\n' order by n) as ddl_create_deps,
        string_agg(ddlx_drop,'' order by n desc) as ddl_drop_deps
   from ddl 

@@ -47,9 +47,12 @@ begin
   ddl := ddlx_script('test_class_v'::regtype,'{nowrap}');
   perform public.execute(ddl);
 
-  ddl := ddlx_script('test_class_v2'::regtype,'{nowrap}');
+  ddl := ddlx_script('test_class_v2'::regclass,'{nowrap}');
 --  raise warning 'DDLX: %', ddl;
   perform public.execute(ddl);
+
+  ddl := ddlx_script('test_class_r'::regclass,'{nowrap,drop}');
+  execute ddl;
 
 end
 $_$ LANGUAGE plpgsql;

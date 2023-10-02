@@ -1,8 +1,8 @@
 \pset null _null_
 \pset format unaligned
 begin;
-create user pgddl_test_user nologin nosuperuser
-encrypted password 'md5db6d137a5ac4e8c22bed58e3e6687aca';
+create user pgddl_test_user nologin nosuperuser;
+alter user pgddl_test_user with password 'md5db6d137a5ac4e8c22bed58e3e6687aca';
 alter user pgddl_test_user valid until '2100-01-01';
 comment on role pgddl_test_user
 is 'pg_ddl test user...';
