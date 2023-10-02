@@ -33,7 +33,7 @@ Support for other missing options:
 - ✔︎ comments on all objects
 - ✔︎ ownership of all objects 
 - ✔︎ grants on all objects
-- grants vs current_role (who is grantor?)
+- grants vs current_role (who is grantor?, GRANTED BY)
 - materialized view tablespace & storage parameters
 - table of type not nulls
 - PG14 SET COMPRESSION
