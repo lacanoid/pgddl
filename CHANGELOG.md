@@ -7,8 +7,10 @@ Version 0.26
 - `nostorage` option to omit storage settings
 - `nosettings` option to omit settings
 - `notriggers` option to omit triggers
+- added 'CREATE SEQUENCE'+'ALTER SEQUENCE' for owned sequences
 - updated tests for postgres 16 on others
-- added 'CREATE SEQUENCE' for owned sequences
+- new execute tests which acturally run generated scripts
+- bug fixes
 
 Version 0.23
 ------------
