@@ -253,6 +253,8 @@ COMMENT ON TABLE tab_generated12 IS NULL;
 
 ALTER TABLE tab_generated12 ALTER d SET DEFAULT 42;
 
+CREATE SEQUENCE IF NOT EXISTS tab_generated12_e_seq;
+ALTER SEQUENCE tab_generated12_e_seq OWNER TO postgres;
 ALTER SEQUENCE tab_generated12_e_seq OWNED BY tab_generated12.e;
 
 
