@@ -1,3 +1,6 @@
+Version 0.27
+------------
+
 Version 0.26
 ------------
 - added new `lite` option, which moves defaults and constraints into `create table` section, as per patch by 
