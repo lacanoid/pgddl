@@ -8,8 +8,8 @@ Version 0.26
 - `nosettings` option to omit settings
 - `notriggers` option to omit triggers
 - added 'CREATE SEQUENCE'+'ALTER SEQUENCE' for owned sequences
-- updated tests for postgres 16 on others
-- new execute tests which acturally run generated scripts
+- updated tests for postgres 16
+- new execute tests which actually runs generated scripts
 - bug fixes
 
 Version 0.23
