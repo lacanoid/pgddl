@@ -86,7 +86,6 @@ ALTER TABLE test_class_r ALTER h SET STATISTICS 50;
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key UNIQUE (b);
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey PRIMARY KEY (a);
-ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
 
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);
@@ -158,7 +157,6 @@ ALTER TABLE test_class_r ALTER h SET STATISTICS 50;
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_b_key UNIQUE (b);
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_pkey PRIMARY KEY (a);
-ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
 
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);

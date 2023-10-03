@@ -1253,7 +1253,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass, text[] default '{}'
    E' ' || constraint_definition as sql
     from ddlx_get_constraints($1)
    where is_local
-     and (constraint_type not in ('FOREIGN KEY','CHECK') or not 'script' ilike any($2)) 
+     and (constraint_type not in ('CHECK') or not 'script' ilike any($2)) 
    order by constraint_type desc, constraint_name
  )
  select coalesce(string_agg(sql,E';\n') || E';\n\n','')
