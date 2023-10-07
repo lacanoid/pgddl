@@ -1,5 +1,7 @@
 Version 0.27
 ------------
+- include GRANTED BY when grantor is distinct from current role
+- script order now much better
 
 Version 0.26
 ------------

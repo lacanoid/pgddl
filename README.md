@@ -145,7 +145,8 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 * `ine` - add `if not exists` in bunch of places
 * `ie` - add `if exists` in a bunch of places
 * `ext` - include extension contents instead of `create extension`.
-* `lite` - move defaults and constraints into `create table` statement.
+* `lite` - move defaults and constraints into `create table` statement, omit some other Postgres specific stuff
+* `nowrap` - do not wrap scripts with `BEGIN` and `END`
 
 Drop statements are created with `ddlx_drop()` function.	
 
@@ -200,7 +201,7 @@ and are possibly subject to change in future versions of the extension.
 They are generally not intended to be used by the end user. 
 Nevertheless, some of them are:
 
-- `ddlx_identify(oid) returns record`
+- `ddlx_identify(oid) returns table(oid oid,classid regclass,name name,namespace name,owner name,sql_kind text,sql_identifier text,acl aclitem[])`
 
     Identify an object by object ID, `oid`. Searches all supported system catalogs.
     This function is used a lot by others in this extension.

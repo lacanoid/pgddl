@@ -1846,7 +1846,7 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}')
  a   as (
  select
    coalesce(format(
-        E'GRANT %s ON %s TO %s%s;\n',
+        E'GRANT %s ON %s TO %s%s%s;\n',
         privilege_type, 
         cast($1 as text),
         case grantee  
@@ -1856,7 +1856,8 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}')
         case is_grantable  
           when 'YES' then ' WITH GRANT OPTION' 
           else '' 
-        end
+        end,
+        ' GRANTED BY '||nullif(grantor,current_role)
     ), '') 
     as ddl
  FROM information_schema.table_privileges g 
@@ -2671,7 +2672,7 @@ with obj as (select * from ddlx_identify($1))
 --    ddlx_alter_table_settings(oid) as settings,
     case when 'lite' ilike any($2) then ''
          else ddlx_create_constraints(oid,$2) end as constraints,
-    ddlx_create_indexes(oid, options) as indexes,
+    ddlx_create_indexes(oid,$2) as indexes,
     ddlx_create_triggers(oid) as triggers,
     ddlx_create_rules(oid) as rules,
 #if 9.5
@@ -2807,7 +2808,7 @@ CREATE OR REPLACE FUNCTION ddlx_script_parts(
  RETURNS record LANGUAGE sql AS $function$
 with 
 ddl as (
-select row_number() over() as n,
+select row_number() over(order by gd.depth,gd.objid) as n,
        ddlx_drop(gd.objid,$2||'{script}'),
        ddlx_create(gd.objid,$2||'{script}'),
        gd.objid
@@ -2816,8 +2817,9 @@ select row_number() over() as n,
        on de.objid=gd.objid and de.refclassid='pg_extension'::regclass
  where case when 'ext' ilike any($2)
             then gd.classid is distinct from 'pg_extension'::regclass
-	     else de.refclassid is null end
-       and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
+	          else de.refclassid is null end
+   and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
+ order by depth,objid
 )
 select ddlx_create($1,$2||'{script}') as ddl_create,
        ddlx_drop($1,$2||'{script}') as ddl_drop,

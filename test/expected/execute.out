@@ -10,7 +10,7 @@ AS $function$DECLARE
    body ALIAS FOR $1; 
    result INT; 
  BEGIN 
-   RAISE NOTICE 'Execute: %', body; 
+--   RAISE NOTICE 'Execute: %', body; 
    set search_path=public2;
    EXECUTE body; 
    GET DIAGNOSTICS result = ROW_COUNT; 
@@ -38,12 +38,12 @@ begin
 end
 $_$ LANGUAGE plpgsql;
 drop role pgddl_test_user2;
+reset role; SET ROLE postgres;
 do $_$
 declare ddl text;
 begin
   ddl := replace(ddlx_script('public.int_t'::regtype,'{nowrap}'),'public.','');
   perform public.execute(ddl);
-
   ddl := ddlx_script('test_class_v'::regtype,'{nowrap}');
   perform public.execute(ddl);
 
@@ -53,6 +53,12 @@ begin
 
   ddl := ddlx_script('test_class_r'::regclass,'{nowrap,drop}');
   execute ddl;
-
 end
 $_$ LANGUAGE plpgsql;
+create function test_f() returns setof test_class_r as $$select * from test_class_r$$ language sql;
+do $$ begin execute ddlx_script('test_class_r'::regclass,'{drop,nowrap}'); end $$;
+create table cons1 (id serial primary key,x int, label text);
+create table cons2 (id serial primary key,x int, label text);
+alter table cons1 add foreign key (x) references cons2;
+alter table cons2 add foreign key (x) references cons1;
+do $$ begin execute ddlx_script('cons1'::regclass,'{drop,nowrap}'); end $$;
