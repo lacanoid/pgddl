@@ -130,7 +130,9 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
                 ('u','UNIQUE'), ('p','PRIMARY KEY'), ('t','TRIGGER')) 
              as tt on tt.column1 = con.contype
    WHERE con.oid = $1
+#if 14
      AND NOT (c.relname like 'pg_%' or c.relnamespace = 'pg_catalog'::regnamespace) -- hack!
+#end
    UNION ALL
   SELECT t.oid,'pg_trigger'::regclass,
          t.tgname as name, c.relname as namespace, null as owner,
@@ -756,6 +758,9 @@ CREATE OR REPLACE FUNCTION ddlx_grants(oid) RETURNS text
 CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}') RETURNS text
   LANGUAGE sql AS $function$ select null::text $function$;
 
+CREATE OR REPLACE FUNCTION ddlx_create_function(regproc, text[] default '{}') RETURNS text
+  LANGUAGE sql AS $function$ select null::text $function$;
+
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid)
@@ -1161,8 +1166,9 @@ seq as (
       string_agg(
         format(e'CREATE SEQUENCE IF NOT EXISTS %s;\n'||
                e'ALTER SEQUENCE %s OWNER TO %s;\n',
-                "sequence",
-                "sequence",(select relowner from pg_class where oid=$1)::regrole::text) ||
+                "sequence","sequence",
+		pg_get_userbyid((select relowner from pg_class where oid=$1))
+	      ) ||
         format(e'ALTER SEQUENCE %s OWNED BY %s;',
                 "sequence",sql_identifier), 
         E'\n') || E'\n\n', 
@@ -1971,7 +1977,12 @@ c as (
 select case obj.classid
        when 'pg_class'::regclass then ddlx_grants(obj.oid::regclass,$2)
        when 'pg_proc'::regclass then ddlx_grants(obj.oid::regproc,$2)
-       when 'pg_roles'::regclass then ddlx_grants(obj.oid::regrole,$2)
+       when 'pg_roles'::regclass
+#if 9.5
+       then ddlx_grants(obj.oid::regrole,$2)
+#else
+       then ddlx_grants_to_role(obj.oid,$2)
+#end
        else c.grants
        end
   from obj full join c on true
@@ -2590,12 +2601,17 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_extension(oid, text[] default '{}')
-#end
  RETURNS text LANGUAGE sql AS $function$
 select format(E'CREATE EXTENSION %s%I%s VERSION %s;\n',
               case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end,
               e.extname,
-              ' SCHEMA '||quote_ident(nullif(e.extnamespace::regnamespace::text,current_schema())),
+              ' SCHEMA '||quote_ident(nullif(
+#if 9.5
+	        e.extnamespace::regnamespace::text,
+#else
+                (select nspname from pg_namespace n1 where n1.oid = e.extnamespace), 
+#end
+	      current_schema())),
               quote_nullable(e.extversion))
   from pg_extension e
  where oid = $1
@@ -2714,7 +2730,7 @@ with obj as (select * from ddlx_identify($1))
 #if 9.5
      ddlx_alter_table_rls(oid) as rls,
 #else
-     null as rls,
+     null::text as rls,
 #end
      ddlx_grants(oid,$2) as grants
     from obj
@@ -2847,8 +2863,8 @@ CREATE OR REPLACE FUNCTION ddlx_script_parts(
 with 
 ddl as (
 select row_number() over(order by gd.depth,gd.objid) as n,
-       ddlx_drop(gd.objid,$2||'{script}'),
-       ddlx_create(gd.objid,$2||'{script}'),
+       ddlx_drop(gd.objid,$2||'{script}'::text[]),
+       ddlx_create(gd.objid,$2||'{script}'::text[]),
        gd.objid
   from ddlx_get_dependants($1) gd
   left join pg_depend de
@@ -2859,8 +2875,8 @@ select row_number() over(order by gd.depth,gd.objid) as n,
    and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
  order by depth,objid
 )
-select ddlx_create($1,$2||'{script}') as ddl_create,
-       ddlx_drop($1,$2||'{script}') as ddl_drop,
+select ddlx_create($1,$2||'{script}'::text[]) as ddl_create,
+       ddlx_drop($1,$2||'{script}'::text[]) as ddl_drop,
        string_agg(ddlx_create,E'\n' order by n) as ddl_create_deps,
        string_agg(ddlx_drop,'' order by n desc) as ddl_drop_deps
   from ddl 
