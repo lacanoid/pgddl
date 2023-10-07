@@ -1,7 +1,7 @@
 Version 0.27
 ------------
 - include `GRANTED BY` when grantor is distinct from current role
-- bug fixes script order, now much better!
+- bug fixes in script order, now much better!
 - bug fixes in `GENERATED` columns
 - improved `CREATE TYPE` for base types, shell types support
 - new execute tests
