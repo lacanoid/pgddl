@@ -1,7 +1,10 @@
 Version 0.27
 ------------
-- include GRANTED BY when grantor is distinct from current role
-- script order now much better
+- include `GRANTED BY`` when grantor is distinct from current role
+- bug fixes script order, now much better!
+- bug fixes in `GENERATED` columns
+- improved `CREATE TYPE` for base types, shell types support
+- new execute tests
 
 Version 0.26
 ------------
@@ -14,7 +17,7 @@ Version 0.26
 - `notriggers` option to omit triggers
 - added 'CREATE SEQUENCE'+'ALTER SEQUENCE' for owned sequences
 - updated tests for postgres 16
-- new execute tests which actually runs generated scripts
+- new execute tests which actually run generated scripts
 - bug fixes
 
 Version 0.23

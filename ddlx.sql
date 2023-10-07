@@ -410,7 +410,8 @@ CREATE OR REPLACE FUNCTION ddlx_describe(
   OUT relid oid, OUT options text[], OUT definition text,
   OUT sequence regclass)
  RETURNS SETOF record LANGUAGE sql AS $function$
-SELECT  a.attnum AS ord,
+SELECT  DISTINCT 
+        a.attnum AS ord,
         a.attname AS name, 
         format_type(t.oid, NULL::integer) AS type,
         CASE
@@ -490,7 +491,7 @@ SELECT  a.attnum AS ord,
 	,
 #if 12
 	case when a.attgenerated = 's'
-	     then format(' GENERATED ALWAYS AS %s STORED', 
+	     then format(' GENERATED ALWAYS AS (%s) STORED', 
 	     	         pg_get_expr(def.adbin,def.adrelid))
 	end
 #else
@@ -1227,15 +1228,25 @@ CREATE OR REPLACE FUNCTION ddlx_create_default(oid)
     join pg_class c on c.oid = def.adrelid
     join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum and not a.attisdropped
    where def.oid = $1
+#if 12 
+     and a.attgenerated = ''
+#end
 $function$ strict;
 
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_drop_default(oid)
  RETURNS text LANGUAGE sql AS $function$
-  select format(E'ALTER TABLE %s ALTER %I DROP DEFAULT;\n',
+  select format(E'ALTER TABLE %s ALTER %I DROP %s;\n',
             cast(c.oid::regclass as text),
-            a.attname)
+            a.attname,
+#if 12
+            case when a.attgenerated <> ''
+                 then 'EXPRESSION' else 'DEFAULT' end
+#else
+            'DEFAULT'
+#end
+            )
     from pg_attrdef def 
     join pg_class c on c.oid = def.adrelid
     join pg_attribute a on c.oid = a.attrelid and a.attnum = def.adnum and not a.attisdropped

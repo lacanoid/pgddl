@@ -67,10 +67,3 @@ $_$ LANGUAGE plpgsql;
 create function test_f() returns setof test_class_r as $$select * from test_class_r$$ language sql;
 
 do $$ begin execute ddlx_script('test_class_r'::regclass,'{drop,nowrap}'); end $$;
-
-create table cons1 (id serial primary key,x int, label text);
-create table cons2 (id serial primary key,x int, label text);
-alter table cons1 add foreign key (x) references cons2;
-alter table cons2 add foreign key (x) references cons1;
-
-do $$ begin execute ddlx_script('cons1'::regclass,'{drop,nowrap}'); end $$;

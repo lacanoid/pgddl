@@ -18,3 +18,14 @@ create table tab_generated12 (
 
 \pset format unaligned
 select ddlx_script('tab_generated12');
+do $$ begin execute ddlx_script('tab_generated12'::regclass,'{drop,nowrap}'); end $$;
+
+create table cons1 (id serial primary key,x int, label text generated always as ('a label') stored);
+create table cons2 (id serial primary key,x int, label text default 'a label');
+alter table cons1 add foreign key (x) references cons2;
+alter table cons2 add foreign key (x) references cons1;
+
+do $$ begin execute ddlx_script('cons1'::regclass,'{drop,nowrap}'); end $$;
+do $$ begin execute ddlx_script('cons2'::regclass,'{drop,nowrap}'); end $$;
+
+

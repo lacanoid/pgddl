@@ -201,7 +201,7 @@ and are possibly subject to change in future versions of the extension.
 They are generally not intended to be used by the end user. 
 Nevertheless, some of them are:
 
-- `ddlx_identify(oid) returns table(oid oid,classid regclass,name name,namespace name,owner name,sql_kind text,sql_identifier text,acl aclitem[])`
+- `ddlx_identify(oid) returns table(oid, classid, name, namespace, owner, sql_kind, sql_identifier, acl)`
 
     Identify an object by object ID, `oid`. Searches all supported system catalogs.
     This function is used a lot by others in this extension.
@@ -210,7 +210,8 @@ Nevertheless, some of them are:
 
     Get columns of a class.
 
-- `ddlx_definitions(oid) returns record`
+- `ddlx_definitions(oid) returns table(oid, classid, sql_kind, sql_identifier, base_ddl, comment, owner,storage, defaults, settings, constraints, indexes, triggers, rules, rls, grants)`
+
 
     Get individual parts of object definition, 
     such as: base_ddl, comment, owner, storage, defaults, settings, constraints, indexes, triggers, rules, rls, grants.
@@ -230,7 +231,7 @@ Nevertheless, some of them are:
 
     Return GRANT statements for an object
 
-- `ddlx_apropos(regexp) returns setof record`
+- `ddlx_apropos(regexp) returns setof table(classid, objid, sql_identifier, sql_kind, language, owner, comment, retset, namespace, name, source)`
 
     Search query bodies (functions and view definitions) matching POSIX regular expression.
 ```    
