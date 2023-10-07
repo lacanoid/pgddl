@@ -28,4 +28,16 @@ alter table cons2 add foreign key (x) references cons1;
 do $$ begin execute ddlx_script('cons1'::regclass,'{drop,nowrap}'); end $$;
 do $$ begin execute ddlx_script('cons2'::regclass,'{drop,nowrap}'); end $$;
 
+-- check rebuild of partitioned tables
+\pset format aligned
+\d 
 
+/*
+select rebuild(i.name::regclass), i.sql_kind, i.sql_identifier 
+  from pg_class c, ddlx_identify(c.oid) i 
+ where relnamespace='public'::regnamespace
+ order by c.oid;
+*/
+
+\d 
+\pset format unaligned

@@ -2,7 +2,7 @@
 \pset format unaligned
 SET client_min_messages = warning;
 create schema public2;
-CREATE OR REPLACE FUNCTION execute(text)
+CREATE OR REPLACE FUNCTION execute2(text)
  RETURNS integer
  LANGUAGE plpgsql
  STRICT
@@ -19,21 +19,39 @@ AS $function$DECLARE
  END; 
  $function$
 ;
+CREATE OR REPLACE FUNCTION rebuild(oid)
+ RETURNS integer
+ LANGUAGE plpgsql
+ STRICT
+AS $function$
+DECLARE 
+   ddl text; 
+   result INT; 
+   obj record;
+ BEGIN 
+   raise notice 'REBUILD: % %',(ddlx_identify($1)).sql_kind,(ddlx_identify($1)).sql_identifier;
+   ddl := ddlx_script($1,'{drop,nowrap}');
+   EXECUTE ddl; 
+   GET DIAGNOSTICS result = ROW_COUNT; 
+   RETURN result; 
+ END; 
+ $function$
+;
 create role pgddl_test_user2 login connection limit 100;
 alter user pgddl_test_user2 password 'hello_world';
 do $_$
 declare ddl text;
 begin
   ddl := ddlx_create('test_collation_d'::regtype,'{}');
-  perform public.execute(ddl);
+  perform public.execute2(ddl);
   ddl := ddlx_create('test_class_r_a_seq'::regclass,'{}');
-  perform public.execute(ddl);
+  perform public.execute2(ddl);
   ddl := ddlx_createonly('test_class_r'::regclass,'{}');
-  perform public.execute(ddl);
+  perform public.execute2(ddl);
 
   ddl := ddlx_create('pgddl_test_user2'::regrole,'{}');
   drop role pgddl_test_user2;
-  perform public.execute(ddl);
+  perform public.execute2(ddl);
 
 end
 $_$ LANGUAGE plpgsql;
@@ -43,13 +61,13 @@ do $_$
 declare ddl text;
 begin
   ddl := replace(ddlx_script('public.int_t'::regtype,'{nowrap}'),'public.','');
-  perform public.execute(ddl);
+  perform public.execute2(ddl);
   ddl := ddlx_script('test_class_v'::regtype,'{nowrap}');
-  perform public.execute(ddl);
+  perform public.execute2(ddl);
 
   ddl := ddlx_script('test_class_v2'::regclass,'{nowrap}');
 --  raise warning 'DDLX: %', ddl;
-  perform public.execute(ddl);
+  perform public.execute2(ddl);
 
   ddl := ddlx_script('test_class_r'::regclass,'{nowrap,drop}');
   execute ddl;
@@ -57,3 +75,109 @@ end
 $_$ LANGUAGE plpgsql;
 create function test_f() returns setof test_class_r as $$select * from test_class_r$$ language sql;
 do $$ begin execute ddlx_script('test_class_r'::regclass,'{drop,nowrap}'); end $$;
+select rebuild('test_class_r'::regclass);
+rebuild
+0
+(1 row)
+SET client_min_messages = notice;
+\pset format aligned
+\d 
+                       List of relations
+ Schema |         Name          |       Type        |  Owner   
+--------+-----------------------+-------------------+----------
+ public | items                 | table             | postgres
+ public | test_child            | table             | postgres
+ public | test_class_f          | foreign table     | postgres
+ public | test_class_m          | materialized view | postgres
+ public | test_class_r          | table             | postgres
+ public | test_class_r2         | table             | postgres
+ public | test_class_r2_i_seq   | sequence          | postgres
+ public | test_class_r_a_seq    | sequence          | postgres
+ public | test_class_v          | view              | postgres
+ public | test_class_v2         | view              | postgres
+ public | test_class_v_opt2     | view              | postgres
+ public | test_collation        | table             | postgres
+ public | test_collation_id_seq | sequence          | postgres
+ public | test_parent           | table             | postgres
+ public | test_parent_i_seq     | sequence          | postgres
+ public | test_type_s           | sequence          | postgres
+(16 rows)
+
+select rebuild(i.name::regclass), i.sql_kind, i.sql_identifier 
+  from pg_class c, ddlx_identify(c.oid) i 
+ where relnamespace='public'::regnamespace
+ order by c.oid;
+NOTICE:  REBUILD: TYPE test_type_c
+NOTICE:  REBUILD: SEQUENCE test_class_r2_i_seq
+NOTICE:  REBUILD: TABLE test_class_r2
+NOTICE:  REBUILD: SEQUENCE test_type_s
+NOTICE:  REBUILD: SEQUENCE test_collation_id_seq
+NOTICE:  REBUILD: TABLE test_collation
+NOTICE:  REBUILD: SEQUENCE test_parent_i_seq
+NOTICE:  REBUILD: TABLE test_parent
+NOTICE:  REBUILD: TABLE test_child
+NOTICE:  REBUILD: FOREIGN TABLE test_class_f
+NOTICE:  REBUILD: TABLE items
+NOTICE:  REBUILD: INDEX items_pkey
+NOTICE:  REBUILD: TABLE test_class_r
+NOTICE:  REBUILD: SEQUENCE test_class_r_a_seq
+NOTICE:  REBUILD: INDEX test_class_r_b_key
+NOTICE:  REBUILD: INDEX test_class_r_pkey
+NOTICE:  REBUILD: INDEX idx1
+NOTICE:  REBUILD: INDEX idx2
+NOTICE:  REBUILD: INDEX idx3
+NOTICE:  REBUILD: VIEW test_class_v
+NOTICE:  REBUILD: MATERIALIZED VIEW test_class_m
+NOTICE:  REBUILD: INDEX test_class_mi
+NOTICE:  REBUILD: VIEW test_class_v2
+NOTICE:  REBUILD: VIEW test_class_v_opt2
+ rebuild |     sql_kind      |    sql_identifier     
+---------+-------------------+-----------------------
+       0 | TYPE              | test_type_c
+       0 | SEQUENCE          | test_class_r2_i_seq
+       0 | TABLE             | test_class_r2
+       0 | SEQUENCE          | test_type_s
+       0 | SEQUENCE          | test_collation_id_seq
+       0 | TABLE             | test_collation
+       0 | SEQUENCE          | test_parent_i_seq
+       0 | TABLE             | test_parent
+       0 | TABLE             | test_child
+       0 | FOREIGN TABLE     | test_class_f
+       0 | TABLE             | items
+       0 | INDEX             | items_pkey
+       0 | TABLE             | test_class_r
+       0 | SEQUENCE          | test_class_r_a_seq
+       0 | INDEX             | test_class_r_b_key
+       0 | INDEX             | test_class_r_pkey
+       0 | INDEX             | idx1
+       0 | INDEX             | idx2
+       0 | INDEX             | idx3
+       0 | VIEW              | test_class_v
+       0 | MATERIALIZED VIEW | test_class_m
+       0 | INDEX             | test_class_mi
+       0 | VIEW              | test_class_v2
+       0 | VIEW              | test_class_v_opt2
+(24 rows)
+
+\d 
+                       List of relations
+ Schema |         Name          |       Type        |  Owner   
+--------+-----------------------+-------------------+----------
+ public | items                 | table             | postgres
+ public | test_child            | table             | postgres
+ public | test_class_f          | foreign table     | postgres
+ public | test_class_m          | materialized view | postgres
+ public | test_class_r          | table             | postgres
+ public | test_class_r2         | table             | postgres
+ public | test_class_r2_i_seq   | sequence          | postgres
+ public | test_class_r_a_seq    | sequence          | postgres
+ public | test_class_v          | view              | postgres
+ public | test_class_v2         | view              | postgres
+ public | test_class_v_opt2     | view              | postgres
+ public | test_collation        | table             | postgres
+ public | test_collation_id_seq | sequence          | postgres
+ public | test_parent           | table             | postgres
+ public | test_parent_i_seq     | sequence          | postgres
+ public | test_type_s           | sequence          | postgres
+(16 rows)
+

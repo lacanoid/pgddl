@@ -1077,6 +1077,31 @@ $function$  strict;
 
 ---------------------------------------------------
 
+CREATE OR REPLACE FUNCTION ddlx_drop_index(regclass,ddlx_options text[] default '{}')
+ RETURNS text LANGUAGE sql AS $function$
+ with ii as (
+ SELECT CASE d.refclassid
+            WHEN 'pg_constraint'::regclass 
+            THEN 'ALTER TABLE ' || text(c.oid::regclass) 
+                 || ' DROP CONSTRAINT ' || quote_ident(cc.conname) 
+            ELSE 'DROP INDEX ' || text(i.oid::regclass)
+        END
+        AS indexdef 
+   FROM pg_index x
+   JOIN pg_class c ON c.oid = x.indrelid
+   JOIN pg_class i ON i.oid = x.indexrelid
+   JOIN pg_depend d ON d.objid = x.indexrelid
+   LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
+  WHERE i.oid = $1
+    -- AND c.relkind in ('r','m','p') AND i.relkind = 'i'::"char"  
+)
+ SELECT indexdef
+        || E';\n'
+   FROM ii
+$function$  strict;
+
+---------------------------------------------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_class(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1)),
@@ -2793,6 +2818,8 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
      case
        when obj.sql_kind = 'SEQUENCE'
        then format(E'DROP %s IF EXISTS %s;\n',obj.sql_kind, obj.sql_identifier)
+       when obj.sql_kind = 'INDEX'
+       then ddlx_drop_index(oid)
        when obj.sql_kind is not null
        then format(E'DROP %s %s%s;%s\n',
                    obj.sql_kind, 

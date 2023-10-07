@@ -4,6 +4,7 @@ Version 0.27
 - bug fixes in script order, now much better!
 - bug fixes in `GENERATED` columns
 - improved `CREATE TYPE` for base types, shell types support
+- improved droping of indexes which are constraints
 - new execute tests
 
 Version 0.26

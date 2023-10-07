@@ -274,6 +274,107 @@ alter table cons1 add foreign key (x) references cons2;
 alter table cons2 add foreign key (x) references cons1;
 do $$ begin execute ddlx_script('cons1'::regclass,'{drop,nowrap}'); end $$;
 do $$ begin execute ddlx_script('cons2'::regclass,'{drop,nowrap}'); end $$;
+-- check rebuild of partitioned tables
+\pset format aligned
+\d 
+                       List of relations
+ Schema |         Name          |       Type        |  Owner   
+--------+-----------------------+-------------------+----------
+ public | cons1                 | table             | postgres
+ public | cons1_id_seq          | sequence          | postgres
+ public | cons2                 | table             | postgres
+ public | cons2_id_seq          | sequence          | postgres
+ public | customer_def          | table             | postgres
+ public | customer_ind          | table             | postgres
+ public | customer_jap          | table             | postgres
+ public | customers             | partitioned table | postgres
+ public | dept                  | partitioned table | postgres
+ public | dept_1                | table             | postgres
+ public | dept_10               | table             | postgres
+ public | dept_2                | table             | postgres
+ public | dept_3                | table             | postgres
+ public | dept_4                | table             | postgres
+ public | dept_5                | table             | postgres
+ public | dept_6                | table             | postgres
+ public | dept_7                | table             | postgres
+ public | dept_8                | table             | postgres
+ public | dept_9                | table             | postgres
+ public | items                 | table             | postgres
+ public | tab_generated12       | table             | postgres
+ public | tab_generated12_a_seq | sequence          | postgres
+ public | tab_generated12_b_seq | sequence          | postgres
+ public | tab_generated12_e_seq | sequence          | postgres
+ public | test_child            | table             | postgres
+ public | test_class_f          | foreign table     | postgres
+ public | test_class_m          | materialized view | postgres
+ public | test_class_r          | table             | postgres
+ public | test_class_r2         | table             | postgres
+ public | test_class_r2_i_seq   | sequence          | postgres
+ public | test_class_r_a_seq    | sequence          | postgres
+ public | test_class_v          | view              | postgres
+ public | test_class_v2         | view              | postgres
+ public | test_class_v_opt2     | view              | postgres
+ public | test_collation        | table             | postgres
+ public | test_collation_id_seq | sequence          | postgres
+ public | test_parent           | table             | postgres
+ public | test_parent_i_seq     | sequence          | postgres
+ public | test_stat             | table             | postgres
+ public | test_type_s           | sequence          | postgres
+(40 rows)
+
+/*
+select rebuild(i.name::regclass), i.sql_kind, i.sql_identifier 
+  from pg_class c, ddlx_identify(c.oid) i 
+ where relnamespace='public'::regnamespace
+ order by c.oid;
+*/
+\d 
+                       List of relations
+ Schema |         Name          |       Type        |  Owner   
+--------+-----------------------+-------------------+----------
+ public | cons1                 | table             | postgres
+ public | cons1_id_seq          | sequence          | postgres
+ public | cons2                 | table             | postgres
+ public | cons2_id_seq          | sequence          | postgres
+ public | customer_def          | table             | postgres
+ public | customer_ind          | table             | postgres
+ public | customer_jap          | table             | postgres
+ public | customers             | partitioned table | postgres
+ public | dept                  | partitioned table | postgres
+ public | dept_1                | table             | postgres
+ public | dept_10               | table             | postgres
+ public | dept_2                | table             | postgres
+ public | dept_3                | table             | postgres
+ public | dept_4                | table             | postgres
+ public | dept_5                | table             | postgres
+ public | dept_6                | table             | postgres
+ public | dept_7                | table             | postgres
+ public | dept_8                | table             | postgres
+ public | dept_9                | table             | postgres
+ public | items                 | table             | postgres
+ public | tab_generated12       | table             | postgres
+ public | tab_generated12_a_seq | sequence          | postgres
+ public | tab_generated12_b_seq | sequence          | postgres
+ public | tab_generated12_e_seq | sequence          | postgres
+ public | test_child            | table             | postgres
+ public | test_class_f          | foreign table     | postgres
+ public | test_class_m          | materialized view | postgres
+ public | test_class_r          | table             | postgres
+ public | test_class_r2         | table             | postgres
+ public | test_class_r2_i_seq   | sequence          | postgres
+ public | test_class_r_a_seq    | sequence          | postgres
+ public | test_class_v          | view              | postgres
+ public | test_class_v2         | view              | postgres
+ public | test_class_v_opt2     | view              | postgres
+ public | test_collation        | table             | postgres
+ public | test_collation_id_seq | sequence          | postgres
+ public | test_parent           | table             | postgres
+ public | test_parent_i_seq     | sequence          | postgres
+ public | test_stat             | table             | postgres
+ public | test_type_s           | sequence          | postgres
+(40 rows)
+
+\pset format unaligned
 alter view test_class_v rename column a to aardvark;
 select ddlx_create('test_class_v'::regclass);
 ddlx_create
