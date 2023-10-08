@@ -4,8 +4,9 @@ Version 0.27
 - bug fixes in script order, now much better!
 - bug fixes in `GENERATED` columns
 - improved `CREATE TYPE` for base types, shell types support
-- improved droping of indexes which are constraints
+- improved dropping of indexes which are really constraints
 - new execute tests
+- compatibility improvements with old postgres versions
 
 Version 0.26
 ------------
