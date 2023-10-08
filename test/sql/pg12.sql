@@ -29,6 +29,7 @@ do $$ begin execute ddlx_script('cons1'::regclass,'{drop,nowrap}'); end $$;
 do $$ begin execute ddlx_script('cons2'::regclass,'{drop,nowrap}'); end $$;
 
 -- check rebuild of partitioned tables
+SET client_min_messages = notice;
 \pset format aligned
 \d 
 

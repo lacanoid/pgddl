@@ -2037,8 +2037,9 @@ select level, -- partitions
        'pg_class'::regclass, $1, 0, 'n',
        array[array[$1::int,relid::int]]
   from pg_partition_tree($1)
+  join pg_class c on (c.oid=relid)
  where parentrelid is not null and relid is distinct from $1
-
+   and c.relkind not in ('I','i')
  union all
 select depth+1,
        case when r.oid is not null then 'pg_class'::regclass 
