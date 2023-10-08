@@ -32,12 +32,14 @@ do $$ begin execute ddlx_script('cons2'::regclass,'{drop,nowrap}'); end $$;
 \pset format aligned
 \d 
 
-/*
 select rebuild(i.name::regclass), i.sql_kind, i.sql_identifier 
   from pg_class c, ddlx_identify(c.oid) i 
  where relnamespace='public'::regnamespace
  order by c.oid;
-*/
+
+select sql_kind,sql_identifier
+  from ddlx_get_dependants('customers'::regclass),ddlx_identify(objid);
 
 \d 
 \pset format unaligned
+

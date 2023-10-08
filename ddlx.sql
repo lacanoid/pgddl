@@ -2018,7 +2018,7 @@ returns setof record as $$
 with recursive 
   tree(depth,classid,objid,objsubid,refclassid,refobjid,refobjsubid,deptype,edges) 
 as (
-select 1,
+select 1, -- dependancies
        case when r.oid is not null then 'pg_class'::regclass 
             else d.classid::regclass 
        end as classid,
@@ -2029,6 +2029,16 @@ select 1,
   left join pg_rewrite r on 
        (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
  where d.refobjid = $1 and r.ev_class is distinct from d.refobjid
+
+ union all
+select level, -- partitions
+       'pg_class'::regclass as classid,
+       relid as objid, 0, 
+       'pg_class'::regclass, $1, 0, 'n',
+       array[array[$1::int,relid::int]]
+  from pg_partition_tree($1)
+ where parentrelid is not null and relid is distinct from $1
+
  union all
 select depth+1,
        case when r.oid is not null then 'pg_class'::regclass 

@@ -7,6 +7,7 @@ Version 0.27
 - improved dropping of indexes which are really constraints
 - new execute tests
 - compatibility improvements with old postgres versions
+- include partitions in a script
 
 Version 0.26
 ------------

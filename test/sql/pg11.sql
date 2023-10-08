@@ -5,9 +5,12 @@ SET client_min_messages = warning;
 SET ROLE postgres;
 
 CREATE TABLE customers(cust_id bigint NOT NULL,cust_name varchar(32) NOT NULL,cust_address text,
-cust_country text) PARTITION BY LIST(cust_country);
+cust_country text, cust_city text) PARTITION BY LIST(cust_country);
 CREATE TABLE customer_ind PARTITION OF customers FOR VALUES IN ('ind');
-CREATE TABLE customer_jap PARTITION OF customers FOR VALUES IN ('jap');
+CREATE TABLE customer_jap PARTITION OF customers FOR VALUES IN ('jap') PARTITION BY LIST(cust_city);
+CREATE TABLE customer_jap_tokyo PARTITION OF customer_jap FOR VALUES IN ('tokyo');
+CREATE TABLE customer_jap_kyoto PARTITION OF customer_jap FOR VALUES IN ('kyoto');
+CREATE TABLE customer_jap_def PARTITION OF customer_jap DEFAULT;
 CREATE TABLE customer_def PARTITION OF customers DEFAULT;
 INSERT INTO customers VALUES (2039,'Puja','Hyderabad','ind');
 SELECT tableoid::regclass,* FROM customers;
