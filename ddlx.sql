@@ -2011,7 +2011,7 @@ $function$  strict;
 ---------------------------------------------------
 
 create or replace function ddlx_get_dependants(
- in oid, 
+ in oid, in text[] default '{}',
  out depth int, out classid regclass, out objid oid
 )
 returns setof record as $$
@@ -2040,6 +2040,7 @@ select level, -- partitions
   join pg_class c on (c.oid=relid)
  where parentrelid is not null and relid is distinct from $1
    and c.relkind not in ('I','i')
+   and not ('nopartitions' ilike any($2))
 #end
  union all
 select depth+1,
@@ -2878,7 +2879,7 @@ select row_number() over(order by gd.depth,gd.objid) as n,
        ddlx_drop(gd.objid,$2||'{script}'::text[]),
        ddlx_create(gd.objid,$2||'{script}'::text[]),
        gd.objid
-  from ddlx_get_dependants($1) gd
+  from ddlx_get_dependants($1,$2) gd
   left join pg_depend de
        on de.objid=gd.objid and de.refclassid='pg_extension'::regclass
  where case when 'ext' ilike any($2)
