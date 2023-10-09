@@ -29,7 +29,7 @@ DECLARE
    result INT; 
    obj record;
  BEGIN 
-   raise notice 'REBUILD: % %',(ddlx_identify($1)).sql_kind,(ddlx_identify($1)).sql_identifier;
+   raise notice 'REBUILD % %',(ddlx_identify($1)).sql_kind,(ddlx_identify($1)).sql_identifier;
    ddl := ddlx_script($1,'{drop,nowrap}');
    EXECUTE ddl; 
    GET DIAGNOSTICS result = ROW_COUNT; 
@@ -107,30 +107,30 @@ select rebuild(i.name::regclass), i.sql_kind, i.sql_identifier
   from pg_class c, ddlx_identify(c.oid) i 
  where relnamespace='public'::regnamespace
  order by c.oid;
-NOTICE:  REBUILD: TYPE test_type_c
-NOTICE:  REBUILD: SEQUENCE test_class_r2_i_seq
-NOTICE:  REBUILD: TABLE test_class_r2
-NOTICE:  REBUILD: SEQUENCE test_type_s
-NOTICE:  REBUILD: SEQUENCE test_collation_id_seq
-NOTICE:  REBUILD: TABLE test_collation
-NOTICE:  REBUILD: SEQUENCE test_parent_i_seq
-NOTICE:  REBUILD: TABLE test_parent
-NOTICE:  REBUILD: TABLE test_child
-NOTICE:  REBUILD: FOREIGN TABLE test_class_f
-NOTICE:  REBUILD: TABLE items
-NOTICE:  REBUILD: INDEX items_pkey
-NOTICE:  REBUILD: TABLE test_class_r
-NOTICE:  REBUILD: SEQUENCE test_class_r_a_seq
-NOTICE:  REBUILD: INDEX test_class_r_b_key
-NOTICE:  REBUILD: INDEX test_class_r_pkey
-NOTICE:  REBUILD: INDEX idx1
-NOTICE:  REBUILD: INDEX idx2
-NOTICE:  REBUILD: INDEX idx3
-NOTICE:  REBUILD: VIEW test_class_v
-NOTICE:  REBUILD: MATERIALIZED VIEW test_class_m
-NOTICE:  REBUILD: INDEX test_class_mi
-NOTICE:  REBUILD: VIEW test_class_v2
-NOTICE:  REBUILD: VIEW test_class_v_opt2
+NOTICE:  REBUILD TYPE test_type_c
+NOTICE:  REBUILD SEQUENCE test_class_r2_i_seq
+NOTICE:  REBUILD TABLE test_class_r2
+NOTICE:  REBUILD SEQUENCE test_type_s
+NOTICE:  REBUILD SEQUENCE test_collation_id_seq
+NOTICE:  REBUILD TABLE test_collation
+NOTICE:  REBUILD SEQUENCE test_parent_i_seq
+NOTICE:  REBUILD TABLE test_parent
+NOTICE:  REBUILD TABLE test_child
+NOTICE:  REBUILD FOREIGN TABLE test_class_f
+NOTICE:  REBUILD TABLE items
+NOTICE:  REBUILD INDEX items_pkey
+NOTICE:  REBUILD TABLE test_class_r
+NOTICE:  REBUILD SEQUENCE test_class_r_a_seq
+NOTICE:  REBUILD INDEX test_class_r_b_key
+NOTICE:  REBUILD INDEX test_class_r_pkey
+NOTICE:  REBUILD INDEX idx1
+NOTICE:  REBUILD INDEX idx2
+NOTICE:  REBUILD INDEX idx3
+NOTICE:  REBUILD VIEW test_class_v
+NOTICE:  REBUILD MATERIALIZED VIEW test_class_m
+NOTICE:  REBUILD INDEX test_class_mi
+NOTICE:  REBUILD VIEW test_class_v2
+NOTICE:  REBUILD VIEW test_class_v_opt2
  rebuild |     sql_kind      |    sql_identifier     
 ---------+-------------------+-----------------------
        0 | TYPE              | test_type_c

@@ -33,7 +33,7 @@ DECLARE
    result INT; 
    obj record;
  BEGIN 
-   raise notice 'REBUILD: % %',(ddlx_identify($1)).sql_kind,(ddlx_identify($1)).sql_identifier;
+   raise notice 'REBUILD % %',(ddlx_identify($1)).sql_kind,(ddlx_identify($1)).sql_identifier;
    ddl := ddlx_script($1,'{drop,nowrap}');
    EXECUTE ddl; 
    GET DIAGNOSTICS result = ROW_COUNT; 

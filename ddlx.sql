@@ -1055,7 +1055,8 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_create_index(regclass,ddlx_options text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
  with ii as (
- SELECT CASE d.refclassid
+ SELECT CASE WHEN coalesce(cc.conislocal,true) THEN '' ELSE '-- ' END ||
+        CASE d.refclassid
             WHEN 'pg_constraint'::regclass 
             THEN 'ALTER TABLE ' || text(c.oid::regclass) 
                  || ' ADD CONSTRAINT ' || quote_ident(cc.conname) 
@@ -1085,7 +1086,8 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_drop_index(regclass,ddlx_options text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
  with ii as (
- SELECT CASE d.refclassid
+ SELECT CASE WHEN coalesce(cc.conislocal,true) THEN '' ELSE '-- ' END ||
+        CASE d.refclassid
             WHEN 'pg_constraint'::regclass 
             THEN 'ALTER TABLE ' || text(c.oid::regclass) 
                  || ' DROP CONSTRAINT ' || quote_ident(cc.conname) 
