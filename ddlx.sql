@@ -2029,7 +2029,7 @@ select 1, -- dependancies
   left join pg_rewrite r on 
        (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
  where d.refobjid = $1 and r.ev_class is distinct from d.refobjid
-
+#if 12
  union all
 select level, -- partitions
        'pg_class'::regclass as classid,
@@ -2040,6 +2040,7 @@ select level, -- partitions
   join pg_class c on (c.oid=relid)
  where parentrelid is not null and relid is distinct from $1
    and c.relkind not in ('I','i')
+#end
  union all
 select depth+1,
        case when r.oid is not null then 'pg_class'::regclass 
