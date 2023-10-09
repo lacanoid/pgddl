@@ -33,7 +33,7 @@ Support for other missing options:
 - ✔︎ comments on all objects
 - ✔︎ ownership of all objects 
 - ✔︎ grants on all objects
-- grants vs current_role (who is grantor?, GRANTED BY)
+- ✔︎ grants vs current_role (who is grantor?, GRANTED BY)
 - materialized view tablespace & storage parameters
 - table of type not nulls
 - PG14 SET COMPRESSION
@@ -43,6 +43,8 @@ Support for other missing options:
 - PG16 GRANT WITH INHERIT, SET
 - SET STATISTICS on indexes
 - ✔︎ pg_subscription not readable by non superuser
+- create base type: SUBSCRIPT, PASSEDBYVALUE, LIKE,  
+- create range type: MULTIRANGE_TYPE_NAME
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
@@ -50,7 +52,7 @@ Other:
 - ✔︎ add `ddlx_alter(oid)` for post-data
 - add `ddlx_alter_column(regclass,name)`
 - group column alters together by column name
-- handle sequences better (create if not exists)
+- ✔︎ handle sequences better (create if not exists)
 - ✔︎ handle dependancies for types better (use shell types)
 - improve dumping of comments (be quiet on NULL comments)
 - optimize grants on functions
@@ -58,7 +60,7 @@ Other:
 - move storage setting to pre-data section
 - use ONLY when appropriate
 - ✔︎ mysterious duplicates in index section for partitioned tables (see table dept_1)
-- perhaps include table subpartitions in a script
+- ✔︎ include table subpartitions in a script
 - ✔︎ do not emit ALTER OWNER for objects owned by current role
 
 Build and tests:
@@ -83,10 +85,10 @@ Some options as to what and how to dump stuff might be required:
 * ✔︎ `NOWRAP` - do not wrap in BEGIN / END
 * ✔︎ `EXT` - include objects from extensions. Normally, these are omitted.
 * `DEP` - output objects which depend on this object too
-* `SUB` - include subpartitions
 * `DATA` - add statements preserve / copy table data
 * ✔︎ `NOSTORAGE` - exclude storage parameters settings
 * ✔︎ `NOSETTINGS` - exclude table settings
+* ✔︎ `NOPARTITIONS` - exclude table partitions
 * ✔︎ `LITE` - better SQL standard compatibility (to export definitions for SQLite, for example). Moves constraints and defaults into create table section, omits a bunch of postgres specific stuff.
 
 Other DDL dumping tools
