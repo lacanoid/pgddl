@@ -914,7 +914,12 @@ CREATE OR REPLACE FUNCTION ddlx_drop_sequence(regclass)
  RETURNS text LANGUAGE sql AS $function$
   with seq as (
   select sc.oid::regclass,d.refobjid::regclass,
-         a.attrelid,a.attname,a.attidentity
+         a.attrelid,a.attname,
+#if 10
+         a.attidentity
+#else
+         ''
+#end
     from pg_class sc
     left join pg_depend d on d.objid = sc.oid and d.deptype in ('a','i')
     left join pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
@@ -932,7 +937,12 @@ CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
   with seq as (
   select sc.oid::regclass,d.refobjid::regclass,
-         a.attrelid,a.attname,a.attidentity
+         a.attrelid,a.attname,
+#if 10
+         a.attidentity
+#else
+         ''
+#end
     from pg_class sc
     left join pg_depend d on d.objid = sc.oid and d.deptype in ('a','i')
     left join pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
