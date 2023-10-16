@@ -910,22 +910,48 @@ CREATE OR REPLACE FUNCTION ddlx_alter_sequence(regclass)
    AND obj.sql_kind = 'SEQUENCE'
 $function$  strict;
 
-CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass, text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_drop_sequence(regclass)
  RETURNS text LANGUAGE sql AS $function$
- with obj as (select * from ddlx_identify($1)),
- seq as (
-  select sc.oid::regclass,d.refobjid::regclass,a.attname
-   from pg_class sc
-   left join pg_depend d on d.objid = sc.oid and d.deptype = 'a'
-   left join pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
+  with seq as (
+  select sc.oid::regclass,d.refobjid::regclass,
+         a.attrelid,a.attname,a.attidentity
+    from pg_class sc
+    left join pg_depend d on d.objid = sc.oid and d.deptype in ('a','i')
+    left join pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
    where relkind='S' and sc.oid = $1
  )
- select 
- 'CREATE SEQUENCE '
- || case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end
- ||(obj.oid::regclass::text) || E';\n'
--- || ddlx_alter_sequence($1)
-   from obj;
+ select case 
+        when attidentity in ('d','a')
+        then format(e'ALTER TABLE %s ALTER %I DROP IDENTITY;\n',attrelid::regclass,attname)
+        else format(e'DROP SEQUENCE IF EXISTS %s;\n',$1::text)
+        end
+   from seq
+$function$  strict;
+
+CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass, text[] default '{}')
+ RETURNS text LANGUAGE sql AS $function$
+  with seq as (
+  select sc.oid::regclass,d.refobjid::regclass,
+         a.attrelid,a.attname,a.attidentity
+    from pg_class sc
+    left join pg_depend d on d.objid = sc.oid and d.deptype in ('a','i')
+    left join pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
+   where relkind='S' and sc.oid = $1
+ )
+ select case 
+        when attidentity in ('d','a')
+        then format(e'ALTER TABLE %s ALTER %I ADD GENERATED %s AS IDENTITY;\n',
+                      attrelid::regclass,attname,
+                      case attidentity::text
+                      when 'd' then 'BY DEFAULT'
+                      when 'a' then 'ALWAYS'
+                      else attidentity::text
+                      end)
+        else format(e'CREATE SEQUENCE %s%s;\n',
+                    case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end, 
+                    $1::text)
+        end
+   from seq
 $function$  strict;
 
 ---------------------------------------------------
@@ -1399,7 +1425,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_triggers(regclass)
 $function$  strict;
 
 ---------------------------------------------------
-
+/*
 CREATE OR REPLACE FUNCTION ddlx_drop_trigger(oid)
  RETURNS text LANGUAGE sql AS $function$
  select format(
@@ -1408,7 +1434,7 @@ CREATE OR REPLACE FUNCTION ddlx_drop_trigger(oid)
    from pg_trigger t join pg_class c on (t.tgrelid=c.oid)
   where t.oid = $1 
 $function$  strict;
-
+*/
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass,ddlx_options text[] default '{}')
@@ -2841,14 +2867,14 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
  select 
    case obj.classid
    when 'pg_constraint'::regclass then ddlx_drop_constraint(oid)
-   when 'pg_trigger'::regclass    then ddlx_drop_trigger(oid)
+--   when 'pg_trigger'::regclass    then ddlx_drop_trigger(oid)
    when 'pg_attrdef'::regclass    then ddlx_drop_default(oid)
    when 'pg_amproc'::regclass     then ddlx_drop_amproc(oid)
    when 'pg_amop'::regclass       then ddlx_drop_amop(oid)
    else
      case
        when obj.sql_kind = 'SEQUENCE'
-       then format(E'DROP %s IF EXISTS %s;\n',obj.sql_kind, obj.sql_identifier)
+       then ddlx_drop_sequence(oid)
        when obj.sql_kind = 'INDEX'
        then ddlx_drop_index(oid)
        when obj.sql_kind is not null

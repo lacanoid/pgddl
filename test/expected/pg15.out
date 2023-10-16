@@ -515,12 +515,144 @@ SET client_min_messages = notice;
  public | test_type_s           | sequence          | postgres
 (43 rows)
 
-/*
 select rebuild(i.name::regclass), i.sql_kind, i.sql_identifier 
   from pg_class c, ddlx_identify(c.oid) i 
  where relnamespace='public'::regnamespace
  order by c.oid;
-*/
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TYPE test_type_c
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_class_r2_i_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_class_r2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_type_s
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_collation_id_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_collation
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_parent_i_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_parent
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_child
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD FOREIGN TABLE test_class_f
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE items
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX items_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_class_r
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_class_r_a_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX test_class_r_b_key
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX test_class_r_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX idx1
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX idx2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX idx3
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD VIEW test_class_v
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD MATERIALIZED VIEW test_class_m
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX test_class_mi
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD VIEW test_class_v2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD VIEW test_class_v_opt2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customers
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_ind
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_jap
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_jap_tokyo
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_jap_kyoto
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_jap_def
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_def
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_stat
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX test_stat_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_1
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_1_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_2_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_3
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_3_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_4
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_4_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_5
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_5_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_6
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_6_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_7
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_7_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_8
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_8_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_9
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_9_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_10
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_10_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE tab_generated12_a_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE tab_generated12_b_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE tab_generated12
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE tab_generated12_e_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE cons1
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE cons1_id_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX cons1_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE cons2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE cons2_id_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX cons2_pkey
+ rebuild |     sql_kind      |    sql_identifier     
+---------+-------------------+-----------------------
+       0 | TYPE              | test_type_c
+       0 | SEQUENCE          | test_class_r2_i_seq
+       0 | TABLE             | test_class_r2
+       0 | SEQUENCE          | test_type_s
+       0 | SEQUENCE          | test_collation_id_seq
+       0 | TABLE             | test_collation
+       0 | SEQUENCE          | test_parent_i_seq
+       0 | TABLE             | test_parent
+       0 | TABLE             | test_child
+       0 | FOREIGN TABLE     | test_class_f
+       0 | TABLE             | items
+       0 | INDEX             | items_pkey
+       0 | TABLE             | test_class_r
+       0 | SEQUENCE          | test_class_r_a_seq
+       0 | INDEX             | test_class_r_b_key
+       0 | INDEX             | test_class_r_pkey
+       0 | INDEX             | idx1
+       0 | INDEX             | idx2
+       0 | INDEX             | idx3
+       0 | VIEW              | test_class_v
+       0 | MATERIALIZED VIEW | test_class_m
+       0 | INDEX             | test_class_mi
+       0 | VIEW              | test_class_v2
+       0 | VIEW              | test_class_v_opt2
+       0 | TABLE             | customers
+       0 | TABLE             | customer_ind
+       0 | TABLE             | customer_jap
+       0 | TABLE             | customer_jap_tokyo
+       0 | TABLE             | customer_jap_kyoto
+       0 | TABLE             | customer_jap_def
+       0 | TABLE             | customer_def
+       0 | TABLE             | test_stat
+       0 | INDEX             | test_stat_pkey
+       0 | TABLE             | dept
+       0 | INDEX             | dept_pkey
+       0 | TABLE             | dept_1
+       0 | INDEX             | dept_1_pkey
+       0 | TABLE             | dept_2
+       0 | INDEX             | dept_2_pkey
+       0 | TABLE             | dept_3
+       0 | INDEX             | dept_3_pkey
+       0 | TABLE             | dept_4
+       0 | INDEX             | dept_4_pkey
+       0 | TABLE             | dept_5
+       0 | INDEX             | dept_5_pkey
+       0 | TABLE             | dept_6
+       0 | INDEX             | dept_6_pkey
+       0 | TABLE             | dept_7
+       0 | INDEX             | dept_7_pkey
+       0 | TABLE             | dept_8
+       0 | INDEX             | dept_8_pkey
+       0 | TABLE             | dept_9
+       0 | INDEX             | dept_9_pkey
+       0 | TABLE             | dept_10
+       0 | INDEX             | dept_10_pkey
+       0 | SEQUENCE          | tab_generated12_a_seq
+       0 | SEQUENCE          | tab_generated12_b_seq
+       0 | TABLE             | tab_generated12
+       0 | SEQUENCE          | tab_generated12_e_seq
+       0 | TABLE             | cons1
+       0 | SEQUENCE          | cons1_id_seq
+       0 | INDEX             | cons1_pkey
+       0 | TABLE             | cons2
+       0 | SEQUENCE          | cons2_id_seq
+       0 | INDEX             | cons2_pkey
+(65 rows)
+
 select sql_kind,sql_identifier
   from ddlx_get_dependants('customers'::regclass),ddlx_identify(objid);
  sql_kind |   sql_identifier   

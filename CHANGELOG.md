@@ -6,8 +6,8 @@ Version 0.27
 - improved `CREATE TYPE` for base types, shell types support
 - improved dropping of indexes which are really constraints
 - new execute tests
+- include partitions in a script, `nopartitions` option to omit
 - compatibility improvements with old postgres versions
-- include partitions in a script, `nopartitions` flag to omit
 
 Version 0.26
 ------------
