@@ -925,11 +925,15 @@ CREATE OR REPLACE FUNCTION ddlx_drop_sequence(regclass)
     left join pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
    where relkind='S' and sc.oid = $1
  )
+#if 10
  select case 
         when attidentity in ('d','a')
         then format(e'ALTER TABLE %s ALTER %I DROP IDENTITY;\n',attrelid::regclass,attname)
         else format(e'DROP SEQUENCE IF EXISTS %s;\n',$1::text)
         end
+#else
+ select format(e'DROP SEQUENCE IF EXISTS %s;\n',$1::text)
+#end
    from seq
 $function$  strict;
 
@@ -948,6 +952,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass, text[] default '{}')
     left join pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
    where relkind='S' and sc.oid = $1
  )
+#if 10
  select case 
         when attidentity in ('d','a')
         then format(e'ALTER TABLE %s ALTER %I ADD GENERATED %s AS IDENTITY;\n',
@@ -961,6 +966,11 @@ CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass, text[] default '{}')
                     case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end, 
                     $1::text)
         end
+#else
+ select format(e'CREATE SEQUENCE %s%s;\n',
+                    case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end, 
+                    $1::text)
+#end
    from seq
 $function$  strict;
 
