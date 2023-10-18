@@ -5,14 +5,14 @@ Version 0.27
 - bug fixes in `GENERATED` columns
 - improved `CREATE TYPE` for base types, shell types support
 - improved dropping of indexes which are really constraints
-- new execute tests
-- include partitions in a script, `nopartitions` option to omit
+- new execute tests, testing if (some) generated scripts actually run
+- include table partitions in a script, `nopartitions` option to omit
 - compatibility improvements with old postgres versions
-
+- `nocomments` option to hide all comments
 STILL TO DO:
+- `comments` option to show all comments, even NULL ones
 - `noconstraints` + `lite` options should omit constraints
 - `owner` and `noowner` and `nodcl` for serial sequences
-- `comments` and `nocomments` options
 - check if `script` option works ok for sequences
 
 Version 0.26
