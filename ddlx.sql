@@ -808,7 +808,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
     ' (' ||coalesce(E'\n' ||
       array_to_string(array_cat(
         (SELECT array_agg('    '||definition) FROM ddlx_describe($1,$2) WHERE is_local),
-        case when 'lite' ilike any($2) then
+        case when 'lite' ilike any($2)
+	      and not 'noconstraints' ilike any($2) then
           (SELECT array_agg('    '||sql) FROM
             (select ('CONSTRAINT ' || quote_ident(constraint_name) || ' ' || constraint_definition) as sql
                from ddlx_get_constraints($1) where is_local order by constraint_type desc, constraint_name) as a)
@@ -2835,7 +2836,9 @@ obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         base_ddl,           
-        case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n',
+	case when 'nocomments' ilike any($2) then null else 
+          case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n'
+	end,
         case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
         else case 
           when 'owner' ilike any($2) or obj.owner is distinct from current_role
@@ -2859,8 +2862,10 @@ with
 obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
-        base_ddl,           
-        case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n',
+        base_ddl,
+	case when 'nocomments' ilike any($2) then null else 
+          case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n'
+	end,
         case when 'noalter' ilike any($2) then null
         else array_to_string(array[
           case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
