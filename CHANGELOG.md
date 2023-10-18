@@ -8,6 +8,7 @@ Version 0.27
 - new execute tests
 - include partitions in a script, `nopartitions` option to omit
 - compatibility improvements with old postgres versions
+- 
 STILL TO DO:
 - `noconstraints` + `lite` options should omit constraints
 - `owner` and `noowner` and `nodcl` for serial sequences
