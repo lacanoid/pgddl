@@ -10,6 +10,7 @@ Version 0.27
 - improved dropping of indexes which are really constraints
 - compatibility improvements with old postgres versions
 - `comments` option to show all comments, even null ones, these are now omitted by default if null
+
 STILL TO DO:
 - `noconstraints` + `lite` options should omit constraints
 - `owner` and `noowner` and `nodcl` for serial sequences
