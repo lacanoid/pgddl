@@ -1212,8 +1212,13 @@ seq as (
  select 
     coalesce(
       string_agg(
-        format(e'CREATE SEQUENCE IF NOT EXISTS %s;\n'||
+        format(e'CREATE SEQUENCE %s%s;\n'||
                e'ALTER SEQUENCE %s OWNER TO %s;\n',
+#if 9.5
+	        'IF NOT EXISTS ',
+#else
+		'',
+#end
                 "sequence","sequence",
 		pg_get_userbyid((select relowner from pg_class where oid=$1))
 	      ) ||

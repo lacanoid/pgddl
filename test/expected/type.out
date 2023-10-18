@@ -206,32 +206,33 @@ COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)
 
 
 (1 row)
-select ddlx_create('int_t[]'::regtype);
-ddlx_create
+select replace(ddlx_create('int_t[]'::regtype),'PARALLEL SAFE ','')
+;
+replace
 CREATE TYPE int_t[];
 
 CREATE OR REPLACE FUNCTION pg_catalog.array_in(cstring, oid, integer)
  RETURNS anyarray
  LANGUAGE internal
- STABLE PARALLEL SAFE STRICT
+ STABLE STRICT
 AS $function$array_in$function$;
 
 CREATE OR REPLACE FUNCTION pg_catalog.array_out(anyarray)
  RETURNS cstring
  LANGUAGE internal
- STABLE PARALLEL SAFE STRICT
+ STABLE STRICT
 AS $function$array_out$function$;
 
 CREATE OR REPLACE FUNCTION pg_catalog.array_send(anyarray)
  RETURNS bytea
  LANGUAGE internal
- STABLE PARALLEL SAFE STRICT
+ STABLE STRICT
 AS $function$array_send$function$;
 
 CREATE OR REPLACE FUNCTION pg_catalog.array_recv(internal, oid, integer)
  RETURNS anyarray
  LANGUAGE internal
- STABLE PARALLEL SAFE STRICT
+ STABLE STRICT
 AS $function$array_recv$function$;
 
 CREATE TYPE int_t[] (
