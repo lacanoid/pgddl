@@ -8,6 +8,14 @@ Version 0.27
 - new execute tests
 - include partitions in a script, `nopartitions` option to omit
 - compatibility improvements with old postgres versions
+- 
+STILL TO DO:
+- `noconstraints` + `lite` options should omit constraints
+- `owner` and `noowner` and `nodcl` for serial sequences
+- `comments` and `nocomments` options
+- support for `SET COMPRESSION`
+- publication columns and qualifiers
+- check if `script` option works ok for sequences
 
 Version 0.26
 ------------
