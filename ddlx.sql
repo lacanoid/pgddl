@@ -749,7 +749,8 @@ CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{comments}')
         then format(
           E'COMMENT ON %s %s IS %L;\n',
 	  sql_kind, sql_identifier, comment
-        ) else '' end
+        ) else ''
+	end
    from c	
 $function$ strict;
 
@@ -1010,6 +1011,9 @@ select ddlx_create_type_shell($1) ||
          'TYPMOD_IN = ' || cast(nullif(t.typmodin,0)::regproc as text),
          'TYPMOD_OUT = ' || cast(nullif(t.typmodout,0)::regproc as text),
          'ANALYZE = ' || cast(nullif(t.typanalyze,0)::regproc as text),
+#if 14
+         'SUBSCRIPT = ' || cast(nullif(t.typsubscript,0)::regproc as text),
+#end
          'INTERNALLENGTH = ' || 
             case when  t.typlen < 0 then 'VARIABLE' else cast(t.typlen as text) end,
          case when t.typbyval then 'PASSEDBYVALUE' end,

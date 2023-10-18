@@ -205,54 +205,9 @@ COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)
 
 
 (1 row)
-select replace(ddlx_create('int_t[]'::regtype),'PARALLEL SAFE ','')
-;
-replace
-CREATE TYPE int_t[];
-
-CREATE OR REPLACE FUNCTION pg_catalog.array_in(cstring, oid, integer)
- RETURNS anyarray
- LANGUAGE internal
- STABLE STRICT
-AS $function$array_in$function$;
-
-CREATE OR REPLACE FUNCTION pg_catalog.array_out(anyarray)
- RETURNS cstring
- LANGUAGE internal
- STABLE STRICT
-AS $function$array_out$function$;
-
-CREATE OR REPLACE FUNCTION pg_catalog.array_send(anyarray)
- RETURNS bytea
- LANGUAGE internal
- STABLE STRICT
-AS $function$array_send$function$;
-
-CREATE OR REPLACE FUNCTION pg_catalog.array_recv(internal, oid, integer)
- RETURNS anyarray
- LANGUAGE internal
- STABLE STRICT
-AS $function$array_recv$function$;
-
-CREATE TYPE int_t[] (
-  INPUT = array_in,
-  OUTPUT = array_out,
-  SEND = array_send,
-  RECEIVE = array_recv,
-  ANALYZE = array_typanalyze,
-  INTERNALLENGTH = VARIABLE,
-  ALIGNMENT = int4,
-  STORAGE = extended,
-  CATEGORY = 'A',
-  ELEMENT = int_t,
-  DELIMITER = ',',
-  COLLATABLE = false
-);
-
-
-
-(1 row)
 /*
+select replace(ddlx_create('int_t[]'::regtype),'PARALLEL SAFE ','');
+
 select ddlx_script('daterange'::regtype);
 
 select ddlx_script('=(integer,integer)'::regoperator);

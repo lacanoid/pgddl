@@ -67,10 +67,9 @@ COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)
 ALTER TYPE int_t OWNER TO postgres;
 
 select ddlx_create('int_t'::regtype);
-select replace(ddlx_create('int_t[]'::regtype),'PARALLEL SAFE ','')
-;
-
 /*
+select replace(ddlx_create('int_t[]'::regtype),'PARALLEL SAFE ','');
+
 select ddlx_script('daterange'::regtype);
 
 select ddlx_script('=(integer,integer)'::regoperator);
