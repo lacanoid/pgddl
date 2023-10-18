@@ -1,14 +1,14 @@
 Version 0.27
 ------------
 - include `GRANTED BY` when grantor is distinct from current role
+- include table partitions in a script, `nopartitions` option to omit
+- new `nocomments` option to hide all comments
+- more execute tests
 - bug fixes in script order, now much better!
 - bug fixes in `GENERATED` columns
 - improved `CREATE TYPE` for base types, shell types support
 - improved dropping of indexes which are really constraints
-- new execute tests, testing if (some) generated scripts actually run
-- include table partitions in a script, `nopartitions` option to omit
 - compatibility improvements with old postgres versions
-- `nocomments` option to hide all comments
 STILL TO DO:
 - `comments` option to show all comments, even NULL ones
 - `noconstraints` + `lite` options should omit constraints

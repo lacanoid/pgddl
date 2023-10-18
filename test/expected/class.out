@@ -825,8 +825,6 @@ select replace(ddlx_alter('test_class_r'::regclass),'FUNCTION','PROCEDURE') as d
 ddlx_alter
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
-ALTER TABLE test_class_r OWNER TO postgres;
-
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
 

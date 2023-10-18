@@ -763,15 +763,19 @@ CREATE OR REPLACE FUNCTION ddlx_create_function(regproc, text[] default '{}') RE
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid)
+CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
  RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1))
- select
-   case
-     when obj.sql_kind = 'INDEX' then ''
-     else 'ALTER '||sql_kind||' '||sql_identifier||
-          ' OWNER TO '||quote_ident(owner)||E';\n'
-   end
+ select case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
+        else case 
+          when 'owner' ilike any($2) or obj.owner is distinct from current_role
+          then
+          case
+     	    when obj.sql_kind = 'INDEX' then null
+     	    else 'ALTER '||sql_kind||' '||sql_identifier||
+                 ' OWNER TO '||quote_ident(owner)||E';\n'
+          end end
+        end
   from obj 
 $function$  strict;
 
@@ -2778,7 +2782,7 @@ with obj as (select * from ddlx_identify($1))
       end
     end as base_ddl,
     ddlx_comment(oid,$2) as comment,
-    ddlx_alter_owner(oid) as owner,
+    ddlx_alter_owner(oid,$2) as owner,
     ddlx_alter_table_storage(oid) as storage,
     ddlx_alter_table_defaults(oid,$2) as defaults,
     case obj.sql_kind
