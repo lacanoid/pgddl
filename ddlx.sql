@@ -1357,18 +1357,17 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_constraint(oid)
+CREATE OR REPLACE FUNCTION ddlx_create_constraint(oid, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
- select format(
-   E'ALTER %s %s ADD CONSTRAINT %I\n  %s;\n',
-   case
-     when t.oid is not null then 'DOMAIN'
-     else 'TABLE'
-   end,
-   coalesce(cast(t.oid::regtype as text),
-            cast(r.oid::regclass as text)),
-   c.conname, 
-   pg_get_constraintdef(c.oid,true)) 
+ select case
+        when not 'noconstraints' ilike any($2)
+        then format(
+          E'ALTER %s %s ADD CONSTRAINT %I\n  %s;\n',
+          case when t.oid is not null then 'DOMAIN' else 'TABLE' end,
+          coalesce(cast(t.oid::regtype as text),cast(r.oid::regclass as text)),
+          c.conname, 
+          pg_get_constraintdef(c.oid,true))
+	end
    from pg_constraint c 
    left join pg_class r on (c.conrelid = r.oid)
    left join pg_type t on (c.contypid = t.oid)
@@ -2735,7 +2734,7 @@ with obj as (select * from ddlx_identify($1))
     when 'pg_ts_parser'::regclass      then ddlx_create_text_search_parser(oid)
     when 'pg_ts_template'::regclass    then ddlx_create_text_search_template(oid)
     when 'pg_database'::regclass       then ddlx_create_database(oid)
-    when 'pg_constraint'::regclass     then ddlx_create_constraint(oid)
+    when 'pg_constraint'::regclass     then ddlx_create_constraint(oid,$2)
     when 'pg_trigger'::regclass        then ddlx_create_trigger(oid)
     when 'pg_attrdef'::regclass        then ddlx_create_default(oid)
     when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid)
