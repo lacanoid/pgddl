@@ -43,7 +43,6 @@ CREATE TABLE customers (
 )
   PARTITION BY LIST (cust_country);
 
-COMMENT ON TABLE customers IS NULL;
 
 
 END;
@@ -63,7 +62,6 @@ CREATE TABLE customer_jap PARTITION OF customers
   FOR VALUES IN ('jap')
   PARTITION BY LIST (cust_city);
 
-COMMENT ON TABLE customer_jap IS NULL;
 
 
 END;
@@ -82,7 +80,6 @@ DROP TABLE customer_def; --==>> !!! ATTENTION !!! <<==--
 CREATE TABLE customer_def PARTITION OF customers
   DEFAULT;
 
-COMMENT ON TABLE customer_def IS NULL;
 
 
 END;
@@ -97,7 +94,6 @@ CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
 select ddlx_create(oid) from pg_statistic_ext where stxname='test_stat1';
 ddlx_create
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
-COMMENT ON STATISTICS test_stat1 IS NULL;
 
 
 (1 row)
@@ -116,12 +112,10 @@ CREATE TABLE test_stat (
     b integer
 );
 
-COMMENT ON TABLE test_stat IS NULL;
 
 ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey PRIMARY KEY (a);
 
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
-COMMENT ON STATISTICS test_stat1 IS NULL;
 
 
 
@@ -155,7 +149,6 @@ CREATE TABLE dept (
 )
   PARTITION BY HASH (id);
 
-COMMENT ON TABLE dept IS NULL;
 
 ALTER TABLE dept ADD CONSTRAINT dept_pkey PRIMARY KEY (id);
 
@@ -176,7 +169,6 @@ DROP TABLE dept_7; --==>> !!! ATTENTION !!! <<==--
 CREATE TABLE dept_7 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 6);
 
-COMMENT ON TABLE dept_7 IS NULL;
 
 ALTER TABLE dept_7 ADD CONSTRAINT dept_7_pkey PRIMARY KEY (id);
 
@@ -212,7 +204,6 @@ BEGIN
 END ;
 $procedure$;
 
-COMMENT ON PROCEDURE procedure1(text) IS NULL;
 
 REVOKE ALL ON FUNCTION procedure1(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION procedure1(text) TO PUBLIC;

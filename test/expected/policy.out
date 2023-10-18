@@ -45,7 +45,6 @@ CREATE TABLE items (
     acl_write uuid[]
 );
 
-COMMENT ON TABLE items IS NULL;
 
 ALTER TABLE items OWNER TO postgres;
 ALTER TABLE items ALTER id SET DEFAULT uuid_generate_v4();
@@ -64,7 +63,6 @@ CREATE POLICY item_owner ON items
   TO postgres
   USING (acl_read && regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text)::uuid[] OR acl_write && regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text)::uuid[])
   WITH CHECK (acl_write && regexp_split_to_array(current_setting('jwt.claims.roles'::text), ','::text)::uuid[]);
-COMMENT ON POLICY item_owner ON items IS NULL;
 
 
 END;

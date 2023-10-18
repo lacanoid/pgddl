@@ -107,7 +107,6 @@ GRANT UPDATE ON test_class_r TO PUBLIC;
 
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
   CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
-COMMENT ON CONSTRAINT test_class_r_c_check ON test_class_r IS NULL;
 
 
 ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
@@ -189,7 +188,6 @@ DROP INDEX idx1;
 
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
 
-COMMENT ON INDEX idx1 IS NULL;
 
 
 END;
@@ -207,7 +205,6 @@ DROP INDEX idx2;
 
 CREATE INDEX idx2 ON public.test_class_r USING gin (v);
 
-COMMENT ON INDEX idx2 IS NULL;
 
 
 END;
@@ -243,7 +240,6 @@ CREATE UNLOGGED TABLE test_class_r2 (
     n numeric(10,2)
 );
 
-COMMENT ON TABLE test_class_r2 IS NULL;
 
 CREATE SEQUENCE IF NOT EXISTS test_class_r2_i_seq;
 ALTER SEQUENCE test_class_r2_i_seq OWNER TO postgres;
@@ -285,7 +281,6 @@ CREATE OR REPLACE VIEW test_class_v AS
     v
    FROM test_class_r;
 
-COMMENT ON VIEW test_class_v IS NULL;
 
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
@@ -315,7 +310,6 @@ CREATE OR REPLACE VIEW test_class_v AS
     v
    FROM test_class_r;
 
-COMMENT ON VIEW test_class_v IS NULL;
 
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
@@ -350,7 +344,6 @@ CREATE OR REPLACE VIEW test_class_v AS
     v
    FROM test_class_r;
 
-COMMENT ON VIEW test_class_v IS NULL;
 
 ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
@@ -371,7 +364,6 @@ CREATE OR REPLACE VIEW test_class_v2 AS
     v
    FROM test_class_v;
 
-COMMENT ON VIEW test_class_v2 IS NULL;
 
 ALTER VIEW test_class_v2 OWNER TO postgres;
 GRANT SELECT (a) ON test_class_v2 TO PUBLIC;
@@ -406,7 +398,6 @@ CREATE MATERIALIZED VIEW test_class_m AS
     v
    FROM test_class_r;
 
-COMMENT ON MATERIALIZED VIEW test_class_m IS NULL;
 
 ALTER MATERIALIZED VIEW test_class_m OWNER TO postgres;
 CREATE UNIQUE INDEX test_class_mi ON public.test_class_m USING btree (a);
@@ -530,7 +521,6 @@ CREATE TABLE test_collation (
     t text
 );
 
-COMMENT ON TABLE test_collation IS NULL;
 
 CREATE SEQUENCE IF NOT EXISTS test_collation_id_seq;
 ALTER SEQUENCE test_collation_id_seq OWNER TO postgres;
@@ -572,7 +562,6 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
-COMMENT ON VIEW test_class_v_opt2 IS NULL;
 
 
 END;
@@ -603,7 +592,6 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
-COMMENT ON VIEW test_class_v_opt2 IS NULL;
 
 
 END;
@@ -634,7 +622,6 @@ CREATE OR REPLACE VIEW test_class_v_opt2 AS
 
 ALTER VIEW test_class_v_opt2 SET (security_barrier='true');
 
-COMMENT ON VIEW test_class_v_opt2 IS NULL;
 
 
 END;
@@ -659,7 +646,6 @@ CREATE OR REPLACE FUNCTION public.test_proc_1()
  LANGUAGE sql
 AS $function$ select 'Hello, world!'::text $function$;
 
-COMMENT ON FUNCTION test_proc_1() IS NULL;
 
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
@@ -683,7 +669,6 @@ CREATE OR REPLACE FUNCTION public.test_proc_1()
  LANGUAGE sql
 AS $function$ select 'Hello, world!'::text $function$;
 
-COMMENT ON FUNCTION test_proc_1() IS NULL;
 
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
@@ -707,7 +692,6 @@ CREATE OR REPLACE FUNCTION public.test_proc_1()
  LANGUAGE sql
 AS $function$ select 'Hello, world!'::text $function$;
 
-COMMENT ON FUNCTION test_proc_1() IS NULL;
 
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
@@ -735,7 +719,6 @@ CREATE AGGREGATE test_proc_agg_1(text) (
   STYPE = text
 );
 
-COMMENT ON AGGREGATE test_proc_agg_1(text) IS NULL;
 
 REVOKE ALL ON FUNCTION test_proc_agg_1(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO PUBLIC;
@@ -764,7 +747,6 @@ CREATE TABLE test_parent (
     i integer NOT NULL
 );
 
-COMMENT ON TABLE test_parent IS NULL;
 
 CREATE SEQUENCE IF NOT EXISTS test_parent_i_seq;
 ALTER SEQUENCE test_parent_i_seq OWNER TO postgres;
@@ -779,7 +761,6 @@ ddlx_create
 CREATE TABLE test_child ()
   INHERITS(test_parent);
 
-COMMENT ON TABLE test_child IS NULL;
 
 ALTER TABLE test_child ALTER i SET DEFAULT nextval('test_parent_i_seq'::regclass);
 

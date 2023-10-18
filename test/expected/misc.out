@@ -71,7 +71,6 @@ ddlx_create
 CREATE OPERATOR CLASS opc1
   FOR TYPE text USING btree FAMILY opf1 AS STORAGE text;
 
-COMMENT ON OPERATOR CLASS opc1 USING btree IS NULL;
 
 
 (1 row)
@@ -141,7 +140,6 @@ DROP TABLESPACE pg_default;
 */
 
 CREATE TABLESPACE pg_default LOCATION '';
-COMMENT ON TABLESPACE pg_default IS NULL;
 
 
 END;

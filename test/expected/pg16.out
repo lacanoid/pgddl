@@ -56,7 +56,6 @@ CREATE TABLE customers (
 )
   PARTITION BY LIST (cust_country);
 
-COMMENT ON TABLE customers IS NULL;
 
 
 -- DEPENDANTS
@@ -66,7 +65,6 @@ COMMENT ON TABLE customers IS NULL;
 CREATE TABLE customer_ind PARTITION OF customers
   FOR VALUES IN ('ind');
 
-COMMENT ON TABLE customer_ind IS NULL;
 
 
 -- Type: TABLE ; Name: customer_jap; Owner: postgres
@@ -75,7 +73,6 @@ CREATE TABLE customer_jap PARTITION OF customers
   FOR VALUES IN ('jap')
   PARTITION BY LIST (cust_city);
 
-COMMENT ON TABLE customer_jap IS NULL;
 
 
 -- Type: TABLE ; Name: customer_def; Owner: postgres
@@ -83,7 +80,6 @@ COMMENT ON TABLE customer_jap IS NULL;
 CREATE TABLE customer_def PARTITION OF customers
   DEFAULT;
 
-COMMENT ON TABLE customer_def IS NULL;
 
 
 -- Type: TABLE ; Name: customer_jap_tokyo; Owner: postgres
@@ -91,7 +87,6 @@ COMMENT ON TABLE customer_def IS NULL;
 CREATE TABLE customer_jap_tokyo PARTITION OF customer_jap
   FOR VALUES IN ('tokyo');
 
-COMMENT ON TABLE customer_jap_tokyo IS NULL;
 
 
 -- Type: TABLE ; Name: customer_jap_kyoto; Owner: postgres
@@ -99,7 +94,6 @@ COMMENT ON TABLE customer_jap_tokyo IS NULL;
 CREATE TABLE customer_jap_kyoto PARTITION OF customer_jap
   FOR VALUES IN ('kyoto');
 
-COMMENT ON TABLE customer_jap_kyoto IS NULL;
 
 
 -- Type: TABLE ; Name: customer_jap_def; Owner: postgres
@@ -107,7 +101,6 @@ COMMENT ON TABLE customer_jap_kyoto IS NULL;
 CREATE TABLE customer_jap_def PARTITION OF customer_jap
   DEFAULT;
 
-COMMENT ON TABLE customer_jap_def IS NULL;
 
 
 END;
@@ -131,7 +124,6 @@ CREATE TABLE customer_jap PARTITION OF customers
   FOR VALUES IN ('jap')
   PARTITION BY LIST (cust_city);
 
-COMMENT ON TABLE customer_jap IS NULL;
 
 
 -- DEPENDANTS
@@ -141,7 +133,6 @@ COMMENT ON TABLE customer_jap IS NULL;
 CREATE TABLE customer_jap_tokyo PARTITION OF customer_jap
   FOR VALUES IN ('tokyo');
 
-COMMENT ON TABLE customer_jap_tokyo IS NULL;
 
 
 -- Type: TABLE ; Name: customer_jap_kyoto; Owner: postgres
@@ -149,7 +140,6 @@ COMMENT ON TABLE customer_jap_tokyo IS NULL;
 CREATE TABLE customer_jap_kyoto PARTITION OF customer_jap
   FOR VALUES IN ('kyoto');
 
-COMMENT ON TABLE customer_jap_kyoto IS NULL;
 
 
 -- Type: TABLE ; Name: customer_jap_def; Owner: postgres
@@ -157,7 +147,6 @@ COMMENT ON TABLE customer_jap_kyoto IS NULL;
 CREATE TABLE customer_jap_def PARTITION OF customer_jap
   DEFAULT;
 
-COMMENT ON TABLE customer_jap_def IS NULL;
 
 
 END;
@@ -176,7 +165,6 @@ DROP TABLE customer_def; --==>> !!! ATTENTION !!! <<==--
 CREATE TABLE customer_def PARTITION OF customers
   DEFAULT;
 
-COMMENT ON TABLE customer_def IS NULL;
 
 
 END;
@@ -191,7 +179,6 @@ CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
 select ddlx_create(oid) from pg_statistic_ext where stxname='test_stat1';
 ddlx_create
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
-COMMENT ON STATISTICS test_stat1 IS NULL;
 
 
 (1 row)
@@ -210,12 +197,10 @@ CREATE TABLE test_stat (
     b integer
 );
 
-COMMENT ON TABLE test_stat IS NULL;
 
 ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey PRIMARY KEY (a);
 
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
-COMMENT ON STATISTICS test_stat1 IS NULL;
 
 
 
@@ -260,7 +245,6 @@ CREATE TABLE dept (
 )
   PARTITION BY HASH (id);
 
-COMMENT ON TABLE dept IS NULL;
 
 ALTER TABLE dept ADD CONSTRAINT dept_pkey PRIMARY KEY (id);
 
@@ -272,7 +256,6 @@ ALTER TABLE dept ADD CONSTRAINT dept_pkey PRIMARY KEY (id);
 CREATE TABLE dept_1 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 0);
 
-COMMENT ON TABLE dept_1 IS NULL;
 
 
 -- Type: TABLE ; Name: dept_2; Owner: postgres
@@ -280,7 +263,6 @@ COMMENT ON TABLE dept_1 IS NULL;
 CREATE TABLE dept_2 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 1);
 
-COMMENT ON TABLE dept_2 IS NULL;
 
 
 -- Type: TABLE ; Name: dept_3; Owner: postgres
@@ -288,7 +270,6 @@ COMMENT ON TABLE dept_2 IS NULL;
 CREATE TABLE dept_3 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 2);
 
-COMMENT ON TABLE dept_3 IS NULL;
 
 
 -- Type: TABLE ; Name: dept_4; Owner: postgres
@@ -296,7 +277,6 @@ COMMENT ON TABLE dept_3 IS NULL;
 CREATE TABLE dept_4 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 3);
 
-COMMENT ON TABLE dept_4 IS NULL;
 
 
 -- Type: TABLE ; Name: dept_5; Owner: postgres
@@ -304,7 +284,6 @@ COMMENT ON TABLE dept_4 IS NULL;
 CREATE TABLE dept_5 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 4);
 
-COMMENT ON TABLE dept_5 IS NULL;
 
 
 -- Type: TABLE ; Name: dept_6; Owner: postgres
@@ -312,7 +291,6 @@ COMMENT ON TABLE dept_5 IS NULL;
 CREATE TABLE dept_6 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 5);
 
-COMMENT ON TABLE dept_6 IS NULL;
 
 
 -- Type: TABLE ; Name: dept_7; Owner: postgres
@@ -320,7 +298,6 @@ COMMENT ON TABLE dept_6 IS NULL;
 CREATE TABLE dept_7 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 6);
 
-COMMENT ON TABLE dept_7 IS NULL;
 
 
 -- Type: TABLE ; Name: dept_8; Owner: postgres
@@ -328,7 +305,6 @@ COMMENT ON TABLE dept_7 IS NULL;
 CREATE TABLE dept_8 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 7);
 
-COMMENT ON TABLE dept_8 IS NULL;
 
 
 -- Type: TABLE ; Name: dept_9; Owner: postgres
@@ -336,7 +312,6 @@ COMMENT ON TABLE dept_8 IS NULL;
 CREATE TABLE dept_9 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 8);
 
-COMMENT ON TABLE dept_9 IS NULL;
 
 
 -- Type: TABLE ; Name: dept_10; Owner: postgres
@@ -344,7 +319,6 @@ COMMENT ON TABLE dept_9 IS NULL;
 CREATE TABLE dept_10 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 9);
 
-COMMENT ON TABLE dept_10 IS NULL;
 
 
 END;
@@ -363,7 +337,6 @@ DROP TABLE dept_7; --==>> !!! ATTENTION !!! <<==--
 CREATE TABLE dept_7 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 6);
 
-COMMENT ON TABLE dept_7 IS NULL;
 
 
 END;
@@ -397,7 +370,6 @@ BEGIN
 END ;
 $procedure$;
 
-COMMENT ON PROCEDURE procedure1(text) IS NULL;
 
 REVOKE ALL ON FUNCTION procedure1(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION procedure1(text) TO PUBLIC;
@@ -440,7 +412,6 @@ CREATE TABLE tab_generated12 (
     f integer
 );
 
-COMMENT ON TABLE tab_generated12 IS NULL;
 
 ALTER TABLE tab_generated12 ALTER d SET DEFAULT 42;
 
@@ -733,7 +704,6 @@ CREATE OR REPLACE VIEW test_class_v AS
     v
    FROM test_class_r;
 
-COMMENT ON VIEW test_class_v IS NULL;
 
 GRANT SELECT ON test_class_v TO PUBLIC;
 

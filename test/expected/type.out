@@ -118,7 +118,6 @@ CREATE DOMAIN test_collation_d AS text
   COLLATE "C"
   DEFAULT '***'::text;
 
-COMMENT ON DOMAIN test_collation_d IS NULL;
 
 
 END;
@@ -250,7 +249,6 @@ CREATE TYPE int_t[] (
   COLLATABLE = false
 );
 
-COMMENT ON TYPE int_t[] IS NULL;
 
 
 (1 row)

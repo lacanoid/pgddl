@@ -27,7 +27,6 @@ CREATE TABLE options (
 
 ALTER TABLE options SET (parallel_workers='2');
 
-COMMENT ON TABLE options IS NULL;
 
 ALTER TABLE options ALTER regtype SET DEFAULT 'text'::regtype;
 
@@ -68,7 +67,6 @@ CREATE TABLE measurement (
 )
   PARTITION BY RANGE (logdate);
 
-COMMENT ON TABLE measurement IS NULL;
 
 
 END;
@@ -112,7 +110,6 @@ CREATE TABLE customers (
 )
   PARTITION BY LIST (cust_country);
 
-COMMENT ON TABLE customers IS NULL;
 
 
 END;
@@ -131,7 +128,6 @@ DROP TABLE customer_jap; --==>> !!! ATTENTION !!! <<==--
 CREATE TABLE customer_jap PARTITION OF customers
   FOR VALUES IN ('jap');
 
-COMMENT ON TABLE customer_jap IS NULL;
 
 
 END;
@@ -166,7 +162,6 @@ CREATE TABLE log (
 )
   PARTITION BY RANGE (code, date_trunc('month'::text, ts), t COLLATE "C", a, (((code % 100) / 100)));
 
-COMMENT ON TABLE log IS NULL;
 
 
 END;
@@ -181,7 +176,6 @@ CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
 \x
 select ddlx_create(oid),ddlx_drop(oid) from pg_statistic_ext where stxname='test_stat1';
 ddlx_create|CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
-COMMENT ON STATISTICS test_stat1 IS NULL;
 
 
 ddlx_drop|DROP STATISTICS test_stat1;
@@ -202,12 +196,10 @@ CREATE TABLE test_stat (
     b integer
 );
 
-COMMENT ON TABLE test_stat IS NULL;
 
 ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey PRIMARY KEY (a);
 
 CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
-COMMENT ON STATISTICS test_stat1 IS NULL;
 
 
 
@@ -224,7 +216,6 @@ ddlx_create|ddlx_drop
 CREATE PUBLICATION ddlx_test_pub
   FOR TABLE customer_ind, customer_jap
   WITH ( publish='insert,delete' );
-COMMENT ON PUBLICATION ddlx_test_pub IS NULL;
 
 |DROP PUBLICATION ddlx_test_pub;
 
@@ -287,7 +278,6 @@ CREATE TABLE tab_generated (
     f integer
 );
 
-COMMENT ON TABLE tab_generated IS NULL;
 
 ALTER TABLE tab_generated ALTER d SET DEFAULT 42;
 

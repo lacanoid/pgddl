@@ -731,20 +731,26 @@ $function$;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{comments}')
  RETURNS text LANGUAGE sql AS $function$
- with obj as (select * from ddlx_identify($1))
- select format(
-          E'COMMENT ON %s %s IS %L;\n',
-          obj.sql_kind, sql_identifier, 
+ with obj as (select * from ddlx_identify($1)),
+ c as (
+   select obj.sql_kind, sql_identifier, 
           case 
             when obj.classid='pg_database'::regclass
             then shobj_description(oid,classid::name)
             when obj.classid='pg_tablespace'::regclass
             then shobj_description(oid,classid::name)
             else obj_description(oid)
-          end)
-   from obj
+          end as comment
+     from obj
+ )
+ select case when comment is not null or 'comments' ilike any($2)
+        then format(
+          E'COMMENT ON %s %s IS %L;\n',
+	  sql_kind, sql_identifier, comment
+        ) else '' end
+   from c	
 $function$ strict;
 
 ---------------------------------------------------
@@ -2841,8 +2847,8 @@ parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         base_ddl,           
 	case when 'nocomments' ilike any($2) then null else 
-          case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n'
-	end,
+          case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end
+	end || e'\n',
         case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
         else case 
           when 'owner' ilike any($2) or obj.owner is distinct from current_role
@@ -2868,8 +2874,8 @@ parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         base_ddl,
 	case when 'nocomments' ilike any($2) then null else 
-          case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end || e'\n'
-	end,
+          case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end
+	end || e'\n',
         case when 'noalter' ilike any($2) then null
         else array_to_string(array[
           case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null

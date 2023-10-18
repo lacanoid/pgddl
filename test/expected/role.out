@@ -15,7 +15,6 @@ grant pgddl_test_user3 to pgddl_test_user with admin option;
 select ddlx_create(oid) from pg_roles where rolname='pgddl_test_user';
 ddlx_create
 CREATE GROUP pgddl_test_user;
-COMMENT ON ROLE pgddl_test_user IS NULL;
 
 ALTER ROLE pgddl_test_user WITH
   NOLOGIN
@@ -39,7 +38,6 @@ GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 select ddlx_create(oid) from pg_roles where rolname='pgddl_test_user3';
 ddlx_create
 CREATE GROUP pgddl_test_user3;
-COMMENT ON ROLE pgddl_test_user3 IS NULL;
 
 ALTER ROLE pgddl_test_user3 WITH
   NOLOGIN
@@ -58,7 +56,6 @@ GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
 select ddlx_create(oid) from pg_roles where rolname='pgddl_test_user2';
 ddlx_create
 CREATE USER pgddl_test_user2;
-COMMENT ON ROLE pgddl_test_user2 IS NULL;
 
 ALTER ROLE pgddl_test_user2 WITH
   LOGIN
