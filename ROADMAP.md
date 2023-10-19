@@ -43,7 +43,7 @@ Support for other missing options:
 - PG16 GRANT WITH INHERIT, SET
 - SET STATISTICS on indexes
 - ✔︎ pg_subscription not readable by non superuser
-- create base type: SUBSCRIPT, PASSEDBYVALUE, LIKE,  
+- ✔︎ create base type: SUBSCRIPT
 - create range type: MULTIRANGE_TYPE_NAME
 
 Other:
@@ -54,7 +54,7 @@ Other:
 - group column alters together by column name
 - ✔︎ handle sequences better (create if not exists)
 - ✔︎ handle dependancies for types better (use shell types)
-- improve dumping of comments (be quiet on NULL comments)
+- ✔︎ improve dumping of comments (be quiet on NULL comments)
 - optimize grants on functions
 - move not nulls to constraints section
 - move storage setting to pre-data section
