@@ -26,13 +26,8 @@ Support for other postgres objects:
 - ✔︎ pg_extension
 - pg_default_acl
 - pg_largeobject_metadata
-<<<<<<< HEAD
 - pg_publication_rel (10,15)
 - pg_publication_namespace (15)
-=======
-- pg_publication_rel
-- pg_publication_namespace
->>>>>>> 45b593abf1f886e84ad1a9fd1f6cc08e8a6d1864
 - pg_enum
 
 Support for other missing options:
