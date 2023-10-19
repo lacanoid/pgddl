@@ -1224,18 +1224,18 @@ seq as (
  select 
     coalesce(
       string_agg(
-       format(e'CREATE SEQUENCE %s%s;\n%s%s',
+       case when 'script' ilike any($2)
+            then format(e'CREATE SEQUENCE %s%s;\n%s',
 #if 9.5
-	        'IF NOT EXISTS ',
+	           'IF NOT EXISTS ',
 #else
-		'',
+		   '',
 #end
-                "sequence",
-		ddlx_alter_owner("sequence",$2),
-                format(e'ALTER SEQUENCE %s OWNED BY %s;',"sequence",sql_identifier)
-	), 
-        E'\n') || E'\n\n', 
-    '') as ddl
+                   "sequence",
+		   ddlx_alter_owner("sequence",$2)
+	         ) else '' end ||
+	    format(e'ALTER SEQUENCE %s OWNED BY %s;',"sequence",sql_identifier),
+	E'\n') || E'\n\n', '') as ddl
    from ddlx_describe($1,$2)
   where "sequence" is not null and ident is null
 )
