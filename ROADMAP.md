@@ -23,10 +23,11 @@ Tasks
 
 Support for other postgres objects:
 - ✔︎ pg_amop, pg_amproc
-- ✔︎ extensions
+- ✔︎ pg_extension
 - pg_default_acl
 - pg_largeobject_metadata
-- pg_publication_rel
+- pg_publication_rel (10,15)
+- pg_publication_namespace (15)
 - pg_enum
 
 Support for other missing options:
@@ -38,7 +39,7 @@ Support for other missing options:
 - table of type not nulls
 - PG14 SET COMPRESSION
 - PG15 UNIQUE NULL NOT DISTINCT
-- PG15 publication columns and qualifiers
+- ✔︎ PG15 publication columns and qualifiers
 - PG16 MAINTAIN privilege
 - PG16 GRANT WITH INHERIT, SET
 - SET STATISTICS on indexes

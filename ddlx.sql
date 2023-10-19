@@ -1859,31 +1859,58 @@ CREATE OR REPLACE FUNCTION ddlx_create_transform(oid)
 $function$  strict;
 #end
 
+#unless 10
+/*
+#end
 #if 10
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_publication(oid)
  RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from pg_publication where oid = $1)
- select format(
-           E'CREATE PUBLICATION %I\n  FOR %s\n  WITH ( publish=%L );\n',
-	   obj.pubname,
-	   case when obj.puballtables then 'ALL TABLES'
-	        else format('TABLE %s',(
-		  select string_agg(cast(prrelid::regclass as text),', ')
-		    from pg_publication_rel
-		   where prpubid = $1
-		))
-           end,
-	   array_to_string(array[
+ select array_to_string(array[
+        format(E'CREATE PUBLICATION %I %sWITH ( publish=%L%s );',
+	       obj.pubname,
+	       case when obj.puballtables then 'FOR ALL TABLES ' end,
+	       array_to_string(array[
 		 case when obj.pubinsert then 'insert' end
 		,case when obj.pubupdate then 'update' end
 		,case when obj.pubdelete then 'delete' end
 #if 11
 		,case when obj.pubtruncate then 'truncate' end
 #if 10
-	    ],',')
-	   )
+	       ],','),
+#if 13
+               case when obj.pubviaroot then ', publish_via_partition_root' end
+#else
+               null
+#if 10
+	   ),
+           (select string_agg(
+	            format(E'ALTER PUBLICATION %I ADD TABLE %s%s%s;',
+	              obj.pubname, prrelid::regclass,
+#if 15
+                      ' ('||(select string_agg(quote_ident(attname),',')
+			       from unnest(prattrs) u join pg_attribute a on a.attnum=u and a.attrelid=prrelid
+		      )||')',
+                      ' CHECK '||pg_get_expr(prqual,prrelid)
+#else
+                      null, null
+#if 10
+		      ),e'\n')
+             from pg_publication_rel where prpubid = $1
+           ),
+#if 15
+           (select string_agg(
+	            format(E'ALTER PUBLICATION %I ADD TABLES IN SCHEMA %s;',
+	              obj.pubname, pnnspid::regnamespace),e'\n')
+             from pg_publication_namespace where pnpubid = $1
+           )
+#else
+           null
+#if 10
+
+	],e'\n') || e'\n'
    from obj
 $function$  strict;
 
@@ -1905,6 +1932,9 @@ CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid)
 	   )
    from obj
 $function$  strict;
+#end
+#unless 10
+*/
 #end
 
 ---------------------------------------------------

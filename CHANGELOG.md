@@ -8,6 +8,7 @@ Version 0.27
 - bug fixes in `GENERATED` columns
 - improved `CREATE TYPE` for base types, shell types support
 - improved dropping of indexes which are really constraints
+- improved support for publications (columns and qualifiers)
 - compatibility improvements with old postgres versions
 - `comments` option to show all comments, even null ones, these are now omitted by default if null
 
@@ -18,7 +19,7 @@ STILL TO DO:
 
 Version 0.26
 ------------
-- added new `lite` option, which moves defaults and constraints into `create table` section, as per patch by 
+- added new `lite` option, which moves defaults and constraints into `create table` section, as per patch by
 [electric-sql](https://github.com/electric-sql/pgddl/commit/696d4d6d0a595f186f2540ba5eb79a8d0cbfa241)
 - more `lite` option improvements, remove some other postgres specific things (settings and storage)
 - `nowrap` option for scripts to omit begin/end
@@ -32,9 +33,9 @@ Version 0.26
 
 Version 0.23
 ------------
-- new function `ddlx_createonly()` to create pre-data stuff only. 
+- new function `ddlx_createonly()` to create pre-data stuff only.
 This includes ddl, comments, storage, defaults, settings and owner
-but not conststraints, indexes, triggers etc. 
+but not conststraints, indexes, triggers etc.
 Use `ddlx_alter()` to create those after the data is loaded.
 - more use of explicit casts
 - `ddlx_create_trigger()` improvements by [PegoraroF10](https://github.com/PegoraroF10), now with replica and always triggers
