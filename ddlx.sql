@@ -770,7 +770,6 @@ CREATE OR REPLACE FUNCTION ddlx_create_function(regproc, text[] default '{}') RE
 
 CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
  RETURNS text LANGUAGE sql AS $function$
- with obj as (select * from ddlx_identify($1))
  select case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
         else case 
           when 'owner' ilike any($2) or obj.owner is distinct from current_role
@@ -781,7 +780,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
                  ' OWNER TO '||quote_ident(owner)||E';\n'
           end end
         end
-  from obj 
+  from ddlx_identify($1) obj 
 $function$  strict;
 
 ---------------------------------------------------
@@ -1225,18 +1224,16 @@ seq as (
  select 
     coalesce(
       string_agg(
-        format(e'CREATE SEQUENCE %s%s;\n'||
-               e'ALTER SEQUENCE %s OWNER TO %s;\n',
+       format(e'CREATE SEQUENCE %s%s;\n%s%s',
 #if 9.5
 	        'IF NOT EXISTS ',
 #else
 		'',
 #end
-                "sequence","sequence",
-		pg_get_userbyid((select relowner from pg_class where oid=$1))
-	      ) ||
-        format(e'ALTER SEQUENCE %s OWNED BY %s;',
-                "sequence",sql_identifier), 
+                "sequence",
+		ddlx_alter_owner("sequence",$2),
+                format(e'ALTER SEQUENCE %s OWNED BY %s;',"sequence",sql_identifier)
+	), 
         E'\n') || E'\n\n', 
     '') as ddl
    from ddlx_describe($1,$2)

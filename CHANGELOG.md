@@ -9,12 +9,12 @@ Version 0.27
 - improved `CREATE TYPE` for base types, shell types support
 - improved dropping of indexes which are really constraints
 - improved support for publications (columns and qualifiers)
+- improved handling of owned sequences
 - compatibility improvements with old postgres versions
 - `comments` option to show all comments, even null ones, these are now omitted by default if null
 
 STILL TO DO:
 - `noconstraints` + `lite` options should omit constraints
-- `owner` and `noowner` and `nodcl` for serial sequences
 - check if `script` option works ok for sequences
 
 Version 0.26

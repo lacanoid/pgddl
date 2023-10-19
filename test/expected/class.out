@@ -242,7 +242,6 @@ CREATE UNLOGGED TABLE test_class_r2 (
 
 
 CREATE SEQUENCE IF NOT EXISTS test_class_r2_i_seq;
-ALTER SEQUENCE test_class_r2_i_seq OWNER TO postgres;
 ALTER SEQUENCE test_class_r2_i_seq OWNED BY test_class_r2.i;
 
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah FOREIGN KEY (a) REFERENCES test_class_r(a);
@@ -523,7 +522,6 @@ CREATE TABLE test_collation (
 
 
 CREATE SEQUENCE IF NOT EXISTS test_collation_id_seq;
-ALTER SEQUENCE test_collation_id_seq OWNER TO postgres;
 ALTER SEQUENCE test_collation_id_seq OWNED BY test_collation.id;
 
 
@@ -749,7 +747,6 @@ CREATE TABLE test_parent (
 
 
 CREATE SEQUENCE IF NOT EXISTS test_parent_i_seq;
-ALTER SEQUENCE test_parent_i_seq OWNER TO postgres;
 ALTER SEQUENCE test_parent_i_seq OWNED BY test_parent.i;
 
 
@@ -792,7 +789,6 @@ ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
 
 CREATE SEQUENCE IF NOT EXISTS test_class_r_a_seq;
-ALTER SEQUENCE test_class_r_a_seq OWNER TO postgres;
 ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
@@ -810,7 +806,6 @@ ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
 
 CREATE SEQUENCE IF NOT EXISTS test_class_r_a_seq;
-ALTER SEQUENCE test_class_r_a_seq OWNER TO postgres;
 ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
