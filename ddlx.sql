@@ -733,8 +733,13 @@ $function$;
 
 CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{comments}')
  RETURNS text LANGUAGE sql AS $function$
- with obj as (select * from ddlx_identify($1)),
- c as (
+ select case when comment is not null or 'comments' ilike any($2)
+        then format(
+          E'COMMENT ON %s %s IS %L;\n',
+	  sql_kind, sql_identifier, comment
+        ) else ''
+	end
+   from (
    select obj.sql_kind, sql_identifier, 
           case 
             when obj.classid='pg_database'::regclass
@@ -743,15 +748,8 @@ CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{comments}')
             then shobj_description(oid,classid::name)
             else obj_description(oid)
           end as comment
-     from obj
- )
- select case when comment is not null or 'comments' ilike any($2)
-        then format(
-          E'COMMENT ON %s %s IS %L;\n',
-	  sql_kind, sql_identifier, comment
-        ) else ''
-	end
-   from c	
+     from ddlx_identify($1) as obj
+   ) as c
 $function$ strict;
 
 ---------------------------------------------------
