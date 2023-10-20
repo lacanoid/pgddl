@@ -1185,22 +1185,25 @@ CREATE OR REPLACE FUNCTION ddlx_create_class(regclass, text[] default '{}')
      join obj on (true)
  )
 
- select ddlx_banner(obj.name,obj.sql_kind,obj.namespace,obj.owner) 
-  ||
- case 
-  when obj.sql_kind in ('VIEW','MATERIALIZED VIEW') then ddlx_create_view($1,$2)  
-  when obj.sql_kind in ('TABLE','TYPE','FOREIGN TABLE') then ddlx_create_table($1,$2)
-  when obj.sql_kind in ('SEQUENCE') then ddlx_create_sequence($1,$2)
-  when obj.sql_kind in ('INDEX') then ddlx_create_index($1,$2)
-  else '-- UNSUPPORTED CLASS: '||obj.sql_kind
- end 
-  ||
-  coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'')
-  ||
-  coalesce(E'\n'||(select string_agg(ss,E'\n')||E'\n' from settings),'') 
-  || E'\n'
-    from obj
-    
+   select array_to_string(array[
+          ddlx_banner(obj.name,obj.sql_kind,obj.namespace,obj.owner) 
+          ,
+          case 
+            when obj.sql_kind in ('VIEW','MATERIALIZED VIEW') then ddlx_create_view($1,$2)  
+            when obj.sql_kind in ('TABLE','TYPE','FOREIGN TABLE') then ddlx_create_table($1,$2)
+            when obj.sql_kind in ('SEQUENCE') then ddlx_create_sequence($1,$2)
+            when obj.sql_kind in ('INDEX') then ddlx_create_index($1,$2)
+            else '-- UNSUPPORTED CLASS: '||obj.sql_kind
+          end 
+          ,
+          case when 'nocomments' ilike any($2) then ''
+               else coalesce((select string_agg(cc,E'\n')||E'\n' from comments),'')
+          end
+          ,
+          coalesce(E'\n'||(select string_agg(ss,E'\n')||E'\n' from settings),'')
+          ],'') || E'\n'
+
+     from obj
 $function$ strict;
 
 ---------------------------------------------------
