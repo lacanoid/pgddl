@@ -161,6 +161,37 @@ COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)
 ALTER TYPE int_t OWNER TO postgres;
 select ddlx_create('int_t'::regtype);
 ddlx_create
+CREATE TYPE int_t (
+  INPUT = int_t4in,
+  OUTPUT = int_t4out,
+  SEND = int_t4send,
+  RECEIVE = int_t4recv,
+  INTERNALLENGTH = 4,
+  PASSEDBYVALUE,
+  ALIGNMENT = int4,
+  STORAGE = plain,
+  CATEGORY = 'N',
+  DELIMITER = ',',
+  COLLATABLE = false
+);
+
+COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)';
+
+
+(1 row)
+select ddlx_script('int_t'::regtype);
+ddlx_script
+BEGIN;
+
+/*
+DROP FUNCTION int_t4recv(internal);
+DROP FUNCTION int_t4send(int_t);
+DROP FUNCTION int_t4out(int_t);
+DROP FUNCTION int_t4in(cstring);
+
+DROP TYPE int_t;
+*/
+
 CREATE TYPE int_t;
 
 CREATE OR REPLACE FUNCTION public.int_t4in(cstring)
@@ -203,6 +234,62 @@ CREATE TYPE int_t (
 
 COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)';
 
+
+-- DEPENDANTS
+
+-- Type: FUNCTION ; Name: int_t4in(cstring); Owner: postgres
+
+CREATE OR REPLACE FUNCTION public.int_t4in(cstring)
+ RETURNS int_t
+ LANGUAGE internal
+ IMMUTABLE STRICT
+AS $function$int4in$function$;
+
+
+REVOKE ALL ON FUNCTION int_t4in(cstring) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION int_t4in(cstring) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION int_t4in(cstring) TO postgres WITH GRANT OPTION;
+
+-- Type: FUNCTION ; Name: int_t4out(int_t); Owner: postgres
+
+CREATE OR REPLACE FUNCTION public.int_t4out(int_t)
+ RETURNS cstring
+ LANGUAGE internal
+ IMMUTABLE STRICT
+AS $function$int4out$function$;
+
+
+REVOKE ALL ON FUNCTION int_t4out(int_t) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION int_t4out(int_t) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION int_t4out(int_t) TO postgres WITH GRANT OPTION;
+
+-- Type: FUNCTION ; Name: int_t4send(int_t); Owner: postgres
+
+CREATE OR REPLACE FUNCTION public.int_t4send(int_t)
+ RETURNS bytea
+ LANGUAGE internal
+ IMMUTABLE STRICT
+AS $function$int4send$function$;
+
+
+REVOKE ALL ON FUNCTION int_t4send(int_t) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION int_t4send(int_t) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION int_t4send(int_t) TO postgres WITH GRANT OPTION;
+
+-- Type: FUNCTION ; Name: int_t4recv(internal); Owner: postgres
+
+CREATE OR REPLACE FUNCTION public.int_t4recv(internal)
+ RETURNS int_t
+ LANGUAGE internal
+ IMMUTABLE STRICT
+AS $function$int4recv$function$;
+
+
+REVOKE ALL ON FUNCTION int_t4recv(internal) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION int_t4recv(internal) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION int_t4recv(internal) TO postgres WITH GRANT OPTION;
+
+END;
 
 (1 row)
 /*

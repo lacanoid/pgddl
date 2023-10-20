@@ -996,9 +996,9 @@ $function$  strict;
 
 ---------------------------------------------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_type_base(regtype)
+CREATE OR REPLACE FUNCTION ddlx_create_type_base(regtype, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
-select ddlx_create_type_shell($1) ||
+select case when 'script' ilike any($2) then ddlx_create_type_shell($1) else '' end ||
        'CREATE TYPE ' || format_type($1,null) || ' (' || E'\n  ' ||
        array_to_string(array[ 
          'INPUT = '  || cast(t.typinput::regproc as text),  
@@ -2739,7 +2739,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_type(regtype, text[] default '{}')
    select case t.typtype
           when 'e' then ddlx_create_type_enum(t.oid)
           when 'd' then ddlx_create_type_domain(t.oid)
-          when 'b' then ddlx_create_type_base(t.oid)
+          when 'b' then ddlx_create_type_base(t.oid,$2)
 #if 9.2
           when 'r' then ddlx_create_type_range(t.oid)
 #end

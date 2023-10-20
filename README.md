@@ -147,6 +147,9 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 * `ext` - include extension contents instead of `create extension`.
 * `lite` - move defaults and constraints into `create table` statement, omit some other Postgres specific stuff
 * `nowrap` - do not wrap scripts with `BEGIN` and `END`
+* `nopartitions` - do not include table partitions
+* `comments` - include all comments, even if null
+* `nocomments` - do not include any comments
 
 Drop statements are created with `ddlx_drop()` function.	
 
@@ -155,7 +158,7 @@ Drop statements are created with `ddlx_drop()` function.
     Generates SQL DDL DROP statement for object ID, `oid`.
 
 There is also a higher level function to build entire DDL scripts. 
-Scripts include dependant objects and can get quite large.
+Scripts include dependant objects and subpartitions and can get quite large.
 
 - `ddlx_script(oid[,options]) returns text`
 
