@@ -13,9 +13,6 @@ Version 0.27
 - improved handling of owned sequences
 - compatibility improvements with old postgres versions
 
-STILL TO DO:
-- `noconstraints` + `lite` options should omit constraints
-
 Version 0.26
 ------------
 - added new `lite` option, which moves defaults and constraints into `create table` section, as per patch by

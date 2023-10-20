@@ -35,7 +35,7 @@ Support for other missing options:
 - ✔︎ ownership of all objects 
 - ✔︎ grants on all objects
 - ✔︎ grants vs current_role (who is grantor?, GRANTED BY)
-- materialized view tablespace & storage parameters
+- materialized view storage parameters
 - table of type not nulls
 - PG14 SET COMPRESSION
 - PG15 UNIQUE NULL NOT DISTINCT
@@ -58,11 +58,12 @@ Other:
 - ✔︎ improve dumping of comments (be quiet on NULL comments)
 - optimize grants on functions
 - move not nulls to constraints section
-- move storage setting to pre-data section
+- move storage settings to pre-data section
 - use ONLY when appropriate
 - ✔︎ mysterious duplicates in index section for partitioned tables (see table dept_1)
 - ✔︎ include table subpartitions in a script
 - ✔︎ do not emit ALTER OWNER for objects owned by current role
+- hide comments etc when object is hidden, such as with `{noconstraints,comments}`
 
 Build and tests:
 - improve and add to simple tests
