@@ -1,3 +1,6 @@
+Version 0.28
+------------
+
 Version 0.27
 ------------
 - include `GRANTED BY` when grantor is distinct from current role
