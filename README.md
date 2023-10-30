@@ -49,7 +49,7 @@ Some disadvantages:
 - It is not very well tested. While it contains a number of regression tests, these can be
   hardly considered as proofs of correctness. Be certain there are bugs. Use at your own risk!
   In fact, generated scripts might not run at all.
-  Do not run them on production databases without inspecting and testing first!
+  Do not run them on production databases without inspecting and testing them first!
 - It is kind of slow-ish for complicated dependancy trees
 
 That said, it has still proven quite useful in a many situations
