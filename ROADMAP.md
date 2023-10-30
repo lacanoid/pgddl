@@ -64,6 +64,7 @@ Other:
 - ✔︎ include table subpartitions in a script
 - ✔︎ do not emit ALTER OWNER for objects owned by current role
 - hide comments etc when object is hidden, such as with `{noconstraints,comments}`
+- make it possible to neatly drop/create extensions in a script, now broken
 
 Build and tests:
 - improve and add to simple tests
