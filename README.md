@@ -29,8 +29,9 @@ Advantages over using other tools like `psql` or `pg_dump` include:
   This is great when you need to edit a table, then a view, then a function that uses the view, 
   then a function that returns SETOF.
   It works particularly well with the transactional DDL of Postgres.
-- Created scripts are really intended to be run and copy/pasted manually by the DBA
-  into other databases/scripts. It attempts to strike a balance between detail and clutter.
+- Created scripts are mostly intended to be run and copy/pasted manually by the DBA
+  into other databases/scripts, such as a database upgrade scripts. It attempts to strike
+  a reasonable balance between detail and clutter.
   This involves 
    pretty printing,
    using **idempotent DDL** where possible (preferring ALTER to CREATE), 
