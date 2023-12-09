@@ -148,7 +148,7 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 * `ext` - include extension contents instead of `create extension`.
 * `lite` - move defaults and constraints into `create table` statement, omit some other Postgres specific stuff
 * `nowrap` - do not wrap scripts with `BEGIN` and `END`
-* `nopartitions` - do not include table partitions
+* `nopartitions` - do not include table partitions in a script
 * `comments` - include all comments, even if null
 * `nocomments` - do not include any comments
 
