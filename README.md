@@ -15,7 +15,7 @@ and therefore requires shell access or local installation to be of use.
 
 PostgreSQL however already provides a number of helper functions which already greatly help 
 with reconstructing DDL and are of course used by this extension.
-PostgreSQL also has sophisticated query capabilities, such as CTEs and window functions 
+PostgreSQL also has sophisticated query capabilities, such as common table expressions and window functions 
 which make this project possible by using only SQL.
 
 Advantages over using other tools like `psql` or `pg_dump` include:
