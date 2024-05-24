@@ -55,6 +55,7 @@ Some disadvantages:
 That said, it has still proven quite useful in a many situations
 and is being used with a number of production databases.
 Bug reports are welcome.
+If support for your favorite Postgres feature is broken or missing, please let us know and we will put some focus on it.
 
 Curently developed and tested on PostgreSQL 13. 
 Included preprocessor adapts the source to target PG version. 
