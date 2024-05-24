@@ -5,12 +5,12 @@ SET ROLE postgres;
 SET client_min_messages = warning;
 
 CREATE EXTENSION file_fdw;
-CREATE EXTENSION adminpack;
+-- CREATE EXTENSION adminpack;
 
 COMMENT ON FOREIGN DATA WRAPPER file_fdw IS 'File wrapper';
 GRANT USAGE ON FOREIGN DATA WRAPPER file_fdw to PUBLIC;
-CREATE TEMPORARY TABLE t1 AS SELECT pg_file_unlink('pgddltest.tmp');
-SELECT pg_file_write('pgddltest.tmp',E'Hello, World!\nThis is some text\n',false);
+-- CREATE TEMPORARY TABLE t1 AS SELECT pg_file_unlink('pgddltest.tmp');
+-- SELECT pg_file_write('pgddltest.tmp',E'Hello, World!\nThis is some text\n',false);
 
 CREATE SERVER serv FOREIGN DATA WRAPPER file_fdw;
 
