@@ -2012,28 +2012,43 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_grants(regproc, text[] default '{}') 
  RETURNS text LANGUAGE sql AS $function$
- with obj as (select * from ddlx_identify($1))
- select
-   format(E'REVOKE ALL ON FUNCTION %s FROM PUBLIC;\n',
-          text($1::regprocedure)) ||
+ with obj as (select * from ddlx_identify($1)),
+rp as (
+ select g.privilege_type,
+        g.grantee,
+        g.is_grantable,
+        text($1::regprocedure) as routine_sig,
+        r.routine_type
+   from information_schema.routine_privileges g
+   join information_schema.routines r
+        on (r.routine_schema = g.routine_schema
+            and r.specific_name = g.specific_name)
+   join obj on (true)
+  where r.routine_schema=obj.namespace
+        and r.specific_name=obj.name||'_'||obj.oid
+)
+select
+   format(E'REVOKE ALL ON %s %s FROM PUBLIC;\n',
+          rp.routine_type,
+          rp.routine_sig) ||
    coalesce(
     string_agg (format(
-        E'GRANT %s ON FUNCTION %s TO %s%s;\n',
-        privilege_type, 
-        text($1::regprocedure), 
-        case grantee  
-          when 'PUBLIC' then 'PUBLIC' 
-          else quote_ident(grantee) 
+        E'GRANT %s ON %s %s TO %s%s;\n',
+        rp.privilege_type,
+        rp.routine_type,
+        rp.routine_sig,
+        case rp.grantee
+          when 'PUBLIC' then 'PUBLIC'
+          else quote_ident(rp.grantee)
         end,
-        case is_grantable  
-          when 'YES' then ' WITH GRANT OPTION' 
-          else '' 
-        end), ''),
+        case rp.is_grantable
+          when 'YES' then ' WITH GRANT OPTION'
+          else ''
+        end), '' order by rp.grantee, rp.privilege_type),
     '')
- from information_schema.routine_privileges g 
- join obj on (true)
- where routine_schema=obj.namespace 
-   and specific_name=obj.name||'_'||obj.oid
+ from rp
+ group by rp.routine_type,
+          rp.routine_sig
 $function$  strict;
 
 ---------------------------------------------------
