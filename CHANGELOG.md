@@ -1,5 +1,6 @@
 Version 0.28
 ------------
+- use correct function type in ddlx_grants()
 
 Version 0.27
 ------------
