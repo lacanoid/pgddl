@@ -1,6 +1,6 @@
 Version 0.28
 ------------
-- use correct function type in ddlx_grants()
+- use correct routine type in ddlx_grants()
 - test updates for Postgres 17
 
 Version 0.27
