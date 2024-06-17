@@ -2014,12 +2014,14 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regproc, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1))
  select
-   format(E'REVOKE ALL ON FUNCTION %s FROM PUBLIC;\n',
-          text($1::regprocedure)) ||
+   format(E'REVOKE ALL ON %s %s FROM PUBLIC;\n',
+          max(obj.sql_kind), text($1::regprocedure))
+   ||
    coalesce(
     string_agg (format(
-        E'GRANT %s ON FUNCTION %s TO %s%s;\n',
+        E'GRANT %s ON %s %s TO %s%s;\n',
         privilege_type, 
+        obj.sql_kind,
         text($1::regprocedure), 
         case grantee  
           when 'PUBLIC' then 'PUBLIC' 
@@ -2030,8 +2032,7 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regproc, text[] default '{}')
           else '' 
         end), ''),
     '')
- from information_schema.routine_privileges g 
- join obj on (true)
+ from obj, information_schema.routine_privileges g
  where routine_schema=obj.namespace 
    and specific_name=obj.name||'_'||obj.oid
 $function$  strict;

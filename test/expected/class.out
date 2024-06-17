@@ -718,9 +718,9 @@ CREATE AGGREGATE test_proc_agg_1(text) (
 );
 
 
-REVOKE ALL ON FUNCTION test_proc_agg_1(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO postgres WITH GRANT OPTION;
+REVOKE ALL ON AGGREGATE test_proc_agg_1(text) FROM PUBLIC;
+GRANT EXECUTE ON AGGREGATE test_proc_agg_1(text) TO PUBLIC;
+GRANT EXECUTE ON AGGREGATE test_proc_agg_1(text) TO postgres WITH GRANT OPTION;
 
 END;
 

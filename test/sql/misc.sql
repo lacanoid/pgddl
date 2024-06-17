@@ -125,3 +125,10 @@ select classid,objid,ddlx_identify(objid) as obj
 
 select * from ddlx_identify(0);
 select * from ddlx_identify(1);
+
+-- test procedure grants
+create function foo() returns void as $$select 1$$ language sql;
+create procedure bar() as $$select 1$$ language sql;
+
+select ddlx_create('foo'::regproc);
+select ddlx_create('bar'::regproc);
