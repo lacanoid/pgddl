@@ -397,6 +397,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE sub.oid = $1
 #end
 $function$  strict;
+COMMENT ON FUNCTION ddlx_identify(oid) 
+     IS 'Identify object by object id';
 
 ---------------------------------------------------
 
