@@ -2166,6 +2166,7 @@ select distinct
 q as (
   select distinct depth,classid,objid
     from ddlx_get_dependants_recursive
+    left join pg_constraint co on (co.oid=objid)
    where deptype = 'n'
 )
 select depth,classid,objid 
