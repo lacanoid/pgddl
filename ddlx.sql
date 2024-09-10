@@ -2269,7 +2269,8 @@ UNION
     AND has_table_privilege(c.oid, 'select')
 ORDER BY 2
 $function$;
-
+COMMENT ON FUNCTION ddlx_apropos(text)
+     IS 'Search definitions (functions and views) for a regular expression';
 
 ---------------------------------------------------
 --  Main script generating functions
@@ -3038,4 +3039,3 @@ $function$  strict;
 
 COMMENT ON FUNCTION ddlx_script(text, text[]) 
      IS 'Get SQL DDL script for any object and dependants by object name';
-
