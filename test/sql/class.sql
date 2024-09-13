@@ -154,3 +154,14 @@ select ddlx_createonly('test_class_r'::regclass,'{lite}');
 select ddlx_alter('test_class_r'::regclass,'{lite}');
 
 
+-----
+-- test referential constraints to the same table
+/*
+create table ref1 (
+    id integer unique REFERENCES ref1(id)
+);
+create table ref2 (
+    id integer REFERENCES ref1(id)
+);
+select ddlx_script('ref1'::regclass);
+*/

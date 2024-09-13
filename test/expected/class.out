@@ -893,3 +893,14 @@ CREATE INDEX idx3 ON public.test_class_r USING btree (g) WITH (fillfactor='50');
 
 
 (1 row)
+-----
+-- test referential constraints to the same table
+/*
+create table ref1 (
+    id integer unique REFERENCES ref1(id)
+);
+create table ref2 (
+    id integer REFERENCES ref1(id)
+);
+select ddlx_script('ref1'::regclass);
+*/
