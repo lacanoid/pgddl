@@ -895,7 +895,6 @@ CREATE INDEX idx3 ON public.test_class_r USING btree (g) WITH (fillfactor='50');
 (1 row)
 -----
 -- test referential constraints to the same table
-/*
 create table ref1 (
     id integer unique REFERENCES ref1(id)
 );
@@ -903,4 +902,36 @@ create table ref2 (
     id integer REFERENCES ref1(id)
 );
 select ddlx_script('ref1'::regclass);
+ddlx_script
+BEGIN;
+
+/*
+ALTER TABLE ref2 DROP CONSTRAINT ref2_id_fkey;
+ALTER TABLE ref1 DROP CONSTRAINT ref1_id_fkey;
+
+DROP TABLE ref1; --==>> !!! ATTENTION !!! <<==--
 */
+
+-- Type: TABLE ; Name: ref1; Owner: postgres
+
+CREATE TABLE ref1 (
+    id integer
+);
+
+
+ALTER TABLE ref1 ADD CONSTRAINT ref1_id_key UNIQUE (id);
+
+
+-- DEPENDANTS
+
+ALTER TABLE ref1 ADD CONSTRAINT ref1_id_fkey
+  FOREIGN KEY (id) REFERENCES ref1(id);
+
+
+ALTER TABLE ref2 ADD CONSTRAINT ref2_id_fkey
+  FOREIGN KEY (id) REFERENCES ref1(id);
+
+
+END;
+
+(1 row)

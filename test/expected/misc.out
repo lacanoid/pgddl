@@ -219,10 +219,10 @@ select namespace,sql_kind, count(*)
 namespace|sql_kind|count
 public|AGGREGATE|1
 public|FOREIGN TABLE|1
-public|INDEX|7
+public|INDEX|8
 public|MATERIALIZED VIEW|1
 public|SEQUENCE|5
-public|TABLE|6
+public|TABLE|8
 public|TYPE|1
 public|VIEW|3
 (8 rows)

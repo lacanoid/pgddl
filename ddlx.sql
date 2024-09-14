@@ -1057,7 +1057,7 @@ select 'CREATE TYPE ' || format_type($1,null) || E' AS RANGE (\n  ' ||
             when length(col.collcollate) > 0 
             then 'COLLATION = ' || quote_ident(col.collcollate::text)
           end,
-          'CANONICAL = ' || cast(nullif(r.rngcanonical,0)::regproc as text),
+          'CANONICAL = ' || cast(nullif(r.rngcanonical,0)::regproc as text),          
           'SUBTYPE_DIFF = ' || cast(nullif(r.rngsubdiff,0)::regproc as text)
         ],E'\n  ')
        || E'\n);\n\n'
@@ -1361,9 +1361,11 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass, text[] default '{}'
    'ALTER TABLE ' || text(regclass(regclass)) ||  
    ' ADD CONSTRAINT ' || quote_ident(constraint_name) || 
    E' ' || constraint_definition as sql
-    from ddlx_get_constraints($1)
+    from ddlx_get_constraints($1) gc
+    join pg_constraint co on (co.oid = gc.oid)
    where is_local
      and (constraint_type not in ('CHECK') or not 'script' ilike any($2)) 
+     and (co.conrelid is distinct from co.confrelid or not 'script' ilike any($2))
    order by constraint_type desc, constraint_name
  )
  select coalesce(string_agg(sql,E';\n') || E';\n\n','')

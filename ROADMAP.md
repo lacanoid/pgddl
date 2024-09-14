@@ -38,6 +38,7 @@ Support for other missing options:
 - materialized view storage parameters
 - table of type not nulls
 - PG14 SET COMPRESSION
+- PG14 create range type: MULTIRANGE_TYPE_NAME
 - PG15 UNIQUE NULL NOT DISTINCT
 - ✔︎ PG15 publication columns and qualifiers
 - PG16 MAINTAIN privilege
@@ -45,7 +46,6 @@ Support for other missing options:
 - SET STATISTICS on indexes
 - ✔︎ pg_subscription not readable by non superuser
 - ✔︎ create base type: SUBSCRIPT
-- create range type: MULTIRANGE_TYPE_NAME
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl

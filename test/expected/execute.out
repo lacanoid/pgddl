@@ -86,6 +86,8 @@ SET client_min_messages = notice;
  Schema |         Name          |       Type        |  Owner   
 --------+-----------------------+-------------------+----------
  public | items                 | table             | postgres
+ public | ref1                  | table             | postgres
+ public | ref2                  | table             | postgres
  public | test_child            | table             | postgres
  public | test_class_f          | foreign table     | postgres
  public | test_class_m          | materialized view | postgres
@@ -101,7 +103,7 @@ SET client_min_messages = notice;
  public | test_parent           | table             | postgres
  public | test_parent_i_seq     | sequence          | postgres
  public | test_type_s           | sequence          | postgres
-(16 rows)
+(18 rows)
 
 select rebuild(i.name::regclass), i.sql_kind, i.sql_identifier 
   from pg_class c, ddlx_identify(c.oid) i 
@@ -116,6 +118,9 @@ NOTICE:  REBUILD TABLE test_collation
 NOTICE:  REBUILD SEQUENCE test_parent_i_seq
 NOTICE:  REBUILD TABLE test_parent
 NOTICE:  REBUILD TABLE test_child
+NOTICE:  REBUILD TABLE ref1
+NOTICE:  REBUILD INDEX ref1_id_key
+NOTICE:  REBUILD TABLE ref2
 NOTICE:  REBUILD FOREIGN TABLE test_class_f
 NOTICE:  REBUILD TABLE items
 NOTICE:  REBUILD INDEX items_pkey
@@ -142,6 +147,9 @@ NOTICE:  REBUILD VIEW test_class_v_opt2
        0 | SEQUENCE          | test_parent_i_seq
        0 | TABLE             | test_parent
        0 | TABLE             | test_child
+       0 | TABLE             | ref1
+       0 | INDEX             | ref1_id_key
+       0 | TABLE             | ref2
        0 | FOREIGN TABLE     | test_class_f
        0 | TABLE             | items
        0 | INDEX             | items_pkey
@@ -157,13 +165,15 @@ NOTICE:  REBUILD VIEW test_class_v_opt2
        0 | INDEX             | test_class_mi
        0 | VIEW              | test_class_v2
        0 | VIEW              | test_class_v_opt2
-(24 rows)
+(27 rows)
 
 \d 
                        List of relations
  Schema |         Name          |       Type        |  Owner   
 --------+-----------------------+-------------------+----------
  public | items                 | table             | postgres
+ public | ref1                  | table             | postgres
+ public | ref2                  | table             | postgres
  public | test_child            | table             | postgres
  public | test_class_f          | foreign table     | postgres
  public | test_class_m          | materialized view | postgres
@@ -179,5 +189,5 @@ NOTICE:  REBUILD VIEW test_class_v_opt2
  public | test_parent           | table             | postgres
  public | test_parent_i_seq     | sequence          | postgres
  public | test_type_s           | sequence          | postgres
-(16 rows)
+(18 rows)
 

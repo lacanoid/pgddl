@@ -464,6 +464,8 @@ SET client_min_messages = notice;
  public | dept_8                | table             | postgres
  public | dept_9                | table             | postgres
  public | items                 | table             | postgres
+ public | ref1                  | table             | postgres
+ public | ref2                  | table             | postgres
  public | tab_generated12       | table             | postgres
  public | tab_generated12_a_seq | sequence          | postgres
  public | tab_generated12_b_seq | sequence          | postgres
@@ -484,7 +486,7 @@ SET client_min_messages = notice;
  public | test_parent_i_seq     | sequence          | postgres
  public | test_stat             | table             | postgres
  public | test_type_s           | sequence          | postgres
-(43 rows)
+(45 rows)
 
 select rebuild(i.name::regclass), i.sql_kind, i.sql_identifier 
   from pg_class c, ddlx_identify(c.oid) i 
@@ -499,6 +501,9 @@ psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_collation
 psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_parent_i_seq
 psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_parent
 psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_child
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE ref1
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX ref1_id_key
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE ref2
 psql:test/sql/pg12.sql:39: NOTICE:  REBUILD FOREIGN TABLE test_class_f
 psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE items
 psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX items_pkey
@@ -566,6 +571,9 @@ psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX cons2_pkey
        0 | SEQUENCE          | test_parent_i_seq
        0 | TABLE             | test_parent
        0 | TABLE             | test_child
+       0 | TABLE             | ref1
+       0 | INDEX             | ref1_id_key
+       0 | TABLE             | ref2
        0 | FOREIGN TABLE     | test_class_f
        0 | TABLE             | items
        0 | INDEX             | items_pkey
@@ -622,7 +630,7 @@ psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX cons2_pkey
        0 | TABLE             | cons2
        0 | SEQUENCE          | cons2_id_seq
        0 | INDEX             | cons2_pkey
-(65 rows)
+(68 rows)
 
 select sql_kind,sql_identifier
   from ddlx_get_dependants('customers'::regclass),ddlx_identify(objid);
@@ -663,6 +671,8 @@ select sql_kind,sql_identifier
  public | dept_8                | table             | postgres
  public | dept_9                | table             | postgres
  public | items                 | table             | postgres
+ public | ref1                  | table             | postgres
+ public | ref2                  | table             | postgres
  public | tab_generated12       | table             | postgres
  public | tab_generated12_a_seq | sequence          | postgres
  public | tab_generated12_b_seq | sequence          | postgres
@@ -683,7 +693,7 @@ select sql_kind,sql_identifier
  public | test_parent_i_seq     | sequence          | postgres
  public | test_stat             | table             | postgres
  public | test_type_s           | sequence          | postgres
-(43 rows)
+(45 rows)
 
 \pset format unaligned
 alter view test_class_v rename column a to aardvark;

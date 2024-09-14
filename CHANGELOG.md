@@ -2,6 +2,7 @@ Version 0.28
 ------------
 - use correct routine type in ddlx_grants()
 - test updates for Postgres 17
+- fixed bug with duplicate foreign key constraints for self referencing tables
 
 Version 0.27
 ------------
