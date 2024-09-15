@@ -43,8 +43,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
   )
   SELECT coalesce(t.oid,c.oid),
          case when t.oid is not null then 'pg_type'::regclass
-	            else 'pg_class'::regclass end,
-	       c.relname AS name, n.nspname AS namespace,
+              else 'pg_class'::regclass end,
+         c.relname AS name, n.nspname AS namespace,
          pg_get_userbyid(c.relowner) AS owner,
          coalesce(cc.v,c.relkind::text) AS sql_kind,
          cast($1::regclass AS text) AS sql_identifier,
@@ -77,7 +77,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    UNION ALL
   SELECT coalesce(c.oid,t.oid),
          case when c.oid is not null then 'pg_class'::regclass
-	 else 'pg_type'::regclass end,
+   else 'pg_type'::regclass end,
          t.typname AS name, n.nspname AS namespace, pg_get_userbyid(t.typowner) AS owner,
          coalesce(cc.v,tt.v2,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier,
@@ -321,8 +321,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          'FUNCTION '||amprocnum, null as namespace, null as owner,
          'AMPROC' as sql_kind,
          format('FUNCTION %s (%s)',
-	        amprocnum,
-	        array_to_string(array[amproclefttype,amprocrighttype]::regtype[],','))
+          amprocnum,
+          array_to_string(array[amproclefttype,amprocrighttype]::regtype[],','))
          as sql_identifier,
          null as acl
     FROM pg_amproc amproc
@@ -332,8 +332,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          'OPERATOR '||amopstrategy, null as namespace, null as owner,
          'AMOP' as sql_kind,
          format('OPERATOR %s (%s)',
-	        amopstrategy,
-	        array_to_string(array[amoplefttype,amoprighttype]::regtype[],','))
+          amopstrategy,
+          array_to_string(array[amoplefttype,amoprighttype]::regtype[],','))
          as sql_identifier,
          null as acl
     FROM pg_amop amop
@@ -412,7 +412,8 @@ CREATE OR REPLACE FUNCTION ddlx_describe(
   OUT is_local boolean, OUT storage text, OUT collation text, 
   OUT namespace name, OUT class_name name, OUT sql_identifier text,
   OUT relid oid, OUT options text[], OUT definition text,
-  OUT sequence regclass)
+  OUT sequence regclass,
+  OUT compression text)
  RETURNS SETOF record LANGUAGE sql AS $function$
 SELECT  DISTINCT 
         a.attnum AS ord,
@@ -425,26 +426,26 @@ SELECT  DISTINCT
         a.attnotnull AS not_null,
         pg_get_expr(def.adbin,def.adrelid) AS "default",
 #if 10
-	nullif(a.attidentity::text,''),
+  nullif(a.attidentity::text,''),
 #else
-	null::text,
+  null::text,
 #end
 #if 12
-	nullif(a.attgenerated::text,''),
+  nullif(a.attgenerated::text,''),
 #else
-	null::text,
+  null::text,
 #end
         col_description(c.oid, a.attnum::integer) AS comment,
         con.conname AS primary_key,
         a.attislocal AS is_local,
         case when a.attstorage<>t.typstorage
-             then case a.attstorage
-	          when 'p' then 'plain'::text
-	          when 'e' then 'external'::text
-	          when 'm' then 'main'::text
-	          when 'x' then 'extended'::text
-                  else a.attstorage::text
-		  end
+        then case a.attstorage
+             when 'p' then 'plain'::text
+             when 'e' then 'external'::text
+             when 'm' then 'main'::text
+             when 'x' then 'extended'::text
+             else a.attstorage::text
+             end
         end as storage,
         nullif(col.collcollate::text,'') AS collation,
         s.nspname AS namespace,
@@ -456,7 +457,7 @@ SELECT  DISTINCT
 #else
         attoptions as options,
 #end
-	format('%I %s%s%s%s%s%s%s',a.attname::text,format_type(t.oid, a.atttypmod),
+  format('%I %s%s%s%s%s%s%s',a.attname::text,format_type(t.oid, a.atttypmod),
 #if 9.2
          case
            when a.attfdwoptions is not null
@@ -473,43 +474,52 @@ SELECT  DISTINCT
            WHEN length(col.collcollate) > 0
            THEN ' COLLATE ' || quote_ident(col.collcollate::text)
          END
-	 ,
+   ,
 #if 10	
-	 case when a.attnotnull and attidentity not in ('a','d') then ' NOT NULL' end
+   case when a.attnotnull and attidentity not in ('a','d') then ' NOT NULL' end
 #else
-	 case when a.attnotnull THEN ' NOT NULL' end
+   case when a.attnotnull THEN ' NOT NULL' end
 #end
-	 ,
+   ,
    case when 'lite' ilike any($2) then ' DEFAULT ' || pg_get_expr(def.adbin,def.adrelid) end,
 #if 10
-	case when attidentity in ('a','d')
-	     then format(' GENERATED %s AS IDENTITY',
-	       case attidentity
-	       when 'a' then 'ALWAYS'
-	       when 'd' then 'BY DEFAULT'
-	       end)
-	     end
+  case when attidentity in ('a','d')
+       then format(' GENERATED %s AS IDENTITY',
+         case attidentity
+         when 'a' then 'ALWAYS'
+         when 'd' then 'BY DEFAULT'
+         end)
+       end
 #else
-	 null::text
+   null::text
 #end
-	,
+  ,
 #if 12
-	case when a.attgenerated = 's'
-	     then format(' GENERATED ALWAYS AS (%s) STORED', 
-	     	         pg_get_expr(def.adbin,def.adrelid))
-	end
+  case when a.attgenerated = 's'
+       then format(' GENERATED ALWAYS AS (%s) STORED', 
+                  pg_get_expr(def.adbin,def.adrelid))
+  end
 #else
          null::text
 #end
-	 )
+   )
         AS definition,
-        pg_get_serial_sequence(c.oid::regclass::text,a.attname)::regclass as sequence	
+        pg_get_serial_sequence(c.oid::regclass::text,a.attname)::regclass as sequence,
+#if 14
+        case a.attcompression 
+        when 'l' then 'LZ4'
+        when 'p' then 'PGLZ'
+        end
+#else
+        null
+#end
+        AS compression
    FROM pg_class c
    JOIN pg_namespace s ON s.oid = c.relnamespace
    JOIN pg_attribute a ON c.oid = a.attrelid
    LEFT JOIN pg_attrdef def ON c.oid = def.adrelid AND a.attnum = def.adnum
    LEFT JOIN pg_constraint con
-        ON con.conrelid = c.oid AND (a.attnum = ANY (con.conkey)) AND con.contype = 'p'
+     ON con.conrelid = c.oid AND (a.attnum = ANY (con.conkey)) AND con.contype = 'p'
    LEFT JOIN pg_type t ON t.oid = a.atttypid
    LEFT JOIN pg_collation col ON col.oid = a.attcollation
    JOIN pg_namespace tn ON tn.oid = t.typnamespace
@@ -552,7 +562,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_constraints(
         c.condeferrable AS is_deferrable, 
         c.condeferred  AS initially_deferred, 
         r.oid as regclass, c.oid AS sysid,
-	d.refobjid is null AS is_local
+  d.refobjid is null AS is_local
    FROM pg_constraint c
    JOIN pg_class r ON c.conrelid = r.oid
    JOIN pg_namespace nc ON nc.oid = c.connamespace
@@ -653,7 +663,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_indexes(
         i.relname::text AS name,
         NULL::text AS tablespace, 
         cc.conname::text AS constraint_name,
-	      d2.refobjid IS NULL AS is_local,
+        d2.refobjid IS NULL AS is_local,
         x.indisclustered as is_clustered
    FROM pg_index x
    JOIN pg_class c ON c.oid = x.indrelid
@@ -738,9 +748,9 @@ CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{comments}')
  select case when comment is not null or 'comments' ilike any($2)
         then format(
           E'COMMENT ON %s %s IS %L;\n',
-	  sql_kind, sql_identifier, comment
+    sql_kind, sql_identifier, comment
         ) else ''
-	end
+  end
    from (
    select obj.sql_kind, sql_identifier, 
           case 
@@ -777,8 +787,8 @@ CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
           when 'owner' ilike any($2) or obj.owner is distinct from current_role
           then
           case
-     	    when obj.sql_kind = 'INDEX' then null
-     	    else 'ALTER '||sql_kind||' '||sql_identifier||
+           when obj.sql_kind = 'INDEX' then null
+           else 'ALTER '||sql_kind||' '||sql_identifier||
                  ' OWNER TO '||quote_ident(owner)||E';\n'
           end end
         end
@@ -819,7 +829,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
       array_to_string(array_cat(
         (SELECT array_agg('    '||definition) FROM ddlx_describe($1,$2) WHERE is_local),
         case when 'lite' ilike any($2)
-	      and not 'noconstraints' ilike any($2) then
+        and not 'noconstraints' ilike any($2) then
           (SELECT array_agg('    '||sql) FROM
             (select ('CONSTRAINT ' || quote_ident(constraint_name) || ' ' || constraint_definition) as sql
                from ddlx_get_constraints($1) where is_local order by constraint_type desc, constraint_name) as a)
@@ -1232,15 +1242,15 @@ seq as (
        case when 'script' ilike any($2)
             then format(e'CREATE SEQUENCE %s%s;\n%s',
 #if 9.5
-	           'IF NOT EXISTS ',
+             'IF NOT EXISTS ',
 #else
-		   '',
+       '',
 #end
                    "sequence",
-		   ddlx_alter_owner("sequence",$2)
-	         ) else '' end ||
-	    format(e'ALTER SEQUENCE %s OWNED BY %s;',"sequence",sql_identifier),
-	E'\n') || E'\n\n', '') as ddl
+       ddlx_alter_owner("sequence",$2)
+           ) else '' end ||
+      format(e'ALTER SEQUENCE %s OWNED BY %s;',"sequence",sql_identifier),
+  E'\n') || E'\n\n', '') as ddl
    from ddlx_describe($1,$2)
   where "sequence" is not null and ident is null
 )
@@ -1260,11 +1270,19 @@ cs as (
   select 
     coalesce(
       string_agg(format(E'ALTER %s %s ALTER %I SET STORAGE %s;',
-      			obj.sql_kind,obj.sql_identifier,d.name,
-			storage), E'\n') || E'\n\n', 
+            obj.sql_kind,obj.sql_identifier,d.name,d.storage), E'\n') || E'\n\n', 
     '') as ddl
    from d, obj
-  where storage is not null
+  where d.storage is not null
+),
+lz as (
+  select 
+    coalesce(
+      string_agg(format(E'ALTER %s %s ALTER %I SET COMPRESSION %s;',
+            obj.sql_kind,obj.sql_identifier,d.name,d.compression), E'\n') || E'\n\n', 
+    '') as ddl
+   from d, obj
+  where d.compression is not null
 ),
 ts as (
   select case when s.oid is not null then
@@ -1275,8 +1293,8 @@ ts as (
     left join pg_tablespace s on (s.oid=c.reltablespace)
    where c.oid = $1
 )
-select cs.ddl || ts.ddl
-  from cs,ts
+select cs.ddl || lz.ddl || ts.ddl
+  from cs,ts,lz
 $function$ strict;
 
 ---------------------------------------------------
@@ -1291,8 +1309,8 @@ ob as (
  from (
  select
  (select format(E'ALTER %s %s ALTER %I SET ( %s = %s );',
-      		 obj.sql_kind,obj.sql_identifier,att.attname,
-	         option_name, quote_nullable(option_value))
+           obj.sql_kind,obj.sql_identifier,att.attname,
+           option_name, quote_nullable(option_value))
    from pg_options_to_table(att.attoptions)) as ddl
    from pg_attribute att, obj
   where attnum>0 and att.attrelid=$1 and attoptions is not null and not attisdropped
@@ -1304,8 +1322,8 @@ os as (
         as ddl
  from (
  select format(E'ALTER %s %s ALTER %I SET STATISTICS %s;',
-      		 obj.sql_kind,obj.sql_identifier,att.attname,
-	         attstattarget) as ddl
+           obj.sql_kind,obj.sql_identifier,att.attname,
+           attstattarget) as ddl
    from pg_attribute att, obj
   where attnum>0 and att.attrelid=$1 and attstattarget>=0 and not attisdropped
   order by att.attname
@@ -1384,7 +1402,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraint(oid, text[] default '{}')
           coalesce(cast(t.oid::regtype as text),cast(r.oid::regclass as text)),
           c.conname, 
           pg_get_constraintdef(c.oid,true))
-	end
+  end
    from pg_constraint c 
    left join pg_class r on (c.conrelid = r.oid)
    left join pg_type t on (c.contypid = t.oid)
@@ -1605,9 +1623,9 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_alter_role_auth(oid)
  RETURNS text LANGUAGE sql AS $function$ 
  select case when rolpassword is not null
-	     then 'ALTER ROLE '|| quote_ident(rolname)||
+       then 'ALTER ROLE '|| quote_ident(rolname)||
                   ' ENCRYPTED PASSWORD '||quote_literal(rolpassword)
-	end
+  end
    from pg_authid where oid = $1
 $function$  strict;
 
@@ -1655,7 +1673,7 @@ q1 as (
 #end
    case when rolreplication then 'REPLICATION' else 'NOREPLICATION' end
                 ],E'\n  ')) ||
-   		array_to_string(array[
+       array_to_string(array[
    case 
      when description is not null 
      then 'COMMENT ON ROLE '||quote_ident(rolname)||
@@ -1827,7 +1845,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_policy(oid)
 select format(
            E'CREATE POLICY %s\n  %s;\n',
             obj.sql_identifier,
-			array_to_string(array[
+      array_to_string(array[
 #if 10
              'AS '||nullif(p.permissive,'PERMISSIVE'),
 #if 9.5
@@ -1872,47 +1890,47 @@ CREATE OR REPLACE FUNCTION ddlx_create_publication(oid)
  with obj as (select * from pg_publication where oid = $1)
  select array_to_string(array[
         format(E'CREATE PUBLICATION %I %sWITH ( publish=%L%s );',
-	       obj.pubname,
-	       case when obj.puballtables then 'FOR ALL TABLES ' end,
-	       array_to_string(array[
-		 case when obj.pubinsert then 'insert' end
-		,case when obj.pubupdate then 'update' end
-		,case when obj.pubdelete then 'delete' end
+         obj.pubname,
+         case when obj.puballtables then 'FOR ALL TABLES ' end,
+         array_to_string(array[
+     case when obj.pubinsert then 'insert' end
+    ,case when obj.pubupdate then 'update' end
+    ,case when obj.pubdelete then 'delete' end
 #if 11
-		,case when obj.pubtruncate then 'truncate' end
+    ,case when obj.pubtruncate then 'truncate' end
 #if 10
-	       ],','),
+         ],','),
 #if 13
                case when obj.pubviaroot then ', publish_via_partition_root' end
 #else
                null
 #if 10
-	   ),
+     ),
            (select string_agg(
-	            format(E'ALTER PUBLICATION %I ADD TABLE %s%s%s;',
-	              obj.pubname, prrelid::regclass,
+              format(E'ALTER PUBLICATION %I ADD TABLE %s%s%s;',
+                obj.pubname, prrelid::regclass,
 #if 15
                       ' ('||(select string_agg(quote_ident(attname),',')
-			       from unnest(prattrs) u join pg_attribute a on a.attnum=u and a.attrelid=prrelid
-		      )||')',
+             from unnest(prattrs) u join pg_attribute a on a.attnum=u and a.attrelid=prrelid
+          )||')',
                       ' CHECK '||pg_get_expr(prqual,prrelid)
 #else
                       null, null
 #if 10
-		      ),e'\n')
+          ),e'\n')
              from pg_publication_rel where prpubid = $1
            ),
 #if 15
            (select string_agg(
-	            format(E'ALTER PUBLICATION %I ADD TABLES IN SCHEMA %s;',
-	              obj.pubname, pnnspid::regnamespace),e'\n')
+              format(E'ALTER PUBLICATION %I ADD TABLES IN SCHEMA %s;',
+                obj.pubname, pnnspid::regnamespace),e'\n')
              from pg_publication_namespace where pnpubid = $1
            )
 #else
            null
 #if 10
 
-	],e'\n') || e'\n'
+  ],e'\n') || e'\n'
    from obj
 $function$  strict;
 
@@ -1923,15 +1941,15 @@ CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid)
  with obj as (select * from pg_subscription where oid = $1)
  select format(
            E'CREATE SUBSCRIPTION %I\n  CONNECTION %L\n  PUBLICATION %s\n  WITH (\n    %s );\n',
-	   obj.subname,
-	   obj.subconninfo,
-	   array_to_string(obj.subpublications,', '),
-	   array_to_string(array[
-		'connect='||quote_literal(obj.subenabled),
-		'slot_name='||quote_literal(obj.subslotname),
-		'synchronous_commit='||quote_literal(obj.subsynccommit)
-	   ],E'\n    ')	   
-	   )
+     obj.subname,
+     obj.subconninfo,
+     array_to_string(obj.subpublications,', '),
+     array_to_string(array[
+    'connect='||quote_literal(obj.subenabled),
+    'slot_name='||quote_literal(obj.subslotname),
+    'synchronous_commit='||quote_literal(obj.subsynccommit)
+     ],E'\n    ')	   
+     )
    from obj
 $function$  strict;
 #end
@@ -2200,7 +2218,7 @@ with
   )
 select	'pg_proc'::regclass as classid,
         p.oid AS objid, 
-	p.oid::regprocedure::text AS sql_identifier, 
+  p.oid::regprocedure::text AS sql_identifier, 
 #if 11
          case p.prokind
            when 'f' then 'FUNCTION'
@@ -2217,14 +2235,14 @@ select	'pg_proc'::regclass as classid,
         AS sql_kind,
         l.lanname AS language, 
 #if 9.5
-	p.proowner::regrole::name
+  p.proowner::regrole::name
 #else
-	u.rolname
+  u.rolname
 #end
-	AS owner,
+  AS owner,
         obj_description(p.oid) AS comment,
         p.proretset AS retset, 
-	s.nspname AS namespace, p.proname AS name,
+  s.nspname AS namespace, p.proname AS name,
         p.prosrc AS source
    FROM pg_proc p
    JOIN pg_namespace s ON s.oid = p.pronamespace
@@ -2241,18 +2259,18 @@ select	'pg_proc'::regclass as classid,
 UNION
  SELECT	'pg_class'::regclass as classid,
         c.oid AS objid, 
-	c.oid::regclass::text AS sql_identifier, 
+  c.oid::regclass::text AS sql_identifier, 
         k.v AS sql_kind,
         'sql' AS language, 
 #if 9.5
-	c.relowner::regrole::name
+  c.relowner::regrole::name
 #else
-	u.rolname
+  u.rolname
 #end
-	AS owner,
+  AS owner,
         obj_description(c.oid) AS comment,
         true AS retset, 
-	s.nspname AS namespace, c.relname AS name,
+  s.nspname AS namespace, c.relname AS name,
         pg_get_viewdef(c.oid,true) AS source
    FROM pg_class c JOIN rel_kind k on k.k=c.relkind
    JOIN pg_namespace s ON s.oid = c.relnamespace
@@ -2284,11 +2302,11 @@ COMMENT ON FUNCTION ddlx_apropos(text)
 CREATE OR REPLACE FUNCTION ddlx_alter_table_rls(regclass)
  RETURNS text LANGUAGE sql AS $function$
   select case when c.relrowsecurity
-	       then 'ALTER TABLE '||cast($1 as text)||E' ENABLE ROW LEVEL SECURITY;\n'
-	       else '' end ||
-	       case when c.relforcerowsecurity
-	       then 'ALTER TABLE '||cast($1 as text)||E' FORCE ROW LEVEL SECURITY;\n'
-	       else '' end
+         then 'ALTER TABLE '||cast($1 as text)||E' ENABLE ROW LEVEL SECURITY;\n'
+         else '' end ||
+         case when c.relforcerowsecurity
+         then 'ALTER TABLE '||cast($1 as text)||E' FORCE ROW LEVEL SECURITY;\n'
+         else '' end
     from pg_class c 
    where oid = $1
 $function$  strict;
@@ -2301,8 +2319,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_operator(regoper)
 with obj as (select * from ddlx_identify($1))
 select format(
          E'CREATE OPERATOR %s%s (\n%s%s%s%s%s%s%s%s%s\n);\n\n',
-	 nullif(obj.namespace,current_schema())||'.',
-	 obj.name,
+   nullif(obj.namespace,current_schema())||'.',
+   obj.name,
          E'  PROCEDURE = '  || cast(o.oprcode::regproc as text),
          case when o.oprleft <> 0 
               then E',\n  LEFTARG = ' || format_type(o.oprleft,null) end,
@@ -2474,8 +2492,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_tablespace(oid)
 with obj as (select * from ddlx_identify($1))
 select format(E'CREATE TABLESPACE %s%s;\n',
          obj.sql_identifier,
-		 ' LOCATION '||quote_literal(pg_tablespace_location(t.oid))
-	     ) || format(E'%s',
+     ' LOCATION '||quote_literal(pg_tablespace_location(t.oid))
+       ) || format(E'%s',
          (
    select string_agg(format('ALTER TABLESPACE %s SET ( %s = %s );', 
           obj.sql_identifier,
@@ -2524,9 +2542,9 @@ select format(E'ALTER DATABASE %s WITH ALLOW_CONNECTIONS %s;\n',
        ||
        (  select coalesce(e'\n'||string_agg(
                    'ALTER DATABASE '||obj.sql_identifier||' SET '||cfg||';',E'\n'
-		   ) || E'\n', '')
+       ) || E'\n', '')
           from unnest((select setconfig from pg_db_role_setting
-	                where setdatabase = $1 and setrole = 0::oid)) as cfg
+                  where setdatabase = $1 and setrole = 0::oid)) as cfg
        )
   from pg_database as d 
   left join pg_tablespace s on (s.oid=d.dattablespace), obj
@@ -2623,7 +2641,7 @@ f as (select * from ddlx_identify((select amprocfamily from a)) ),
 obj as (select * from ddlx_identify($1))
 select format(E'ALTER OPERATOR FAMILY %s ADD %s %s;\n',
         f.sql_identifier, obj.sql_identifier,
-	cast(a.amproc::regprocedure as text)
+  cast(a.amproc::regprocedure as text)
        )
   from a,f,obj
 $function$  strict;
@@ -2663,16 +2681,16 @@ f as (select * from ddlx_identify((select amopfamily from a)) ),
 obj as (select * from ddlx_identify($1))
 select format(E'ALTER OPERATOR FAMILY %s ADD OPERATOR %s %s (%s) %s;\n',
         f.sql_identifier,
-	amopstrategy,
-	amopopr::regoper::text,
-	array_to_string(array[amoplefttype,amoprighttype]::regtype[],','),
-	case amoppurpose
-	when 'o' then 'FOR ORDER BY '||
-	     	      (select quote_ident(opfname)
-		         from pg_opfamily f
-			 where f.oid = a.amopsortfamily)
-	when 's' then 'FOR SEARCH'
-	end
+  amopstrategy,
+  amopopr::regoper::text,
+  array_to_string(array[amoplefttype,amoprighttype]::regtype[],','),
+  case amoppurpose
+  when 'o' then 'FOR ORDER BY '||
+               (select quote_ident(opfname)
+             from pg_opfamily f
+       where f.oid = a.amopsortfamily)
+  when 's' then 'FOR SEARCH'
+  end
        )
   from a,f,obj
 $function$  strict;
@@ -2721,11 +2739,11 @@ select format(E'CREATE EXTENSION %s%I%s VERSION %s;\n',
               e.extname,
               ' SCHEMA '||quote_ident(nullif(
 #if 9.5
-	        e.extnamespace::regnamespace::text,
+          e.extnamespace::regnamespace::text,
 #else
                 (select nspname from pg_namespace n1 where n1.oid = e.extnamespace), 
 #end
-	      current_schema())),
+        current_schema())),
               quote_nullable(e.extversion))
   from pg_extension e
  where oid = $1
@@ -2884,9 +2902,9 @@ obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         base_ddl,           
-	case when 'nocomments' ilike any($2) then null else 
+  case when 'nocomments' ilike any($2) then null else 
           case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end
-	end || e'\n',
+  end || e'\n',
         case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
         else case 
           when 'owner' ilike any($2) or obj.owner is distinct from current_role
@@ -2911,9 +2929,9 @@ obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         base_ddl,
-	case when 'nocomments' ilike any($2) then null else 
+  case when 'nocomments' ilike any($2) then null else 
           case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end
-	end || e'\n',
+  end || e'\n',
         case when 'noalter' ilike any($2) then null
         else array_to_string(array[
           case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
@@ -2959,7 +2977,7 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
                    obj.sql_kind, 
                    case when 'ie' ilike any($2) then 'IF EXISTS ' end,
                    obj.sql_identifier,
-		               case when obj.sql_kind = 'TABLE' then ' --==>> !!! ATTENTION !!! <<==--' end
+                   case when obj.sql_kind = 'TABLE' then ' --==>> !!! ATTENTION !!! <<==--' end
                    )
        else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
       end
@@ -2989,7 +3007,7 @@ select row_number() over(order by gd.depth,gd.objid) as n,
        on de.objid=gd.objid and de.refclassid='pg_extension'::regclass
  where case when 'ext' ilike any($2)
             then gd.classid is distinct from 'pg_extension'::regclass
-	          else de.refclassid is null end
+            else de.refclassid is null end
    and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
  order by depth,objid
 )

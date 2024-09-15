@@ -713,3 +713,19 @@ CREATE OR REPLACE VIEW test_class_v AS
 GRANT SELECT ON test_class_v TO PUBLIC;
 
 (1 row)
+-- test compression
+create table complz ( label text );
+alter table complz alter label set compression lz4;
+select ddlx_create('complz'::regclass);
+ddlx_create
+-- Type: TABLE ; Name: complz; Owner: postgres
+
+CREATE TABLE complz (
+    label text
+);
+
+
+ALTER TABLE complz ALTER label SET COMPRESSION LZ4;
+
+
+(1 row)

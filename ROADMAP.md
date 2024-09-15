@@ -37,7 +37,7 @@ Support for other missing options:
 - ✔︎ grants vs current_role (who is grantor?, GRANTED BY)
 - materialized view storage parameters
 - table of type not nulls
-- PG14 SET COMPRESSION
+- ✔︎ PG14 SET COMPRESSION
 - PG14 create range type: MULTIRANGE_TYPE_NAME
 - PG15 UNIQUE NULL NOT DISTINCT
 - ✔︎ PG15 publication columns and qualifiers
