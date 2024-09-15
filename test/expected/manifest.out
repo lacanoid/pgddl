@@ -10,8 +10,11 @@ select * from a
  ddlx_apropos(text)                          | Search definitions (functions and views) for a regular expression
  ddlx_create(oid,text[])                     | Get SQL CREATE statement for any object by object id. Includes constraints, triggers, indexes...
  ddlx_createonly(oid,text[])                 | Get SQL CREATE statement for any object by object id (pre-data)
+ ddlx_definitions(oid,text[])                | Get individial parts of SQL definition for any object by object id
+ ddlx_describe(regclass,text[])              | Describe columns of a class
  ddlx_drop(oid,text[])                       | Get SQL DROP statement for any object by object id
- ddlx_identify(oid)                          | Identify object by object id
+ ddlx_grants(oid,text[])                     | Get SQL GRANT statements for any object by object id
+ ddlx_identify(oid)                          | Identify any object by object id
  ddlx_script(oid,text[])                     | Get SQL DDL script for any object and dependants by object id
  ddlx_script(text,text[])                    | Get SQL DDL script for any object and dependants by object name
  ddlx_alter_database(oid)                    | 
@@ -74,8 +77,6 @@ select * from a
  ddlx_create_type_shell(regtype)             | 
  ddlx_create_user_mapping(oid,text[])        | 
  ddlx_create_view(regclass,text[])           | 
- ddlx_definitions(oid,text[])                | 
- ddlx_describe(regclass,text[])              | 
  ddlx_drop_amop(oid)                         | 
  ddlx_drop_amproc(oid)                       | 
  ddlx_drop_constraint(oid)                   | 
@@ -88,7 +89,6 @@ select * from a
  ddlx_get_indexes(regclass)                  | 
  ddlx_get_rules(regclass)                    | 
  ddlx_get_triggers(regclass)                 | 
- ddlx_grants(oid,text[])                     | 
  ddlx_grants(regclass,text[])                | 
  ddlx_grants(regproc,text[])                 | 
  ddlx_grants(regrole,text[])                 | 

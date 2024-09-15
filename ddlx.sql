@@ -398,7 +398,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
 #end
 $function$  strict;
 COMMENT ON FUNCTION ddlx_identify(oid) 
-     IS 'Identify object by object id';
+     IS 'Identify any object by object id';
 
 ---------------------------------------------------
 
@@ -530,6 +530,7 @@ SELECT  DISTINCT
     AND c.oid = $1
   ORDER BY s.nspname, c.relname, a.attnum;
 $function$ strict;
+COMMENT ON FUNCTION ddlx_describe(regclass, text[]) IS 'Describe columns of a class';
 
 ---------------------------------------------------
 
@@ -2105,6 +2106,8 @@ select case obj.classid
        end
   from obj full join c on true
 $function$  strict;
+COMMENT ON FUNCTION ddlx_grants(oid, text[]) 
+     IS 'Get SQL GRANT statements for any object by object id';
 
 ---------------------------------------------------
 
@@ -2867,6 +2870,8 @@ with obj as (select * from ddlx_identify($1))
      ddlx_grants(oid,$2) as grants
     from obj
 $function$  strict;
+comment on function ddlx_definitions(oid,text[]) 
+     is 'Get individial parts of SQL definition for any object by object id';
 
 ---------------------------------------------------
 
