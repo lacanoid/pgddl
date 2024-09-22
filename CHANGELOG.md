@@ -1,9 +1,10 @@
 Version 0.28
 ------------
+- column compression support with ALTER COLUMN SET COMPRESSION
 - use correct routine type in ddlx_grants()
 - test updates for Postgres 17
 - fixed bug with duplicate foreign key constraints for self referencing tables
-- column compression support
+- few more functions have comments
 
 Version 0.27
 ------------

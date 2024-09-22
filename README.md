@@ -69,7 +69,7 @@ To build this module:
 
     make
 
-This builds extension for your particular version of Postgres in a file like `ddlx--0.22.sql`.
+This builds extension for your particular version of Postgres in a file like `ddlx--0.28.sql`.
 
     make install
     make install installcheck

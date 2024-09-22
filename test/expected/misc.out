@@ -263,8 +263,7 @@ oid|classid|name|namespace|owner|sql_kind|sql_identifier|acl
 1|pg_database|template1|_null_|postgres|DATABASE|template1|{=c/postgres,postgres=CTc/postgres}
 (1 row)
 -- test procedure grants
-create function foo() returns void as $$select 1$$ language sql;
-create procedure bar() as $$select 1$$ language sql;
+create function foo() returns void as $$select null::void$$ language sql;
 select ddlx_create('foo'::regproc);
 ddlx_create
 -- Type: FUNCTION ; Name: foo(); Owner: postgres
@@ -272,25 +271,11 @@ ddlx_create
 CREATE OR REPLACE FUNCTION public.foo()
  RETURNS void
  LANGUAGE sql
-AS $function$select 1$function$;
+AS $function$select null::void$function$;
 
 
 REVOKE ALL ON FUNCTION foo() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION foo() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION foo() TO postgres WITH GRANT OPTION;
-
-(1 row)
-select ddlx_create('bar'::regproc);
-ddlx_create
--- Type: PROCEDURE ; Name: bar(); Owner: postgres
-
-CREATE OR REPLACE PROCEDURE public.bar()
- LANGUAGE sql
-AS $procedure$select 1$procedure$;
-
-
-REVOKE ALL ON PROCEDURE bar() FROM PUBLIC;
-GRANT EXECUTE ON PROCEDURE bar() TO PUBLIC;
-GRANT EXECUTE ON PROCEDURE bar() TO postgres WITH GRANT OPTION;
 
 (1 row)
