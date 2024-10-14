@@ -46,6 +46,8 @@ Support for other missing options:
 - SET STATISTICS on indexes
 - ✔︎ pg_subscription not readable by non superuser
 - ✔︎ create base type: SUBSCRIPT
+- PG17 fallback option for subscriptions
+- check what's up with CLUSTER on PG9.6
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
@@ -65,6 +67,7 @@ Other:
 - ✔︎ do not emit ALTER OWNER for objects owned by current role
 - hide comments etc when object is hidden, such as with `{noconstraints,comments}`
 - make it possible to neatly drop/create extensions in a script, now broken
+- add option to preserve table data
 
 Build and tests:
 - improve and add to simple tests

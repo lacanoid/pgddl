@@ -1,0 +1,768 @@
+\i test/sql/pg17.sql
+\i test/sql/pg16.sql
+\i test/sql/pg15.sql
+\i test/sql/pg14.sql
+\i test/sql/pg13.sql
+\i test/sql/pg12.sql
+\pset null _null_
+\i test/sql/pg11.sql
+\pset null _null_
+\pset format unaligned
+SET client_min_messages = warning;
+SET ROLE postgres;
+CREATE TABLE customers(cust_id bigint NOT NULL,cust_name varchar(32) NOT NULL,cust_address text,
+cust_country text, cust_city text) PARTITION BY LIST(cust_country);
+CREATE TABLE customer_ind PARTITION OF customers FOR VALUES IN ('ind');
+CREATE TABLE customer_jap PARTITION OF customers FOR VALUES IN ('jap') PARTITION BY LIST(cust_city);
+CREATE TABLE customer_jap_tokyo PARTITION OF customer_jap FOR VALUES IN ('tokyo');
+CREATE TABLE customer_jap_kyoto PARTITION OF customer_jap FOR VALUES IN ('kyoto');
+CREATE TABLE customer_jap_def PARTITION OF customer_jap DEFAULT;
+CREATE TABLE customer_def PARTITION OF customers DEFAULT;
+INSERT INTO customers VALUES (2039,'Puja','Hyderabad','ind');
+SELECT tableoid::regclass,* FROM customers;
+tableoid|cust_id|cust_name|cust_address|cust_country|cust_city
+customer_ind|2039|Puja|Hyderabad|ind|_null_
+(1 row)
+SELECT * FROM customer_ind;
+cust_id|cust_name|cust_address|cust_country|cust_city
+2039|Puja|Hyderabad|ind|_null_
+(1 row)
+UPDATE customers SET cust_country ='jap' WHERE cust_id=2039;
+SELECT * FROM customer_jap;
+cust_id|cust_name|cust_address|cust_country|cust_city
+2039|Puja|Hyderabad|jap|_null_
+(1 row)
+select ddlx_script('customers');
+ddlx_script
+BEGIN;
+
+/*
+DROP TABLE customer_jap_def; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_jap_kyoto; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_jap_tokyo; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_def; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_jap; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_ind; --==>> !!! ATTENTION !!! <<==--
+
+DROP TABLE customers; --==>> !!! ATTENTION !!! <<==--
+*/
+
+-- Type: TABLE ; Name: customers; Owner: postgres
+
+CREATE TABLE customers (
+    cust_id bigint NOT NULL,
+    cust_name character varying(32) NOT NULL,
+    cust_address text,
+    cust_country text,
+    cust_city text
+)
+  PARTITION BY LIST (cust_country);
+
+
+
+-- DEPENDANTS
+
+-- Type: TABLE ; Name: customer_ind; Owner: postgres
+
+CREATE TABLE customer_ind PARTITION OF customers
+  FOR VALUES IN ('ind');
+
+
+
+-- Type: TABLE ; Name: customer_jap; Owner: postgres
+
+CREATE TABLE customer_jap PARTITION OF customers
+  FOR VALUES IN ('jap')
+  PARTITION BY LIST (cust_city);
+
+
+
+-- Type: TABLE ; Name: customer_def; Owner: postgres
+
+CREATE TABLE customer_def PARTITION OF customers
+  DEFAULT;
+
+
+
+-- Type: TABLE ; Name: customer_jap_tokyo; Owner: postgres
+
+CREATE TABLE customer_jap_tokyo PARTITION OF customer_jap
+  FOR VALUES IN ('tokyo');
+
+
+
+-- Type: TABLE ; Name: customer_jap_kyoto; Owner: postgres
+
+CREATE TABLE customer_jap_kyoto PARTITION OF customer_jap
+  FOR VALUES IN ('kyoto');
+
+
+
+-- Type: TABLE ; Name: customer_jap_def; Owner: postgres
+
+CREATE TABLE customer_jap_def PARTITION OF customer_jap
+  DEFAULT;
+
+
+
+END;
+
+(1 row)
+select ddlx_script('customer_jap');
+ddlx_script
+BEGIN;
+
+/*
+DROP TABLE customer_jap_def; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_jap_kyoto; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_jap_tokyo; --==>> !!! ATTENTION !!! <<==--
+
+DROP TABLE customer_jap; --==>> !!! ATTENTION !!! <<==--
+*/
+
+-- Type: TABLE ; Name: customer_jap; Owner: postgres
+
+CREATE TABLE customer_jap PARTITION OF customers
+  FOR VALUES IN ('jap')
+  PARTITION BY LIST (cust_city);
+
+
+
+-- DEPENDANTS
+
+-- Type: TABLE ; Name: customer_jap_tokyo; Owner: postgres
+
+CREATE TABLE customer_jap_tokyo PARTITION OF customer_jap
+  FOR VALUES IN ('tokyo');
+
+
+
+-- Type: TABLE ; Name: customer_jap_kyoto; Owner: postgres
+
+CREATE TABLE customer_jap_kyoto PARTITION OF customer_jap
+  FOR VALUES IN ('kyoto');
+
+
+
+-- Type: TABLE ; Name: customer_jap_def; Owner: postgres
+
+CREATE TABLE customer_jap_def PARTITION OF customer_jap
+  DEFAULT;
+
+
+
+END;
+
+(1 row)
+select ddlx_script('customer_def');
+ddlx_script
+BEGIN;
+
+/*
+DROP TABLE customer_def; --==>> !!! ATTENTION !!! <<==--
+*/
+
+-- Type: TABLE ; Name: customer_def; Owner: postgres
+
+CREATE TABLE customer_def PARTITION OF customers
+  DEFAULT;
+
+
+
+END;
+
+(1 row)
+-- statistics
+CREATE TABLE test_stat (
+    a   int primary key,
+    b   int
+);
+CREATE STATISTICS test_stat1 (dependencies) ON a, b FROM test_stat;
+select ddlx_create(oid) from pg_statistic_ext where stxname='test_stat1';
+ddlx_create
+CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
+
+
+(1 row)
+select ddlx_script('test_stat');
+ddlx_script
+BEGIN;
+
+/*
+DROP TABLE test_stat; --==>> !!! ATTENTION !!! <<==--
+*/
+
+-- Type: TABLE ; Name: test_stat; Owner: postgres
+
+CREATE TABLE test_stat (
+    a integer NOT NULL,
+    b integer
+);
+
+
+ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey PRIMARY KEY (a);
+
+CREATE STATISTICS public.test_stat1 (dependencies) ON a, b FROM test_stat;
+
+
+
+END;
+
+(1 row)
+-- test hash partitioning
+create table dept (id  int primary key) partition by hash(id) ;
+create table dept_1 partition of dept FOR VALUES WITH (MODULUS 10, REMAINDER 0);
+create table dept_2 partition of dept FOR VALUES WITH (MODULUS 10, REMAINDER 1);
+create table dept_3 partition of dept FOR VALUES WITH (MODULUS 10, REMAINDER 2);
+create table dept_4 partition of dept FOR VALUES WITH (MODULUS 10, REMAINDER 3);
+create table dept_5 partition of dept FOR VALUES WITH (MODULUS 10, REMAINDER 4);
+create table dept_6 partition of dept FOR VALUES WITH (MODULUS 10, REMAINDER 5);
+create table dept_7 partition of dept FOR VALUES WITH (MODULUS 10, REMAINDER 6);
+create table dept_8 partition of dept FOR VALUES WITH (MODULUS 10, REMAINDER 7);
+create table dept_9 partition of dept FOR VALUES WITH (MODULUS 10, REMAINDER 8);
+create table dept_10 partition of dept FOR VALUES WITH (MODULUS 10, REMAINDER 9);
+select ddlx_script('dept');
+ddlx_script
+BEGIN;
+
+/*
+DROP TABLE dept_10; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_9; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_8; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_7; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_6; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_5; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_4; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_3; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_2; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_1; --==>> !!! ATTENTION !!! <<==--
+
+DROP TABLE dept; --==>> !!! ATTENTION !!! <<==--
+*/
+
+-- Type: TABLE ; Name: dept; Owner: postgres
+
+CREATE TABLE dept (
+    id integer NOT NULL
+)
+  PARTITION BY HASH (id);
+
+
+ALTER TABLE dept ADD CONSTRAINT dept_pkey PRIMARY KEY (id);
+
+
+-- DEPENDANTS
+
+-- Type: TABLE ; Name: dept_1; Owner: postgres
+
+CREATE TABLE dept_1 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 0);
+
+
+
+-- Type: TABLE ; Name: dept_2; Owner: postgres
+
+CREATE TABLE dept_2 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 1);
+
+
+
+-- Type: TABLE ; Name: dept_3; Owner: postgres
+
+CREATE TABLE dept_3 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 2);
+
+
+
+-- Type: TABLE ; Name: dept_4; Owner: postgres
+
+CREATE TABLE dept_4 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 3);
+
+
+
+-- Type: TABLE ; Name: dept_5; Owner: postgres
+
+CREATE TABLE dept_5 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 4);
+
+
+
+-- Type: TABLE ; Name: dept_6; Owner: postgres
+
+CREATE TABLE dept_6 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 5);
+
+
+
+-- Type: TABLE ; Name: dept_7; Owner: postgres
+
+CREATE TABLE dept_7 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 6);
+
+
+
+-- Type: TABLE ; Name: dept_8; Owner: postgres
+
+CREATE TABLE dept_8 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 7);
+
+
+
+-- Type: TABLE ; Name: dept_9; Owner: postgres
+
+CREATE TABLE dept_9 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 8);
+
+
+
+-- Type: TABLE ; Name: dept_10; Owner: postgres
+
+CREATE TABLE dept_10 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 9);
+
+
+
+END;
+
+(1 row)
+select ddlx_script('dept_7');
+ddlx_script
+BEGIN;
+
+/*
+DROP TABLE dept_7; --==>> !!! ATTENTION !!! <<==--
+*/
+
+-- Type: TABLE ; Name: dept_7; Owner: postgres
+
+CREATE TABLE dept_7 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 6);
+
+
+
+END;
+
+(1 row)
+-- test procedures
+CREATE PROCEDURE procedure1(IN p1 TEXT)
+AS $$
+BEGIN
+    RAISE WARNING 'Procedure Parameter: %', p1 ;
+END ;
+$$
+LANGUAGE plpgsql ;
+call procedure1('Hello, world!');
+psql:test/sql/pg11.sql:60: WARNING:  Procedure Parameter: Hello, world!
+select ddlx_script('procedure1(text)');
+ddlx_script
+BEGIN;
+
+/*
+DROP PROCEDURE procedure1(text);
+*/
+
+-- Type: PROCEDURE ; Name: procedure1(text); Owner: postgres
+
+CREATE OR REPLACE PROCEDURE public.procedure1(IN p1 text)
+ LANGUAGE plpgsql
+AS $procedure$
+BEGIN
+    RAISE WARNING 'Procedure Parameter: %', p1 ;
+END ;
+$procedure$;
+
+
+REVOKE ALL ON PROCEDURE procedure1(text) FROM PUBLIC;
+GRANT EXECUTE ON PROCEDURE procedure1(text) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE procedure1(text) TO postgres WITH GRANT OPTION;
+
+END;
+
+(1 row)
+SET client_min_messages = warning;
+SET ROLE postgres;
+create table tab_generated12 (
+       a integer generated by default as identity,
+       b integer generated always as identity,
+       c integer generated always as (a+b) stored,
+       d integer default 42,
+       e serial,
+       f integer
+);
+-- select * from ddlx_describe('tab_generated12'::regclass) d;
+\pset format unaligned
+select ddlx_script('tab_generated12');
+ddlx_script
+BEGIN;
+
+/*
+ALTER TABLE tab_generated12 ALTER e DROP DEFAULT;
+ALTER TABLE tab_generated12 ALTER c DROP EXPRESSION;
+
+DROP TABLE tab_generated12; --==>> !!! ATTENTION !!! <<==--
+*/
+
+-- Type: TABLE ; Name: tab_generated12; Owner: postgres
+
+CREATE TABLE tab_generated12 (
+    a integer GENERATED BY DEFAULT AS IDENTITY,
+    b integer GENERATED ALWAYS AS IDENTITY,
+    c integer GENERATED ALWAYS AS ((a + b)) STORED,
+    d integer,
+    e integer NOT NULL,
+    f integer
+);
+
+
+ALTER TABLE tab_generated12 ALTER d SET DEFAULT 42;
+
+CREATE SEQUENCE IF NOT EXISTS tab_generated12_e_seq;
+ALTER SEQUENCE tab_generated12_e_seq OWNED BY tab_generated12.e;
+
+
+-- DEPENDANTS
+
+
+ALTER TABLE tab_generated12 ALTER e SET DEFAULT nextval('tab_generated12_e_seq'::regclass);
+
+END;
+
+(1 row)
+do $$ begin execute ddlx_script('tab_generated12'::regclass,'{drop,nowrap}'); end $$;
+create table cons1 (id serial primary key,x int, label text generated always as ('a label') stored);
+create table cons2 (id serial primary key,x int, label text default 'a label');
+alter table cons1 add foreign key (x) references cons2;
+alter table cons2 add foreign key (x) references cons1;
+do $$ begin execute ddlx_script('cons1'::regclass,'{drop,nowrap}'); end $$;
+do $$ begin execute ddlx_script('cons2'::regclass,'{drop,nowrap}'); end $$;
+-- check rebuild of partitioned tables
+SET client_min_messages = notice;
+\pset format aligned
+\d 
+                       List of relations
+ Schema |         Name          |       Type        |  Owner   
+--------+-----------------------+-------------------+----------
+ public | cons1                 | table             | postgres
+ public | cons1_id_seq          | sequence          | postgres
+ public | cons2                 | table             | postgres
+ public | cons2_id_seq          | sequence          | postgres
+ public | customer_def          | table             | postgres
+ public | customer_ind          | table             | postgres
+ public | customer_jap          | partitioned table | postgres
+ public | customer_jap_def      | table             | postgres
+ public | customer_jap_kyoto    | table             | postgres
+ public | customer_jap_tokyo    | table             | postgres
+ public | customers             | partitioned table | postgres
+ public | dept                  | partitioned table | postgres
+ public | dept_1                | table             | postgres
+ public | dept_10               | table             | postgres
+ public | dept_2                | table             | postgres
+ public | dept_3                | table             | postgres
+ public | dept_4                | table             | postgres
+ public | dept_5                | table             | postgres
+ public | dept_6                | table             | postgres
+ public | dept_7                | table             | postgres
+ public | dept_8                | table             | postgres
+ public | dept_9                | table             | postgres
+ public | items                 | table             | postgres
+ public | ref1                  | table             | postgres
+ public | ref2                  | table             | postgres
+ public | tab_generated12       | table             | postgres
+ public | tab_generated12_a_seq | sequence          | postgres
+ public | tab_generated12_b_seq | sequence          | postgres
+ public | tab_generated12_e_seq | sequence          | postgres
+ public | test_child            | table             | postgres
+ public | test_class_f          | foreign table     | postgres
+ public | test_class_m          | materialized view | postgres
+ public | test_class_r          | table             | postgres
+ public | test_class_r2         | table             | postgres
+ public | test_class_r2_i_seq   | sequence          | postgres
+ public | test_class_r_a_seq    | sequence          | postgres
+ public | test_class_v          | view              | postgres
+ public | test_class_v2         | view              | postgres
+ public | test_class_v_opt2     | view              | postgres
+ public | test_collation        | table             | postgres
+ public | test_collation_id_seq | sequence          | postgres
+ public | test_parent           | table             | postgres
+ public | test_parent_i_seq     | sequence          | postgres
+ public | test_stat             | table             | postgres
+ public | test_type_s           | sequence          | postgres
+(45 rows)
+
+select rebuild(i.name::regclass), i.sql_kind, i.sql_identifier 
+  from pg_class c, ddlx_identify(c.oid) i 
+ where relnamespace='public'::regnamespace
+ order by c.oid;
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TYPE test_type_c
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_class_r2_i_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_class_r2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_type_s
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_collation_id_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_collation
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_parent_i_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_parent
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_child
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE ref1
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX ref1_id_key
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE ref2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD FOREIGN TABLE test_class_f
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE items
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX items_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_class_r
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE test_class_r_a_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX test_class_r_b_key
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX test_class_r_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX idx1
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX idx2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX idx3
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD VIEW test_class_v
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD MATERIALIZED VIEW test_class_m
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX test_class_mi
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD VIEW test_class_v2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD VIEW test_class_v_opt2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customers
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_ind
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_jap
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_jap_tokyo
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_jap_kyoto
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_jap_def
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE customer_def
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE test_stat
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX test_stat_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_1
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_1_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_2_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_3
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_3_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_4
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_4_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_5
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_5_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_6
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_6_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_7
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_7_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_8
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_8_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_9
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_9_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE dept_10
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX dept_10_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE tab_generated12_a_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE tab_generated12_b_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE tab_generated12
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE tab_generated12_e_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE cons1
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE cons1_id_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX cons1_pkey
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD TABLE cons2
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD SEQUENCE cons2_id_seq
+psql:test/sql/pg12.sql:39: NOTICE:  REBUILD INDEX cons2_pkey
+ rebuild |     sql_kind      |    sql_identifier     
+---------+-------------------+-----------------------
+       0 | TYPE              | test_type_c
+       0 | SEQUENCE          | test_class_r2_i_seq
+       0 | TABLE             | test_class_r2
+       0 | SEQUENCE          | test_type_s
+       0 | SEQUENCE          | test_collation_id_seq
+       0 | TABLE             | test_collation
+       0 | SEQUENCE          | test_parent_i_seq
+       0 | TABLE             | test_parent
+       0 | TABLE             | test_child
+       0 | TABLE             | ref1
+       0 | INDEX             | ref1_id_key
+       0 | TABLE             | ref2
+       0 | FOREIGN TABLE     | test_class_f
+       0 | TABLE             | items
+       0 | INDEX             | items_pkey
+       0 | TABLE             | test_class_r
+       0 | SEQUENCE          | test_class_r_a_seq
+       0 | INDEX             | test_class_r_b_key
+       0 | INDEX             | test_class_r_pkey
+       0 | INDEX             | idx1
+       0 | INDEX             | idx2
+       0 | INDEX             | idx3
+       0 | VIEW              | test_class_v
+       0 | MATERIALIZED VIEW | test_class_m
+       0 | INDEX             | test_class_mi
+       0 | VIEW              | test_class_v2
+       0 | VIEW              | test_class_v_opt2
+       0 | TABLE             | customers
+       0 | TABLE             | customer_ind
+       0 | TABLE             | customer_jap
+       0 | TABLE             | customer_jap_tokyo
+       0 | TABLE             | customer_jap_kyoto
+       0 | TABLE             | customer_jap_def
+       0 | TABLE             | customer_def
+       0 | TABLE             | test_stat
+       0 | INDEX             | test_stat_pkey
+       0 | TABLE             | dept
+       0 | INDEX             | dept_pkey
+       0 | TABLE             | dept_1
+       0 | INDEX             | dept_1_pkey
+       0 | TABLE             | dept_2
+       0 | INDEX             | dept_2_pkey
+       0 | TABLE             | dept_3
+       0 | INDEX             | dept_3_pkey
+       0 | TABLE             | dept_4
+       0 | INDEX             | dept_4_pkey
+       0 | TABLE             | dept_5
+       0 | INDEX             | dept_5_pkey
+       0 | TABLE             | dept_6
+       0 | INDEX             | dept_6_pkey
+       0 | TABLE             | dept_7
+       0 | INDEX             | dept_7_pkey
+       0 | TABLE             | dept_8
+       0 | INDEX             | dept_8_pkey
+       0 | TABLE             | dept_9
+       0 | INDEX             | dept_9_pkey
+       0 | TABLE             | dept_10
+       0 | INDEX             | dept_10_pkey
+       0 | SEQUENCE          | tab_generated12_a_seq
+       0 | SEQUENCE          | tab_generated12_b_seq
+       0 | TABLE             | tab_generated12
+       0 | SEQUENCE          | tab_generated12_e_seq
+       0 | TABLE             | cons1
+       0 | SEQUENCE          | cons1_id_seq
+       0 | INDEX             | cons1_pkey
+       0 | TABLE             | cons2
+       0 | SEQUENCE          | cons2_id_seq
+       0 | INDEX             | cons2_pkey
+(68 rows)
+
+select sql_kind,sql_identifier
+  from ddlx_get_dependants('customers'::regclass),ddlx_identify(objid);
+ sql_kind |   sql_identifier   
+----------+--------------------
+ TABLE    | customer_ind
+ TABLE    | customer_jap
+ TABLE    | customer_def
+ TABLE    | customer_jap_tokyo
+ TABLE    | customer_jap_kyoto
+ TABLE    | customer_jap_def
+(6 rows)
+
+\d 
+                       List of relations
+ Schema |         Name          |       Type        |  Owner   
+--------+-----------------------+-------------------+----------
+ public | cons1                 | table             | postgres
+ public | cons1_id_seq          | sequence          | postgres
+ public | cons2                 | table             | postgres
+ public | cons2_id_seq          | sequence          | postgres
+ public | customer_def          | table             | postgres
+ public | customer_ind          | table             | postgres
+ public | customer_jap          | partitioned table | postgres
+ public | customer_jap_def      | table             | postgres
+ public | customer_jap_kyoto    | table             | postgres
+ public | customer_jap_tokyo    | table             | postgres
+ public | customers             | partitioned table | postgres
+ public | dept                  | partitioned table | postgres
+ public | dept_1                | table             | postgres
+ public | dept_10               | table             | postgres
+ public | dept_2                | table             | postgres
+ public | dept_3                | table             | postgres
+ public | dept_4                | table             | postgres
+ public | dept_5                | table             | postgres
+ public | dept_6                | table             | postgres
+ public | dept_7                | table             | postgres
+ public | dept_8                | table             | postgres
+ public | dept_9                | table             | postgres
+ public | items                 | table             | postgres
+ public | ref1                  | table             | postgres
+ public | ref2                  | table             | postgres
+ public | tab_generated12       | table             | postgres
+ public | tab_generated12_a_seq | sequence          | postgres
+ public | tab_generated12_b_seq | sequence          | postgres
+ public | tab_generated12_e_seq | sequence          | postgres
+ public | test_child            | table             | postgres
+ public | test_class_f          | foreign table     | postgres
+ public | test_class_m          | materialized view | postgres
+ public | test_class_r          | table             | postgres
+ public | test_class_r2         | table             | postgres
+ public | test_class_r2_i_seq   | sequence          | postgres
+ public | test_class_r_a_seq    | sequence          | postgres
+ public | test_class_v          | view              | postgres
+ public | test_class_v2         | view              | postgres
+ public | test_class_v_opt2     | view              | postgres
+ public | test_collation        | table             | postgres
+ public | test_collation_id_seq | sequence          | postgres
+ public | test_parent           | table             | postgres
+ public | test_parent_i_seq     | sequence          | postgres
+ public | test_stat             | table             | postgres
+ public | test_type_s           | sequence          | postgres
+(45 rows)
+
+\pset format unaligned
+alter view test_class_v rename column a to aardvark;
+select ddlx_create('test_class_v'::regclass);
+ddlx_create
+-- Type: VIEW ; Name: test_class_v; Owner: postgres
+
+CREATE OR REPLACE VIEW test_class_v AS
+ SELECT a AS aardvark,
+    b,
+    c,
+    d,
+    e,
+    f,
+    g,
+    h,
+    v
+   FROM test_class_r;
+
+
+GRANT SELECT ON test_class_v TO PUBLIC;
+
+(1 row)
+-- test compression
+create table complz ( label text );
+alter table complz alter label set compression lz4;
+select ddlx_create('complz'::regclass);
+ddlx_create
+-- Type: TABLE ; Name: complz; Owner: postgres
+
+CREATE TABLE complz (
+    label text
+);
+
+
+ALTER TABLE complz ALTER label SET COMPRESSION LZ4;
+
+
+(1 row)
+SET client_min_messages TO error;
+create table pubtab ( id integer, label text );
+create publication pub1 for all tables;
+comment on publication pub1 is 'Master Blaster';
+create publication pub2 with ( publish='insert,delete', publish_via_partition_root );
+alter publication pub2 add table pubtab;
+alter publication pub2 add table items where (value is not null);
+alter publication pub2 add table tab_generated12 (a,b,e);
+comment on publication pub2 is 'vija vaja';
+create publication pub3;
+alter publication pub3 add tables in schema public2;
+alter publication pub3 add table pubtab where (label is not null);
+select ddlx_create(oid) from pg_publication;
+ddlx_create
+CREATE PUBLICATION pub1 FOR ALL TABLES WITH ( publish='insert,update,delete,truncate' );
+COMMENT ON PUBLICATION pub1 IS 'Master Blaster';
+
+
+CREATE PUBLICATION pub2 WITH ( publish='insert,delete', publish_via_partition_root );
+ALTER PUBLICATION pub2 ADD TABLE pubtab;
+ALTER PUBLICATION pub2 ADD TABLE items CHECK (value IS NOT NULL);
+ALTER PUBLICATION pub2 ADD TABLE tab_generated12 (a,b,e);
+COMMENT ON PUBLICATION pub2 IS 'vija vaja';
+
+
+CREATE PUBLICATION pub3 WITH ( publish='insert,update,delete,truncate' );
+ALTER PUBLICATION pub3 ADD TABLE pubtab CHECK (label IS NOT NULL);
+ALTER PUBLICATION pub3 ADD TABLES IN SCHEMA public2;
+
+
+(3 rows)

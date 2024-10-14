@@ -55,6 +55,7 @@ Some disadvantages:
 That said, it has still proven quite useful in a many situations
 and is being used with a number of production databases.
 Bug reports are welcome.
+
 If support for your favorite Postgres feature is broken or missing, please let us know and we will put some focus on it.
 
 Curently developed and tested on PostgreSQL 13. 
@@ -186,7 +187,7 @@ If you want to dump a whole namespace without schema names, set `search_path` be
 Note that dropping dependant tables will erase all data stored there, so use with care!
 Scripts might be more useful for rebuilding layers of functions and views and such.
 
-For example:
+### Example
 
     CREATE TABLE users (
         id int PRIMARY KEY,
@@ -201,6 +202,8 @@ For example:
 
     SELECT ddlx_script(current_role::regrole);
 
+### Additional functions
+
 A number of other functions are provided to extract more specific objects.
 Their names all begin with `ddlx_`. They are used internally by the extension 
 and are possibly subject to change in future versions of the extension. 
@@ -212,7 +215,7 @@ Nevertheless, some of them are:
     Identify an object by object ID, `oid`. Searches all supported system catalogs.
     This function is used a lot by others in this extension.
 
-- `ddlx_describe(regclass) returns setof record`
+- `ddlx_describe(regclass) returns table`
 
     Get columns of a class.
 
@@ -237,7 +240,7 @@ Nevertheless, some of them are:
 
     Return GRANT statements for an object
 
-- `ddlx_apropos(regexp) returns setof table(classid, objid, sql_identifier, sql_kind, language, owner, comment, retset, namespace, name, source)`
+- `ddlx_apropos(regexp) returns table(classid, objid, sql_identifier, sql_kind, language, owner, comment, retset, namespace, name, source)`
 
     Search query bodies (functions and view definitions) matching POSIX regular expression.
 ```    
