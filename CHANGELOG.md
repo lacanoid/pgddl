@@ -1,7 +1,8 @@
 Version 0.29
 ------------
+- improvements in `ddlx_create_subscription()`, support new options
+- bug fixes in `ddlx_create_type_range()`
 - MULTIRANGE_TYPE_NAME support
-- bug fixes in CREATE RANGE TYPE
 - bug fixes in SET COMPRESSION
 
 Version 0.28

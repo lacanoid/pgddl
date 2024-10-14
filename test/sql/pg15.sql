@@ -19,4 +19,3 @@ alter publication pub3 add tables in schema public2;
 alter publication pub3 add table pubtab where (label is not null);
 
 select ddlx_create(oid) from pg_publication;
-

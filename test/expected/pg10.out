@@ -232,10 +232,10 @@ ddlx_create_subscription
 CREATE SUBSCRIPTION ddlx_test_sub
   CONNECTION 'dbname=contrib_regression'
   PUBLICATION ddlx_test_pub
-  WITH (
-    connect='false'
-    slot_name='ddlx_test_sub'
-    synchronous_commit='off' );
+  WITH ( connect=false,
+         enabled=false,
+         slot_name='ddlx_test_sub',
+         synchronous_commit='off' );
 
 (1 row)
 alter subscription ddlx_test_sub set ( slot_name=none );
@@ -244,9 +244,9 @@ ddlx_create_subscription
 CREATE SUBSCRIPTION ddlx_test_sub
   CONNECTION 'dbname=contrib_regression'
   PUBLICATION ddlx_test_pub
-  WITH (
-    connect='false'
-    synchronous_commit='off' );
+  WITH ( connect=false,
+         enabled=false,
+         synchronous_commit='off' );
 
 (1 row)
 drop subscription ddlx_test_sub;

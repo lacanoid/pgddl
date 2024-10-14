@@ -1942,21 +1942,66 @@ $function$  strict;
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid)
- RETURNS text LANGUAGE sql AS $function$ 
+ RETURNS text LANGUAGE sql STRICT AS $$ 
  with obj as (select * from pg_subscription where oid = $1)
  select format(
-           E'CREATE SUBSCRIPTION %I\n  CONNECTION %L\n  PUBLICATION %s\n  WITH (\n    %s );\n',
+           E'CREATE SUBSCRIPTION %I\n  CONNECTION %L\n  PUBLICATION %s\n  WITH ( %s );\n',
      obj.subname,
      obj.subconninfo,
      array_to_string(obj.subpublications,', '),
      array_to_string(array[
-    'connect='||quote_literal(obj.subenabled),
+    'connect='||(obj.subenabled::text),
+    'enabled='||(obj.subenabled::text),
+#if 14
+    'binary='||(obj.subbinary::text),
+    'streaming='||
+      case obj.substream::text
+      when 'f' then 'off'::text
+      when 't' then 'on'::text
+      when 'p' then 'parallel'::text
+      else obj.substream::text
+      end,
+#if 15
+    'two_phase='||
+      case obj.subtwophasestate
+      when 'f' then 'false'::text
+      when 't' then 'true'::text
+      else obj.subtwophasestate::text
+      end,
+    'disable_on_error='||
+      case obj.subdisableonerr
+      when 'f' then 'false'::text
+      when 't' then 'true'::text
+      else obj.subdisableonerr::text
+      end,
+#if 16
+    'password_required='||
+      case obj.subpasswordrequired
+      when 'f' then 'false'::text
+      when 't' then 'true'::text
+      else obj.subpasswordrequired::text
+      end,
+    'run_as_owner='||
+      case obj.subrunasowner
+      when 'f' then 'false'::text
+      when 't' then 'true'::text
+      else obj.subrunasowner::text
+      end,
+    'origin='||quote_literal(obj.suborigin::text),
+#if 17
+    'failover='||
+      case obj.subfailover
+      when 'f' then 'false'::text
+      when 't' then 'true'::text
+      else obj.subfailover::text
+      end,
+#if 10
     'slot_name='||quote_literal(obj.subslotname),
     'synchronous_commit='||quote_literal(obj.subsynccommit)
-     ],E'\n    ')	   
+     ],E',\n         ')	   
      )
    from obj
-$function$  strict;
+$$;
 #end
 #unless 10
 */

@@ -46,7 +46,7 @@ Support for other missing options:
 - SET STATISTICS on indexes
 - ✔︎ pg_subscription not readable by non superuser
 - ✔︎ create base type: SUBSCRIPT
-- PG17 fallback option for subscriptions
+- ✔︎ PG17 fallback option for subscriptions
 - check what's up with CLUSTER on PG9.6
 
 Other:
