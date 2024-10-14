@@ -70,7 +70,7 @@ Other:
 - add option to preserve table data
 
 Build and tests:
-- improve and add to simple tests
+- improve and add to tests
 - improve support for non superusers (more testing)
 - ✔︎ make some tests to test if what we output actually runs, test execute them
 - make some tests which compare to output of pg_dump;

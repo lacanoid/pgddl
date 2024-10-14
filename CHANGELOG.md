@@ -1,14 +1,13 @@
 Version 0.29
 ------------
-- improvements in `ddlx_create_subscription()`, support new options
-- bug fixes in `ddlx_create_type_range()`
-- MULTIRANGE_TYPE_NAME support
-- bug fixes in SET COMPRESSION
+- improvements in `ddlx_create_subscription()`, support for new options
+- bug fixes in `ddlx_create_type_range()`, `MULTIRANGE_TYPE_NAME` support
+- bug fixes in `SET COMPRESSION`
 
 Version 0.28
 ------------
-- column compression support with ALTER COLUMN SET COMPRESSION
-- use correct routine type in ddlx_grants()
+- column compression support with `ALTER COLUMN SET COMPRESSION`
+- use correct routine type in `ddlx_grants()`
 - test updates for Postgres 17
 - fixed bug with duplicate foreign key constraints for self referencing tables
 - few more functions have comments
@@ -90,8 +89,8 @@ Version 0.19
 
 Version 0.18
 ------------
-- bug fix in create_event_trigger()
-- ddlx_identify() now more correctly identifies regtype vs regclass objects
+- bug fix in `create_event_trigger()`
+- `ddlx_identify()` now more correctly identifies regtype vs regclass objects
 - exclude objects from extensions unless `ext` option is specified
 - added .travis.yml
 
@@ -106,10 +105,10 @@ Version 0.16
 
 Version 0.15
 ------------
-- added parameter ddlx_options text[] to a bunch of functions
+- added parameter `ddlx_options text[]` to a bunch of functions
 - bug fixes WRT dropped attributes
-- added ddlx_apropos(pattern) function to search queries (functions and views) matching a pattern
-- support for ALTER TABLE ENABLE/FORCE ROW LEVEL SECURITY
+- added `ddlx_apropos(pattern)` function to search queries (functions and views) matching a pattern
+- support for `ALTER TABLE ENABLE/FORCE ROW LEVEL SECURITY`
 - support for publications and subscriptions
 - pg12 test fixes
 
@@ -119,30 +118,30 @@ Version 0.14
 
 Version 0.13
 ------------
-- support for ALTER TABLE ALTER COLUMN SET configurations (attoptions)
-- support for ALTER TABLE ALTER COLUMN SET STATISTICS (attstattarget)
-- support for materialized views WITH NO DATA
+- support for `ALTER TABLE ALTER COLUMN SET` configurations (attoptions)
+- support for `ALTER TABLE ALTER COLUMN SET STATISTICS` (attstattarget)
+- support for materialized views `WITH NO DATA`
 - some support for tables OF type (still missing not nulls)
 - better handling of SERIAL columns, particularly in scripts
 - CLUSTER now also works for constraint indexes + name bugfix
 - ddlx_create(regrole) now works for non-superusers + other bugfixes
-- partition key now displayed correctly thanks to pg_get_partkeydef(oid)
+- partition key now displayed correctly thanks to `pg_get_partkeydef(oid)`
 - slightly reworked some of the queries in ddlx_get_* functions to make them a lot faster :)
 - added tests for index fillfactor and not valid constraints
-- removal of obsolete pg_attrdef.adsrc
+- removal of obsolete `pg_attrdef.adsrc`
 - misc bug fixes: operator name, better 9.1 compatibility
 
 Version 0.12
 ------------
-- support CLUSTER table USING index
+- support `CLUSTER table USING index`
 - support for disabled triggers
 - support for policies (row level security)
 - support for statistics
 - support for grants on foreign data wrappers and servers
-- support for ALTER DATABASE SET configurations
+- support for `ALTER DATABASE SET` configurations
 - some support for partitioning
 - some support for operator classes, pg_amproc, pg_amop
-- added new ddlx_alter_class(regclass) (internal) function, for post data DDL
+- added new `ddlx_alter_class(regclass)` (internal) function, for post data DDL
 - more use of format() function for speed and readability
 - slight refactoring removing some code duplication
 
@@ -150,9 +149,9 @@ Version 0.11
 ------------
 - support for column grants
 - support for fdw options on columns
-- function ddlx_get_dependants_recursive() rolled into ddlx_get_dependants()
-- removed redundant column 'kind' from ddlx_identify()
-- bug fix in create enum
+- function `ddlx_get_dependants_recursive()` rolled into `ddlx_get_dependants()`
+- removed redundant column `kind` from `ddlx_identify()`
+- bug fix in `CREATE ENUM`
 
 Version 0.10
 ------------
@@ -165,12 +164,12 @@ Version 0.10
 - support for column storage parameters
 - some support for access methods
 - some support for operator families
-- added column 'acl' to ddlx_identify()
-- new ddlx_grants(oid) function
-- ddlx_get_dependants_recursive() is faster
-- better storage parameter output in ddlx_describe()
+- added column `acl` to `ddlx_identify()`
+- new `ddlx_grants(oid)` function
+- `ddlx_get_dependants_recursive()` is faster
+- better storage parameter output in `ddlx_describe()`
 - preprocessor for specific pg version
-- more use of format() function for speed and readability
+- more use of `format()` function for speed and readability
 - some code cleanup for speed and readability
 - bug fixes
 
