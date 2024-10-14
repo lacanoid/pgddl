@@ -69,7 +69,7 @@ To build this module:
 
     make
 
-This builds extension for your particular version of Postgres in a file like `ddlx--0.28.sql`.
+This builds extension for your particular version of Postgres in a file like `ddlx--0.29.sql`.
 
     make install
     make install installcheck
@@ -152,6 +152,7 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 * `nopartitions` - do not include table partitions in a script
 * `comments` - include all comments, even if null
 * `nocomments` - do not include any comments
+* `nostorage` - do not include storage settings
 
 Drop statements are created with `ddlx_drop()` function.	
 

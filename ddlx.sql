@@ -1,6 +1,6 @@
 --
 --  DDL eXtractor functions
---  version 0.27 lacanoid@ljudmila.org
+--  version 0.29 lacanoid@ljudmila.org
 --
 ---------------------------------------------------
 
@@ -506,10 +506,11 @@ SELECT  DISTINCT
         AS definition,
         pg_get_serial_sequence(c.oid::regclass::text,a.attname)::regclass as sequence,
 #if 14
-        case a.attcompression 
-        when 'l' then 'LZ4'
-        when 'p' then 'PGLZ'
-        end
+        nullif(case a.attcompression 
+               when 'l' then 'LZ4'
+               when 'p' then 'PGLZ'
+               else a.attcompression::text
+               end,'')
 #else
         null
 #end
@@ -1070,7 +1071,10 @@ select 'CREATE TYPE ' || format_type($1,null) || E' AS RANGE (\n  ' ||
           end,
           'CANONICAL = ' || cast(nullif(r.rngcanonical,0)::regproc as text),          
           'SUBTYPE_DIFF = ' || cast(nullif(r.rngsubdiff,0)::regproc as text)
-        ],E'\n  ')
+#if 14
+          ,'MULTIRANGE_TYPE_NAME = ' || (r.rngmultitypid::regtype::text)
+#if 9.2
+        ],E',\n  ')
        || E'\n);\n\n'
   from pg_range r
   left join pg_opclass opc on (opc.oid=r.rngsubopc)
@@ -2139,7 +2143,7 @@ returns setof record as $$
 with recursive 
   tree(depth,classid,objid,objsubid,refclassid,refobjid,refobjsubid,deptype,edges) 
 as (
-select 1, -- dependancies
+select 1, -- dependancies initial
        case when r.oid is not null then 'pg_class'::regclass 
             else d.classid::regclass 
        end as classid,
@@ -2164,7 +2168,7 @@ select level, -- partitions
    and not ('nopartitions' ilike any($2))
 #end
  union all
-select depth+1,
+select depth+1, -- dependancies recursive
        case when r.oid is not null then 'pg_class'::regclass 
             else d.classid::regclass 
        end as classid,
@@ -2297,8 +2301,6 @@ $function$;
 COMMENT ON FUNCTION ddlx_apropos(text)
      IS 'Search definitions (functions and views) for a regular expression';
 
----------------------------------------------------
---  Main script generating functions
 ---------------------------------------------------
 
 #if 9.5
@@ -2779,6 +2781,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_type(regtype, text[] default '{}')
     where t.oid = $1 and t.typtype <> 'c'
 $function$  strict;
 
+---------------------------------------------------
+--  Main script generating functions
 ---------------------------------------------------
 
 CREATE OR REPLACE FUNCTION ddlx_definitions(

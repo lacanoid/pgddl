@@ -1,3 +1,9 @@
+Version 0.29
+------------
+- MULTIRANGE_TYPE_NAME support
+- bug fixes in CREATE RANGE TYPE
+- bug fixes in SET COMPRESSION
+
 Version 0.28
 ------------
 - column compression support with ALTER COLUMN SET COMPRESSION
