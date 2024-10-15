@@ -18,6 +18,7 @@ if($VI=~m!(\d+)(\.(\d+))?!) {
 print "-- preprocessed by pgsqlpp for PG=$V\n";
 my $i=0;  # line number
 my $sv=0; # selected version
+my $rv=0; # required version
 my $unless=0;
 while($l=<>) {
 	$i++;
@@ -28,11 +29,14 @@ while($l=<>) {
 		elsif($c eq 'unless') { $sv=$v2; $unless=1; }
 		elsif($c eq 'else') { $unless=!$unless; }
 		elsif($c eq 'end') { $sv=0; }
+		elsif($c eq 'require') { $rv=$v2; }
+		elsif($c eq 'required') { $rv=0; }
 		else {
 			errlog "Unknown Directive line $i \#$c $v2";
 		}
 	} else {
-		if($sv==0 || ($unless?($V<$sv):($V>=$sv))) {
+		if(($sv==0 || ($unless?($V<$sv):($V>=$sv)))
+		   && ($rv==0 || $V>=$rv)) {
 			print $l;
 		}
 	}

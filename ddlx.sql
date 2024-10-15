@@ -1884,9 +1884,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_transform(oid)
 $function$  strict;
 #end
 
-#unless 10
-/*
-#end
+#require 10
 #if 10
 --------------------------------------------------------------- ---------------
 
@@ -2003,9 +2001,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid)
    from obj
 $$;
 #end
-#unless 10
-*/
-#end
+#required
 
 --------------------------------------------------------------- ---------------
 --  Grants
