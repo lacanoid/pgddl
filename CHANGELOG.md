@@ -1,6 +1,7 @@
 Version 0.29
 ------------
 - improvements in `ddlx_create_subscription()`, support for new options
+- improvements in `ddlx_script_parts()`, better handling of extensions
 - bug fixes in `ddlx_create_type_range()`, `MULTIRANGE_TYPE_NAME` support
 - bug fixes in `SET COMPRESSION`
 

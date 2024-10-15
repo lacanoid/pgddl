@@ -128,7 +128,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
              as tt on tt.column1 = con.contype
    WHERE con.oid = $1
 #if 14
-     AND NOT (c.relname like 'pg_%' or c.relnamespace = 'pg_catalog'::regnamespace) -- hack!
+     AND (c.oid is null or -- hack to hide duplicated oids
+     NOT (c.relname like 'pg_%' or c.relnamespace = 'pg_catalog'::regnamespace)) 
 #end
    UNION ALL
   SELECT t.oid,'pg_trigger'::regclass,
@@ -1399,7 +1400,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraint(oid, text[] default '{}')
  select case
         when not 'noconstraints' ilike any($2)
         then format(
-          E'ALTER %s %s ADD CONSTRAINT %I\n  %s;\n',
+          E'ALTER %s %s ADD CONSTRAINT %I\n      %s;\n',
           case when t.oid is not null then 'DOMAIN' else 'TABLE' end,
           coalesce(cast(t.oid::regtype as text),cast(r.oid::regclass as text)),
           c.conname, 
@@ -2247,10 +2248,10 @@ select qq.depth,qq.classid,qq.objid,
   left join pg_trigger t on (t.oid=qq.objid)
   left join pg_constraint c on (c.oid=qq.objid)
   left join pg_attrdef a on (a.oid=qq.objid)
-  left join pg_depend d on (d.objid=any(array[qq.objid,t.tgrelid,c.conrelid,a.adrelid])
-                            and d.deptype='e'
-                            and d.refclassid='pg_extension'::regclass)
-  order by qq.depth,qq.objid;
+  left join pg_depend d on (
+       d.objid=any(array[qq.objid,t.tgrelid,c.conrelid,c.contypid,a.adrelid])
+   and d.deptype='e' and d.refclassid='pg_extension'::regclass)
+ order by qq.depth,qq.objid;
 $$ language sql;
 
 --------------------------------------------------------------- ---------------
