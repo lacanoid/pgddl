@@ -2182,7 +2182,7 @@ $function$  strict;
 
 create or replace function ddlx_get_dependants(
  in oid, in text[] default '{}',
- out depth int, out classid regclass, out objid oid
+ out depth int, out classid regclass, out objid oid, out extid oid
 )
 returns setof record as $$
 with recursive 
@@ -2239,11 +2239,22 @@ q as (
   select distinct depth,classid,objid
     from ddlx_get_dependants_recursive
    where deptype = 'n'
+),
+qq as (
+  select depth,classid,objid 
+    from q 
+   where (objid,depth) in (select objid,max(depth) from q group by objid)
 )
-select depth,classid,objid 
-  from q 
- where (objid,depth) in (select objid,max(depth) from q group by objid)
- order by depth,objid
+select qq.depth,qq.classid,qq.objid,
+       d.refobjid as extid
+  from qq
+  left join pg_trigger t on (t.oid=qq.objid)
+  left join pg_constraint c on (c.oid=qq.objid)
+  left join pg_attrdef a on (a.oid=qq.objid)
+  left join pg_depend d on (d.objid=any(array[qq.objid,t.tgrelid,c.conrelid,a.adrelid])
+                            and d.deptype='e'
+                            and d.refclassid='pg_extension'::regclass)
+  order by qq.depth,qq.objid;
 $$ language sql;
 
 --------------------------------------------------------------- ---------------
@@ -3058,11 +3069,11 @@ select row_number() over(order by gd.depth,gd.objid) as n,
        ddlx_create(gd.objid,$2||'{script}'::text[]),
        gd.objid
   from ddlx_get_dependants($1,$2) gd
-  left join pg_depend de
-       on de.objid=gd.objid and de.refclassid='pg_extension'::regclass
+--  left join pg_depend de
+--       on de.objid=gd.objid and de.refclassid='pg_extension'::regclass
  where case when 'ext' ilike any($2)
             then gd.classid is distinct from 'pg_extension'::regclass
-            else de.refclassid is null end
+            else gd.extid is null end
    and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
  order by depth,objid
 )
