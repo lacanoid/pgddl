@@ -53,6 +53,7 @@ ALTER TABLE test_class_r DROP CONSTRAINT test_class_r_c_check;
 DROP TABLE test_class_r; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: test_class_r; Owner: postgres
 
 CREATE TABLE test_class_r (
@@ -108,7 +109,6 @@ GRANT UPDATE ON test_class_r TO PUBLIC;
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
       CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
 
-
 ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 
 END;
@@ -122,6 +122,7 @@ BEGIN;
 /*
 DROP TABLE test_class_r; --==>> !!! ATTENTION !!! <<==--
 */
+
 
 -- Type: TABLE ; Name: test_class_r; Owner: postgres
 
@@ -184,6 +185,7 @@ BEGIN;
 DROP INDEX idx1;
 */
 
+
 -- Type: INDEX ; Name: idx1; Owner: postgres
 
 CREATE UNIQUE INDEX idx1 ON public.test_class_r USING btree (lower(b)) WHERE (b IS NOT NULL);
@@ -200,6 +202,7 @@ BEGIN;
 /*
 DROP INDEX idx2;
 */
+
 
 -- Type: INDEX ; Name: idx2; Owner: postgres
 
@@ -229,6 +232,7 @@ ALTER TABLE test_class_r2 ALTER i DROP DEFAULT;
 
 DROP TABLE test_class_r2; --==>> !!! ATTENTION !!! <<==--
 */
+
 
 -- Type: TABLE ; Name: test_class_r2; Owner: postgres
 
@@ -266,6 +270,7 @@ BEGIN;
 DROP VIEW test_class_v;
 */
 
+
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v AS
@@ -294,6 +299,7 @@ BEGIN;
 /*
 DROP VIEW test_class_v;
 */
+
 
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
@@ -329,6 +335,7 @@ DROP VIEW test_class_v2;
 DROP VIEW test_class_v;
 */
 
+
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v AS
@@ -348,6 +355,7 @@ ALTER VIEW test_class_v OWNER TO postgres;
 GRANT SELECT ON test_class_v TO PUBLIC;
 
 -- DEPENDANTS
+
 
 -- Type: VIEW ; Name: test_class_v2; Owner: postgres
 
@@ -382,6 +390,7 @@ BEGIN;
 /*
 DROP MATERIALIZED VIEW test_class_m;
 */
+
 
 -- Type: MATERIALIZED VIEW ; Name: test_class_m; Owner: postgres
 
@@ -426,6 +435,7 @@ BEGIN;
 DROP FUNCTION funfun(integer,text);
 */
 
+
 -- Type: FUNCTION ; Name: funfun(integer,text); Owner: postgres
 
 CREATE OR REPLACE FUNCTION public.funfun(a integer, b text DEFAULT NULL::text, OUT c numeric, OUT d text)
@@ -451,6 +461,7 @@ BEGIN;
 /*
 DROP FUNCTION funfun(integer,text);
 */
+
 
 -- Type: FUNCTION ; Name: funfun(integer,text); Owner: postgres
 
@@ -480,6 +491,7 @@ BEGIN;
 /*
 DROP SEQUENCE IF EXISTS test_type_s;
 */
+
 
 -- Type: SEQUENCE ; Name: test_type_s; Owner: postgres
 
@@ -512,6 +524,7 @@ ALTER TABLE test_collation ALTER id DROP DEFAULT;
 DROP TABLE test_collation; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: test_collation; Owner: postgres
 
 CREATE TABLE test_collation (
@@ -543,6 +556,7 @@ BEGIN;
 DROP VIEW test_class_v_opt2;
 */
 
+
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
@@ -573,6 +587,7 @@ BEGIN;
 DROP VIEW test_class_v_opt2;
 */
 
+
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v_opt2 AS
@@ -602,6 +617,7 @@ BEGIN;
 /*
 DROP VIEW test_class_v_opt2;
 */
+
 
 -- Type: VIEW ; Name: test_class_v_opt2; Owner: postgres
 
@@ -637,6 +653,7 @@ BEGIN;
 DROP FUNCTION test_proc_1();
 */
 
+
 -- Type: FUNCTION ; Name: test_proc_1(); Owner: postgres
 
 CREATE OR REPLACE FUNCTION public.test_proc_1()
@@ -660,6 +677,7 @@ BEGIN;
 DROP FUNCTION test_proc_1();
 */
 
+
 -- Type: FUNCTION ; Name: test_proc_1(); Owner: postgres
 
 CREATE OR REPLACE FUNCTION public.test_proc_1()
@@ -682,6 +700,7 @@ BEGIN;
 /*
 DROP FUNCTION test_proc_1();
 */
+
 
 -- Type: FUNCTION ; Name: test_proc_1(); Owner: postgres
 
@@ -709,6 +728,7 @@ BEGIN;
 /*
 DROP AGGREGATE test_proc_agg_1(text);
 */
+
 
 -- Type: AGGREGATE ; Name: test_proc_agg_1(text); Owner: postgres
 
@@ -739,6 +759,7 @@ create table test_parent ( i serial );
 create table test_child () inherits (test_parent);
 select ddlx_create('test_parent'::regclass); 
 ddlx_create
+
 -- Type: TABLE ; Name: test_parent; Owner: postgres
 
 CREATE TABLE test_parent (
@@ -752,6 +773,7 @@ ALTER SEQUENCE test_parent_i_seq OWNED BY test_parent.i;
 (1 row)
 select ddlx_create('test_child'::regclass); 
 ddlx_create
+
 -- Type: TABLE ; Name: test_child; Owner: postgres
 
 CREATE TABLE test_child ()
@@ -766,6 +788,7 @@ ALTER TABLE test_child ALTER i SET DEFAULT nextval('test_parent_i_seq'::regclass
 -- test pre-data and post-data functions
 select ddlx_createonly('test_class_r'::regclass);
 ddlx_createonly
+
 -- Type: TABLE ; Name: test_class_r; Owner: postgres
 
 CREATE TABLE test_class_r (
@@ -828,6 +851,7 @@ ALTER TABLE test_class_r DISABLE TRIGGER aaaa;
 -- test 'lite' option
 select ddlx_create('test_class_r'::regclass,'{lite}');
 ddlx_create
+
 -- Type: TABLE ; Name: test_class_r; Owner: postgres
 
 CREATE TABLE test_class_r (
@@ -863,6 +887,7 @@ GRANT UPDATE ON test_class_r TO PUBLIC;
 (1 row)
 select ddlx_createonly('test_class_r'::regclass,'{lite}');
 ddlx_createonly
+
 -- Type: TABLE ; Name: test_class_r; Owner: postgres
 
 CREATE TABLE test_class_r (
@@ -912,6 +937,7 @@ ALTER TABLE ref1 DROP CONSTRAINT ref1_id_fkey;
 DROP TABLE ref1; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: ref1; Owner: postgres
 
 CREATE TABLE ref1 (
@@ -926,7 +952,6 @@ ALTER TABLE ref1 ADD CONSTRAINT ref1_id_key UNIQUE (id);
 
 ALTER TABLE ref1 ADD CONSTRAINT ref1_id_fkey
       FOREIGN KEY (id) REFERENCES ref1(id);
-
 
 ALTER TABLE ref2 ADD CONSTRAINT ref2_id_fkey
       FOREIGN KEY (id) REFERENCES ref1(id);

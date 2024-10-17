@@ -266,6 +266,7 @@ oid|classid|name|namespace|owner|sql_kind|sql_identifier|acl
 create function foo() returns void as $$select null::void$$ language sql;
 select ddlx_create('foo'::regproc);
 ddlx_create
+
 -- Type: FUNCTION ; Name: foo(); Owner: postgres
 
 CREATE OR REPLACE FUNCTION public.foo()

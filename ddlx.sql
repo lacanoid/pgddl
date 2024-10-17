@@ -736,7 +736,7 @@ CREATE OR REPLACE FUNCTION ddlx_banner(
    name text, kind text, namespace text, owner text, extra text default null
  )
  RETURNS text LANGUAGE sql AS $$
-  SELECT format(E'%s-- Type: %s ; Name: %s; Owner: %s\n\n',
+  SELECT format(E'\n%s-- Type: %s ; Name: %s; Owner: %s\n\n',
                 E'--\n-- ' || $5 || E'\n',
                 $2,$1,$4)
 $$;
@@ -3058,7 +3058,7 @@ select row_number() over(order by gd.depth,gd.objid) as n,
 )
 select ddlx_create($1,$2||'{script}'::text[]) as ddl_create,
        ddlx_drop($1,$2||'{script}'::text[]) as ddl_drop,
-       string_agg(ddlx_create,E'\n' order by n) as ddl_create_deps,
+       string_agg(ddlx_create,E'' order by n) as ddl_create_deps,
        string_agg(ddlx_drop,'' order by n desc) as ddl_drop_deps
   from ddl 
 $$ strict;

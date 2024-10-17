@@ -43,6 +43,7 @@ DROP TABLE customer_ind; --==>> !!! ATTENTION !!! <<==--
 DROP TABLE customers; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: customers; Owner: postgres
 
 CREATE TABLE customers (
@@ -57,6 +58,7 @@ CREATE TABLE customers (
 
 
 -- DEPENDANTS
+
 
 -- Type: TABLE ; Name: customer_ind; Owner: postgres
 
@@ -116,6 +118,7 @@ DROP TABLE customer_jap_tokyo; --==>> !!! ATTENTION !!! <<==--
 DROP TABLE customer_jap; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: customer_jap; Owner: postgres
 
 CREATE TABLE customer_jap PARTITION OF customers
@@ -125,6 +128,7 @@ CREATE TABLE customer_jap PARTITION OF customers
 
 
 -- DEPENDANTS
+
 
 -- Type: TABLE ; Name: customer_jap_tokyo; Owner: postgres
 
@@ -158,6 +162,7 @@ BEGIN;
 DROP TABLE customer_def; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: customer_def; Owner: postgres
 
 CREATE TABLE customer_def PARTITION OF customers
@@ -187,6 +192,7 @@ BEGIN;
 /*
 DROP TABLE test_stat; --==>> !!! ATTENTION !!! <<==--
 */
+
 
 -- Type: TABLE ; Name: test_stat; Owner: postgres
 
@@ -236,6 +242,7 @@ DROP TABLE dept_1; --==>> !!! ATTENTION !!! <<==--
 DROP TABLE dept; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: dept; Owner: postgres
 
 CREATE TABLE dept (
@@ -248,6 +255,7 @@ ALTER TABLE dept ADD CONSTRAINT dept_pkey PRIMARY KEY (id);
 
 
 -- DEPENDANTS
+
 
 -- Type: TABLE ; Name: dept_1; Owner: postgres
 
@@ -330,6 +338,7 @@ BEGIN;
 DROP TABLE dept_7; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: dept_7; Owner: postgres
 
 CREATE TABLE dept_7 PARTITION OF dept
@@ -357,6 +366,7 @@ BEGIN;
 /*
 DROP PROCEDURE procedure1(text);
 */
+
 
 -- Type: PROCEDURE ; Name: procedure1(text); Owner: postgres
 
@@ -397,6 +407,7 @@ ALTER TABLE tab_generated12 ALTER e DROP DEFAULT;
 
 DROP TABLE tab_generated12; --==>> !!! ATTENTION !!! <<==--
 */
+
 
 -- Type: TABLE ; Name: tab_generated12; Owner: postgres
 
@@ -695,6 +706,7 @@ select sql_kind,sql_identifier
 alter view test_class_v rename column a to aardvark;
 select ddlx_create('test_class_v'::regclass);
 ddlx_create
+
 -- Type: VIEW ; Name: test_class_v; Owner: postgres
 
 CREATE OR REPLACE VIEW test_class_v AS
@@ -718,6 +730,7 @@ create table complz ( label text );
 alter table complz alter label set compression lz4;
 select ddlx_create('complz'::regclass);
 ddlx_create
+
 -- Type: TABLE ; Name: complz; Owner: postgres
 
 CREATE TABLE complz (

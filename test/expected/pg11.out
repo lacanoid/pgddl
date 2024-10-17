@@ -32,6 +32,7 @@ BEGIN;
 DROP TABLE customers; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: customers; Owner: postgres
 
 CREATE TABLE customers (
@@ -56,6 +57,7 @@ BEGIN;
 DROP TABLE customer_jap; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: customer_jap; Owner: postgres
 
 CREATE TABLE customer_jap PARTITION OF customers
@@ -74,6 +76,7 @@ BEGIN;
 /*
 DROP TABLE customer_def; --==>> !!! ATTENTION !!! <<==--
 */
+
 
 -- Type: TABLE ; Name: customer_def; Owner: postgres
 
@@ -104,6 +107,7 @@ BEGIN;
 /*
 DROP TABLE test_stat; --==>> !!! ATTENTION !!! <<==--
 */
+
 
 -- Type: TABLE ; Name: test_stat; Owner: postgres
 
@@ -142,6 +146,7 @@ BEGIN;
 DROP TABLE dept; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: dept; Owner: postgres
 
 CREATE TABLE dept (
@@ -163,6 +168,7 @@ BEGIN;
 /*
 DROP TABLE dept_7; --==>> !!! ATTENTION !!! <<==--
 */
+
 
 -- Type: TABLE ; Name: dept_7; Owner: postgres
 
@@ -193,6 +199,7 @@ BEGIN;
 /*
 DROP PROCEDURE procedure1(text);
 */
+
 
 -- Type: PROCEDURE ; Name: procedure1(text); Owner: postgres
 

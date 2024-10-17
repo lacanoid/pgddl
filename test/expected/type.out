@@ -67,6 +67,7 @@ BEGIN;
 DROP TYPE test_type_c;
 */
 
+
 -- Type: TYPE ; Name: test_type_c; Owner: postgres
 
 CREATE TYPE test_type_c AS (
@@ -89,6 +90,7 @@ BEGIN;
 /*
 DROP TYPE test_type_c;
 */
+
 
 -- Type: TYPE ; Name: test_type_c; Owner: postgres
 
@@ -236,6 +238,7 @@ COMMENT ON TYPE int_t IS '-2 billion to 2 billion integer, 4-byte storage (test)
 
 
 -- DEPENDANTS
+
 
 -- Type: FUNCTION ; Name: int_t4in(cstring); Owner: postgres
 

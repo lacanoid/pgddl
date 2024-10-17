@@ -36,6 +36,7 @@ DROP POLICY item_owner ON items;
 DROP TABLE items; --==>> !!! ATTENTION !!! <<==--
 */
 
+
 -- Type: TABLE ; Name: items; Owner: postgres
 
 CREATE TABLE items (
