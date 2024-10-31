@@ -73,6 +73,7 @@ Build and tests:
 - improve and add to tests
 - improve support for non superusers (more testing)
 - ✔︎ make some tests to test if what we output actually runs, test execute them
+- run execute tests on regtypes, too
 - make some tests which compare to output of pg_dump;
   make utility for any sql file to compare the dump by pg_dump and ddlx.
   Comparison should compare actual contents, not merely text.

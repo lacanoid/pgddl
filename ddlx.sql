@@ -2034,21 +2034,24 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}')
  with 
  obj as (select * from ddlx_identify($1)),
  a   as (
- select
-   coalesce(format(
-        E'GRANT %s ON %s TO %s%s%s;\n',
-        privilege_type, 
-        cast($1 as text),
-        case grantee  
-          when 'PUBLIC' then 'PUBLIC' 
-          else quote_ident(grantee) 
-        end, 
-        case is_grantable  
-          when 'YES' then ' WITH GRANT OPTION' 
-          else '' 
-        end,
-        ' GRANTED BY '||nullif(grantor,current_role)
-    ), '') 
+ select format(
+          E'GRANT %s ON %s TO %s%s%s;\n',
+          privilege_type, 
+          cast($1 as text),
+          case grantee  
+            when 'PUBLIC' then 'PUBLIC' 
+            else quote_ident(grantee) 
+          end, 
+          case is_grantable  
+            when 'YES' then ' WITH GRANT OPTION' 
+            else '' 
+          end,
+#if 14
+          ' GRANTED BY '||nullif(grantor,current_role)
+#else
+          null
+#end
+        ) 
     as ddl
  FROM information_schema.table_privileges g 
  join obj on (true)
