@@ -1,7 +1,7 @@
 
 Version 0.30
 ------------
-- 
+- `ddlx_grants(regclass)` fixes, now handles materialized views
 
 Version 0.29
 ------------

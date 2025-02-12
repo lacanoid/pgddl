@@ -72,6 +72,7 @@ SELECT regexp_replace(ddlx_script('test_class_v'::regclass,'{owner}'),'test_clas
 CREATE MATERIALIZED VIEW test_class_m AS
 SELECT * FROM test_class_r;
 create unique index test_class_mi ON test_class_m (a);
+grant select on test_class_m to public;
 
 SELECT replace(ddlx_script('test_class_m'::regclass,'{owner}'),'test_class_r.','');;
 

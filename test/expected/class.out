@@ -383,6 +383,7 @@ END;
 CREATE MATERIALIZED VIEW test_class_m AS
 SELECT * FROM test_class_r;
 create unique index test_class_mi ON test_class_m (a);
+grant select on test_class_m to public;
 SELECT replace(ddlx_script('test_class_m'::regclass,'{owner}'),'test_class_r.','');;
 replace
 BEGIN;
@@ -410,6 +411,7 @@ CREATE MATERIALIZED VIEW test_class_m AS
 ALTER MATERIALIZED VIEW test_class_m OWNER TO postgres;
 CREATE UNIQUE INDEX test_class_mi ON public.test_class_m USING btree (a);
 
+GRANT SELECT ON test_class_m TO PUBLIC;
 
 END;
 
