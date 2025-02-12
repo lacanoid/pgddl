@@ -1,5 +1,5 @@
 CREATE EXTENSION ddlx;
 \pset tuples_only
 \dx ddlx
- ddlx | 0.29    | public | DDL eXtractor functions
+ ddlx | 0.30    | public | DDL eXtractor functions
 

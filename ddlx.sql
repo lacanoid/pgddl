@@ -1,6 +1,6 @@
 --------------------------------------------------------------- ---------------
 --  DDL eXtractor functions
---  version 0.29 lacanoid@ljudmila.org
+--  version 0.30 lacanoid@ljudmila.org
 --------------------------------------------------------------- ---------------
 
 SET client_min_messages = warning;
@@ -2033,7 +2033,18 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
  with 
  obj as (select * from ddlx_identify($1)),
- a   as (
+ p as (
+ select coalesce(quote_ident(r1.rolname),'PUBLIC') as grantor,
+        coalesce(quote_ident(r2.rolname),'PUBLIC') as grantee,
+        privilege_type,
+        case 
+        when is_grantable then ' WITH GRANT OPTION' else ''
+        end as grant_option
+   from aclexplode((select acl from obj)) e
+   left join pg_roles r1 on (r1.oid = e.grantor)
+   left join pg_roles r2 on (r2.oid = e.grantee)
+ ),
+ a as (
  select format(
           E'GRANT %s ON %s TO %s%s%s;\n',
           privilege_type, 
@@ -2041,11 +2052,8 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}')
           case grantee  
             when 'PUBLIC' then 'PUBLIC' 
             else quote_ident(grantee) 
-          end, 
-          case is_grantable  
-            when 'YES' then ' WITH GRANT OPTION' 
-            else '' 
           end,
+	  grant_option,
 #if 14
           ' GRANTED BY '||nullif(grantor,current_role)
 #else
@@ -2053,12 +2061,8 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}')
 #end
         ) 
     as ddl
- FROM information_schema.table_privileges g 
- join obj on (true)
- WHERE table_schema=obj.namespace 
-   AND table_name=obj.name
-   AND grantee<>obj.owner
- ORDER BY grantee,privilege_type,obj.name
+ FROM p,obj WHERE grantee <> obj.owner
+ ORDER BY grantee,privilege_type
 )
 select coalesce(string_agg(a.ddl,''),'')||
        ddlx_grants_columns($1,$2) from a

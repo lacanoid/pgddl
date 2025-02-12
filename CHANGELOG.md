@@ -1,3 +1,8 @@
+
+Version 0.30
+------------
+- 
+
 Version 0.29
 ------------
 - improvements in `ddlx_create_subscription()`, support for new options
