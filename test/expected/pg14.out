@@ -725,9 +725,12 @@ CREATE OR REPLACE VIEW test_class_v AS
 GRANT SELECT ON test_class_v TO PUBLIC;
 
 (1 row)
+begin;
 -- test compression
 create table complz ( label text );
+create user ddlx_test_user_999;
 alter table complz alter label set compression lz4;
+--grant select on complz to public granted by ddlx_test_user_999;
 select ddlx_create('complz'::regclass);
 ddlx_create
 
@@ -742,3 +745,4 @@ ALTER TABLE complz ALTER label SET COMPRESSION LZ4;
 
 
 (1 row)
+abort;
