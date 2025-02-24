@@ -68,6 +68,7 @@ Other:
 - hide comments etc when object is hidden, such as with `{noconstraints,comments}`
 - make it possible to neatly drop/create extensions in a script, now broken
 - add option to preserve table data
+- fix indentation
 
 Build and tests:
 - improve and add to tests
