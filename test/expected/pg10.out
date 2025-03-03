@@ -24,7 +24,7 @@ CREATE TABLE options (
     name text NOT NULL,
     value text NOT NULL,
     regtype regtype NOT NULL
-);
+  );
 
 ALTER TABLE options SET (parallel_workers='2');
 
@@ -66,7 +66,7 @@ CREATE TABLE measurement (
     logdate date NOT NULL,
     peaktemp integer,
     unitsales integer
-)
+  )
   PARTITION BY RANGE (logdate);
 
 
@@ -110,7 +110,7 @@ CREATE TABLE customers (
     cust_name character varying(32) NOT NULL,
     cust_address text,
     cust_country text
-)
+  )
   PARTITION BY LIST (cust_country);
 
 
@@ -164,7 +164,7 @@ CREATE TABLE log (
     a boolean,
     d character varying COLLATE "C",
     j json
-)
+  )
   PARTITION BY RANGE (code, date_trunc('month'::text, ts), t COLLATE "C", a, (((code % 100) / 100)));
 
 
@@ -200,7 +200,7 @@ DROP TABLE test_stat; --==>> !!! ATTENTION !!! <<==--
 CREATE TABLE test_stat (
     a integer NOT NULL,
     b integer
-);
+  );
 
 
 ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey PRIMARY KEY (a);
@@ -283,7 +283,7 @@ CREATE TABLE tab_generated (
     d integer,
     e integer NOT NULL,
     f integer
-);
+  );
 
 
 ALTER TABLE tab_generated ALTER d SET DEFAULT 42;

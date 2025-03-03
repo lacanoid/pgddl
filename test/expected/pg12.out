@@ -50,7 +50,7 @@ CREATE TABLE customers (
     cust_address text,
     cust_country text,
     cust_city text
-)
+  )
   PARTITION BY LIST (cust_country);
 
 
@@ -197,7 +197,7 @@ DROP TABLE test_stat; --==>> !!! ATTENTION !!! <<==--
 CREATE TABLE test_stat (
     a integer NOT NULL,
     b integer
-);
+  );
 
 
 ALTER TABLE test_stat ADD CONSTRAINT test_stat_pkey PRIMARY KEY (a);
@@ -245,7 +245,7 @@ DROP TABLE dept; --==>> !!! ATTENTION !!! <<==--
 
 CREATE TABLE dept (
     id integer NOT NULL
-)
+  )
   PARTITION BY HASH (id);
 
 
@@ -416,7 +416,7 @@ CREATE TABLE tab_generated12 (
     d integer,
     e integer NOT NULL,
     f integer
-);
+  );
 
 
 ALTER TABLE tab_generated12 ALTER d SET DEFAULT 42;

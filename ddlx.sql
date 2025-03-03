@@ -829,7 +829,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
             (select ('CONSTRAINT ' || quote_ident(constraint_name) || ' ' || constraint_definition) as sql
                from ddlx_get_constraints($1) where is_local order by constraint_type desc, constraint_name) as a)
         end
-      ), E',\n') || E'\n','') || ')'
+      ), E',\n') || E'\n','') || '  )'
     end
 #if 10
   end

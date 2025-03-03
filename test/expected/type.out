@@ -74,7 +74,7 @@ CREATE TYPE test_type_c AS (
     i integer,
     t text,
     d test_type_d
-);
+  );
 COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
 
 COMMENT ON TYPE test_type_c IS 'my class type';
@@ -98,7 +98,7 @@ CREATE TYPE test_type_c AS (
     i integer,
     t text,
     d test_type_d
-);
+  );
 COMMENT ON COLUMN test_type_c.i IS 'my class class column i';
 
 COMMENT ON TYPE test_type_c IS 'my class type';

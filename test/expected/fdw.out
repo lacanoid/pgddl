@@ -33,7 +33,7 @@ SELECT ddlx_script('test_class_f'::regclass);
                                                              +
  CREATE FOREIGN TABLE test_class_f (                         +
      line text OPTIONS ( force_not_null 'true' )             +
- )                                                           +
+   )                                                         +
    SERVER serv OPTIONS (                                     +
      filename 'pgddltest.tmp',                               +
      format 'text'                                           +

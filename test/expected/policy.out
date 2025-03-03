@@ -44,7 +44,7 @@ CREATE TABLE items (
     value text,
     acl_read uuid[],
     acl_write uuid[]
-);
+  );
 
 
 ALTER TABLE items OWNER TO postgres;

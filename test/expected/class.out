@@ -66,7 +66,7 @@ CREATE TABLE test_class_r (
     g character varying(10)[],
     h character varying[],
     v tsvector
-);
+  );
 
 COMMENT ON TABLE test_class_r IS 'Comment1';
 
@@ -136,7 +136,7 @@ CREATE TABLE test_class_r (
     g character varying(10)[],
     h character varying[],
     v tsvector
-);
+  );
 
 COMMENT ON TABLE test_class_r IS 'Comment1';
 
@@ -242,7 +242,7 @@ CREATE UNLOGGED TABLE test_class_r2 (
     cc character(20),
     vv character varying(20),
     n numeric(10,2)
-);
+  );
 
 
 CREATE SEQUENCE IF NOT EXISTS test_class_r2_i_seq;
@@ -533,7 +533,7 @@ CREATE TABLE test_collation (
     id integer NOT NULL,
     c text COLLATE "C" NOT NULL,
     t text
-);
+  );
 
 
 CREATE SEQUENCE IF NOT EXISTS test_collation_id_seq;
@@ -766,7 +766,7 @@ ddlx_create
 
 CREATE TABLE test_parent (
     i integer NOT NULL
-);
+  );
 
 
 ALTER SEQUENCE test_parent_i_seq OWNED BY test_parent.i;
@@ -778,7 +778,7 @@ ddlx_create
 
 -- Type: TABLE ; Name: test_child; Owner: postgres
 
-CREATE TABLE test_child ()
+CREATE TABLE test_child (  )
   INHERITS(test_parent);
 
 
@@ -803,7 +803,7 @@ CREATE TABLE test_class_r (
     g character varying(10)[],
     h character varying[],
     v tsvector
-);
+  );
 
 COMMENT ON TABLE test_class_r IS 'Comment1';
 
@@ -870,7 +870,7 @@ CREATE TABLE test_class_r (
     CONSTRAINT test_class_r_b_key UNIQUE (b),
     CONSTRAINT test_class_r_pkey PRIMARY KEY (a),
     CONSTRAINT test_class_r_c_check CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone)
-);
+  );
 
 COMMENT ON TABLE test_class_r IS 'Comment1';
 
@@ -906,7 +906,7 @@ CREATE TABLE test_class_r (
     CONSTRAINT test_class_r_b_key UNIQUE (b),
     CONSTRAINT test_class_r_pkey PRIMARY KEY (a),
     CONSTRAINT test_class_r_c_check CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone)
-);
+  );
 
 COMMENT ON TABLE test_class_r IS 'Comment1';
 
@@ -944,7 +944,7 @@ DROP TABLE ref1; --==>> !!! ATTENTION !!! <<==--
 
 CREATE TABLE ref1 (
     id integer
-);
+  );
 
 
 ALTER TABLE ref1 ADD CONSTRAINT ref1_id_key UNIQUE (id);
