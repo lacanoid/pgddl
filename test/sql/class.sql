@@ -164,3 +164,11 @@ create table ref2 (
     id integer REFERENCES ref1(id)
 );
 select ddlx_script('ref1'::regclass);
+
+-----
+-- test grants on seqeunces
+create sequence my_sequence;
+grant usage on SEQUENCE my_sequence to public;
+select ddlx_grants('my_sequence'::regclass);
+select ddlx_grants('my_sequence'::regclass::oid);
+drop sequence my_sequence;

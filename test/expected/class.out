@@ -962,3 +962,18 @@ ALTER TABLE ref2 ADD CONSTRAINT ref2_id_fkey
 END;
 
 (1 row)
+-----
+-- test grants on seqeunces
+create sequence my_sequence;
+grant usage on SEQUENCE my_sequence to public;
+select ddlx_grants('my_sequence'::regclass);
+ddlx_grants
+GRANT USAGE ON my_sequence TO PUBLIC;
+
+(1 row)
+select ddlx_grants('my_sequence'::regclass::oid);
+ddlx_grants
+GRANT USAGE ON my_sequence TO PUBLIC;
+
+(1 row)
+drop sequence my_sequence;
