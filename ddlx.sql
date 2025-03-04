@@ -2029,6 +2029,7 @@ $function$  strict;
 
 --------------------------------------------------------------- ---------------
 
+/*
 CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}') 
  RETURNS text LANGUAGE sql AS $function$
  with 
@@ -2053,7 +2054,7 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}')
             when 'PUBLIC' then 'PUBLIC' 
             else quote_ident(grantee) 
           end,
-	  grant_option,
+	        grant_option,
 #if 14
           ' GRANTED BY '||nullif(grantor,current_role)
 #else
@@ -2067,6 +2068,7 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}')
 select coalesce(string_agg(a.ddl,''),'')||
        ddlx_grants_columns($1,$2) from a
 $function$  strict;
+*/
 
 --------------------------------------------------------------- ---------------
 
@@ -2114,16 +2116,30 @@ a as (
    left join pg_roles r2 on (r2.oid = e.grantee)
 ),
 b as (
-select format('GRANT %s ON %s %s TO %s%s;',
+select format('GRANT %s ON %s%s TO %s%s%s;',
               privilege_type,
               case obj.sql_kind
-              when 'SERVER' then 'FOREIGN SERVER'
-              else obj.sql_kind end,
+                when 'SERVER' then 'FOREIGN SERVER '
+                when 'TABLE' then null
+                when 'VIEW' then null
+                when 'MATERIALIZED VIEW' then null 
+                when 'SEQUENCE' then null 
+                else obj.sql_kind || ' '
+              end,
               obj.sql_identifier,
-              grantee,grant_option,grantor)
+              case grantee  
+                when 'PUBLIC' then 'PUBLIC' 
+                else quote_ident(grantee) 
+              end,
+              grant_option,
+#if 14
+              ' GRANTED BY '||nullif(grantor,current_role)
+#else
+              null
+#end
+             )
        as dcl
-  from obj,a
- where grantee<>obj.owner
+  from obj,a where grantee<>obj.owner
  order by grantor,lower(grantee),privilege_type
 ),
 c as (
@@ -2131,7 +2147,9 @@ c as (
     from b
 )
 select case obj.classid
-       when 'pg_class'::regclass then ddlx_grants(obj.oid::regclass,$2)
+       when 'pg_class'::regclass 
+       then c.grants || ddlx_grants_columns(obj.oid::regclass,$2)
+--       when 'pg_class'::regclass then ddlx_grants(obj.oid::regclass,$2)
        when 'pg_proc'::regclass then ddlx_grants(obj.oid::regproc,$2)
        when 'pg_roles'::regclass
 #if 9.5

@@ -3,6 +3,7 @@ Version 0.30
 ------------
 - `ddlx_grants(regclass)` fixes, now handles materialized views
 - indentation improvements
+- removed function `ddlx_grants(regclass)` as it now handled by `ddlx_grants)oid)`
 
 Version 0.29
 ------------
