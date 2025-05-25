@@ -107,7 +107,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE r.oid = $1
    UNION ALL
   SELECT n.oid,'pg_namespace'::regclass,
-         n.nspname as name, current_database() as namespace, pg_get_userbyid(n.nspowner) AS owner,
+         n.nspname as name, current_database() as namespace, 
+         pg_get_userbyid(n.nspowner) AS owner,
          'SCHEMA' as sql_kind,
          quote_ident(n.nspname) as sql_identifier,
          nspacl as acl
@@ -495,6 +496,9 @@ SELECT  DISTINCT
 #if 12
   case when a.attgenerated = 's'
        then format(' GENERATED ALWAYS AS (%s) STORED', 
+                  pg_get_expr(def.adbin,def.adrelid))
+       when a.attgenerated = 'v'
+       then format(' GENERATED ALWAYS AS (%s)', 
                   pg_get_expr(def.adbin,def.adrelid))
   end
 #else
@@ -2282,8 +2286,10 @@ CREATE OR REPLACE FUNCTION ddlx_apropos(
  RETURNS SETOF record LANGUAGE sql AS $function$
 with
   rel_kind(k,v) AS (
-         VALUES ('r','TABLE'), ('p','TABLE'),('v','VIEW'), ('i','INDEX'), ('I','INDEX'),
-                ('S','SEQUENCE'), ('m','MATERIALIZED VIEW'), ('c','TYPE'), ('f','FOREIGN TABLE')
+         VALUES ('r','TABLE'), ('p','TABLE'),('v','VIEW'), 
+                ('i','INDEX'), ('I','INDEX'),
+                ('S','SEQUENCE'), ('m','MATERIALIZED VIEW'), 
+                ('c','TYPE'), ('f','FOREIGN TABLE')
   )
 select	'pg_proc'::regclass as classid,
         p.oid AS objid, 
@@ -2471,7 +2477,8 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_template(oid)
  RETURNS text LANGUAGE sql AS $function$
 with obj as (select * from ddlx_identify($1))
-select format(E'CREATE TEXT SEARCH TEMPLATE %s (\n  %s\n);\n',obj.sql_identifier,
+select format(E'CREATE TEXT SEARCH TEMPLATE %s (\n  %s\n);\n',
+         obj.sql_identifier,
          array_to_string(array[
            'INIT = '   || cast(nullif(t.tmplinit,0)::regproc as text), 
            'LEXIZE = ' || cast(nullif(t.tmpllexize,0)::regproc as text) 
@@ -2656,8 +2663,8 @@ select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n\n'
              else '' end,
              coalesce(e'\n  '||(select string_agg(l,e',\n  ') from (
                select format('FUNCTION %s %s',amprocnum,amproc::regprocedure) as l, 1, amprocnum
-               from pg_amproc where amprocfamily = opc.opcfamily 
-               union all 
+                 from pg_amproc where amprocfamily = opc.opcfamily 
+                union all 
                select format('OPERATOR %s %s %s',amopstrategy,amopopr::regoperator,
                              case amoppurpose
                              when 'o' then 'FOR ORDER BY '||
@@ -2668,10 +2675,11 @@ select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n\n'
                              when 's' then 'FOR SEARCH'
                              end
                             ) as l, 0, amopstrategy
-               from pg_amop where amopfamily = opc.opcfamily 
-               union all 
-               select format('STORAGE %s',opc.opckeytype::regtype),2,0 where opc.opckeytype <> 0
-               order by 2,3
+                 from pg_amop where amopfamily = opc.opcfamily 
+                union all 
+               select format('STORAGE %s',opc.opckeytype::regtype),2,0 
+                where opc.opckeytype <> 0
+                order by 2,3
             ) as item),'STORAGE '||format_type(opc.opcintype,null))
        )
   from pg_opclass as opc join pg_am am on (am.oid=opc.opcmethod)
@@ -2948,16 +2956,25 @@ with
 obj as (select * from ddlx_identify($1)),
 parts as (select * from ddlx_definitions($1,$2))
   select array_to_string( array[
-           case when 'lite' ilike any($2) or 'nostorage' ilike any($2) then null else storage end,
-           case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
+           case when 'lite' ilike any($2) or 'nostorage' ilike any($2) 
+                then null else storage end,
+           case when 'nodcl' ilike any($2) 
+                  or 'noowner' ilike any($2) 
+                  or 'lite' ilike any($2) 
+                then null
                 else case when obj.sql_kind='TABLE' then parts.owner end || e'\n' end,
            defaults,
-           case when 'lite' ilike any($2) or 'nosettings' ilike any($2) then null else settings end,
-           case when 'lite' ilike any($2) or 'noconstraints' ilike any($2) then null else constraints end,
+           case when 'lite' ilike any($2) or 'nosettings' ilike any($2) 
+                then null else settings end,
+           case when 'lite' ilike any($2) or 'noconstraints' ilike any($2) 
+                then null else constraints end,
            indexes,
-           case when 'lite' ilike any($2) or 'notriggers' ilike any($2) then null else triggers end,
-           case when 'lite' ilike any($2) then null else rules end,
-           case when 'lite' ilike any($2) or 'nodcl' ilike any($2) then null else rls end
+           case when 'lite' ilike any($2) or 'notriggers' ilike any($2) 
+                then null else triggers end,
+           case when 'lite' ilike any($2) 
+                then null else rules end,
+           case when 'lite' ilike any($2) or 'nodcl' ilike any($2) 
+                then null else rls end
          ],'')
     from obj,parts
 $$  strict;
@@ -2975,16 +2992,23 @@ parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         base_ddl,           
   case when 'nocomments' ilike any($2) then null else 
-          case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end
+          case when obj.sql_kind is distinct from 'DEFAULT' 
+               then parts.comment end
   end || e'\n',
-        case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
+        case when 'nodcl' ilike any($2) 
+               or 'noowner' ilike any($2)
+               or 'lite' ilike any($2) 
+        then null
         else case 
-          when 'owner' ilike any($2) or obj.owner is distinct from current_role
+          when 'owner' ilike any($2) 
+            or obj.owner is distinct from current_role
           then parts.owner end
         end,
-        case when 'lite' ilike any($2) or 'nostorage' ilike any($2) then null else storage end,
+        case when 'lite' ilike any($2) or 'nostorage' ilike any($2) 
+             then null else storage end,
         defaults,
-        case when 'lite' ilike any($2) or 'nosettings' ilike any($2) then null else settings end
+        case when 'lite' ilike any($2) or 'nosettings' ilike any($2) 
+             then null else settings end
       ],'')
   from obj,parts
 $$ strict;
@@ -3002,23 +3026,35 @@ parts as (select * from ddlx_definitions($1,$2))
 select array_to_string(array[
         base_ddl,
   case when 'nocomments' ilike any($2) then null else 
-          case when obj.sql_kind is distinct from 'DEFAULT' then parts.comment end
+          case when obj.sql_kind is distinct from 'DEFAULT' 
+          then parts.comment end
   end || e'\n',
         case when 'noalter' ilike any($2) then null
         else array_to_string(array[
-          case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
-               else case when 'owner' ilike any($2) or obj.owner is distinct from current_role then parts.owner end
+          case when 'nodcl' ilike any($2) 
+                 or 'noowner' ilike any($2) 
+                 or 'lite' ilike any($2) 
+               then null
+               else case when 'owner' ilike any($2) 
+                           or obj.owner is distinct from current_role 
+                    then parts.owner end
           end,
-          case when 'lite' ilike any($2) or 'nostorage' ilike any($2) then null else storage end,
+          case when 'lite' ilike any($2) or 'nostorage' ilike any($2) 
+               then null else storage end,
           defaults,
-          case when 'lite' ilike any($2) or 'nosettings' ilike any($2) then null else settings end,
-          case when 'noconstraints' ilike any($2) then null else constraints end, 
+          case when 'lite' ilike any($2) or 'nosettings' ilike any($2) 
+               then null else settings end,
+          case when 'noconstraints' ilike any($2) 
+               then null else constraints end, 
           indexes,
-           case when 'lite' ilike any($2) or 'notriggers' ilike any($2) then null else triggers end,
+           case when 'lite' ilike any($2) or 'notriggers' ilike any($2) 
+                then null else triggers end,
            case when 'lite' ilike any($2) then null else rules end,
-           case when 'lite' ilike any($2) or 'nodcl' ilike any($2) then null else rls end
+           case when 'lite' ilike any($2) or 'nodcl' ilike any($2) 
+                then null else rls end
         ],'') end,
-        case when 'nodcl' ilike any($2) or 'nogrants' ilike any($2) then null else grants end
+        case when 'nodcl' ilike any($2) or 'nogrants' ilike any($2) 
+             then null else grants end
         ],'')
   from obj,parts
 $$ strict;
@@ -3049,7 +3085,8 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
                    obj.sql_kind, 
                    case when 'ie' ilike any($2) then 'IF EXISTS ' end,
                    obj.sql_identifier,
-                   case when obj.sql_kind = 'TABLE' then ' --==>> !!! ATTENTION !!! <<==--' end
+                   case when obj.sql_kind = 'TABLE' 
+                        then ' --==>> !!! ATTENTION !!! <<==--' end
                    )
        else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
       end
