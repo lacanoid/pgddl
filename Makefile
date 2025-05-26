@@ -8,7 +8,7 @@ DATA_built   = ${EXTENSION}--$(EXT_VERSION).sql
 
 VTESTS       = $(shell bin/tests ${VERSION})
 #REGRESS      = init manifest role type class fdw tsearch policy misc script ${VTESTS}
-REGRESS      = init role type class fdw tsearch policy misc execute ${VTESTS}
+REGRESS      = init manifest role type class fdw tsearch policy misc execute ${VTESTS}
 REGRESS_OPTS = --inputdir=test
 
 PGXS := $(shell $(PG_CONFIG) --pgxs)

@@ -130,3 +130,15 @@ select * from ddlx_identify(1);
 create function foo() returns void as $$select null::void$$ language sql;
 
 select ddlx_create('foo'::regproc);
+
+-- test data backup & restore
+create table test_backup (a int);
+insert into test_backup values 
+  (1),(2),(3),(5),(7),(11),(13),(17),(19),(23),(29),(31),(37),(41),
+  (43),(47),(53),(59),(61),(67),(71),(73),(79),(83),(89),(97);
+
+select regexp_replace(ddlx_data_backup('test_backup'),'\$\d+"','$oid"','g');
+select regexp_replace(ddlx_data_restore('test_backup'),'\$\d+"','$oid"','g');
+
+insert into ref1 select a from test_backup;
+drop table test_backup;

@@ -3042,6 +3042,8 @@ select array_to_string(array[
           case when 'lite' ilike any($2) or 'nostorage' ilike any($2) 
                then null else storage end,
           defaults,
+          case when obj.sql_kind='TABLE' and 'data' ilike any($2)  
+               then E'\n' || ddlx_data_restore(obj.oid) || E'\n' end,
           case when 'lite' ilike any($2) or 'nosettings' ilike any($2) 
                then null else settings end,
           case when 'noconstraints' ilike any($2) 
@@ -3081,11 +3083,13 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
        when obj.sql_kind = 'INDEX'
        then ddlx_drop_index(oid)
        when obj.sql_kind is not null
-       then format(E'DROP %s %s%s;%s\n',
+       then format(E'%sDROP %s %s%s;%s\n',
+                   case when obj.sql_kind = 'TABLE' and 'data' ilike any($2) 
+                   then ddlx_data_backup(obj.oid) end,
                    obj.sql_kind, 
                    case when 'ie' ilike any($2) then 'IF EXISTS ' end,
                    obj.sql_identifier,
-                   case when obj.sql_kind = 'TABLE' 
+                   case when obj.sql_kind = 'TABLE' and (not 'data' ilike any($2))
                         then ' --==>> !!! ATTENTION !!! <<==--' end
                    )
        else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
@@ -3098,6 +3102,33 @@ $$  strict;
 COMMENT ON FUNCTION ddlx_drop(oid,text[]) 
      IS 'Get SQL DROP statement for any object by object id';
      
+--------------------------------------------------------------- ---------------
+
+CREATE OR REPLACE FUNCTION ddlx_data_backup(
+  IN regclass, ddlx_options text[] default '{}')
+ RETURNS text LANGUAGE sql AS $$
+ with obj as (select * from ddlx_identify($1))
+ select format(E'CREATE TEMPORARY TABLE %I AS SELECT * FROM %s;\n',
+               obj.name||'$'||obj.oid, obj.sql_identifier)
+   from obj
+$$;
+
+--------------------------------------------------------------- ---------------
+
+CREATE OR REPLACE FUNCTION ddlx_data_restore(
+  IN regclass, ddlx_options text[] default '{}')
+ RETURNS text LANGUAGE sql AS $$
+ with obj as (select * from ddlx_identify($1)),
+      cols as (select string_agg(quote_ident(name),',' order by ord) as cols 
+                 from ddlx_describe($1) where gen is null)
+ select format(E'INSERT INTO %s(%s) OVERRIDING SYSTEM VALUE\n     SELECT %s\n       FROM %I;\n',
+               obj.sql_identifier,cols.cols,
+               cols.cols,obj.name||'$'||obj.oid) ||
+        format(E'DROP TABLE %I;\n',
+               obj.name||'$'||obj.oid)
+   from obj,cols
+$$;
+
 --------------------------------------------------------------- ---------------
 
 CREATE OR REPLACE FUNCTION ddlx_script_parts(

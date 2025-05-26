@@ -77,6 +77,8 @@ select * from a
  ddlx_create_type_shell(regtype)             | 
  ddlx_create_user_mapping(oid,text[])        | 
  ddlx_create_view(regclass,text[])           | 
+ ddlx_data_backup(regclass,text[])           | 
+ ddlx_data_restore(regclass,text[])          | 
  ddlx_drop_amop(oid)                         | 
  ddlx_drop_amproc(oid)                       | 
  ddlx_drop_constraint(oid)                   | 
@@ -89,7 +91,6 @@ select * from a
  ddlx_get_indexes(regclass)                  | 
  ddlx_get_rules(regclass)                    | 
  ddlx_get_triggers(regclass)                 | 
- ddlx_grants(regclass,text[])                | 
  ddlx_grants(regproc,text[])                 | 
  ddlx_grants(regrole,text[])                 | 
  ddlx_grants_columns(regclass,text[])        | 

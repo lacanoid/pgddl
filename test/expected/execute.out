@@ -2,6 +2,20 @@
 \pset format unaligned
 SET client_min_messages = warning;
 create schema public2;
+CREATE OR REPLACE FUNCTION execute1(text)
+ RETURNS integer
+ LANGUAGE plpgsql
+ STRICT
+AS $function$DECLARE 
+   body ALIAS FOR $1; 
+   result INT; 
+ BEGIN 
+   EXECUTE body; 
+   GET DIAGNOSTICS result = ROW_COUNT; 
+   RETURN result; 
+ END; 
+ $function$
+;
 CREATE OR REPLACE FUNCTION execute2(text)
  RETURNS integer
  LANGUAGE plpgsql
@@ -30,7 +44,7 @@ DECLARE
    obj record;
  BEGIN 
    raise notice 'REBUILD % %',(ddlx_identify($1)).sql_kind,(ddlx_identify($1)).sql_identifier;
-   ddl := ddlx_script($1,'{drop,nowrap}');
+   ddl := ddlx_script($1,'{drop,nowrap,data}');
    EXECUTE ddl; 
    GET DIAGNOSTICS result = ROW_COUNT; 
    RETURN result; 

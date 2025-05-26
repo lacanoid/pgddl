@@ -1,4 +1,5 @@
 comment = 'DDL eXtractor functions'
 default_version = 0.30
+superuser = false
 
 

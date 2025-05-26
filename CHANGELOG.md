@@ -5,6 +5,7 @@ Version 0.30
 - indentation improvements
 - removed function `ddlx_grants(regclass)` as it now handled by `ddlx_grants(oid)`
 - added support for virtual generated columns
+- added `data` option to attempt to preserve table data
 
 Version 0.29
 ------------

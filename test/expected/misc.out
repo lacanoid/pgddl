@@ -280,3 +280,23 @@ GRANT EXECUTE ON FUNCTION foo() TO PUBLIC;
 GRANT EXECUTE ON FUNCTION foo() TO postgres WITH GRANT OPTION;
 
 (1 row)
+-- test data backup & restore
+create table test_backup (a int);
+insert into test_backup values 
+  (1),(2),(3),(5),(7),(11),(13),(17),(19),(23),(29),(31),(37),(41),
+  (43),(47),(53),(59),(61),(67),(71),(73),(79),(83),(89),(97);
+select regexp_replace(ddlx_data_backup('test_backup'),'\$\d+"','$oid"','g');
+regexp_replace
+CREATE TEMPORARY TABLE "test_backup$oid" AS SELECT * FROM test_backup;
+
+(1 row)
+select regexp_replace(ddlx_data_restore('test_backup'),'\$\d+"','$oid"','g');
+regexp_replace
+INSERT INTO test_backup(a) OVERRIDING SYSTEM VALUE
+     SELECT a
+       FROM "test_backup$oid";
+DROP TABLE "test_backup$oid";
+
+(1 row)
+insert into ref1 select a from test_backup;
+drop table test_backup;

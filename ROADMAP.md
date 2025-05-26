@@ -69,7 +69,7 @@ Other:
 - ✔︎ do not emit ALTER OWNER for objects owned by current role
 - hide comments etc when object is hidden, such as with `{noconstraints,comments}`
 - make it possible to neatly drop/create extensions in a script, now broken
-- add option to preserve table data
+- ✔︎ add option to preserve table data
 - fix indentation
 
 Build and tests:
@@ -95,7 +95,7 @@ Some options as to what and how to dump stuff might be required:
 * ✔︎ `NOWRAP` - do not wrap in BEGIN / END
 * ✔︎ `EXT` - include objects from extensions. Normally, these are omitted.
 * `DEP` - output objects which depend on this object too
-* `DATA` - add statements preserve / copy table data
+* ✔︎ `DATA` - add statements preserve / copy table data
 * ✔︎ `NOSTORAGE` - exclude storage parameters settings
 * ✔︎ `NOSETTINGS` - exclude table settings
 * ✔︎ `NOPARTITIONS` - exclude table partitions
