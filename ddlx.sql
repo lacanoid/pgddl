@@ -3121,8 +3121,13 @@ CREATE OR REPLACE FUNCTION ddlx_data_restore(
  with obj as (select * from ddlx_identify($1)),
       cols as (select string_agg(quote_ident(name),',' order by ord) as cols 
                  from ddlx_describe($1) where gen is null)
- select format(E'INSERT INTO %s(%s) OVERRIDING SYSTEM VALUE\n     SELECT %s\n       FROM %I;\n',
+ select format(E'INSERT INTO %s(%s)%s\n     SELECT %s\n       FROM %I;\n',
                obj.sql_identifier,cols.cols,
+#if 10
+               ' OVERRIDING SYSTEM VALUE',
+#else
+               null,
+#end
                cols.cols,obj.name||'$'||obj.oid) ||
         format(E'DROP TABLE %I;\n',
                obj.name||'$'||obj.oid)
