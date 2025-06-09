@@ -53,9 +53,9 @@ Support for other missing options:
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
-- ✔︎ add `ddlx_createonly(oid)` for pre-data
-- ✔︎ add `ddlx_alter(oid)` for post-data
-- add `ddlx_alter_column(regclass,name)`
+- ✔︎ add function `ddlx_createonly(oid)` for pre-data
+- ✔︎ add function `ddlx_alter(oid)` for post-data
+- add function `ddlx_alter_column(regclass,name)`
 - group column alters together by column name
 - ✔︎ handle sequences better (create if not exists)
 - ✔︎ handle dependancies for types better (use shell types)
@@ -70,6 +70,9 @@ Other:
 - hide comments etc when object is hidden, such as with `{noconstraints,comments}`
 - make it possible to neatly drop/create extensions in a script, now broken
 - ✔︎ add option to preserve table data
+- add `nograntor` option to omit GRANTED BY
+- add function `ddlx_get_dependencies` like `ddlx_get_dependants` but in other direction
+- add function `ddlx_list(namespace)` to easily list objects in a namespace/schema
 - fix indentation
 
 Build and tests:
