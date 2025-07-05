@@ -125,7 +125,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
     left JOIN pg_class c ON (con.conrelid=c.oid)
     LEFT join (
          values ('f','FOREIGN KEY'), ('c','CHECK'), ('x','EXCLUDE'),
-                ('u','UNIQUE'), ('p','PRIMARY KEY'), ('t','TRIGGER')) 
+                ('u','UNIQUE'), ('p','PRIMARY KEY'), ('t','TRIGGER'),
+		('n','NOT NULL') )
              as tt on tt.column1 = con.contype
    WHERE con.oid = $1
 #if 14
@@ -560,6 +561,7 @@ CREATE OR REPLACE FUNCTION ddlx_get_constraints(
             when 'u'::"char" then 'UNIQUE'::text
             when 't'::"char" then 'TRIGGER'::text
             when 'x'::"char" then 'EXCLUDE'::text
+            when 'n'::"char" then 'NOT NULL'::text
             else c.contype::text
         end,
         pg_get_constraintdef(c.oid,true) AS constraint_definition,
@@ -831,7 +833,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
         and not 'noconstraints' ilike any($2) then
           (SELECT array_agg('    '||sql) FROM
             (select ('CONSTRAINT ' || quote_ident(constraint_name) || ' ' || constraint_definition) as sql
-               from ddlx_get_constraints($1) where is_local order by constraint_type desc, constraint_name) as a)
+               from ddlx_get_constraints($1) where is_local and constraint_type <> 'NOT NULL'
+	      order by constraint_type desc, constraint_name) as a)
         end
       ), E',\n') || E'\n','') || '  )'
     end
@@ -1385,7 +1388,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass, text[] default '{}'
     from ddlx_get_constraints($1) gc
     join pg_constraint co on (co.oid = gc.oid)
    where is_local
-     and (constraint_type not in ('CHECK') or not 'script' ilike any($2)) 
+     and (constraint_type <> 'CHECK' or not 'script' ilike any($2))
+     and (constraint_type <> 'NOT NULL')
      and (co.conrelid is distinct from co.confrelid or not 'script' ilike any($2))
    order by constraint_type desc, constraint_name
  )
