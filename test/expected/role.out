@@ -2,7 +2,7 @@
 \pset format unaligned
 begin;
 create user pgddl_test_user nologin nosuperuser;
-alter user pgddl_test_user with password 'md5db6d137a5ac4e8c22bed58e3e6687aca';
+--alter user pgddl_test_user with password 'md5db6d137a5ac4e8c22bed58e3e6687aca';
 alter user pgddl_test_user valid until '2100-01-01';
 comment on role pgddl_test_user
 is 'pg_ddl test user...';
@@ -25,7 +25,6 @@ ALTER ROLE pgddl_test_user WITH
   NOREPLICATION;
 
 COMMENT ON ROLE pgddl_test_user IS 'pg_ddl test user...';
-ALTER ROLE pgddl_test_user ENCRYPTED PASSWORD 'md5db6d137a5ac4e8c22bed58e3e6687aca';
 ALTER ROLE pgddl_test_user VALID UNTIL '2100-01-01 00:00:00-08';
 
 ALTER ROLE pgddl_test_user SET standard_conforming_strings=true;

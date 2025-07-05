@@ -4,7 +4,7 @@
 begin;
 
 create user pgddl_test_user nologin nosuperuser;
-alter user pgddl_test_user with password 'md5db6d137a5ac4e8c22bed58e3e6687aca';
+--alter user pgddl_test_user with password 'md5db6d137a5ac4e8c22bed58e3e6687aca';
 
 alter user pgddl_test_user valid until '2100-01-01';
 

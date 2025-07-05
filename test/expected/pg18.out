@@ -1,3 +1,31 @@
+begin;
+-- test new virtual generated columns
+create table aa (
+  id integer,
+  a  numeric,
+  b numeric,
+  c numeric generated always as (a+b) stored,
+  d numeric generated always as (a-b)
+);
+select ddlx_create('aa'::regclass);
+                     ddlx_create                     
+-----------------------------------------------------
+                                                    +
+ -- Type: TABLE ; Name: aa; Owner: root             +
+                                                    +
+ CREATE TABLE aa (                                  +
+     id integer,                                    +
+     a numeric,                                     +
+     b numeric,                                     +
+     c numeric GENERATED ALWAYS AS ((a + b)) STORED,+
+     d numeric GENERATED ALWAYS AS ((a - b))        +
+   );                                               +
+                                                    +
+                                                    +
+ 
+(1 row)
+
+abort;
 \i test/sql/pg17.sql
 \i test/sql/pg16.sql
 \i test/sql/pg15.sql
