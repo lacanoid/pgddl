@@ -5,9 +5,9 @@ SET client_min_messages = warning;
 SET ROLE postgres;
 
 -- row level security
-create extension "uuid-ossp" ;
+-- create extension "uuid-ossp" ;
 create table if not exists items (
-  id uuid default uuid_generate_v4() not null primary key,
+  id uuid not null primary key,
   value text,
   acl_read uuid[] default array[]::uuid[],
   acl_write uuid[] default array[]::uuid[]

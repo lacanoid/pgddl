@@ -6,6 +6,7 @@ Version 0.30
 - removed function `ddlx_grants(regclass)` as it now handled by `ddlx_grants(oid)`
 - added support for virtual generated columns
 - added `data` option to attempt to preserve table data
+- updated for Postgres 18
 
 Version 0.29
 ------------
