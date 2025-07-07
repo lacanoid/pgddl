@@ -292,9 +292,10 @@ CREATE TEMPORARY TABLE "test_backup$oid" AS SELECT * FROM test_backup;
 (1 row)
 select regexp_replace(ddlx_data_restore('test_backup'),'\$\d+"','$oid"','g');
 regexp_replace
-INSERT INTO test_backup(a) OVERRIDING SYSTEM VALUE
-     SELECT a
-       FROM "test_backup$oid";
+INSERT INTO test_backup(a)
+       OVERRIDING SYSTEM VALUE
+       SELECT a
+         FROM "test_backup$oid";
 DROP TABLE "test_backup$oid";
 
 (1 row)
