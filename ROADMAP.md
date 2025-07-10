@@ -70,13 +70,13 @@ Other:
 - hide comments etc when object is hidden, such as with `{noconstraints,comments}`
 - make it possible to neatly drop/create extensions in a script, now broken
 - ✔︎ add option to preserve table data
-- add `nograntor` option to omit GRANTED BY
+- ✔︎ add `nograntor` option to omit GRANTED BY
 - add function `ddlx_get_dependencies` like `ddlx_get_dependants` but in other direction
-- add function `ddlx_list(namespace)` to easily list objects in a namespace/schema
-- fix indentation
+- add function `ddlx_list(namespace)` to nicely list objects in a namespace/schema
+- improve generated DDL indentation
 
 Build and tests:
-- improve and add to tests
+- improve and add to existing tests
 - improve support for non superusers (more testing)
 - ✔︎ make some tests to test if what we output actually runs, test execute them
 - run execute tests on regtypes, too

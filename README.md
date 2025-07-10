@@ -148,12 +148,17 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 * `ine` - add `if not exists` in bunch of places
 * `ie` - add `if exists` in a bunch of places
 * `ext` - include extension contents instead of `create extension`.
-* `lite` - move defaults and constraints into `create table` statement, omit some other Postgres specific stuff
+* `lite` - move defaults and constraints into `create table` statement, omit some other Postgres specific stuff (SQLite compatibility)
 * `nowrap` - do not wrap scripts with `BEGIN` and `END`
 * `nopartitions` - do not include table partitions in a script
 * `comments` - include all comments, even if null
 * `nocomments` - do not include any comments
 * `nostorage` - do not include storage settings
+* `noconstraints` - do not include constraints
+* `nosettings` - do not include settings
+* `notriggers` - do not include triggers
+* `nograntor` - do not include grantor in grant statements
+* `data` - attempt to preserve table data, really only makes sense when used together with `drop`
 
 Drop statements are created with `ddlx_drop()` function.	
 
