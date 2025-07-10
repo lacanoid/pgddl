@@ -47,12 +47,14 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          cast($1::regclass AS text) AS sql_identifier,
          relacl as acl
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
-    LEFT JOIN pg_type t ON t.typrelid=c.oid AND t.typtype='c' AND c.relkind='c'
+    LEFT JOIN pg_type t 
+      ON t.typrelid=c.oid AND t.typtype='c' AND c.relkind='c'
     LEFT JOIN rel_kind AS cc on cc.k = c.relkind
    WHERE c.oid = $1
    UNION ALL
   SELECT p.oid,'pg_proc'::regclass,
-         p.proname AS name, n.nspname AS namespace, pg_get_userbyid(p.proowner) AS owner,
+         p.proname AS name, n.nspname AS namespace, 
+         pg_get_userbyid(p.proowner) AS owner,
 #if 11
          case p.prokind
            when 'f' then 'FUNCTION'
@@ -75,7 +77,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
   SELECT coalesce(c.oid,t.oid),
          case when c.oid is not null then 'pg_class'::regclass
    else 'pg_type'::regclass end,
-         t.typname AS name, n.nspname AS namespace, pg_get_userbyid(t.typowner) AS owner,
+         t.typname AS name, n.nspname AS namespace, 
+         pg_get_userbyid(t.typowner) AS owner,
          coalesce(cc.v,tt.v2,t.typtype::text) AS sql_kind,
          format_type($1,null) AS sql_identifier,
 #if 9.2
@@ -85,7 +88,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
 #end
     FROM pg_type t JOIN pg_namespace n ON n.oid=t.typnamespace
     LEFT JOIN typ_type AS tt ON tt.k = t.typtype 
-    LEFT JOIN pg_class AS c ON c.oid = t.typrelid AND t.typtype='c' AND c.relkind<>'c'
+    LEFT JOIN pg_class AS c 
+      ON c.oid = t.typrelid AND t.typtype='c' AND c.relkind<>'c'
     LEFT JOIN rel_kind AS cc ON cc.k = c.relkind
    WHERE t.oid = $1
    UNION ALL
@@ -117,27 +121,31 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    UNION ALL
   SELECT con.oid,'pg_constraint'::regclass,
          con.conname as name,
-         c.relname as namespace, null as owner, 'CONSTRAINT' as sql_kind,
+         c.relname as namespace, null as owner, 
+         'CONSTRAINT' as sql_kind,
          quote_ident(con.conname)
-         ||coalesce(' ON '||cast(c.oid::regclass as text),'') as sql_identifier,
+         ||coalesce(' ON '||cast(c.oid::regclass as text),'') 
+           as sql_identifier,
          null as acl
     FROM pg_constraint con 
     left JOIN pg_class c ON (con.conrelid=c.oid)
     LEFT join (
          values ('f','FOREIGN KEY'), ('c','CHECK'), ('x','EXCLUDE'),
                 ('u','UNIQUE'), ('p','PRIMARY KEY'), ('t','TRIGGER'),
-		('n','NOT NULL') )
+		            ('n','NOT NULL') )
              as tt on tt.column1 = con.contype
    WHERE con.oid = $1
 #if 14
      AND (c.oid is null or -- hack to hide duplicated oids
-     NOT (c.relname like 'pg_%' or c.relnamespace = 'pg_catalog'::regnamespace)) 
+     NOT (c.relname like 'pg_%' 
+          or c.relnamespace = 'pg_catalog'::regnamespace)) 
 #end
    UNION ALL
   SELECT t.oid,'pg_trigger'::regclass,
          t.tgname as name, c.relname as namespace, null as owner,
          'TRIGGER' as sql_kind,
-         format('%I ON %s',t.tgname,cast(c.oid::regclass as text)) as sql_identifier,
+         format('%I ON %s',t.tgname,cast(c.oid::regclass as text)) 
+           as sql_identifier,
          null as acl
     FROM pg_trigger t join pg_class c on (t.tgrelid=c.oid)
    WHERE t.oid = $1
@@ -145,7 +153,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
   SELECT ad.oid,'pg_attrdef'::regclass,
          a.attname as name, c.relname as namespace, null as owner,
          'DEFAULT' as sql_kind,
-         format('%s.%I',cast(c.oid::regclass as text),a.attname) as sql_identifier,
+         format('%s.%I',cast(c.oid::regclass as text),a.attname) 
+           as sql_identifier,
          null as acl
     FROM pg_attrdef ad 
     JOIN pg_class c ON (ad.adrelid=c.oid)
@@ -153,7 +162,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE ad.oid = $1
    UNION ALL
   SELECT op.oid,'pg_operator'::regclass,
-         op.oprname as name, n.nspname as namespace, pg_get_userbyid(op.oprowner) as owner,
+         op.oprname as name, n.nspname as namespace, 
+         pg_get_userbyid(op.oprowner) as owner,
          'OPERATOR' as sql_kind,
          cast(op.oid::regoperator as text) as sql_identifier,
          null as acl
@@ -161,7 +171,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE op.oid = $1
    UNION ALL
   SELECT cfg.oid,'pg_ts_config'::regclass,
-         cfg.cfgname as name, n.nspname as namespace, pg_get_userbyid(cfg.cfgowner) as owner,
+         cfg.cfgname as name, n.nspname as namespace, 
+         pg_get_userbyid(cfg.cfgowner) as owner,
          'TEXT SEARCH CONFIGURATION' as sql_kind,
          cast(cfg.oid::regconfig as text) as sql_identifier,
          null as acl
@@ -169,7 +180,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE cfg.oid = $1
    UNION ALL
   SELECT dict.oid,'pg_ts_dict'::regclass,
-         dict.dictname as name, n.nspname as namespace, pg_get_userbyid(dict.dictowner) as owner,
+         dict.dictname as name, n.nspname as namespace, 
+         pg_get_userbyid(dict.dictowner) as owner,
          'TEXT SEARCH DICTIONARY' as sql_kind,
          cast(dict.oid::regdictionary as text) as sql_identifier,
          null as acl
@@ -197,7 +209,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE tmpl.oid = $1
    UNION ALL
   SELECT fdw.oid,'pg_foreign_data_wrapper'::regclass,
-         fdw.fdwname as name, null as namespace, pg_get_userbyid(fdw.fdwowner) as owner,
+         fdw.fdwname as name, null as namespace, 
+         pg_get_userbyid(fdw.fdwowner) as owner,
          'FOREIGN DATA WRAPPER' as sql_kind,
          quote_ident(fdw.fdwname) as sql_identifier,
          fdwacl as acl
@@ -205,7 +218,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE fdw.oid = $1
    UNION ALL
   SELECT srv.oid,'pg_foreign_server'::regclass,
-         srv.srvname as name, null as namespace, pg_get_userbyid(srv.srvowner) as owner,
+         srv.srvname as name, null as namespace, 
+         pg_get_userbyid(srv.srvowner) as owner,
          'SERVER' as sql_kind,
          quote_ident(srv.srvname) as sql_identifier,
          srvacl as acl
@@ -213,7 +227,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE srv.oid = $1
    UNION ALL
   SELECT ums.umid,'pg_user_mapping'::regclass,
-         null as name, null as namespace, null as owner, 'USER MAPPING' as sql_kind,
+         null as name, null as namespace, null as owner, 
+         'USER MAPPING' as sql_kind,
          'FOR '||quote_ident(ums.usename)||
          ' SERVER '||quote_ident(ums.srvname) as sql_identifier,
          null as acl
@@ -224,14 +239,15 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          null as name, null as namespace, null as owner,
          'CAST' as sql_kind,
          format('(%s AS %s)',
-           format_type(ca.castsource,null),format_type(ca.casttarget,null))
-           as sql_identifier,
+           format_type(ca.castsource,null),
+           format_type(ca.casttarget,null)) as sql_identifier,
          null as acl
     FROM pg_cast ca
    WHERE ca.oid = $1
    UNION ALL
   SELECT co.oid,'pg_collation'::regclass,
-         co.collname as name, n.nspname as namespace, pg_get_userbyid(co.collowner) as owner,
+         co.collname as name, n.nspname as namespace, 
+         pg_get_userbyid(co.collowner) as owner,
          'COLLATION' as sql_kind,
          format('%s%I',
            quote_ident(nullif(n.nspname,current_schema()))||'.',co.collname) 
@@ -241,7 +257,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE co.oid = $1
    UNION ALL
   SELECT co.oid,'pg_conversion'::regclass,
-         co.conname as name, n.nspname as namespace, pg_get_userbyid(co.conowner) as owner,
+         co.conname as name, n.nspname as namespace, 
+         pg_get_userbyid(co.conowner) as owner,
          'CONVERSION' as sql_kind,
          format('%s%I',
            quote_ident(nullif(n.nspname,current_schema()))||'.',co.conname) 
@@ -251,7 +268,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE co.oid = $1
    UNION ALL
   SELECT lan.oid,'pg_language'::regclass,
-         lan.lanname as name, null as namespace, pg_get_userbyid(lan.lanowner) as owner,
+         lan.lanname as name, null as namespace, 
+         pg_get_userbyid(lan.lanowner) as owner,
          'LANGUAGE' as sql_kind,
          quote_ident(lan.lanname) as sql_identifier,
          lan.lanacl as acl
@@ -259,7 +277,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE lan.oid = $1
    UNION ALL
   SELECT opf.oid,'pg_opfamily'::regclass,
-         opf.opfname as name, n.nspname as namespace, pg_get_userbyid(opf.opfowner) as owner,
+         opf.opfname as name, n.nspname as namespace, 
+         pg_get_userbyid(opf.opfowner) as owner,
          'OPERATOR FAMILY' as sql_kind,
          format('%s%I USING %I',
            quote_ident(nullif(n.nspname,current_schema()))||'.',
@@ -272,7 +291,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE opf.oid = $1
    UNION ALL
   SELECT dat.oid,'pg_database'::regclass,
-         dat.datname as name, null as namespace, pg_get_userbyid(dat.datdba) as owner,
+         dat.datname as name, null as namespace, 
+         pg_get_userbyid(dat.datdba) as owner,
          'DATABASE' as sql_kind,
          quote_ident(dat.datname) as sql_identifier,
          dat.datacl as acl
@@ -280,7 +300,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE dat.oid = $1
    UNION ALL
   SELECT spc.oid,'pg_tablespace'::regclass,
-         spc.spcname as name, null as namespace, pg_get_userbyid(spc.spcowner) as owner,
+         spc.spcname as name, null as namespace, 
+         pg_get_userbyid(spc.spcowner) as owner,
          'TABLESPACE' as sql_kind,
          quote_ident(spc.spcname) as sql_identifier,
          spc.spcacl as acl
@@ -288,7 +309,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE spc.oid = $1
    UNION ALL
   SELECT opc.oid,'pg_opclass'::regclass,
-         opcname as name, n.nspname as namespace, pg_get_userbyid(opc.opcowner) as owner,
+         opcname as name, n.nspname as namespace, 
+         pg_get_userbyid(opc.opcowner) as owner,
          'OPERATOR CLASS' as sql_kind,
          format('%s%I USING %I',
            quote_ident(nullif(n.nspname,current_schema()))||'.',
@@ -301,7 +323,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE opc.oid = $1
    UNION ALL
   SELECT e.oid, 'pg_extension'::regclass,
-         e.extname AS name, e.extnamespace::text AS namespace, pg_get_userbyid(e.extowner) AS owner,
+         e.extname AS name, e.extnamespace::text AS namespace, 
+         pg_get_userbyid(e.extowner) AS owner,
          'EXTENSION'::text AS sql_kind,
          e.extname AS sql_identifier,
          NULL::aclitem[] AS acl
@@ -310,7 +333,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
 #if 9.3
    UNION ALL
   SELECT evt.oid,'pg_event_trigger'::regclass,
-         evt.evtname as name, null as namespace, pg_get_userbyid(evt.evtowner) as owner,
+         evt.evtname as name, null as namespace, 
+         pg_get_userbyid(evt.evtowner) as owner,
          'EVENT TRIGGER' as sql_kind,
          quote_ident(evt.evtname) as sql_identifier,
          null as acl
@@ -371,16 +395,19 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
 #if 10
    UNION ALL
   SELECT stx.oid,'pg_statistic_ext'::regclass,
-         stx.stxname, n.nspname as namespace, pg_get_userbyid(stx.stxowner) as owner,
+         stx.stxname, n.nspname as namespace, 
+         pg_get_userbyid(stx.stxowner) as owner,
          'STATISTICS' as sql_kind,
-         format('%s%I',quote_ident(nullif(n.nspname,current_schema()))||'.',stx.stxname) 
-         as sql_identifier,
+         format('%s%I',quote_ident(nullif(n.nspname,current_schema()))
+           ||'.',stx.stxname) 
+           as sql_identifier,
          null as acl
     FROM pg_statistic_ext stx join pg_namespace n on (n.oid=stxnamespace)
    WHERE stx.oid = $1
    UNION ALL
   SELECT pub.oid,'pg_publication'::regclass,
-         pub.pubname, NULL as namespace, pg_get_userbyid(pub.pubowner) as owner,
+         pub.pubname, NULL as namespace, 
+         pg_get_userbyid(pub.pubowner) as owner,
          'PUBLICATION' as sql_kind,
          quote_ident(pub.pubname) as sql_identifier,
          null as acl
@@ -389,7 +416,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
 #if 14
    UNION ALL
   SELECT sub.oid,'pg_subscription'::regclass,
-         sub.subname, NULL as namespace, pg_get_userbyid(sub.subowner) as owner,
+         sub.subname, NULL as namespace, 
+         pg_get_userbyid(sub.subowner) as owner,
          'SUBSCRIPTION' as sql_kind,
          quote_ident(sub.subname) as sql_identifier,
          null as acl
