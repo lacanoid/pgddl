@@ -816,8 +816,9 @@ CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
         else case 
           when 'owner' ilike any($2) or obj.owner is distinct from current_role
           then
-          case
-           when obj.sql_kind = 'INDEX' then null
+          case obj.sql_kind
+           when 'INDEX' then null
+           when 'EXTENSION' then null
            else 'ALTER '||sql_kind||' '||sql_identifier||
                  ' OWNER TO '||quote_ident(owner)||E';\n'
           end end

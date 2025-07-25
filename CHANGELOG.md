@@ -2,13 +2,13 @@
 Version 0.30
 ------------
 - updated for Postgres 18
-- `ddlx_grants(regclass)` fixes, now handles materialized views too. 
-These should probably be in `INFORMATION_SHEMA.TABLE_PRIVILEGES`, but they aren't.
 - removed function `ddlx_grants(regclass)` as it now handled by `ddlx_grants(oid)`
+- `ddlx_grants(oid)` fixes, now handles materialized views too. 
 - added support for virtual generated columns on Postgres 18
 - added `data` option to attempt to preserve table data
 - added `nograntor` option omit permission grantor
-- generated DDL indentation improvements
+- removed unsupported `ALTER EXTENSION SET OWNER`
+- indentation improvements in generated DDL
 
 Version 0.29
 ------------
