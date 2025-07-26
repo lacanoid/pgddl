@@ -104,11 +104,13 @@ into your database by any regular means:
 Using
 -----
 
-The API provides three public user functions:
+The API provides three main public user functions:
 
 - `ddlx_create(oid, options)` - builds SQL DDL create statements
 - `ddlx_drop(oid, options)`   - builds SQL DDL drop statements
 - `ddlx_script(oid, options)` - builds SQL DDL scripts of entire dependancy trees
+
+For other functions see below.
 
 These are useful with various `reg*` [object identifier types](https://www.postgresql.org/docs/current/datatype-oid.html) 
 supported by Postgres, which are then automatically cast to `oid`. Options can be ommited.
