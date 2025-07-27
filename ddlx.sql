@@ -808,6 +808,12 @@ CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}') RETURNS text
 CREATE OR REPLACE FUNCTION ddlx_create_function(regproc, text[] default '{}') RETURNS text
   LANGUAGE sql AS $$ select null::text $$;
 
+CREATE OR REPLACE FUNCTION ddlx_data_backup(regclass, text[] default '{}') RETURNS text
+  LANGUAGE sql AS $$ select null::text $$;
+
+CREATE OR REPLACE FUNCTION ddlx_data_restore(regclass, text[] default '{}') RETURNS text
+  LANGUAGE sql AS $$ select null::text $$;
+
 --------------------------------------------------------------- ---------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
@@ -1544,10 +1550,18 @@ CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass,ddlx_options text[] defa
     from pg_statistic_ext where stxrelid = $1
  )
 select ddl_idx || 
-       case when 'lite' ilike any($2) then '' else ddl_cluster end 
-       || ddl_stx from a,b,c
+       case when 'lite' ilike any($2)
+            then ''
+            else ddl_cluster || ddl_stx
+       end 
+  from a,b,c
 #else
-select ddl_idx || ddl_cluster from a,c
+select ddl_idx ||
+       case when 'lite' ilike any($2)
+            then ''
+            else ddl_cluster
+       end 
+  from a,c
 #end
 $function$  strict;
 

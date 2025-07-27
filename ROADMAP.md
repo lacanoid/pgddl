@@ -49,7 +49,7 @@ Support for other missing options:
 - ✔︎ pg_subscription not readable by non superuser
 - ✔︎ create base type: SUBSCRIPT
 - ✔︎ PG17 fallback option for subscriptions
-- check what's up with CLUSTER on PG9.6
+- ✔︎ check what's up with CLUSTER on PG9.6
 
 Other:
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
