@@ -6,7 +6,7 @@ Version 0.30
 - `ddlx_grants(oid)` fixes, now handles materialized views too. 
 - added support for virtual generated columns on Postgres 18
 - added `data` option to attempt to preserve table data
-- added `grantor` option show GRATED BY which is now ommited by default
+- added `grantor` option to show GRANTED BY which is now ommited by default
 - removed unsupported `ALTER EXTENSION SET OWNER`
 - indentation improvements in generated DDL
 
