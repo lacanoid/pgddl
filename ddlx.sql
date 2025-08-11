@@ -2184,8 +2184,10 @@ select format('GRANT %s ON %s%s TO %s%s%s;',
               end,
               grant_option,
 #if 14
-              case when 'nograntor' not ilike any($2) 
-              then ' GRANTED BY '||nullif(grantor,current_role) end
+              case
+	      when 'grantor' ilike any($2) 
+              then ' GRANTED BY '||nullif(grantor,current_role)
+	      end
 #else
               null
 #end
