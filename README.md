@@ -159,7 +159,7 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 * `noconstraints` - do not include constraints
 * `nosettings` - do not include settings
 * `notriggers` - do not include triggers
-* `nograntor` - do not include grantor in grant statements
+* `grantor` - include grantor in grant statements
 * `data` - attempt to preserve table data, really only makes sense when used together with `drop`
 
 Drop statements are created with `ddlx_drop()` function.	
