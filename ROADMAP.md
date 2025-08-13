@@ -42,10 +42,8 @@ Support for other missing options:
 - PG15 UNIQUE NULL NOT DISTINCT
 - ✔︎ PG15 publication columns and qualifiers
 - PG16 MAINTAIN privilege
-- PG16 GRANT WITH INHERIT, SET
+- ✔︎ PG16 GRANT WITH INHERIT, SET
 - SET STATISTICS on indexes
-- pg_auth_members.inherit_option (PG16)
-- pg_auth_members.set_option (PG16)
 - ✔︎ pg_subscription not readable by non superuser
 - ✔︎ create base type: SUBSCRIPT
 - ✔︎ PG17 fallback option for subscriptions

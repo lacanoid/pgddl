@@ -781,3 +781,26 @@ ALTER PUBLICATION pub3 ADD TABLES IN SCHEMA public2;
 
 
 (3 rows)
+-- test role privileges with options
+begin;
+  create role ddlx_test_user_9991;
+  create role ddlx_test_user_9992;
+  grant ddlx_test_user_9991 to ddlx_test_user_9992 with admin true, set false;
+  select ddlx_create('ddlx_test_user_9991'::regrole);
+ddlx_create
+CREATE GROUP ddlx_test_user_9991;
+
+ALTER ROLE ddlx_test_user_9991 WITH
+  NOLOGIN
+  NOSUPERUSER
+  INHERIT
+  NOCREATEDB
+  NOCREATEROLE
+  NOREPLICATION;
+
+
+GRANT ddlx_test_user_9991 TO ddlx_test_user_9992 WITH ADMIN OPTION, SET FALSE;
+
+
+(1 row)
+rollback;

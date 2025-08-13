@@ -1642,12 +1642,29 @@ CREATE OR REPLACE FUNCTION ddlx_grants_to_role(oid, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
 with 
 q as (
- select format(E'GRANT %I TO %I%s;\n',r1.rolname, r2.rolname,
-               case when admin_option then ' WITH ADMIN OPTION' end)
+ select format(E'GRANT %I TO %I%s%s;\n',r1.rolname, r2.rolname,
+               ' WITH '||nullif(array_to_string(array[
+                 'ADMIN '||case when admin_option then 'OPTION' else null end,
+#if 16
+                 'INHERIT '||case when inherit_option then null else 'FALSE' end,
+                 'SET '||case when set_option then null else 'FALSE' end
+#else
+                 null, null
+#end                 
+               ],', '),''),
+#if 14
+               case when 'grantor' ilike any($2) 
+                    then ' GRANTED BY '||quote_ident(nullif(r3.rolname,current_user))
+               end
+#else
+               null
+#end
+              )
         as ddl1
    from pg_auth_members m
-   join pg_roles r1 on (r1.oid=m.roleid)
-   join pg_roles r2 on (r2.oid=m.member)
+   left join pg_roles r1 on (r1.oid=m.roleid)
+   left join pg_roles r2 on (r2.oid=m.member)
+   left join pg_roles r3 on (r3.oid=m.grantor)
   where (m.member = $1 or m.roleid = $1)
   order by m.roleid = $1,
            cast(r2.rolname as text), 
@@ -2080,49 +2097,6 @@ $function$  strict;
 
 --------------------------------------------------------------- ---------------
 
-/*
-CREATE OR REPLACE FUNCTION ddlx_grants(regclass, text[] default '{}') 
- RETURNS text LANGUAGE sql AS $function$
- with 
- obj as (select * from ddlx_identify($1)),
- p as (
- select coalesce(quote_ident(r1.rolname),'PUBLIC') as grantor,
-        coalesce(quote_ident(r2.rolname),'PUBLIC') as grantee,
-        privilege_type,
-        case 
-        when is_grantable then ' WITH GRANT OPTION' else ''
-        end as grant_option
-   from aclexplode((select acl from obj)) e
-   left join pg_roles r1 on (r1.oid = e.grantor)
-   left join pg_roles r2 on (r2.oid = e.grantee)
- ),
- a as (
- select format(
-          E'GRANT %s ON %s TO %s%s%s;\n',
-          privilege_type, 
-          cast($1 as text),
-          case grantee  
-            when 'PUBLIC' then 'PUBLIC' 
-            else quote_ident(grantee) 
-          end,
-	        grant_option,
-#if 14
-          ' GRANTED BY '||nullif(grantor,current_role)
-#else
-          null
-#end
-        ) 
-    as ddl
- FROM p,obj WHERE grantee <> obj.owner
- ORDER BY grantee,privilege_type
-)
-select coalesce(string_agg(a.ddl,''),'')||
-       ddlx_grants_columns($1,$2) from a
-$function$  strict;
-*/
-
---------------------------------------------------------------- ---------------
-
 CREATE OR REPLACE FUNCTION ddlx_grants(regproc, text[] default '{}') 
  RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1))
@@ -2185,9 +2159,9 @@ select format('GRANT %s ON %s%s TO %s%s%s;',
               grant_option,
 #if 14
               case
-	      when 'grantor' ilike any($2) 
-              then ' GRANTED BY '||nullif(grantor,current_role)
-	      end
+	              when 'grantor' ilike any($2) 
+                then ' GRANTED BY '||nullif(grantor,current_role)
+	            end
 #else
               null
 #end
