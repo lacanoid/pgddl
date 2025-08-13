@@ -7,7 +7,7 @@ Version 0.30
 - grants to roles now support `INHERIT` and `SET` options on Postgres 16
 - added support for virtual generated columns on Postgres 18
 - added `data` option to attempt to preserve table data
-- added `grantor` option to show GRANTED BY which is now ommited by default
+- added `grantor` option to show `GRANTED BY` which is now ommited by default
 - removed unsupported `ALTER EXTENSION SET OWNER`
 - indentation improvements in generated DDL
 
