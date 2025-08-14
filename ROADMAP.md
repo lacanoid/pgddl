@@ -64,11 +64,11 @@ Other:
 - use ONLY when appropriate
 - ✔︎ mysterious duplicates in index section for partitioned tables (see table dept_1)
 - ✔︎ include table subpartitions in a script
-- ✔︎ do not emit ALTER OWNER for objects owned by current role
+- ✔︎ do not emit `ALTER OWNER` for objects owned by current role
 - hide comments etc when object is hidden, such as with `{noconstraints,comments}`
-- make it possible to neatly drop/create extensions in a script, now broken
+- make it possible to neatly drop/create extensions in a script, now sometimes broken
 - ✔︎ add option to preserve table data
-- ✔︎ add `nograntor` option to omit GRANTED BY
+- ✔︎ add `grantor` option to emit `GRANTED BY`
 - add function `ddlx_get_dependencies` like `ddlx_get_dependants` but in other direction
 - add function `ddlx_list(namespace)` to nicely list objects in a namespace/schema
 - improve generated DDL indentation
