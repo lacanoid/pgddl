@@ -1,11 +1,10 @@
 
 Version 0.30
 ------------
-- updated for Postgres 18
+- added support for virtual generated columns on Postgres 18
+- grants to roles now support `INHERIT` and `SET` options on Postgres 16
 - removed function `ddlx_grants(regclass)` as it now handled by `ddlx_grants(oid)`
 - `ddlx_grants(oid)` fixes, now handles materialized views too. 
-- grants to roles now support `INHERIT` and `SET` options on Postgres 16
-- added support for virtual generated columns on Postgres 18
 - added `data` option to attempt to preserve table data
 - added `grantor` option to show `GRANTED BY` which is now ommited by default
 - removed unsupported `ALTER EXTENSION SET OWNER`
