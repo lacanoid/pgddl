@@ -126,10 +126,11 @@ Generated DDLs are database administrator friendly.
 
 PgAdmin4 is the stuff of legends
 
-Mailing list discussions
-------------------------
+PostgreSQL Mailing list discussions
+-----------------------------------
 
 - [Export the CREATE TABLE command in pure SQL](https://www.postgresql.org/message-id/flat/2bc470194b4837c1f733a4e05f569bc6%40dalibo.info)
 - [SHOW CREATE](https://www.postgresql.org/message-id/flat/20190705163203.GD24679%40fetter.org)
 - [get a relations DDL server-side](https://www.postgresql.org/message-id/flat/c2ce3040-a6b1-4279-97b4-fcd374ac1c60%40www.fastmail.com)
 - [Adding SHOW CREATE TABLE](https://www.postgresql.org/message-id/flat/CAFEN2wxsDSSuOvrU03CE33ZphVLqtyh9viPp6huODCDx2UQkYA%40mail.gmail.com)
+- [Retail DDL](https://www.postgresql.org/message-id/flat/945db7c5-be75-45bf-b55b-cb1e56f2e3e9%40dunslane.net)
