@@ -37,7 +37,7 @@ Advantages over using other tools like `psql` or `pg_dump` include:
    using **idempotent DDL** where possible (preferring ALTER to CREATE), 
    creating indexes which are part of a constraint with ADD CONSTRAINT and so on.
 - It is entrely made out of **plain SQL functions** so you don't have to install any extra
-  languages, not even PL/PgSQL! It runs on plain vanilla Postgres. Of course you can borrow parts of it.
+  languages, not even PL/PgSQL! It runs on plain vanilla Postgres.
 
 Some disadvantages:
 
