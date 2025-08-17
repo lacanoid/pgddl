@@ -2493,7 +2493,7 @@ select format(E'CREATE TEXT SEARCH PARSER %s (\n  %s\n);\n',obj.sql_identifier,
            ],E',\n  ')
         )
   from pg_ts_parser as p, obj
- where p.oid = $1
+ where p.oid = $1 and obj.classid = 'pg_ts_parser'::regclass
 $function$  strict;
 
 --------------------------------------------------------------- ---------------
@@ -2509,7 +2509,7 @@ select format(E'CREATE TEXT SEARCH TEMPLATE %s (\n  %s\n);\n',
            ],E',\n  ')
         )
   from pg_ts_template as t, obj
- where t.oid = $1
+ where t.oid = $1 and obj.classid = 'pg_ts_template'::regclass
 $function$  strict;
 
 --------------------------------------------------------------- ---------------
@@ -2532,7 +2532,7 @@ select format(E'CREATE CAST %s\n  ',obj.sql_identifier)
            end
         || E';\n'
   from pg_cast as c, obj
- where c.oid = $1
+ where c.oid = $1 and obj.classid = 'pg_cast'::regclass
 $function$  strict;
 
 --------------------------------------------------------------- ---------------
