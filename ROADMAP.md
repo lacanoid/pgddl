@@ -50,6 +50,7 @@ Support for other missing options:
 - ✔︎ check what's up with CLUSTER on PG9.6
 
 Other:
+- fix cases when oid is not enough to uniquely specify object
 - figure out how to elegantly separate pre-data, post-data, create, alter and dcl
 - ✔︎ add function `ddlx_createonly(oid)` for pre-data
 - ✔︎ add function `ddlx_alter(oid)` for post-data
