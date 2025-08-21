@@ -865,10 +865,12 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
       array_to_string(array_cat(
         (SELECT array_agg('    '||definition) FROM ddlx_describe($1,$2) WHERE is_local),
         case when 'lite' ilike any($2)
-        and not 'noconstraints' ilike any($2) then
-          (SELECT array_agg('    '||sql) FROM
-            (select ('CONSTRAINT ' || quote_ident(constraint_name) || ' ' || constraint_definition) as sql
-               from ddlx_get_constraints($1) where is_local and constraint_type <> 'NOT NULL'
+              and not 'noconstraints' ilike any($2) 
+             then (SELECT array_agg('    '||sql) FROM (
+                   select 'CONSTRAINT ' || quote_ident(constraint_name) || 
+                          ' ' || constraint_definition as sql
+                     from ddlx_get_constraints($1) 
+                    where is_local and constraint_type <> 'NOT NULL'
 	      order by constraint_type desc, constraint_name) as a)
         end
       ), E',\n') || E'\n','') || '  )'
