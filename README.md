@@ -157,6 +157,7 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 * `nocomments` - do not include any comments
 * `nostorage` - do not include storage settings
 * `noconstraints` - do not include constraints
+* `noindexes` - do not include indexes
 * `nosettings` - do not include settings
 * `notriggers` - do not include triggers
 * `grantor` - include grantor in grant statements

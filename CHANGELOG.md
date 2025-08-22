@@ -6,6 +6,7 @@ Version 0.30
 - removed function `ddlx_grants(regclass)` as it now handled by `ddlx_grants(oid)`
 - `ddlx_grants(oid)` fixes, now handles materialized views too. 
 - added `data` option to attempt to preserve table data
+- added `noindexes` option to omit indexes
 - added `grantor` option to show `GRANTED BY` which is now ommited by default
 - removed unsupported `ALTER EXTENSION SET OWNER`
 - indentation improvements in generated DDL

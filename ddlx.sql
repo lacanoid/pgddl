@@ -1533,10 +1533,12 @@ CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass,ddlx_options text[] defa
  RETURNS text LANGUAGE sql AS $function$
  with
  ii as (select * from ddlx_get_indexes($1) order by name),
+ -- just indexes
  a as (
   select coalesce(string_agg(ddlx_create_index(oid,$2),'') || E'\n' , E'') as ddl_idx
-    from ii where constraint_name is null
+    from ii where constraint_name is null and not 'noindexes' ilike any($2)
  ),
+ -- constraints
  c as (
   select coalesce(string_agg(format(E'CLUSTER %s USING %I;\n',
                                     class::text,name),e'\n'),'')
@@ -1547,6 +1549,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass,ddlx_options text[] defa
  )
 #if 10
  ,
+-- statistics
  b as (
   select coalesce(string_agg(ddlx_create(oid),'' order by oid)||E'\n', '') as ddl_stx
     from pg_statistic_ext where stxrelid = $1
@@ -2994,7 +2997,8 @@ parts as (select * from ddlx_definitions($1,$2))
                 then null else settings end,
            case when 'lite' ilike any($2) or 'noconstraints' ilike any($2) 
                 then null else constraints end,
-           indexes,
+           case when 'noindexes' ilike any($2) 
+                then null else indexes end,
            case when 'lite' ilike any($2) or 'notriggers' ilike any($2) 
                 then null else triggers end,
            case when 'lite' ilike any($2) 
@@ -3074,7 +3078,8 @@ select array_to_string(array[
                then null else settings end,
           case when 'noconstraints' ilike any($2) 
                then null else constraints end, 
-          indexes,
+           case when 'noindexes' ilike any($2) 
+                then null else indexes end,
            case when 'lite' ilike any($2) or 'notriggers' ilike any($2) 
                 then null else triggers end,
            case when 'lite' ilike any($2) then null else rules end,
