@@ -8,6 +8,7 @@ Version 0.30
 - added `data` option to attempt to preserve table data
 - added `noindexes` option to omit indexes
 - added `grantor` option to show `GRANTED BY` which is now ommited by default
+- added support for tsearch mappings in `pg_ts_config_map`
 - removed unsupported `ALTER EXTENSION SET OWNER`
 - indentation improvements in generated DDL
 

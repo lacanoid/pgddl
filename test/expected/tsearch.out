@@ -12,6 +12,17 @@ COMMENT ON TEXT SEARCH CONFIGURATION english1 IS 'configuration for english lang
 
 
 (1 row)
+ALTER TEXT SEARCH CONFIGURATION english1 ADD MAPPING FOR entity WITH english_stem;
+ALTER TEXT SEARCH CONFIGURATION english1 ADD MAPPING FOR word WITH english_stem;
+select ddlx_create('english1'::regconfig);
+ddlx_create
+CREATE TEXT SEARCH CONFIGURATION english1 ( PARSER = pg_catalog."default" );
+ALTER TEXT SEARCH CONFIGURATION english1 ADD MAPPING FOR word WITH english_stem;
+ALTER TEXT SEARCH CONFIGURATION english1 ADD MAPPING FOR entity WITH english_stem;
+COMMENT ON TEXT SEARCH CONFIGURATION english1 IS 'configuration for english language (1)';
+
+
+(1 row)
 select ddlx_drop('english1'::regconfig);
 ddlx_drop
 DROP TEXT SEARCH CONFIGURATION english1;

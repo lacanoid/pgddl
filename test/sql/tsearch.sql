@@ -9,6 +9,10 @@ COMMENT ON TEXT SEARCH CONFIGURATION english1 IS 'configuration for english lang
 ALTER TEXT SEARCH CONFIGURATION english1 OWNER TO postgres;
 
 select ddlx_create('english1'::regconfig);
+
+ALTER TEXT SEARCH CONFIGURATION english1 ADD MAPPING FOR entity WITH english_stem;
+ALTER TEXT SEARCH CONFIGURATION english1 ADD MAPPING FOR word WITH english_stem;
+select ddlx_create('english1'::regconfig);
 select ddlx_drop('english1'::regconfig);
 
 CREATE TEXT SEARCH DICTIONARY english1_stem

@@ -2459,11 +2459,30 @@ with cfg as (select * from pg_ts_config where oid = $1),
               (select p.oid 
                  from pg_ts_parser p
                  join cfg on p.oid = cfg.cfgparser
-             )))
-select format(E'CREATE TEXT SEARCH CONFIGURATION %s ( PARSER = %s );\n',
-              cast($1 as text),
-              prs.sql_identifier)
-  from prs;
+             ))),
+     tt(i,l) as (values 
+              ( 1, 'asciiword'), ( 2, 'word'), ( 3, 'numword'),
+              ( 4, 'email'), ( 5, 'url'), ( 6, 'host'),
+              ( 7, 'sfloat'), ( 8, 'version'),
+              ( 9, 'hword_numpart'), (10, 'hword_part'),
+              (11, 'hword_asciipart'), (12, 'blank'),
+              (13, 'tag'), (14, 'protocol'), (15, 'numhword'),
+              (16, 'asciihword'), (17, 'hword'), (18, 'url_path'),
+              (19, 'file'), (20, '"float"'), (21, '"int"'),
+              (22, 'uint'), (23, 'entity')
+            ),
+     map as (select string_agg(format(
+               'ALTER TEXT SEARCH CONFIGURATION %s ADD MAPPING FOR %s WITH %s;',
+               cast($1::regconfig as text), tt.l, 
+               cast(m.mapdict::regdictionary as text)),e'\n'
+                    order by mapseqno, maptokentype ) || e'\n' as ddl
+               from pg_ts_config_map m join tt on (tt.i=m.maptokentype)
+              where m.mapcfg = $1
+            )
+select format(E'CREATE TEXT SEARCH CONFIGURATION %s ( PARSER = %s );\n%s',
+              cast($1 as text),prs.sql_identifier,
+              map.ddl)
+  from prs,map;
 $function$  strict;
 
 --------------------------------------------------------------- ---------------
