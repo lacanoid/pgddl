@@ -24,6 +24,7 @@ Tasks
 Support for other postgres objects:
 - ✔︎ pg_amop, pg_amproc
 - ✔︎ pg_extension
+- pg_ts_config_map
 - pg_default_acl
 - pg_largeobject_metadata
 - pg_publication_rel (10,15)
