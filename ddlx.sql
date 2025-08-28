@@ -509,7 +509,8 @@ SELECT  DISTINCT
    case when a.attnotnull THEN ' NOT NULL' end
 #end
    ,
-   case when 'lite' ilike any($2) then ' DEFAULT ' || pg_get_expr(def.adbin,def.adrelid) end,
+   case when 'lite' ilike any($2) 
+        then ' DEFAULT ' || pg_get_expr(def.adbin,def.adrelid) end,
 #if 10
   case when attidentity in ('a','d')
        then format(' GENERATED %s AS IDENTITY',
@@ -674,7 +675,8 @@ CREATE OR REPLACE FUNCTION ddlx_get_triggers(
         p.oid::regprocedure AS regprocedure, 
         s.nspname::text AS event_object_schema,
         c.relname::text AS event_object_table, 
-        (quote_ident(t.tgname::text) || ' ON ') || c.oid::regclass::text AS sql_identifier
+        (quote_ident(t.tgname::text) || ' ON ') || c.oid::regclass::text 
+          AS sql_identifier
    FROM pg_trigger t
    LEFT JOIN pg_class c ON c.oid = t.tgrelid
    LEFT JOIN pg_namespace s ON s.oid = c.relnamespace
@@ -688,7 +690,8 @@ $$;
 CREATE OR REPLACE FUNCTION ddlx_get_indexes(
   regclass default null,
   OUT oid oid, OUT namespace text, OUT class regclass, OUT name text, 
-  OUT tablespace text, OUT constraint_name text, OUT is_local boolean, OUT is_clustered boolean)
+  OUT tablespace text, OUT constraint_name text, OUT is_local boolean, 
+  OUT is_clustered boolean)
  RETURNS SETOF record LANGUAGE sql AS $$
  SELECT DISTINCT
         i.oid AS oid, 
@@ -802,23 +805,25 @@ $$ strict;
 -- forward declarations, will be redefined later
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}') RETURNS text
-  LANGUAGE sql AS $$ select null::text $$;
+CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}') 
+  RETURNS text LANGUAGE sql AS $$ select null::text $$;
 
-CREATE OR REPLACE FUNCTION ddlx_create_function(regproc, text[] default '{}') RETURNS text
-  LANGUAGE sql AS $$ select null::text $$;
+CREATE OR REPLACE FUNCTION ddlx_create_function(regproc, text[] default '{}') 
+  RETURNS text LANGUAGE sql AS $$ select null::text $$;
 
-CREATE OR REPLACE FUNCTION ddlx_data_backup(regclass, text[] default '{}') RETURNS text
-  LANGUAGE sql AS $$ select null::text $$;
+CREATE OR REPLACE FUNCTION ddlx_data_backup(regclass, text[] default '{}') 
+  RETURNS text LANGUAGE sql AS $$ select null::text $$;
 
-CREATE OR REPLACE FUNCTION ddlx_data_restore(regclass, text[] default '{}') RETURNS text
-  LANGUAGE sql AS $$ select null::text $$;
+CREATE OR REPLACE FUNCTION ddlx_data_restore(regclass, text[] default '{}') 
+  RETURNS text LANGUAGE sql AS $$ select null::text $$;
 
 --------------------------------------------------------------- ---------------
 
 CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
  RETURNS text LANGUAGE sql AS $$
- select case when 'nodcl' ilike any($2) or 'noowner' ilike any($2) or 'lite' ilike any($2) then null
+ select case when 'nodcl' ilike any($2) 
+               or 'noowner' ilike any($2) or 'lite' ilike any($2) 
+             then null
         else case 
           when 'owner' ilike any($2) or obj.owner is distinct from current_role
           then
