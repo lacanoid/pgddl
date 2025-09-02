@@ -1,6 +1,6 @@
 --------------------------------------------------------------- ---------------
 --  DDL eXtractor functions
---  version 0.30 lacanoid@ljudmila.org
+--  version 0.31 lacanoid@ljudmila.org
 --------------------------------------------------------------- ---------------
 
 SET client_min_messages = warning;
