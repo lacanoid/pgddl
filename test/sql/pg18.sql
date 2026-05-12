@@ -9,4 +9,3 @@ create table aa (
 );
 select ddlx_create('aa'::regclass);
 abort;
-\i test/sql/pg17.sql

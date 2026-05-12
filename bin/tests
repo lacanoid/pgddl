@@ -15,7 +15,14 @@ if($VI=~m!(\d+)(\.(\d+))?!) {
 	my ($maj,$min)=($1+0,$3+0);
 	if($maj>=10) { $min=0; }
 	$V = $maj+$min/10.0;
-	print "pg".$V."\n";
+	if($V<14) {
+	    print "pg".$V."\n";
+	} else {
+	    for(my $i=14;$i<=$V;$i++) {
+		print "pg".$i." ";
+	    }
+	    print "\n";
+	}	
 } else {
 	errlog "No Postgres version specified in VERSION environment variable";
 }

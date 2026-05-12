@@ -1,4 +1,8 @@
-\i test/sql/pg14.sql
+\pset null _null_
+\pset format unaligned
+\i test/sql/pg12.sql
+
+set role postgres;
 
 SET client_min_messages TO error;
 

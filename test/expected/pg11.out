@@ -29,6 +29,13 @@ ddlx_script
 BEGIN;
 
 /*
+DROP TABLE customer_jap_def; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_jap_kyoto; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_jap_tokyo; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_def; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_jap; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_ind; --==>> !!! ATTENTION !!! <<==--
+
 DROP TABLE customers; --==>> !!! ATTENTION !!! <<==--
 */
 
@@ -46,6 +53,52 @@ CREATE TABLE customers (
 
 
 
+-- DEPENDANTS
+
+
+-- Type: TABLE ; Name: customer_ind; Owner: postgres
+
+CREATE TABLE customer_ind PARTITION OF customers
+  FOR VALUES IN ('ind');
+
+
+
+-- Type: TABLE ; Name: customer_jap; Owner: postgres
+
+CREATE TABLE customer_jap PARTITION OF customers
+  FOR VALUES IN ('jap')
+  PARTITION BY LIST (cust_city);
+
+
+
+-- Type: TABLE ; Name: customer_def; Owner: postgres
+
+CREATE TABLE customer_def PARTITION OF customers
+  DEFAULT;
+
+
+
+-- Type: TABLE ; Name: customer_jap_tokyo; Owner: postgres
+
+CREATE TABLE customer_jap_tokyo PARTITION OF customer_jap
+  FOR VALUES IN ('tokyo');
+
+
+
+-- Type: TABLE ; Name: customer_jap_kyoto; Owner: postgres
+
+CREATE TABLE customer_jap_kyoto PARTITION OF customer_jap
+  FOR VALUES IN ('kyoto');
+
+
+
+-- Type: TABLE ; Name: customer_jap_def; Owner: postgres
+
+CREATE TABLE customer_jap_def PARTITION OF customer_jap
+  DEFAULT;
+
+
+
 END;
 
 (1 row)
@@ -54,6 +107,10 @@ ddlx_script
 BEGIN;
 
 /*
+DROP TABLE customer_jap_def; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_jap_kyoto; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE customer_jap_tokyo; --==>> !!! ATTENTION !!! <<==--
+
 DROP TABLE customer_jap; --==>> !!! ATTENTION !!! <<==--
 */
 
@@ -63,6 +120,30 @@ DROP TABLE customer_jap; --==>> !!! ATTENTION !!! <<==--
 CREATE TABLE customer_jap PARTITION OF customers
   FOR VALUES IN ('jap')
   PARTITION BY LIST (cust_city);
+
+
+
+-- DEPENDANTS
+
+
+-- Type: TABLE ; Name: customer_jap_tokyo; Owner: postgres
+
+CREATE TABLE customer_jap_tokyo PARTITION OF customer_jap
+  FOR VALUES IN ('tokyo');
+
+
+
+-- Type: TABLE ; Name: customer_jap_kyoto; Owner: postgres
+
+CREATE TABLE customer_jap_kyoto PARTITION OF customer_jap
+  FOR VALUES IN ('kyoto');
+
+
+
+-- Type: TABLE ; Name: customer_jap_def; Owner: postgres
+
+CREATE TABLE customer_jap_def PARTITION OF customer_jap
+  DEFAULT;
 
 
 
@@ -143,6 +224,17 @@ ddlx_script
 BEGIN;
 
 /*
+DROP TABLE dept_10; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_9; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_8; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_7; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_6; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_5; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_4; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_3; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_2; --==>> !!! ATTENTION !!! <<==--
+DROP TABLE dept_1; --==>> !!! ATTENTION !!! <<==--
+
 DROP TABLE dept; --==>> !!! ATTENTION !!! <<==--
 */
 
@@ -156,6 +248,79 @@ CREATE TABLE dept (
 
 
 ALTER TABLE dept ADD CONSTRAINT dept_pkey PRIMARY KEY (id);
+
+
+-- DEPENDANTS
+
+
+-- Type: TABLE ; Name: dept_1; Owner: postgres
+
+CREATE TABLE dept_1 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 0);
+
+
+
+-- Type: TABLE ; Name: dept_2; Owner: postgres
+
+CREATE TABLE dept_2 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 1);
+
+
+
+-- Type: TABLE ; Name: dept_3; Owner: postgres
+
+CREATE TABLE dept_3 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 2);
+
+
+
+-- Type: TABLE ; Name: dept_4; Owner: postgres
+
+CREATE TABLE dept_4 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 3);
+
+
+
+-- Type: TABLE ; Name: dept_5; Owner: postgres
+
+CREATE TABLE dept_5 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 4);
+
+
+
+-- Type: TABLE ; Name: dept_6; Owner: postgres
+
+CREATE TABLE dept_6 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 5);
+
+
+
+-- Type: TABLE ; Name: dept_7; Owner: postgres
+
+CREATE TABLE dept_7 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 6);
+
+
+
+-- Type: TABLE ; Name: dept_8; Owner: postgres
+
+CREATE TABLE dept_8 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 7);
+
+
+
+-- Type: TABLE ; Name: dept_9; Owner: postgres
+
+CREATE TABLE dept_9 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 8);
+
+
+
+-- Type: TABLE ; Name: dept_10; Owner: postgres
+
+CREATE TABLE dept_10 PARTITION OF dept
+  FOR VALUES WITH (modulus 10, remainder 9);
+
 
 
 END;
@@ -175,8 +340,6 @@ DROP TABLE dept_7; --==>> !!! ATTENTION !!! <<==--
 CREATE TABLE dept_7 PARTITION OF dept
   FOR VALUES WITH (modulus 10, remainder 6);
 
-
-ALTER TABLE dept_7 ADD CONSTRAINT dept_7_pkey PRIMARY KEY (id);
 
 
 END;
@@ -203,7 +366,7 @@ DROP PROCEDURE procedure1(text);
 
 -- Type: PROCEDURE ; Name: procedure1(text); Owner: postgres
 
-CREATE OR REPLACE PROCEDURE public.procedure1(p1 text)
+CREATE OR REPLACE PROCEDURE public.procedure1(IN p1 text)
  LANGUAGE plpgsql
 AS $procedure$
 BEGIN

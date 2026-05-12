@@ -1,5 +1,7 @@
-\i test/sql/pg12.sql
+\pset null _null_
+\pset format unaligned
+SET ROLE postgres;
 
 alter view test_class_v rename column a to aardvark;
-select ddlx_create('test_class_v'::regclass);
+select replace(ddlx_create('test_class_v'::regclass),'test_class_r.','');
 

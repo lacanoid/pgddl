@@ -1,4 +1,6 @@
-\i test/sql/pg15.sql
+\pset null _null_
+\pset format unaligned
+SET ROLE postgres;
 
 -- test role privileges with options
 begin;
