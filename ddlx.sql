@@ -536,7 +536,8 @@ SELECT  DISTINCT
 #end
    )
         AS definition,
-        pg_get_serial_sequence(c.oid::regclass::text,a.attname)::regclass as sequence,
+        pg_get_serial_sequence(c.oid::regclass::text,a.attname)::regclass
+	as sequence,
 #if 14
         nullif(case a.attcompression 
                when 'l' then 'LZ4'
@@ -552,13 +553,15 @@ SELECT  DISTINCT
    JOIN pg_attribute a ON c.oid = a.attrelid
    LEFT JOIN pg_attrdef def ON c.oid = def.adrelid AND a.attnum = def.adnum
    LEFT JOIN pg_constraint con
-     ON con.conrelid = c.oid AND (a.attnum = ANY (con.conkey)) AND con.contype = 'p'
+     ON con.conrelid = c.oid
+        AND (a.attnum = ANY (con.conkey)) AND con.contype = 'p'
    LEFT JOIN pg_type t ON t.oid = a.atttypid
    LEFT JOIN pg_collation col ON col.oid = a.attcollation
    JOIN pg_namespace tn ON tn.oid = t.typnamespace
    LEFT JOIN pg_depend d ON def.oid = d.objid AND d.deptype='n'
    LEFT JOIN pg_class seq ON seq.oid = d.refobjid AND seq.relkind='S'
-  WHERE c.relkind IN ('r','v','c','f','p') AND a.attnum > 0 AND NOT a.attisdropped
+  WHERE c.relkind IN ('r','v','c','f','p')
+        AND a.attnum > 0 AND NOT a.attisdropped
     AND has_table_privilege(c.oid, 'select') AND has_schema_privilege(s.oid, 'usage')
     AND c.oid = $1
   ORDER BY s.nspname, c.relname, a.attnum;
@@ -642,8 +645,10 @@ CREATE OR REPLACE FUNCTION ddlx_get_triggers(
   OUT is_constraint text, OUT trigger_name text, OUT action_order text, 
   OUT event_manipulation text, OUT event_object_sql_identifier text, 
   OUT action_statement text, OUT action_orientation text,
-  OUT trigger_definition text, OUT regclass regclass, OUT regprocedure regprocedure, 
-  OUT event_object_schema text, OUT event_object_table text, OUT sql_identifier text)
+  OUT trigger_definition text, OUT regclass regclass,
+  OUT regprocedure regprocedure, 
+  OUT event_object_schema text, OUT event_object_table text,
+  OUT sql_identifier text)
  RETURNS SETOF record LANGUAGE sql AS $$
  SELECT t.oid,
         CASE t.tgisinternal
@@ -722,9 +727,13 @@ $$;
 CREATE OR REPLACE FUNCTION ddlx_get_functions(
   regproc default null,
   OUT oid oid, OUT namespace name, OUT name name, OUT comment text, 
-  OUT owner name, OUT sql_identifier text, OUT language name, OUT attributes text, 
-  OUT retset boolean, OUT is_trigger boolean, OUT returns text, OUT arguments text, 
-  OUT definition text, OUT security text, OUT is_strict text, OUT argtypes oidvector,
+  OUT owner name, OUT sql_identifier text, OUT language name,
+  OUT attributes text,
+  OUT retset boolean, OUT is_trigger boolean,
+  OUT returns text,
+  OUT arguments text, 
+  OUT definition text, OUT security text, OUT is_strict text,
+  OUT argtypes oidvector,
   OUT cost real, OUT rows real)
  RETURNS SETOF record LANGUAGE sql AS $$
  SELECT p.oid AS oid, 
@@ -1855,7 +1864,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_user_mapping(oid, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$ 
- with obj as (select * from ddlx_identify($1))
+ with obj as (select * from ddlx_identify($1) where sql_kind='USER MAPPING')
  select
     'CREATE USER MAPPING '
     || case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end 

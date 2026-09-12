@@ -76,3 +76,20 @@ select ddlx_script('daterange'::regtype);
 select ddlx_script('=(integer,integer)'::regoperator);
 select ddlx_script('=(text,text)'::regoperator);
 */
+begin;
+
+create role ddlx_test_nobody;
+grant create on schema public to ddlx_test_nobody;
+set role ddlx_test_nobody;
+
+create type mytype1 as (x float,y float);
+select ddlx_create('mytype1'::regclass);
+select ddlx_create('mytype1'::regtype);
+select ord,name,type,size from ddlx_describe('mytype1'::regclass);
+
+create table mytype2 (z int,w text);
+select ddlx_create('mytype2'::regclass);
+select ddlx_create('mytype2'::regtype);
+select ord,name,type,size from ddlx_describe('mytype2'::regclass);
+
+abort;

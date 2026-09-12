@@ -1,3 +1,6 @@
+Version 0.31
+------------
+- updated and improved tests
 
 Version 0.30
 ------------

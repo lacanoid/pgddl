@@ -303,3 +303,72 @@ select ddlx_script('daterange'::regtype);
 select ddlx_script('=(integer,integer)'::regoperator);
 select ddlx_script('=(text,text)'::regoperator);
 */
+begin;
+create role ddlx_test_nobody;
+grant create on schema public to ddlx_test_nobody;
+set role ddlx_test_nobody;
+create type mytype1 as (x float,y float);
+select ddlx_create('mytype1'::regclass);
+ddlx_create
+
+-- Type: TYPE ; Name: mytype1; Owner: ddlx_test_nobody
+
+CREATE TYPE mytype1 AS (
+    x double precision,
+    y double precision
+  );
+
+
+
+(1 row)
+select ddlx_create('mytype1'::regtype);
+ddlx_create
+
+-- Type: TYPE ; Name: mytype1; Owner: ddlx_test_nobody
+
+CREATE TYPE mytype1 AS (
+    x double precision,
+    y double precision
+  );
+
+
+
+(1 row)
+select ord,name,type,size from ddlx_describe('mytype1'::regclass);
+ord|name|type|size
+1|x|double precision|_null_
+2|y|double precision|_null_
+(2 rows)
+create table mytype2 (z int,w text);
+select ddlx_create('mytype2'::regclass);
+ddlx_create
+
+-- Type: TABLE ; Name: mytype2; Owner: ddlx_test_nobody
+
+CREATE TABLE mytype2 (
+    z integer,
+    w text
+  );
+
+
+
+(1 row)
+select ddlx_create('mytype2'::regtype);
+ddlx_create
+
+-- Type: TABLE ; Name: mytype2; Owner: ddlx_test_nobody
+
+CREATE TABLE mytype2 (
+    z integer,
+    w text
+  );
+
+
+
+(1 row)
+select ord,name,type,size from ddlx_describe('mytype2'::regclass);
+ord|name|type|size
+1|z|integer|_null_
+2|w|text|_null_
+(2 rows)
+abort;

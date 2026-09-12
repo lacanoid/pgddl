@@ -30,6 +30,7 @@ Support for other postgres objects:
 - pg_publication_rel (10,15)
 - pg_publication_namespace (15)
 - pg_enum
+- pg_prophgraph_* (19)
 
 Support for other missing options:
 - ✔︎ comments on all objects
@@ -42,13 +43,14 @@ Support for other missing options:
 - ✔︎ PG14 create range type: MULTIRANGE_TYPE_NAME
 - PG15 UNIQUE NULL NOT DISTINCT
 - ✔︎ PG15 publication columns and qualifiers
-- PG16 MAINTAIN privilege
+- ✔︎ PG17 MAINTAIN privilege
 - ✔︎ PG16 GRANT WITH INHERIT, SET
 - SET STATISTICS on indexes
 - ✔︎ pg_subscription not readable by non superuser
 - ✔︎ create base type: SUBSCRIPT
 - ✔︎ PG17 fallback option for subscriptions
 - ✔︎ check what's up with CLUSTER on PG9.6
+- PG19 CREATE PROPERTY GRAPH
 
 Other:
 - fix cases when oid is not enough to uniquely specify object
@@ -62,7 +64,7 @@ Other:
 - ✔︎ improve dumping of comments (be quiet on NULL comments)
 - optimize grants on functions
 - move not nulls to constraints section
-- move storage settings to pre-data section
+- ✔︎ move storage settings to pre-data section
 - use ONLY when appropriate
 - ✔︎ mysterious duplicates in index section for partitioned tables (see table dept_1)
 - ✔︎ include table subpartitions in a script
