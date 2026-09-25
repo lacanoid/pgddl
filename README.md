@@ -58,7 +58,7 @@ Bug reports are welcome.
 
 If support for your favorite Postgres feature is broken or missing, please let us know and we will put some focus on it.
 
-Curently developed and tested on PostgreSQL 13. 
+Curently developed and tested on PostgreSQL 18. 
 Included preprocessor adapts the source to target PG version. 
 Tested to install on version 9.1 and later. 
 Some tests might fail on older versions. 
