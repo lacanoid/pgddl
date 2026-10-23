@@ -58,7 +58,7 @@ Bug reports are welcome.
 
 If support for your favorite Postgres feature is broken or missing, please let us know and we will put some focus on it.
 
-Curently developed and tested on PostgreSQL 13. 
+Curently developed and tested on PostgreSQL 18. 
 Included preprocessor adapts the source to target PG version. 
 Tested to install on version 9.1 and later. 
 Some tests might fail on older versions. 
@@ -70,7 +70,7 @@ To build this module:
 
     make
 
-This builds extension for your particular version of Postgres in a file like `ddlx--0.30.sql`.
+This builds extension for your particular version of Postgres in a file like `ddlx--0.32.sql`.
 
     make install
     make install installcheck
@@ -99,7 +99,7 @@ This of course requires superuser privileges.
 If for some reason you are unable to use this as an extension, you can simply load generated SQL file
 into your database by any regular means:
 
-    $ psql my_database -1 -f ddlx--0.31.sql
+    $ psql my_database -1 -f ddlx--0.32.sql
 
 Using
 -----

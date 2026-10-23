@@ -1,3 +1,7 @@
+Version 0.32
+------------
+- omit internal triggers from scripts
+
 Version 0.31
 ------------
 - updated and improved tests
@@ -7,7 +11,7 @@ Version 0.30
 - added support for virtual generated columns on Postgres 18
 - grants to roles now support `INHERIT` and `SET` options on Postgres 16
 - removed function `ddlx_grants(regclass)` as it now handled by `ddlx_grants(oid)`
-- `ddlx_grants(oid)` fixes, now handles materialized views too. 
+- `ddlx_grants(oid)` fixes, now handles materialized views too.
 - added `data` option to attempt to preserve table data
 - added `noindexes` option to omit indexes
 - added `grantor` option to show `GRANTED BY` which is now ommited by default

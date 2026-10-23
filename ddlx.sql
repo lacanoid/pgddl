@@ -1,6 +1,6 @@
 --------------------------------------------------------------- ---------------
 --  DDL eXtractor functions
---  version 0.31 lacanoid@ljudmila.org
+--  version 0.32 lacanoid@ljudmila.org
 --------------------------------------------------------------- ---------------
 
 SET client_min_messages = warning;
@@ -1236,6 +1236,17 @@ $$  strict;
 
 --------------------------------------------------------------- ---------------
 
+CREATE OR REPLACE FUNCTION ddlx_drop_trigger(oid,ddlx_options text[] default '{}')
+ RETURNS text LANGUAGE sql AS $$
+select format(e'DROP TRIGGER %I ON %s;\n',
+               tgname, tgrelid::text)
+  from pg_trigger t
+ where t.oid = $1
+   and not ('script' ilike any($2) and t.tgisinternal)
+$$  strict;
+
+--------------------------------------------------------------- ---------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_class(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
  with obj as (select * from ddlx_identify($1)),
@@ -1511,7 +1522,7 @@ $function$  strict;
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_trigger(oid)
+CREATE OR REPLACE FUNCTION ddlx_create_trigger(oid, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
  select pg_get_triggerdef($1,true)||
         case t.tgenabled 
@@ -1525,14 +1536,15 @@ CREATE OR REPLACE FUNCTION ddlx_create_trigger(oid)
         end||E';\n'
    from pg_trigger t
   where oid = $1
+    and not ( 'script' ilike any($2) and t.tgisinternal )
 $function$  strict;
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_triggers(regclass)
+CREATE OR REPLACE FUNCTION ddlx_create_triggers(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$
  with tg as (
-  select ddlx_create_trigger(oid) as sql 
+  select ddlx_create_trigger(oid,$2) as sql 
  from ddlx_get_triggers($1) where is_constraint is null
  order by trigger_name 
  -- per SQL triggers get called in order created vs name as in PostgreSQL
@@ -2942,7 +2954,7 @@ with obj as (select * from ddlx_identify($1))
     when 'pg_ts_template'::regclass    then ddlx_create_text_search_template(oid)
     when 'pg_database'::regclass       then ddlx_create_database(oid)
     when 'pg_constraint'::regclass     then ddlx_create_constraint(oid,$2)
-    when 'pg_trigger'::regclass        then ddlx_create_trigger(oid)
+    when 'pg_trigger'::regclass        then ddlx_create_trigger(oid,$2)
     when 'pg_attrdef'::regclass        then ddlx_create_default(oid)
     when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid)
     when 'pg_foreign_server'::regclass then ddlx_create_server(oid,$2)
@@ -2997,7 +3009,7 @@ with obj as (select * from ddlx_identify($1))
     case when 'lite' ilike any($2) then ''
          else ddlx_create_constraints(oid,$2) end as constraints,
     ddlx_create_indexes(oid,$2) as indexes,
-    ddlx_create_triggers(oid) as triggers,
+    ddlx_create_triggers(oid,$2) as triggers,
     ddlx_create_rules(oid) as rules,
 #if 9.5
      ddlx_alter_table_rls(oid) as rls,
@@ -3136,7 +3148,7 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
  select 
    case obj.classid
    when 'pg_constraint'::regclass then ddlx_drop_constraint(oid)
---   when 'pg_trigger'::regclass    then ddlx_drop_trigger(oid)
+   when 'pg_trigger'::regclass    then ddlx_drop_trigger(oid,$2)
    when 'pg_attrdef'::regclass    then ddlx_drop_default(oid)
    when 'pg_amproc'::regclass     then ddlx_drop_amproc(oid)
    when 'pg_amop'::regclass       then ddlx_drop_amop(oid)

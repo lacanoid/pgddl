@@ -67,8 +67,8 @@ select * from a
  ddlx_create_text_search_parser(oid)         | 
  ddlx_create_text_search_template(oid)       | 
  ddlx_create_transform(oid)                  | 
- ddlx_create_trigger(oid)                    | 
- ddlx_create_triggers(regclass)              | 
+ ddlx_create_trigger(oid,text[])             | 
+ ddlx_create_triggers(regclass,text[])       | 
  ddlx_create_type(regtype,text[])            | 
  ddlx_create_type_base(regtype,text[])       | 
  ddlx_create_type_domain(regtype)            | 
@@ -85,6 +85,7 @@ select * from a
  ddlx_drop_default(oid)                      | 
  ddlx_drop_index(regclass,text[])            | 
  ddlx_drop_sequence(regclass)                | 
+ ddlx_drop_trigger(oid,text[])               | 
  ddlx_get_constraints(regclass)              | 
  ddlx_get_dependants(oid,text[])             | 
  ddlx_get_functions(regproc)                 | 
