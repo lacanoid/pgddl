@@ -1375,14 +1375,14 @@ ob as (
  select coalesce(string_agg(a.ddl, E'\n') || E'\n\n', '')
         as ddl
  from (
- select
- (select format(E'ALTER %s %s ALTER %I SET ( %s = %s );',
+ select format(E'ALTER %s %s ALTER %I SET ( %s = %s );',
            obj.sql_kind,obj.sql_identifier,att.attname,
-           option_name, quote_nullable(option_value))
-   from pg_options_to_table(att.attoptions)) as ddl
-   from pg_attribute att, obj
+           o.option_name, quote_nullable(o.option_value)) as ddl
+   from pg_attribute att
+   cross join lateral pg_options_to_table(att.attoptions) as o, obj
   where attnum>0 and att.attrelid=$1 and attoptions is not null and not attisdropped
-  order by att.attname
+    and o.option_name <> 'pg_attver'
+  order by att.attname, o.option_name
  ) as a
 ),
 os as (
