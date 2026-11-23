@@ -473,7 +473,7 @@ SELECT  DISTINCT
              else a.attstorage::text
              end
         end as storage,
-        nullif(col.collcollate::text,'') AS collation,
+        CASE WHEN a.attcollation <> t.typcollation THEN (select format('%I.%I',cn.nspname,col.collname) from pg_namespace cn where cn.oid = col.collnamespace) END AS collation,
         s.nspname AS namespace,
         c.relname AS class_name,
         format('%s.%I',text(c.oid::regclass),a.attname) AS sql_identifier,
@@ -497,8 +497,8 @@ SELECT  DISTINCT
          null::text,
 #end
          CASE
-           WHEN length(col.collcollate) > 0
-           THEN ' COLLATE ' || quote_ident(col.collcollate::text)
+           WHEN a.attcollation <> t.typcollation
+           THEN ' COLLATE ' || (select format('%I.%I',cn.nspname,col.collname) from pg_namespace cn where cn.oid = col.collnamespace)
          END
    ,
 #if 10	
@@ -1122,8 +1122,8 @@ select 'CREATE TYPE ' || format_type($1,null) || E' AS RANGE (\n  ' ||
           'SUBTYPE = '  || format_type(r.rngsubtype,null),
           'SUBTYPE_OPCLASS = '  || quote_ident(opc.opcname),
           case
-            when length(col.collcollate) > 0 
-            then 'COLLATION = ' || quote_ident(col.collcollate::text)
+            when r.rngcollation <> 0
+            then 'COLLATION = ' || (select format('%I.%I',cn.nspname,col.collname) from pg_namespace cn where cn.oid = col.collnamespace)
           end,
           'CANONICAL = ' || cast(nullif(r.rngcanonical,0)::regproc as text),          
           'SUBTYPE_DIFF = ' || cast(nullif(r.rngsubdiff,0)::regproc as text)
@@ -1178,8 +1178,8 @@ select 'CREATE DOMAIN ' || format_type(t.oid,null)
             else ''
           end
        || case
-            when length(col.collcollate) > 0 
-            then E'\n  COLLATE ' || quote_ident(col.collcollate::text)
+            when t.typcollation <> (select b.typcollation from pg_type b where b.oid = t.typbasetype)
+            then E'\n  COLLATE ' || (select format('%I.%I',cn.nspname,col.collname) from pg_namespace cn where cn.oid = col.collnamespace)
             else ''
           end 
        || coalesce(E'\n  DEFAULT ' || t.typdefault, '')
@@ -2715,15 +2715,23 @@ select format(E'CREATE COLLATION %s%s (\n  %s\n);\n',
          case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end,
          obj.sql_identifier,
          array_to_string(array[
-           'LC_COLLATE = '|| quote_nullable(collcollate), 
-           'LC_CTYPE = '  || quote_nullable(collctype)
+           -- collcollate/collctype are NULL for ICU and builtin collations (PG15+)
+           'LC_COLLATE = '|| quote_literal(collcollate), 
+           'LC_CTYPE = '  || quote_literal(collctype)
 #if 10
            ,'PROVIDER = ' || 
            case collprovider
            when 'i' then 'icu'
+           when 'b' then 'builtin'
 --           when 'c' then 'libc'
            when 'd' then 'default'
            end                 
+#end
+#if 15
+           -- colliculocale (PG15,16) became colllocale (PG17); to_jsonb avoids naming either
+           ,'LOCALE = ' || quote_literal(coalesce(to_jsonb(c)->>'colllocale',
+                                                  to_jsonb(c)->>'colliculocale'))
+           ,'RULES = ' || quote_literal(to_jsonb(c)->>'collicurules')
 #end
 #if 12
            ,'DETERMINISTIC = ' || 
@@ -2784,12 +2792,27 @@ with obj as (select * from ddlx_identify($1))
 select format(E'CREATE DATABASE %s WITH\n  %s;\n\n',
               obj.sql_identifier,
               array_to_string(array[
-               'ENCODING = '||pg_encoding_to_char(d.encoding),
-               'LC_COLLATE = '||quote_ident(d.datcollate),
-               'LC_CTYPE = '||quote_ident(d.datctype)
+               -- template1 usually cannot be used with a different encoding or locale
+               'TEMPLATE = template0',
+               'ENCODING = '||quote_literal(pg_encoding_to_char(d.encoding)),
+               'LC_COLLATE = '||quote_literal(d.datcollate),
+               'LC_CTYPE = '||quote_literal(d.datctype)
+#if 15
+               -- daticulocale (PG15,16) became datlocale (PG17); to_jsonb avoids naming either
+               ,case d.datlocprovider
+                  when 'i' then 'LOCALE_PROVIDER = icu'
+                  when 'b' then 'LOCALE_PROVIDER = builtin'
+                end
+               ,case when d.datlocprovider = 'b'
+                     then 'BUILTIN_LOCALE = ' || quote_literal(to_jsonb(d)->>'datlocale')
+                     else 'ICU_LOCALE = ' || quote_literal(coalesce(to_jsonb(d)->>'datlocale',
+                                                                    to_jsonb(d)->>'daticulocale'))
+                end
+               ,'ICU_RULES = ' || quote_literal(to_jsonb(d)->>'daticurules')
+#end
               ],E'\n  ')
               ) ||
-       case when s.oid is not null then
+       case when s.oid is not null and s.oid <> 1663 then -- 1663 = pg_default
        format(E'ALTER DATABASE %s SET TABLESPACE %I;\n\n',
               obj.sql_identifier, s.spcname) 
        else '' end 

@@ -539,7 +539,7 @@ DROP TABLE test_collation; --==>> !!! ATTENTION !!! <<==--
 
 CREATE TABLE test_collation (
     id integer NOT NULL,
-    c text COLLATE "C" NOT NULL,
+    c text COLLATE pg_catalog."C" NOT NULL,
     t text
   );
 

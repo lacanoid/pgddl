@@ -146,11 +146,10 @@ grant create on database ddlx_testdb to ddlx_test_user4 with grant option;
 select ddlx_create(oid) from pg_database where datname='ddlx_testdb';
 ddlx_create
 CREATE DATABASE ddlx_testdb WITH
-  ENCODING = UTF8
-  LC_COLLATE = "C"
-  LC_CTYPE = "C";
-
-ALTER DATABASE ddlx_testdb SET TABLESPACE pg_default;
+  TEMPLATE = template0
+  ENCODING = 'UTF8'
+  LC_COLLATE = 'C'
+  LC_CTYPE = 'C';
 
 COMMENT ON DATABASE ddlx_testdb IS 'DDLX Test Database';
 

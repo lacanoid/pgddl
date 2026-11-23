@@ -117,7 +117,7 @@ DROP DOMAIN test_collation_d;
 */
 
 CREATE DOMAIN test_collation_d AS text
-  COLLATE "C"
+  COLLATE pg_catalog."C"
   DEFAULT '***'::text;
 
 
