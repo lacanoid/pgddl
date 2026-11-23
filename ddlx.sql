@@ -1161,7 +1161,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_type_domain(regtype)
  RETURNS text LANGUAGE sql AS $$
 with
 cc as (
-  select pg_get_constraintdef(oid) as definition
+  select format('CONSTRAINT %I %s',conname,pg_get_constraintdef(oid)) as definition
     from pg_constraint con
    where con.contypid = $1
    order by oid
@@ -1169,6 +1169,14 @@ cc as (
 select 'CREATE DOMAIN ' || format_type(t.oid,null) 
        || E' AS ' || format_type(t.typbasetype,typtypmod) 
        || coalesce(E'\n  '||(select string_agg(definition,E'\n  ') from cc),'')
+       -- before PG17 NOT NULL is only typnotnull; from PG17 it is a named constraint (in cc)
+       || case
+            when t.typnotnull
+             and not exists (select 1 from pg_constraint n
+                              where n.contypid = t.oid and n.contype = 'n')
+            then E'\n  NOT NULL'
+            else ''
+          end
        || case
             when length(col.collcollate) > 0 
             then E'\n  COLLATE ' || quote_ident(col.collcollate::text)
@@ -1605,7 +1613,24 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_create_aggregate(regproc)
  RETURNS text LANGUAGE sql AS $function$ 
   with obj as (select * from ddlx_identify($1))
-select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' || 
+select 'CREATE AGGREGATE ' ||
+#if 9.4
+        case
+          -- ordered-set and hypothetical-set aggregates need the ORDER BY form
+          when a.aggkind <> 'n'
+          then format('%s(%s)', cast(a.aggfnoid::regproc as text),
+                                pg_get_function_arguments(a.aggfnoid))
+          when p.pronargs = 0
+          then format('%s(*)', cast(a.aggfnoid::regproc as text))
+          else obj.sql_identifier
+        end
+#else
+        case when p.pronargs = 0
+             then format('%s(*)', cast(a.aggfnoid::regproc as text))
+             else obj.sql_identifier
+        end
+#end
+        || ' (' || E'\n  ' || 
         array_to_string(array[
           'SFUNC = '  || cast(a.aggtransfn::regproc as text),
           'STYPE = ' || format_type(a.aggtranstype,null),
@@ -1638,6 +1663,20 @@ select 'CREATE AGGREGATE ' || obj.sql_identifier || ' (' || E'\n  ' ||
             when 'r' then 'RESTRICTED'
             when 'u' then null -- 'UNSAFE', default
             else quote_literal(p.proparallel::text)
+          end,
+#if 11
+          case when a.aggfinalmodify <> case when a.aggkind = 'n' then 'r' else 'w' end
+               then 'FINALFUNC_MODIFY = ' || case a.aggfinalmodify
+                      when 'r' then 'READ_ONLY'
+                      when 's' then 'SHAREABLE'
+                      when 'w' then 'READ_WRITE' end
+          end,
+          case when a.aggmfinalfn <> 0
+                and a.aggmfinalmodify <> case when a.aggkind = 'n' then 'r' else 'w' end
+               then 'MFINALFUNC_MODIFY = ' || case a.aggmfinalmodify
+                      when 'r' then 'READ_ONLY'
+                      when 's' then 'SHAREABLE'
+                      when 'w' then 'READ_WRITE' end
           end,
 #if 9.4
           case a.aggkind
@@ -1707,6 +1746,26 @@ q as (
 )
 select coalesce(string_agg(ddl1,'')||E'\n','')
   from q
+$function$  strict;
+
+--------------------------------------------------------------- ---------------
+
+-- Turns a pg_db_role_setting/pg_roles.rolconfig entry 'name=value' into
+-- "name TO value" with the value quoted like pg_dump does: list-valued
+-- settings are stored in a form that is already valid SQL, the rest are literals.
+CREATE OR REPLACE FUNCTION ddlx_set_config_sql(text)
+ RETURNS text LANGUAGE sql IMMUTABLE AS $function$
+ select case when strpos($1,'=') = 0 then $1
+        else substr($1,1,strpos($1,'=')-1) || ' TO ' ||
+             case when lower(substr($1,1,strpos($1,'=')-1)) in 
+                  ('search_path','temp_tablespaces','session_preload_libraries',
+                   'shared_preload_libraries','local_preload_libraries',
+                   'synchronous_standby_names')
+                  and substr($1,strpos($1,'=')+1) <> ''
+                  then substr($1,strpos($1,'=')+1)
+                  else quote_literal(substr($1,strpos($1,'=')+1))
+             end
+        end
 $function$  strict;
 
 --------------------------------------------------------------- ---------------
@@ -1790,7 +1849,7 @@ q1 as (
  ),
 q2 as (
  select string_agg('ALTER ROLE ' || quote_ident(rolname)
-                   ||' SET '||pg_roles.rolconfig[i]||E';\n','')
+                   ||' SET '||ddlx_set_config_sql(pg_roles.rolconfig[i])||E';\n','')
     as ddl_config
   from pg_roles,
   generate_series(
@@ -1959,14 +2018,17 @@ CREATE OR REPLACE FUNCTION ddlx_create_transform(oid)
  RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from pg_transform where oid = $1)
  select format(
-           E'CREATE OR REPLACE TRANSFORM %s (\n'||
-           E'  FROM SQL WITH FUNCTION %s\n' ||
-           E'  TO SQL WITH FUNCTION %s\n);\n',
+           E'CREATE OR REPLACE TRANSFORM %s (\n  %s\n);\n',
            format('FOR %s LANGUAGE %I',
                   format_type(obj.trftype,null),
                   l.lanname),
-            cast(obj.trffromsql::regprocedure as text),
-            cast(obj.trftosql::regprocedure as text)
+           -- either function may be missing (0); the clauses are comma separated
+           array_to_string(array[
+             case when obj.trffromsql <> 0
+                  then 'FROM SQL WITH FUNCTION ' || cast(obj.trffromsql::regprocedure as text) end,
+             case when obj.trftosql <> 0
+                  then 'TO SQL WITH FUNCTION ' || cast(obj.trftosql::regprocedure as text) end
+           ],E',\n  ')
         )
    from obj join pg_language l on (l.oid=obj.trflang);
 $function$  strict;
@@ -2004,7 +2066,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_publication(oid)
                       ' ('||(select string_agg(quote_ident(attname),',')
              from unnest(prattrs) u join pg_attribute a on a.attnum=u and a.attrelid=prrelid
           )||')',
-                      ' WHERE '||pg_get_expr(prqual,prrelid)
+                      ' WHERE ('||pg_get_expr(prqual,prrelid)||')'
 #else
                       null, null
 #if 10
@@ -2548,24 +2610,21 @@ with cfg as (select * from pg_ts_config where oid = $1),
                  from pg_ts_parser p
                  join cfg on p.oid = cfg.cfgparser
              ))),
-     tt(i,l) as (values 
-              ( 1, 'asciiword'), ( 2, 'word'), ( 3, 'numword'),
-              ( 4, 'email'), ( 5, 'url'), ( 6, 'host'),
-              ( 7, 'sfloat'), ( 8, 'version'),
-              ( 9, 'hword_numpart'), (10, 'hword_part'),
-              (11, 'hword_asciipart'), (12, 'blank'),
-              (13, 'tag'), (14, 'protocol'), (15, 'numhword'),
-              (16, 'asciihword'), (17, 'hword'), (18, 'url_path'),
-              (19, 'file'), (20, '"float"'), (21, '"int"'),
-              (22, 'uint'), (23, 'entity')
-            ),
+     -- token names come from the configuration's own parser;
+     -- all dictionaries of a token form one chain in a single mapping
      map as (select string_agg(format(
                'ALTER TEXT SEARCH CONFIGURATION %s ADD MAPPING FOR %s WITH %s;',
-               cast($1::regconfig as text), tt.l, 
-               cast(m.mapdict::regdictionary as text)),e'\n'
-                    order by mapseqno, maptokentype ) || e'\n' as ddl
-               from pg_ts_config_map m join tt on (tt.i=m.maptokentype)
-              where m.mapcfg = $1
+               cast($1::regconfig as text), quote_ident(tt.alias), m.dicts),e'\n'
+                    order by tt.tokid) || e'\n' as ddl
+               from (select m.maptokentype,
+                            string_agg(cast(m.mapdict::regdictionary as text), ', '
+                                       order by m.mapseqno) as dicts
+                       from pg_ts_config_map m
+                      where m.mapcfg = $1
+                      group by m.maptokentype) m
+               join (select tokid, alias
+                       from ts_token_type((select cfgparser from cfg))) tt
+                 on (tt.tokid = m.maptokentype)
             )
 select format(E'CREATE TEXT SEARCH CONFIGURATION %s ( PARSER = %s );\n%s',
               cast($1 as text),prs.sql_identifier,
@@ -2752,7 +2811,7 @@ select format(E'ALTER DATABASE %s WITH ALLOW_CONNECTIONS %s;\n',
               obj.sql_identifier, d.datistemplate::text)
        ||
        (  select coalesce(e'\n'||string_agg(
-                   'ALTER DATABASE '||obj.sql_identifier||' SET '||cfg||';',E'\n'
+                   'ALTER DATABASE '||obj.sql_identifier||' SET '||ddlx_set_config_sql(cfg)||';',E'\n'
        ) || E'\n', '')
           from unnest((select setconfig from pg_db_role_setting
                   where setdatabase = $1 and setrole = 0::oid)) as cfg

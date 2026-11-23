@@ -97,4 +97,5 @@ select * from a
  ddlx_grants(regrole,text[])                 | 
  ddlx_grants_columns(regclass,text[])        | 
  ddlx_script_parts(oid,text[])               | 
+ ddlx_set_config_sql(text)                   | 
 

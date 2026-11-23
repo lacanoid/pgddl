@@ -158,7 +158,7 @@ ALTER DATABASE ddlx_testdb WITH ALLOW_CONNECTIONS true;
 ALTER DATABASE ddlx_testdb WITH CONNECTION LIMIT 1234;
 ALTER DATABASE ddlx_testdb WITH IS_TEMPLATE false;
 
-ALTER DATABASE ddlx_testdb SET standard_conforming_strings=true;
+ALTER DATABASE ddlx_testdb SET standard_conforming_strings TO 'true';
 GRANT CREATE ON DATABASE ddlx_testdb TO ddlx_test_user4 WITH GRANT OPTION;
 GRANT CONNECT ON DATABASE ddlx_testdb TO PUBLIC;
 GRANT TEMPORARY ON DATABASE ddlx_testdb TO PUBLIC;

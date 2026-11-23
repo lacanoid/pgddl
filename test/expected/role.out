@@ -27,7 +27,7 @@ ALTER ROLE pgddl_test_user WITH
 COMMENT ON ROLE pgddl_test_user IS 'pg_ddl test user...';
 ALTER ROLE pgddl_test_user VALID UNTIL '2100-01-01 00:00:00-08';
 
-ALTER ROLE pgddl_test_user SET standard_conforming_strings=true;
+ALTER ROLE pgddl_test_user SET standard_conforming_strings TO 'true';
 
 GRANT pgddl_test_user2 TO pgddl_test_user;
 GRANT pgddl_test_user3 TO pgddl_test_user WITH ADMIN OPTION;
