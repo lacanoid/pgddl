@@ -1,9 +1,7 @@
 --------------------------------------------------------------- ---------------
 --  DDL eXtractor functions
---  version 0.32 lacanoid@ljudmila.org
+--  version 0.33 lacanoid@ljudmila.org
 --------------------------------------------------------------- ---------------
-
-SET client_min_messages = warning;
 
 --------------------------------------------------------------- ---------------
 --  Helpers for digesting system catalogs
