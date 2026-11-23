@@ -1,10 +1,12 @@
--- Regression tests for four ddlx fixes. Needs a superuser (creates an FDW).
--- Run with:  psql -v ON_ERROR_STOP=1 -f test_fixes.sql   (after loading ddlx)
--- Everything happens in a transaction that is rolled back.
+-- Regression tests for ddlx bug fixes. Needs a superuser (roles, FDW, SET ROLE).
+-- Every section runs in its own transaction that is rolled back, so the sections
+-- are independent and a failure in one cannot hide the others.
+-- Passing checks produce no output: they are plpgsql ASSERTs, and where possible
+-- the generated DDL is executed, not just inspected.
+-- 2. FDW without handler and validator
 begin;
 create schema fix_test;
 set local search_path = fix_test, public;
--- 2. FDW without handler and validator
 create foreign data wrapper fix_fdw;
 do $$
 declare s text;
@@ -18,13 +20,13 @@ begin
 end $$;
 rollback;
 -- 3. foreign tables: SERVER is always emitted, OPTIONS only when present
-create server fix_srv foreign data wrapper fix_fdw;
-ERROR:  foreign-data wrapper "fix_fdw" does not exist
-create foreign table fix_ft1 (a int) server fix_srv;
-ERROR:  server "fix_srv" does not exist
-create foreign table fix_ft2 (a int) server fix_srv options (k 'v');
-ERROR:  server "fix_srv" does not exist
 begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create foreign data wrapper fix_fdw;
+create server fix_srv foreign data wrapper fix_fdw;
+create foreign table fix_ft1 (a int) server fix_srv;
+create foreign table fix_ft2 (a int) server fix_srv options (k 'v');
 do $$
 declare s1 text; s2 text;
 begin
@@ -34,11 +36,6 @@ begin
   assert s1 not like '%OPTIONS%',    'unexpected OPTIONS: ' || s1;
   assert s2 like '%SERVER fix_srv OPTIONS (%', 'SERVER/OPTIONS wrong: ' || s2;
 end $$;
-ERROR:  relation "fix_ft1" does not exist
-LINE 1: s1 := ddlx_create_table('fix_ft1'::regclass)
-                                ^
-QUERY:  s1 := ddlx_create_table('fix_ft1'::regclass)
-CONTEXT:  PL/pgSQL function inline_code_block line 4 at assignment
 -- 4. lite mode: no DEFAULT for generated columns (PG12+)
 do $$
 declare s text;
@@ -52,10 +49,9 @@ begin
            'exactly one DEFAULT expected (column c): ' || s;
   end if;
 end $$;
-ERROR:  current transaction is aborted, commands ignored until end of transaction block
 rollback;
-begin;
 -- 5. extension rows: real schema name and quoted identifier
+begin;
 do $$ begin
   assert exists (select 1 from pg_extension), 'need at least one extension';
   assert not exists (
@@ -67,5 +63,280 @@ do $$ begin
             or i.namespace is distinct from
                (select nspname from pg_namespace where oid = e.extnamespace))),
     'extension identity must use quote_ident and the schema name';
+end $$;
+rollback;
+-- 6. GRANT/REVOKE on aggregates and procedures: FUNCTION / PROCEDURE, never AGGREGATE
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role "Fix Role";
+create aggregate fix_agg(int) (sfunc = int4pl, stype = int);
+revoke execute on function fix_agg(int) from public;
+grant execute on function fix_agg(int) to "Fix Role";
+do $$
+declare s text;
+begin
+  s := ddlx_grants('fix_agg(int)'::regprocedure::oid);
+  assert s like 'REVOKE ALL ON FUNCTION fix_agg(integer) FROM PUBLIC;%',
+         'REVOKE on an aggregate must say FUNCTION: ' || s;
+  assert s like '%GRANT EXECUTE ON FUNCTION fix_agg(integer) TO "Fix Role";%',
+         'GRANT on an aggregate must say FUNCTION and quote the role: ' || s;
+  assert s not like '%AGGREGATE%', 'AGGREGATE is not valid in GRANT: ' || s;
+  execute s;   -- must be accepted by the server
+  assert has_function_privilege('Fix Role', 'fix_agg(int)', 'execute'),
+         'privilege must survive the round trip';
+  assert not has_function_privilege('public', 'fix_agg(int)', 'execute'),
+         'PUBLIC must stay revoked';
+
+  -- the kind keyword is always present, also for window functions
+  s := ddlx_grants('row_number()'::regprocedure::oid);
+  assert s like 'REVOKE ALL ON FUNCTION row_number() FROM PUBLIC;%' and s not like '%WINDOW%', s;
+
+  if current_setting('server_version_num')::int >= 110000 then
+    execute 'create procedure fix_proc() language sql as ''select 1''';
+    execute 'revoke execute on procedure fix_proc() from public';
+    execute 'grant execute on procedure fix_proc() to "Fix Role"';
+    s := ddlx_grants((select oid from pg_proc where proname = 'fix_proc'));
+    assert s like 'REVOKE ALL ON PROCEDURE fix_proc() FROM PUBLIC;%'
+       and s like '%GRANT EXECUTE ON PROCEDURE fix_proc() TO "Fix Role";%',
+           'procedures must say PROCEDURE: ' || s;
+    execute s;
+  end if;
+end $$;
+rollback;
+-- 7. GRANT on foreign tables: there is no "ON FOREIGN TABLE"
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role "Fix Role";
+create foreign data wrapper fix_fdw;
+create server fix_srv foreign data wrapper fix_fdw;
+create foreign table fix_ft (a int) server fix_srv;
+grant select on fix_ft to "Fix Role";
+do $$
+declare s text;
+begin
+  s := ddlx_grants('fix_ft'::regclass::oid);
+  assert s like '%GRANT SELECT ON fix_ft TO "Fix Role";%',
+         'foreign table GRANT must use the plain table syntax: ' || s;
+  assert s not like '%FOREIGN TABLE%', 'FOREIGN TABLE is not valid in GRANT: ' || s;
+  execute s;
+end $$;
+rollback;
+-- 8. Grantees, owners and column names that need quoting
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role "Fix Role";
+create role "Own Er";
+create table fix_tab (id int);
+grant select on fix_tab to "Fix Role";
+create table fix_owned (id int);
+alter table fix_owned owner to "Own Er";
+grant select on fix_owned to "Fix Role";
+create table fix_cols ("Col One" int, plain int);
+grant select ("Col One") on fix_cols to "Fix Role";
+do $$
+declare s text;
+begin
+  s := ddlx_grants('fix_tab'::regclass::oid);
+  assert s like '%TO "Fix Role";%', 'grantee must be quoted exactly once: ' || s;
+  assert s not like '%"""%',        'grantee must not be quoted twice: ' || s;
+  execute s;
+
+  -- the owner's own (implicit) grants are filtered even when the name needs quoting
+  s := ddlx_grants('fix_owned'::regclass::oid);
+  assert s like '%TO "Fix Role";%',  'expected grant to Fix Role: ' || s;
+  assert s not like '%TO "Own Er"%', 'owner grants must be filtered: ' || s;
+
+  s := ddlx_grants_columns('fix_cols'::regclass);
+  assert s like '%GRANT SELECT ("Col One") ON fix_cols TO "Fix Role";%',
+         'column name must be quoted: ' || s;
+  execute s;
+end $$;
+rollback;
+-- 9. Policies: role names are quoted, PUBLIC stays bare
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role "Fix Role";
+create role "Own Er";
+create table fix_pol (id int);
+alter table fix_pol enable row level security;
+create policy fix_p1 on fix_pol for select to "Fix Role", "Own Er" using (true);
+create policy fix_p2 on fix_pol for select to public using (true);
+do $$
+declare s text; o oid;
+begin
+  select oid into o from pg_policy where polname = 'fix_p1';
+  s := ddlx_create_policy(o);
+  assert s like '%TO "Fix Role", "Own Er"%', 'policy roles must be quoted: ' || s;
+  execute 'drop policy fix_p1 on fix_pol';
+  execute s;   -- round trip
+
+  select oid into o from pg_policy where polname = 'fix_p2';
+  s := ddlx_create_policy(o);
+  assert s like '%TO PUBLIC%' and s not like '%"PUBLIC"%',
+         'PUBLIC must not be quoted: ' || s;
+  execute 'drop policy fix_p2 on fix_pol';
+  execute s;
+end $$;
+rollback;
+-- 10. Publications: row filters use WHERE, not CHECK (PG15+)
+begin;
+set local client_min_messages = error;  -- wal_level warnings depend on the cluster
+create schema fix_test;
+set local search_path = fix_test, public;
+do $$
+declare s text; o oid;
+begin
+  if current_setting('server_version_num')::int >= 150000 then
+    execute 'create table fix_pub_t (a int primary key, b int)';
+    execute 'create publication fix_pub for table fix_pub_t (a) where (a > 0)';
+    select oid into o from pg_publication where pubname = 'fix_pub';
+    s := ddlx_create_publication(o);
+    assert s like '%ADD TABLE fix_pub_t (a) WHERE (%', 'row filter must use WHERE: ' || s;
+    assert s not like '%CHECK%', 'CHECK is not valid here: ' || s;
+    execute 'drop publication fix_pub';
+    execute s;   -- round trip
+    assert (select prqual is not null and prattrs is not null
+              from pg_publication_rel
+             where prpubid = (select oid from pg_publication where pubname = 'fix_pub')),
+           'row filter and column list must be restored';
+  end if;
+end $$;
+rollback;
+-- 11. Subscriptions: two_phase state mapping, publication names quoted (PG15+)
+begin;
+set local client_min_messages = error;  -- "not connected" / wal_level warnings
+do $$
+declare s text; o oid;
+begin
+  if current_setting('server_version_num')::int >= 150000 then
+    execute $c$create subscription fix_sub connection 'dbname=nonexistent'
+               publication "Pub One", fix_pub2
+               with (connect = false, two_phase = true, slot_name = none)$c$;
+    select oid into o from pg_subscription where subname = 'fix_sub';
+    s := ddlx_create_subscription(o);
+    assert s like '%two_phase=true%', 'pending/enabled two_phase must map to true: ' || s;
+    assert s not like '%two_phase=p%' and s not like '%two_phase=e%',
+           'raw state letters are not valid: ' || s;
+    assert s like '%PUBLICATION "Pub One", fix_pub2%', 'publication names must be quoted: ' || s;
+
+    execute $c$create subscription fix_sub2 connection 'dbname=nonexistent'
+               publication fix_pub2
+               with (connect = false, two_phase = false, slot_name = none)$c$;
+    select oid into o from pg_subscription where subname = 'fix_sub2';
+    s := ddlx_create_subscription(o);
+    assert s like '%two_phase=false%', 'disabled two_phase must map to false: ' || s;
+  end if;
+end $$;
+rollback;
+-- 12. Extension in a schema that needs quoting (skipped if no suitable contrib module)
+begin;
+set local client_min_messages = warning;  -- CASCADE may emit notices
+create schema "Ext Schema";
+do $$
+declare s text; ext text; o oid;
+begin
+  select name into ext
+    from pg_available_extension_versions v
+   where relocatable and name in ('citext','hstore','btree_gin','btree_gist',
+                                  'fuzzystrmatch','intarray','ltree','pg_trgm','cube')
+   order by name limit 1;
+  if ext is not null then
+    execute format('create extension %I schema "Ext Schema" cascade', ext);
+    select oid into o from pg_extension where extname = ext;
+    s := ddlx_create_extension(o);
+    assert s like '%SCHEMA "Ext Schema"%', 'schema must be quoted: ' || s;
+    assert s not like '%"""%', 'schema must not be quoted twice: ' || s;
+    execute format('drop extension %I cascade', ext);
+    execute s;   -- round trip, using ddlx_create_extension output
+  end if;
+end $$;
+rollback;
+-- 13. Function grants are read from proacl
+-- 13a. Default privileges: PUBLIC keeps EXECUTE, the owner is never listed
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create function fix_default() returns int language sql as 'select 1';
+do $$
+declare s text;
+begin
+  s := ddlx_grants('fix_default()'::regprocedure::oid);
+  assert s = E'REVOKE ALL ON FUNCTION fix_default() FROM PUBLIC;\n'
+          || E'GRANT EXECUTE ON FUNCTION fix_default() TO PUBLIC;\n',
+         'default ACL must give REVOKE plus PUBLIC only: ' || s;
+  execute s;
+  assert has_function_privilege('public', 'fix_default()', 'execute'), 'round trip';
+end $$;
+rollback;
+-- 13b. Explicit grants: grant option, quoted role, owner filtered, GRANTED BY
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role "Fix Role";
+create role "Own Er";
+create function fix_explicit() returns int language sql as 'select 1';
+revoke execute on function fix_explicit() from public;
+grant execute on function fix_explicit() to "Fix Role" with grant option;
+grant execute on function fix_explicit() to "Own Er";
+do $$
+declare s text;
+begin
+  s := ddlx_grants('fix_explicit()'::regprocedure::oid);
+  assert s like '%GRANT EXECUTE ON FUNCTION fix_explicit() TO "Fix Role" WITH GRANT OPTION;%',
+         'grant option must be reported: ' || s;
+  assert s like E'%GRANT EXECUTE ON FUNCTION fix_explicit() TO "Own Er";\n%',
+         'plain grant must not carry a grant option: ' || s;
+  assert s not like '%TO ' || quote_ident(current_user) || '%',
+         'the owner must not be listed: ' || s;
+  assert s not like '%TO PUBLIC%', 'PUBLIC was revoked: ' || s;
+  execute s;
+  assert has_function_privilege('Fix Role', 'fix_explicit()', 'execute');
+  assert not has_function_privilege('public', 'fix_explicit()', 'execute');
+
+  -- the default options and the full definition agree
+  assert s = ddlx_grants('fix_explicit()'::regprocedure::oid, '{}'), 'default options';
+  assert ddlx_create('fix_explicit()'::regprocedure::oid)
+         like '%GRANT EXECUTE ON FUNCTION fix_explicit() TO "Fix Role" WITH GRANT OPTION;%',
+         'ddlx_create must include function grants';
+
+  -- GRANTED BY is only emitted on request (PG14+)
+  if current_setting('server_version_num')::int >= 140000 then
+    assert s not like '%GRANTED BY%', 'no GRANTED BY by default: ' || s;
+    s := ddlx_grants('fix_explicit()'::regprocedure::oid, '{grantor}');
+    assert s not like '%GRANTED BY%', 'grantor equal to current_user is omitted: ' || s;
+
+    -- grants made by somebody else are attributed to that role
+    execute 'create function fix_granted() returns int language sql as ''select 1''';
+    execute 'alter function fix_granted() owner to "Own Er"';
+    execute 'revoke execute on function fix_granted() from public';
+    execute 'grant execute on function fix_granted() to "Fix Role"';
+    s := ddlx_grants('fix_granted()'::regprocedure::oid, '{grantor}');
+    assert s like '%TO "Fix Role" GRANTED BY "Own Er";%', 'GRANTED BY expected: ' || s;
+  end if;
+end $$;
+rollback;
+-- 13c. A caller who is neither owner nor grantee still sees the full ACL
+-- (information_schema.routine_privileges hides rows from such callers)
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role "Fix Role";
+create role "Own Er";
+create function fix_hidden() returns int language sql as 'select 1';
+revoke execute on function fix_hidden() from public;
+grant execute on function fix_hidden() to "Own Er";
+do $$
+declare s text; o oid;
+begin
+  o := 'fix_hidden()'::regprocedure::oid;
+  set local role "Fix Role";
+  s := ddlx_grants(o);
+  reset role;
+  assert s like '%GRANT EXECUTE ON FUNCTION % TO "Own Er";%',
+         'grants must be visible to unrelated callers: ' || s;
 end $$;
 rollback;

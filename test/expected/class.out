@@ -461,7 +461,6 @@ COMMENT ON FUNCTION funfun(integer,text) IS 'Use more comments!';
 
 REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION funfun(integer,text) TO postgres WITH GRANT OPTION;
 
 END;
 
@@ -489,7 +488,6 @@ COMMENT ON FUNCTION funfun(integer,text) IS 'Use more comments!';
 ALTER FUNCTION funfun(integer,text) OWNER TO postgres;
 REVOKE ALL ON FUNCTION funfun(integer,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION funfun(integer,text) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION funfun(integer,text) TO postgres WITH GRANT OPTION;
 
 END;
 
@@ -676,7 +674,6 @@ AS $function$ select 'Hello, world!'::text $function$;
 
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_1() TO postgres WITH GRANT OPTION;
 
 END;
 
@@ -700,7 +697,6 @@ AS $function$ select 'Hello, world!'::text $function$;
 
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_1() TO postgres WITH GRANT OPTION;
 
 END;
 
@@ -724,7 +720,6 @@ AS $function$ select 'Hello, world!'::text $function$;
 
 REVOKE ALL ON FUNCTION test_proc_1() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION test_proc_1() TO PUBLIC;
-GRANT EXECUTE ON FUNCTION test_proc_1() TO postgres WITH GRANT OPTION;
 
 END;
 
@@ -750,9 +745,8 @@ CREATE AGGREGATE test_proc_agg_1(text) (
 );
 
 
-REVOKE ALL ON AGGREGATE test_proc_agg_1(text) FROM PUBLIC;
-GRANT EXECUTE ON AGGREGATE test_proc_agg_1(text) TO PUBLIC;
-GRANT EXECUTE ON AGGREGATE test_proc_agg_1(text) TO postgres WITH GRANT OPTION;
+REVOKE ALL ON FUNCTION test_proc_agg_1(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION test_proc_agg_1(text) TO PUBLIC;
 
 END;
 

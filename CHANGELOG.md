@@ -1,6 +1,7 @@
 Version 0.33
 ------------
 - `pg_get_dependants`() improved
+- bug fixes for invalid generated DDL
 
 Version 0.32
 ------------

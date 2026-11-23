@@ -1909,8 +1909,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_policy(oid)
     pol.polname AS policyname,
         CASE
             WHEN pol.polroles = '{0}'::oid[] 
-            THEN string_to_array('PUBLIC'::text, ''::text)::name[]
-            ELSE ARRAY( SELECT pg_authid.rolname
+            THEN array['PUBLIC']::text[]
+            ELSE ARRAY( SELECT quote_ident(pg_authid.rolname)
                FROM pg_authid
               WHERE pg_authid.oid = ANY (pol.polroles)
               ORDER BY pg_authid.rolname)
@@ -2004,7 +2004,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_publication(oid)
                       ' ('||(select string_agg(quote_ident(attname),',')
              from unnest(prattrs) u join pg_attribute a on a.attnum=u and a.attrelid=prrelid
           )||')',
-                      ' CHECK '||pg_get_expr(prqual,prrelid)
+                      ' WHERE '||pg_get_expr(prqual,prrelid)
 #else
                       null, null
 #if 10
@@ -2034,7 +2034,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid)
            E'CREATE SUBSCRIPTION %I\n  CONNECTION %L\n  PUBLICATION %s\n  WITH ( %s );\n',
      obj.subname,
      obj.subconninfo,
-     array_to_string(obj.subpublications,', '),
+     (select string_agg(quote_ident(u.p),', ' order by u.i)
+        from unnest(obj.subpublications) with ordinality as u(p,i)),
      array_to_string(array[
     'connect='||(obj.subenabled::text),
     'enabled='||(obj.subenabled::text),
@@ -2049,11 +2050,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid)
       end,
 #if 15
     'two_phase='||
-      case obj.subtwophasestate
-      when 'f' then 'false'::text
-      when 't' then 'true'::text
-      else obj.subtwophasestate::text
-      end,
+      -- state is d(isabled), p(ending) or e(nabled)
+      case when obj.subtwophasestate in ('p','e') then 'true' else 'false' end,
     'disable_on_error='||
       case obj.subdisableonerr
       when 'f' then 'false'::text
@@ -2119,7 +2117,7 @@ a as (
    left join pg_roles r2 on (r2.oid = e.grantee)
 ),
 b as (
-select format('GRANT %s (%s) ON %s TO %s%s',
+select format('GRANT %s (%I) ON %s TO %s%s',
               privilege_type,attname,obj.sql_identifier,
               grantee,grant_option)
        as dcl
@@ -2134,29 +2132,50 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_grants(regproc, text[] default '{}') 
  RETURNS text LANGUAGE sql AS $function$
- with obj as (select * from ddlx_identify($1))
- select
-   format(E'REVOKE ALL ON %s %s FROM PUBLIC;\n',
-          max(obj.sql_kind), text($1::regprocedure))
-   ||
-   coalesce(
-    string_agg (format(
-        E'GRANT %s ON %s %s TO %s%s;\n',
-        privilege_type, 
-        obj.sql_kind,
-        text($1::regprocedure), 
-        case grantee  
-          when 'PUBLIC' then 'PUBLIC' 
-          else quote_ident(grantee) 
-        end,
-        case is_grantable  
-          when 'YES' then ' WITH GRANT OPTION' 
-          else '' 
-        end), ''),
-    '')
- from obj, information_schema.routine_privileges g
- where routine_schema=obj.namespace 
-   and specific_name=obj.name||'_'||obj.oid
+ with 
+ obj as (
+   -- GRANT accepts FUNCTION (also for aggregates and window functions) or PROCEDURE
+   select i.sql_identifier, p.proowner,
+          case i.sql_kind when 'PROCEDURE' then 'PROCEDURE' else 'FUNCTION' end as acl_kind,
+#if 9.2
+          -- a NULL acl means the default privileges
+          coalesce(p.proacl, acldefault('f', p.proowner)) as acl
+#else
+          p.proacl as acl
+#end
+     from pg_proc p, ddlx_identify($1) i
+    where p.oid = $1
+ ),
+ a as (
+   select coalesce(quote_ident(r1.rolname),'PUBLIC') as grantor,
+          coalesce(quote_ident(r2.rolname),'PUBLIC') as grantee,
+          e.privilege_type,
+          case when e.is_grantable then ' WITH GRANT OPTION' else '' end as grant_option
+     from obj, aclexplode(obj.acl) e
+     left join pg_roles r1 on (r1.oid = e.grantor)
+     left join pg_roles r2 on (r2.oid = e.grantee)
+    where e.grantee <> obj.proowner -- the owner implicitly has all privileges
+ ),
+ b as (
+   select grantor, grantee, privilege_type,
+          format(E'GRANT %s ON %s %s TO %s%s%s;\n',
+                 a.privilege_type, obj.acl_kind, obj.sql_identifier,
+                 a.grantee, a.grant_option,
+#if 14
+                 case 
+                   when 'grantor' ilike any($2) 
+                   then ' GRANTED BY '||nullif(a.grantor,quote_ident(current_role))
+                 end
+#else
+                 null
+#end
+                ) as dcl
+     from a, obj
+ )
+ select format(E'REVOKE ALL ON %s %s FROM PUBLIC;\n', obj.acl_kind, obj.sql_identifier)
+        || coalesce((select string_agg(dcl,'' order by grantor,lower(grantee),privilege_type)
+                       from b), '')
+   from obj
 $function$  strict;
 
 --------------------------------------------------------------- ---------------
@@ -2184,25 +2203,23 @@ select format('GRANT %s ON %s%s TO %s%s%s;',
                 when 'VIEW' then null
                 when 'MATERIALIZED VIEW' then null 
                 when 'SEQUENCE' then null 
+                when 'FOREIGN TABLE' then null 
                 else obj.sql_kind || ' '
               end,
               obj.sql_identifier,
-              case grantee  
-                when 'PUBLIC' then 'PUBLIC' 
-                else quote_ident(grantee) 
-              end,
+              grantee, -- already quoted (or PUBLIC) in a
               grant_option,
 #if 14
               case
 	              when 'grantor' ilike any($2) 
-                then ' GRANTED BY '||nullif(grantor,current_role)
+                then ' GRANTED BY '||nullif(grantor,quote_ident(current_role))
 	            end
 #else
               null
 #end
              )
        as dcl
-  from obj,a where grantee<>obj.owner
+  from obj,a where grantee<>quote_ident(obj.owner)
  order by grantor,lower(grantee),privilege_type
 ),
 c as (
@@ -2932,16 +2949,11 @@ CREATE OR REPLACE FUNCTION ddlx_create_extension(oid, text[] default '{}')
 select format(E'CREATE EXTENSION %s%I%s VERSION %s;\n',
               case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end,
               e.extname,
-              ' SCHEMA '||quote_ident(nullif(
-#if 9.5
-          e.extnamespace::regnamespace::text,
-#else
-                (select nspname from pg_namespace n1 where n1.oid = e.extnamespace), 
-#end
-        current_schema())),
+              ' SCHEMA '||quote_ident(nullif(n.nspname,current_schema())),
               quote_nullable(e.extversion))
   from pg_extension e
- where oid = $1
+  join pg_namespace n on n.oid = e.extnamespace
+ where e.oid = $1
 $function$  strict;
 
 --------------------------------------------------------------- ---------------

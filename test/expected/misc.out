@@ -277,7 +277,6 @@ AS $function$select null::void$function$;
 
 REVOKE ALL ON FUNCTION foo() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION foo() TO PUBLIC;
-GRANT EXECUTE ON FUNCTION foo() TO postgres WITH GRANT OPTION;
 
 (1 row)
 -- test data backup & restore

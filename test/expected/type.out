@@ -251,7 +251,6 @@ AS $function$int4in$function$;
 
 REVOKE ALL ON FUNCTION int_t4in(cstring) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION int_t4in(cstring) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION int_t4in(cstring) TO postgres WITH GRANT OPTION;
 
 -- Type: FUNCTION ; Name: int_t4out(int_t); Owner: postgres
 
@@ -264,7 +263,6 @@ AS $function$int4out$function$;
 
 REVOKE ALL ON FUNCTION int_t4out(int_t) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION int_t4out(int_t) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION int_t4out(int_t) TO postgres WITH GRANT OPTION;
 
 -- Type: FUNCTION ; Name: int_t4send(int_t); Owner: postgres
 
@@ -277,7 +275,6 @@ AS $function$int4send$function$;
 
 REVOKE ALL ON FUNCTION int_t4send(int_t) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION int_t4send(int_t) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION int_t4send(int_t) TO postgres WITH GRANT OPTION;
 
 -- Type: FUNCTION ; Name: int_t4recv(internal); Owner: postgres
 
@@ -290,7 +287,6 @@ AS $function$int4recv$function$;
 
 REVOKE ALL ON FUNCTION int_t4recv(internal) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION int_t4recv(internal) TO PUBLIC;
-GRANT EXECUTE ON FUNCTION int_t4recv(internal) TO postgres WITH GRANT OPTION;
 
 END;
 

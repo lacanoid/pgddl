@@ -234,13 +234,13 @@ COMMENT ON PUBLICATION pub1 IS 'Master Blaster';
 
 CREATE PUBLICATION pub2 WITH ( publish='insert,delete', publish_via_partition_root );
 ALTER PUBLICATION pub2 ADD TABLE pubtab;
-ALTER PUBLICATION pub2 ADD TABLE items CHECK (value IS NOT NULL);
+ALTER PUBLICATION pub2 ADD TABLE items WHERE (value IS NOT NULL);
 ALTER PUBLICATION pub2 ADD TABLE tab_generated12 (a,b,e);
 COMMENT ON PUBLICATION pub2 IS 'vija vaja';
 
 
 CREATE PUBLICATION pub3 WITH ( publish='insert,update,delete,truncate' );
-ALTER PUBLICATION pub3 ADD TABLE pubtab CHECK (label IS NOT NULL);
+ALTER PUBLICATION pub3 ADD TABLE pubtab WHERE (label IS NOT NULL);
 ALTER PUBLICATION pub3 ADD TABLES IN SCHEMA public2;
 
 
