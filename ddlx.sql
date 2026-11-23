@@ -135,7 +135,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE con.oid = $1
 #if 14
      AND (c.oid is null or -- hack to hide duplicated oids
-     NOT (c.relname like 'pg_%' 
+     NOT (left(c.relname,3) = 'pg_' 
           or c.relnamespace = 'pg_catalog'::regnamespace)) 
 #end
    UNION ALL
@@ -2243,81 +2243,122 @@ $function$  strict;
 --  Dependancy handling
 --------------------------------------------------------------- ---------------
 
+-- Core implementation: dependants of the object (classid, objid).
+-- Every pg_depend join is made on the (classid, objid) pair, because OIDs
+-- are only unique within one catalog. Nodes are kept in normalized form:
+-- a view is represented by its pg_class entry, not by its _RETURN rule.
+create or replace function ddlx_get_dependants(
+ in regclass, in oid, in text[],
+ out depth int, out classid regclass, out objid oid, out extid oid
+)
+returns setof record as $$
+with recursive
+  tree(depth,classid,objid,objsubid,refclassid,refobjid,refobjsubid,deptype,path)
+as (
+select 1, -- dependants, initial
+       n.classid, n.objid,
+       d.objsubid, d.refclassid, d.refobjid, d.refobjsubid, d.deptype,
+       array[format('%s:%s',$1::oid,$2), n.key]
+  from pg_depend d
+  left join pg_rewrite r on
+       (d.classid = 'pg_rewrite'::regclass::oid
+        and r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
+ cross join lateral (
+       select c.classid, c.objid,
+              format('%s:%s',c.classid::oid,c.objid) as key
+         from (select case when r.oid is not null
+                           then 'pg_class'::regclass
+                           else d.classid::regclass end as classid,
+                      coalesce(r.ev_class,d.objid) as objid) c
+       ) n
+ where d.refclassid = $1::oid and d.refobjid = $2
+   and n.key is distinct from format('%s:%s',$1::oid,$2)
+#if 12
+ union all
+select pt.level, -- partitions
+       'pg_class'::regclass, pt.relid::oid, 0,
+       'pg_class'::regclass::oid, $2, 0, 'n',
+       array[format('%s:%s',$1::oid,$2),
+             format('%s:%s','pg_class'::regclass::oid,pt.relid::oid)]
+  from pg_partition_tree(case when $1 = 'pg_class'::regclass
+                              then $2::regclass end) pt
+  join pg_class c on (c.oid = pt.relid)
+ where pt.parentrelid is not null and pt.relid::oid is distinct from $2
+   and c.relkind not in ('I','i')
+   and not ('nopartitions' ilike any($3))
+#end
+ union all
+select t.depth+1, -- dependants, recursive
+       n.classid, n.objid,
+       d.objsubid, d.refclassid, d.refobjid, d.refobjsubid, d.deptype,
+       t.path || n.key
+  from tree t
+  join pg_depend d on (d.refclassid = t.classid::oid and d.refobjid = t.objid)
+  left join pg_rewrite r on
+       (d.classid = 'pg_rewrite'::regclass::oid
+        and r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
+ cross join lateral (
+       select c.classid, c.objid,
+              format('%s:%s',c.classid::oid,c.objid) as key
+         from (select case when r.oid is not null
+                           then 'pg_class'::regclass
+                           else d.classid::regclass end as classid,
+                      coalesce(r.ev_class,d.objid) as objid) c
+       ) n
+ where not (n.key = any(t.path)) -- stop at cycles (includes self-reference)
+),
+q as (
+  select classid, objid, max(depth) as depth
+    from tree
+   where deptype = 'n'
+   group by classid, objid
+)
+select q.depth, q.classid, q.objid, x.extid
+  from q
+  -- the container whose extension membership also covers the object
+  left join lateral (
+       select 'pg_class'::regclass::oid as pcls, t.tgrelid as pobj
+         from pg_trigger t
+        where q.classid = 'pg_trigger'::regclass and t.oid = q.objid
+        union all
+       select 'pg_class'::regclass::oid, c.conrelid
+         from pg_constraint c
+        where q.classid = 'pg_constraint'::regclass and c.oid = q.objid
+          and c.conrelid <> 0
+        union all
+       select 'pg_type'::regclass::oid, c.contypid
+         from pg_constraint c
+        where q.classid = 'pg_constraint'::regclass and c.oid = q.objid
+          and c.contypid <> 0
+        union all
+       select 'pg_class'::regclass::oid, a.adrelid
+         from pg_attrdef a
+        where q.classid = 'pg_attrdef'::regclass and a.oid = q.objid
+       ) p on true
+  left join lateral (
+       select d.refobjid as extid
+         from pg_depend d
+        where d.refclassid = 'pg_extension'::regclass::oid
+          and d.deptype = 'e' and d.objsubid = 0
+          and ((d.classid = q.classid::oid and d.objid = q.objid)
+            or (d.classid = p.pcls and d.objid = p.pobj))
+        limit 1
+       ) x on true
+ order by q.depth, q.objid, q.classid;
+$$ language sql;
+
+COMMENT ON FUNCTION ddlx_get_dependants(regclass, oid, text[])
+     IS 'Get dependants of an object given by catalog (classid) and oid';
+
+-- Compatibility wrapper: object given by oid only
 create or replace function ddlx_get_dependants(
  in oid, in text[] default '{}',
  out depth int, out classid regclass, out objid oid, out extid oid
 )
 returns setof record as $$
-with recursive 
-  tree(depth,classid,objid,objsubid,refclassid,refobjid,refobjsubid,deptype,edges) 
-as (
-select 1, -- dependancies initial
-       case when r.oid is not null then 'pg_class'::regclass 
-            else d.classid::regclass 
-       end as classid,
-       coalesce(r.ev_class,d.objid) as objid,
-       d.objsubid, d.refclassid, d.refobjid,d.refobjsubid, d.deptype,
-       array[array[d.refobjid::int,d.objid::int]]
-  from pg_depend d
-  left join pg_rewrite r on 
-       (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
- where d.refobjid = $1 and r.ev_class is distinct from d.refobjid
-#if 12
- union all
-select level, -- partitions
-       'pg_class'::regclass as classid,
-       relid as objid, 0, 
-       'pg_class'::regclass, $1, 0, 'n',
-       array[array[$1::int,relid::int]]
-  from pg_partition_tree($1)
-  join pg_class c on (c.oid=relid)
- where parentrelid is not null and relid is distinct from $1
-   and c.relkind not in ('I','i')
-   and not ('nopartitions' ilike any($2))
-#end
- union all
-select depth+1, -- dependancies recursive
-       case when r.oid is not null then 'pg_class'::regclass 
-            else d.classid::regclass 
-       end as classid,
-       coalesce(r.ev_class,d.objid) as objid,
-       d.objsubid, d.refclassid, d.refobjid, d.refobjsubid, d.deptype,
-       t.edges || array[array[d.refobjid::int,d.objid::int]]
-  from tree t
-  join pg_depend d on (d.refobjid=t.objid) 
-  left join pg_rewrite r on 
-       (r.oid = d.objid and r.ev_type = '1' and r.rulename = '_RETURN')
- where r.ev_class is distinct from d.refobjid
-   and not ( t.edges @> array[array[d.refobjid::int,d.objid::int]] )
-),
-ddlx_get_dependants_recursive as (
-select distinct 
-       depth,
-       classid,objid,objsubid,
-       refclassid,refobjid,refobjsubid,
-       deptype
-  from tree
-),
-q as (
-  select distinct depth,classid,objid
-    from ddlx_get_dependants_recursive
-   where deptype = 'n'
-),
-qq as (
-  select depth,classid,objid 
-    from q 
-   where (objid,depth) in (select objid,max(depth) from q group by objid)
-)
-select qq.depth,qq.classid,qq.objid,
-       d.refobjid as extid
-  from qq
-  left join pg_trigger t on (t.oid=qq.objid)
-  left join pg_constraint c on (c.oid=qq.objid)
-  left join pg_attrdef a on (a.oid=qq.objid)
-  left join pg_depend d on (
-       d.objid=any(array[qq.objid,t.tgrelid,c.conrelid,c.contypid,a.adrelid])
-   and d.deptype='e' and d.refclassid='pg_extension'::regclass)
- order by qq.depth,qq.objid;
+select gd.depth, gd.classid, gd.objid, gd.extid
+  from ddlx_identify($1) i,
+       ddlx_get_dependants(i.classid, i.oid, $2) gd;
 $$ language sql;
 
 --------------------------------------------------------------- ---------------

@@ -120,6 +120,9 @@ ddlx_script
 BEGIN;
 
 /*
+ALTER TABLE test_class_r ALTER a DROP DEFAULT;
+ALTER TABLE test_class_r DROP CONSTRAINT test_class_r_c_check;
+
 DROP TABLE test_class_r; --==>> !!! ATTENTION !!! <<==--
 */
 
@@ -173,6 +176,13 @@ GRANT SELECT ON test_class_r TO PUBLIC;
 GRANT TRIGGER ON test_class_r TO PUBLIC;
 GRANT TRUNCATE ON test_class_r TO PUBLIC;
 GRANT UPDATE ON test_class_r TO PUBLIC;
+
+-- DEPENDANTS
+
+ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
+      CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
+
+ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 
 END;
 

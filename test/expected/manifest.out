@@ -13,6 +13,7 @@ select * from a
  ddlx_definitions(oid,text[])                | Get individial parts of SQL definition for any object by object id
  ddlx_describe(regclass,text[])              | Describe columns of a class
  ddlx_drop(oid,text[])                       | Get SQL DROP statement for any object by object id
+ ddlx_get_dependants(regclass,oid,text[])    | Get dependants of an object given by catalog (classid) and oid
  ddlx_grants(oid,text[])                     | Get SQL GRANT statements for any object by object id
  ddlx_identify(oid)                          | Identify any object by object id
  ddlx_script(oid,text[])                     | Get SQL DDL script for any object and dependants by object id

@@ -1,7 +1,8 @@
 Version 0.33
 ------------
-- 
+- `pg_get_dependants`() improved
 
+Version 0.32
 ------------
 - omit internal triggers from scripts
 
