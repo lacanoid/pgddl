@@ -779,13 +779,27 @@ $$;
 --  DDL generator functions for individial object types  --
 --------------------------------------------------------------- ---------------
 
+-- Makes text safe for use inside a "--" comment: CR and LF would end the
+-- comment and let the rest of the name run as SQL, so they are written as \r and \n
+CREATE OR REPLACE FUNCTION ddlx_comment_text(text)
+ RETURNS text LANGUAGE sql IMMUTABLE AS $$
+  select replace(replace($1, E'\r', E'\\r'), E'\n', E'\\n')
+$$ strict;
+
+-- Comments out SQL text line by line, however many lines it has. Unlike /* */
+-- this cannot be closed early by a "*/" inside a quoted name or a function body.
+CREATE OR REPLACE FUNCTION ddlx_comment_out(text)
+ RETURNS text LANGUAGE sql IMMUTABLE AS $$
+  select '-- ' || regexp_replace(rtrim($1, E'\r\n'), E'(\r\n|\r|\n)', E'\\1-- ', 'g') || E'\n'
+$$ strict;
+
 CREATE OR REPLACE FUNCTION ddlx_banner(
    name text, kind text, namespace text, owner text, extra text default null
  )
  RETURNS text LANGUAGE sql AS $$
   SELECT format(E'\n%s-- Type: %s ; Name: %s; Owner: %s\n\n',
-                E'--\n-- ' || $5 || E'\n',
-                $2,$1,$4)
+                E'--\n-- ' || ddlx_comment_text($5) || E'\n',
+                ddlx_comment_text($2),ddlx_comment_text($1),ddlx_comment_text($4))
 $$;
 
 --------------------------------------------------------------- ---------------
@@ -1194,29 +1208,29 @@ $$  strict;
 CREATE OR REPLACE FUNCTION ddlx_create_index(regclass,ddlx_options text[] default '{}')
  RETURNS text LANGUAGE sql AS $$
  with ii as (
- SELECT CASE WHEN coalesce(cc.conislocal,true) THEN '' ELSE '-- ' END ||
-        CASE d.refclassid
+ SELECT CASE d.refclassid
             WHEN 'pg_constraint'::regclass 
             THEN 'ALTER TABLE ' || text(c.oid::regclass) 
                  || ' ADD CONSTRAINT ' || quote_ident(cc.conname) 
                  || ' ' || pg_get_constraintdef(cc.oid)
             ELSE pg_get_indexdef(i.oid)
         END
-        AS indexdef 
+        AS indexdef,
+        not coalesce(cc.conislocal,true) as commented
    FROM pg_index x
    JOIN pg_class c ON c.oid = x.indrelid
    JOIN pg_class i ON i.oid = x.indexrelid
-   JOIN pg_depend d ON d.objid = x.indexrelid
+   JOIN pg_depend d ON d.classid = 'pg_class'::regclass AND d.objid = x.indexrelid
    LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
   WHERE i.oid = $1
     -- AND c.relkind in ('r','m','p') AND i.relkind = 'i'::"char"  
 )
  SELECT case 
+        when commented then ddlx_comment_out(indexdef || ';')
         when 'ine' ilike any($2) 
-        then regexp_replace(indexdef,'^CREATE ([\w ]*)?INDEX','CREATE \1INDEX IF NOT EXISTS')
-        else indexdef 
+        then regexp_replace(indexdef,'^CREATE ([\w ]*)?INDEX','CREATE \1INDEX IF NOT EXISTS') || E';\n'
+        else indexdef || E';\n'
         end
-        || E';\n'
    FROM ii
 $$  strict;
 
@@ -1225,24 +1239,26 @@ $$  strict;
 CREATE OR REPLACE FUNCTION ddlx_drop_index(regclass,ddlx_options text[] default '{}')
  RETURNS text LANGUAGE sql AS $$
  with ii as (
- SELECT CASE WHEN coalesce(cc.conislocal,true) THEN '' ELSE '-- ' END ||
-        CASE d.refclassid
+ SELECT CASE d.refclassid
             WHEN 'pg_constraint'::regclass 
             THEN 'ALTER TABLE ' || text(c.oid::regclass) 
                  || ' DROP CONSTRAINT ' || quote_ident(cc.conname) 
             ELSE 'DROP INDEX ' || text(i.oid::regclass)
         END
-        AS indexdef 
+        AS indexdef,
+        not coalesce(cc.conislocal,true) as commented
    FROM pg_index x
    JOIN pg_class c ON c.oid = x.indrelid
    JOIN pg_class i ON i.oid = x.indexrelid
-   JOIN pg_depend d ON d.objid = x.indexrelid
+   JOIN pg_depend d ON d.classid = 'pg_class'::regclass AND d.objid = x.indexrelid
    LEFT JOIN pg_constraint cc ON cc.oid = d.refobjid
   WHERE i.oid = $1
     -- AND c.relkind in ('r','m','p') AND i.relkind = 'i'::"char"  
 )
- SELECT indexdef
-        || E';\n'
+ SELECT case when commented
+             then ddlx_comment_out(indexdef || ';')
+             else indexdef || E';\n'
+        end
    FROM ii
 $$  strict;
 
@@ -1770,9 +1786,9 @@ $function$  strict;
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_role_auth(oid)
+CREATE OR REPLACE FUNCTION ddlx_alter_role_auth(oid, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$ 
- select case when rolpassword is not null
+ select case when rolpassword is not null and not 'nosecrets' ilike any($2)
        then 'ALTER ROLE '|| quote_ident(rolname)||
                   ' ENCRYPTED PASSWORD '||quote_literal(rolpassword)
   end
@@ -1801,9 +1817,9 @@ select ddl
 $function$  strict;
 
 #if 9.5
-CREATE OR REPLACE FUNCTION ddlx_alter_role(regrole)
+CREATE OR REPLACE FUNCTION ddlx_alter_role(regrole, text[] default '{}')
 #else
-CREATE OR REPLACE FUNCTION ddlx_alter_role(oid)
+CREATE OR REPLACE FUNCTION ddlx_alter_role(oid, text[] default '{}')
 #end
  RETURNS text
  LANGUAGE sql
@@ -1830,7 +1846,7 @@ q1 as (
           ' IS '||quote_literal(description)||E';\n'
    end,
    case when has_table_privilege('pg_catalog.pg_authid'::regclass, 'select')
-        then ddlx_alter_role_auth(a.oid)||E';\n'
+        then ddlx_alter_role_auth(a.oid,$2)||E';\n'
    end,
    case when rolvaliduntil is not null 
         then 'ALTER ROLE '|| quote_ident(rolname)||
@@ -1887,7 +1903,7 @@ $function$  strict;
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_foreign_data_wrapper(oid)
+CREATE OR REPLACE FUNCTION ddlx_create_foreign_data_wrapper(oid, text[] default '{}')
  RETURNS text LANGUAGE sql AS $function$ 
  with obj as (select * from pg_foreign_data_wrapper where oid = $1)
  select
@@ -1906,7 +1922,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_foreign_data_wrapper(oid)
       (select string_agg(
               '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
               E',\n')
-         from pg_options_to_table(obj.fdwoptions))||E'\n)'
+         from pg_options_to_table(obj.fdwoptions)
+        where not ('nosecrets' ilike any($2) and option_name ~* 'pass(word|wd)|secret|token'))||E'\n)'
     ,'') || E';\n' 
    from obj;
 $function$  strict;
@@ -1930,7 +1947,8 @@ CREATE OR REPLACE FUNCTION ddlx_create_server(oid, text[] default '{}')
       (select string_agg(
               '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
               E',\n')
-         from pg_options_to_table(obj.srvoptions))||E'\n)'
+         from pg_options_to_table(obj.srvoptions)
+        where not ('nosecrets' ilike any($2) and option_name ~* 'pass(word|wd)|secret|token'))||E'\n)'
     ,'') || E';\n' 
    from obj;
 $function$  strict;
@@ -1948,10 +1966,14 @@ CREATE OR REPLACE FUNCTION ddlx_create_user_mapping(oid, text[] default '{}')
       (select string_agg(
               '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
               E',\n')
-         from pg_options_to_table(um.umoptions))||E'\n)'
+         from pg_options_to_table(um.umoptions)
+        where not ('nosecrets' ilike any($2) and option_name ~* 'pass(word|wd)|secret|token')
+     )||E'\n)'
     ,'') || E';\n' 
    from obj
-   join pg_user_mapping um ON um.oid = obj.oid;
+   -- the view, unlike pg_user_mapping, can be read by non-superusers
+   -- (umoptions is NULL there unless the caller may see the options)
+   join pg_user_mappings um ON um.umid = obj.oid;
 $function$  strict;
 
 #if 9.5
@@ -1969,10 +1991,10 @@ CREATE OR REPLACE FUNCTION ddlx_create_policy(oid)
         CASE
             WHEN pol.polroles = '{0}'::oid[] 
             THEN array['PUBLIC']::text[]
-            ELSE ARRAY( SELECT quote_ident(pg_authid.rolname)
-               FROM pg_authid
-              WHERE pg_authid.oid = ANY (pol.polroles)
-              ORDER BY pg_authid.rolname)
+            ELSE ARRAY( SELECT quote_ident(r.rolname)
+               FROM pg_roles r
+              WHERE r.oid = ANY (pol.polroles)
+              ORDER BY r.rolname)
         END AS roles,
         CASE pol.polcmd
             WHEN 'r'::"char" THEN 'SELECT'::text
@@ -2089,13 +2111,42 @@ $function$  strict;
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid)
+-- subconninfo is readable by superusers only, and it contains the password.
+-- With 'nosecrets' the password is removed from the connection string.
+CREATE OR REPLACE FUNCTION ddlx_subscription_conninfo(oid, text[] default '{}')
+ RETURNS text LANGUAGE plpgsql STABLE STRICT AS $$
+declare
+  r text;
+begin
+  if not has_column_privilege('pg_catalog.pg_subscription'::regclass, 'subconninfo', 'select') then
+    return '<conninfo not available: insufficient privileges>';
+  end if;
+  select subconninfo into r from pg_catalog.pg_subscription where oid = $1;
+  if 'nosecrets' ilike any($2) then
+    r := regexp_replace(r, '\s*\mpassword\s*=\s*(''([^''\\]|\\.)*''|\S+)', '', 'gi');
+  end if;
+  return r;
+end
+$$;
+
+CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid, text[] default '{}')
  RETURNS text LANGUAGE sql STRICT AS $$ 
- with obj as (select * from pg_subscription where oid = $1)
+ -- explicit column list: "select *" would need access to subconninfo
+ with obj as (select oid, subname, subenabled, subpublications, subslotname, subsynccommit
+#if 14
+                     , subbinary, substream
+#if 15
+                     , subtwophasestate, subdisableonerr
+#if 16
+                     , subpasswordrequired, subrunasowner, suborigin
+#if 17
+                     , subfailover
+#end
+                from pg_subscription where oid = $1)
  select format(
            E'CREATE SUBSCRIPTION %I\n  CONNECTION %L\n  PUBLICATION %s\n  WITH ( %s );\n',
      obj.subname,
-     obj.subconninfo,
+     ddlx_subscription_conninfo(obj.oid,$2),
      (select string_agg(quote_ident(u.p),', ' order by u.i)
         from unnest(obj.subpublications) with ordinality as u(p,i)),
      array_to_string(array[
@@ -2859,7 +2910,7 @@ select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
         cast(amhandler as regproc)
        )
 #else
-select format(E'-- CREATE ACCESS METHOD %I;\n\n',amname)
+select format(E'-- CREATE ACCESS METHOD %s;\n\n',ddlx_comment_text(quote_ident(amname)))
 #end
   from pg_am as am, obj
  where am.oid = $1
@@ -3095,7 +3146,7 @@ with obj as (select * from ddlx_identify($1))
     when 'pg_constraint'::regclass     then ddlx_create_constraint(oid,$2)
     when 'pg_trigger'::regclass        then ddlx_create_trigger(oid,$2)
     when 'pg_attrdef'::regclass        then ddlx_create_default(oid)
-    when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid)
+    when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid,$2)
     when 'pg_foreign_server'::regclass then ddlx_create_server(oid,$2)
     when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid,$2)
     when 'pg_cast'::regclass           then ddlx_create_cast(oid)
@@ -3125,7 +3176,7 @@ with obj as (select * from ddlx_identify($1))
 #if 10
     when 'pg_statistic_ext'::regclass  then pg_get_statisticsobjdef(oid)||E';\n' 
     when 'pg_publication'::regclass    then ddlx_create_publication(oid)
-    when 'pg_subscription'::regclass   then ddlx_create_subscription(oid)
+    when 'pg_subscription'::regclass   then ddlx_create_subscription(oid,$2)
 #end
     else
       case
@@ -3139,7 +3190,7 @@ with obj as (select * from ddlx_identify($1))
     ddlx_alter_table_storage(oid) as storage,
     ddlx_alter_table_defaults(oid,$2) as defaults,
     case obj.sql_kind
-      when 'ROLE' THEN ddlx_alter_role(oid)
+      when 'ROLE' THEN ddlx_alter_role(oid,$2)
       when 'DATABASE' THEN  ddlx_alter_database(oid)
       when 'SEQUENCE' THEN ddlx_alter_sequence(oid)
       else ddlx_alter_table_settings(oid)
@@ -3380,22 +3431,25 @@ $$ strict;
 
 CREATE OR REPLACE FUNCTION ddlx_script(oid, ddlx_options text[] default '{}')
  RETURNS text LANGUAGE sql AS $$
+with p as (
+  select *, coalesce(ddl_drop_deps||E'\n','') || coalesce(ddl_drop,'') as drops
+    from ddlx_script_parts($1,$2)
+)
 select array_to_string(array[
        case when 'nowrap' ilike any($2) then null else E'BEGIN;\n' end,
        case when 'nodrop' not ilike all($2) then
-       format(
          case
-           when 'drop' ilike any($2)
-           then E'%s%s' else E'/*\n%s%s*/\n'
-         end,
-         ddl_drop_deps||E'\n',
-         ddl_drop
-       ) end,
+           when 'drop' ilike any($2) then drops
+           -- a block comment cannot be used if the text could close or nest it
+           when drops like '%*/%' or drops like '%/*%' then ddlx_comment_out(drops)
+           else E'/*\n' || drops || E'*/\n'
+         end
+       end,
        ddl_create,
        E'-- DEPENDANTS\n\n'||ddl_create_deps,       
        case when 'nowrap' ilike any($2) then null else E'END;\n' end
        ],E'\n')
-  from ddlx_script_parts($1,$2)
+  from p
 $$ strict;
 
 COMMENT ON FUNCTION ddlx_script(oid, text[]) 

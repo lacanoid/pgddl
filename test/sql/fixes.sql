@@ -205,14 +205,14 @@ begin
 end $$;
 rollback;
 
--- 10. Publications: row filters use WHERE, not CHECK (PG15+)
+-- 10. Publications: row filters use WHERE (expr), not CHECK (PG15+)
 begin;
 set local client_min_messages = error;  -- wal_level warnings depend on the cluster
 create schema fix_test;
 set local search_path = fix_test, public;
 
 do $$
-declare s text; o oid;
+declare s text; o oid; n text;
 begin
   if current_setting('server_version_num')::int >= 150000 then
     execute 'create table fix_pub_t (a int primary key, b int)';
@@ -227,6 +227,19 @@ begin
               from pg_publication_rel
              where prpubid = (select oid from pg_publication where pubname = 'fix_pub')),
            'row filter and column list must be restored';
+
+    -- pg_get_expr does not parenthesize everything (a bare column or a constant),
+    -- but the syntax is WHERE ( expression ): the parentheses must always be emitted
+    execute 'create table fix_pub_b (a int primary key, active boolean)';
+    execute 'create publication fix_pub_b1 for table fix_pub_b where (active)';
+    execute 'create publication fix_pub_b2 for table fix_pub_b where (true)';
+    foreach n in array array['fix_pub_b1', 'fix_pub_b2'] loop
+      select oid into o from pg_publication where pubname = n;
+      s := ddlx_create_publication(o);
+      assert s like '%WHERE (%', 'row filter must be parenthesized: ' || s;
+      execute format('drop publication %I', n);
+      execute s;   -- must be accepted by the server
+    end loop;
   end if;
 end $$;
 rollback;
@@ -373,5 +386,533 @@ begin
   reset role;
   assert s like '%GRANT EXECUTE ON FUNCTION % TO "Own Er";%',
          'grants must be visible to unrelated callers: ' || s;
+end $$;
+rollback;
+
+-- 14. Domains: constraint names survive, NOT NULL is emitted (typnotnull before PG17)
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create domain fix_dom as int not null default 5
+  constraint "Pos Check" check (value > 0)
+  constraint small check (value < 100);
+
+do $$
+declare s text; s2 text;
+begin
+  s := ddlx_create_type_domain('fix_dom'::regtype);
+  assert s like '%CONSTRAINT "Pos Check" CHECK%', 'constraint name lost: ' || s;
+  assert s like '%CONSTRAINT small CHECK%', 'constraint name lost: ' || s;
+  assert s like '%NOT NULL%', 'NOT NULL lost: ' || s;
+  assert s like '%DEFAULT 5%', 'DEFAULT lost: ' || s;
+
+  execute 'drop domain fix_dom';
+  execute s;
+  s2 := ddlx_create_type_domain('fix_dom'::regtype);
+  assert s2 = s, 'round trip differs: ' || s || ' <> ' || s2;
+  assert (select count(*) from pg_constraint
+           where contypid = 'fix_dom'::regtype and conname in ('Pos Check','small')) = 2,
+         'named constraints not recreated';
+  begin
+    perform null::int::fix_dom;
+    assert false, 'NOT NULL not enforced after round trip';
+  exception when not_null_violation then null;
+  end;
+end $$;
+rollback;
+
+-- 15. Aggregates: ordered-set, hypothetical-set, zero-argument and FINALFUNC_MODIFY
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create aggregate fix_pctl(double precision order by anyelement) (
+  sfunc = ordered_set_transition, stype = internal,
+  finalfunc = percentile_disc_final, finalfunc_extra);
+create aggregate fix_rank(variadic "any" order by variadic "any") (
+  sfunc = ordered_set_transition_multi, stype = internal,
+  finalfunc = rank_final, finalfunc_extra, hypothetical);
+create aggregate fix_cnt(*) (sfunc = int8inc, stype = int8, initcond = '0');
+
+do $$
+declare s text; s2 text; r double precision; k text;
+begin
+  -- ordered-set
+  s := ddlx_create_aggregate('fix_pctl(double precision, anyelement)'::regprocedure::regproc);
+  assert s like '%ORDER BY%', 'ORDER BY missing: ' || s;
+  execute 'drop aggregate fix_pctl(double precision, anyelement)';
+  execute s;
+  assert (select aggkind from pg_aggregate where aggfnoid = 'fix_pctl(double precision, anyelement)'::regprocedure) = 'o',
+         'not recreated as ordered-set';
+  execute 'select fix_pctl(0.5) within group (order by x) from generate_series(1,9) x' into r;
+  assert r = 5, 'ordered-set aggregate does not work after round trip';
+  assert ddlx_create_aggregate('fix_pctl(double precision, anyelement)'::regprocedure::regproc) = s,
+         'ordered-set round trip differs';
+
+  -- hypothetical-set
+  s := ddlx_create_aggregate('fix_rank("any")'::regprocedure::regproc);
+  assert s like '%HYPOTHETICAL%' and s like '%ORDER BY%', 'hypothetical: ' || s;
+  execute 'drop aggregate fix_rank(variadic "any" order by variadic "any")';
+  execute s;
+  assert (select aggkind from pg_aggregate where aggfnoid = 'fix_rank("any")'::regprocedure) = 'h',
+         'not recreated as hypothetical-set';
+  execute 'select fix_rank(3) within group (order by x) from generate_series(1,9) x' into r;
+  assert r = 3, 'hypothetical-set aggregate does not work after round trip';
+
+  -- zero-argument aggregate is written with (*)
+  s := ddlx_create_aggregate('fix_cnt()'::regprocedure::regproc);
+  assert s like 'CREATE AGGREGATE %fix_cnt(*) (%', 'zero-arg aggregate must use (*): ' || s;
+  execute 'drop aggregate fix_cnt(*)';
+  execute s;
+  execute 'select fix_cnt(*) from generate_series(1,4)' into r;
+  assert r = 4, 'count(*)-style aggregate broken';
+end $$;
+rollback;
+
+-- 15b. FINALFUNC_MODIFY / MFINALFUNC_MODIFY (PG11+)
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+do $$
+declare s text;
+begin
+  if current_setting('server_version_num')::int >= 110000 then
+    execute 'create aggregate fix_fm(int) (sfunc = int4pl, stype = int4, finalfunc = int4inc,
+                                           finalfunc_modify = read_write)';
+    execute 'create aggregate fix_fs(int) (sfunc = int4pl, stype = int4, finalfunc = int4inc,
+                                           finalfunc_modify = shareable)';
+    execute 'create aggregate fix_fr(int) (sfunc = int4pl, stype = int4, finalfunc = int4inc)';
+    s := ddlx_create_aggregate('fix_fm(int)'::regprocedure::regproc);
+    assert s like '%FINALFUNC_MODIFY = READ_WRITE%', 'READ_WRITE lost: ' || s;
+    s := ddlx_create_aggregate('fix_fs(int)'::regprocedure::regproc);
+    assert s like '%FINALFUNC_MODIFY = SHAREABLE%', 'SHAREABLE lost: ' || s;
+    s := ddlx_create_aggregate('fix_fr(int)'::regprocedure::regproc);
+    assert s not like '%FINALFUNC_MODIFY%', 'default must not be emitted: ' || s;
+
+    s := ddlx_create_aggregate('fix_fm(int)'::regprocedure::regproc);
+    execute 'drop aggregate fix_fm(int)';
+    execute s;
+    assert (select aggfinalmodify from pg_aggregate where aggfnoid = 'fix_fm(int)'::regprocedure) = 'w',
+           'aggfinalmodify not restored';
+  end if;
+end $$;
+rollback;
+
+-- 16. Transforms: only the functions that exist, separated by a comma
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create transform for int4 language c (from sql with function varchar_support(internal),
+                                      to sql with function int4recv(internal));
+create transform for int8 language c (from sql with function varchar_support(internal));
+create transform for int2 language c (to sql with function int2recv(internal));
+
+do $$
+declare t regtype; s text; n int; o oid;
+begin
+  foreach t in array array['int4','int8','int2']::regtype[] loop
+    select oid into o from pg_transform where trftype = t;
+    s := ddlx_create_transform(o);
+    assert s not like '%WITH FUNCTION -%', 'bogus "-" function for ' || t || ': ' || s;
+    execute format('drop transform for %s language c', t);
+    execute s;   -- must be valid DDL
+    select oid into o from pg_transform where trftype = t;
+    assert ddlx_create_transform(o) = s, 'round trip differs for ' || t;
+  end loop;
+
+  select oid into o from pg_transform where trftype = 'int8'::regtype;
+  s := ddlx_create_transform(o);
+  assert s like '%FROM SQL%' and s not like '%TO SQL%', 'from-only: ' || s;
+  select oid into o from pg_transform where trftype = 'int2'::regtype;
+  s := ddlx_create_transform(o);
+  assert s like '%TO SQL%' and s not like '%FROM SQL%', 'to-only: ' || s;
+  select oid into o from pg_transform where trftype = 'int4'::regtype;
+  s := ddlx_create_transform(o);
+  assert s ~ 'FROM SQL WITH FUNCTION [^\n]*,\n  TO SQL', 'both need a comma: ' || s;
+end $$;
+rollback;
+
+-- 17. Text search configurations: one ADD MAPPING per token with the whole dictionary chain
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create text search configuration fix_cfg (parser = default);
+alter text search configuration fix_cfg add mapping for asciiword, word with english_stem, simple;
+alter text search configuration fix_cfg add mapping for numword with simple;
+alter text search configuration fix_cfg add mapping for "int", "float", uint with simple;
+alter text search configuration fix_cfg add mapping for email, url with simple, english_stem;
+
+do $$
+declare s text; before text; after text;
+begin
+  select string_agg(t.alias || '=' || (select string_agg(m.mapdict::regdictionary::text, ',' order by m.mapseqno)
+                                         from pg_ts_config_map m
+                                        where m.mapcfg = 'fix_cfg'::regconfig and m.maptokentype = t.tokid), ';'
+                    order by t.tokid)
+    into before
+    from ts_token_type((select cfgparser from pg_ts_config where oid = 'fix_cfg'::regconfig)) t
+   where exists (select 1 from pg_ts_config_map m where m.mapcfg = 'fix_cfg'::regconfig and m.maptokentype = t.tokid);
+
+  s := ddlx_create_text_search_config('fix_cfg'::regconfig);
+  assert s ~ 'FOR asciiword, word WITH [^;]*english_stem, [^;]*simple;'
+         or s ~ 'FOR asciiword WITH [^;]*english_stem, [^;]*simple;', 'dictionary chain not joined: ' || s;
+  assert (select count(*) from regexp_matches(s, 'ADD MAPPING', 'g')) = 8,
+         'one statement per token expected: ' || s;
+
+  execute 'drop text search configuration fix_cfg';
+  execute s;     -- must be valid DDL
+
+  select string_agg(t.alias || '=' || (select string_agg(m.mapdict::regdictionary::text, ',' order by m.mapseqno)
+                                        from pg_ts_config_map m
+                                       where m.mapcfg = 'fix_cfg'::regconfig and m.maptokentype = t.tokid), ';'
+                    order by t.tokid)
+    into after
+    from ts_token_type((select cfgparser from pg_ts_config where oid = 'fix_cfg'::regconfig)) t
+   where exists (select 1 from pg_ts_config_map m where m.mapcfg = 'fix_cfg'::regconfig and m.maptokentype = t.tokid);
+
+  assert before is not null and before = after, 'mappings differ: ' || before || ' <> ' || coalesce(after,'(null)');
+end $$;
+rollback;
+
+-- 18. ALTER ROLE / ALTER DATABASE ... SET: values are quoted
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role "Set Role";
+alter role "Set Role" set application_name = 'my app 100%';
+alter role "Set Role" set default_text_search_config = 'pg_catalog.english';
+alter role "Set Role" set search_path = fix_test, "Odd Schema", public;
+alter role "Set Role" set "DateStyle" = 'ISO, DMY';
+alter role "Set Role" set work_mem = '64MB';
+
+do $$
+declare s text; before text[]; after text[]; l text; o oid;
+begin
+  select oid into o from pg_roles where rolname = 'Set Role';
+  select array_agg(c order by c) into before from pg_roles, unnest(rolconfig) c where oid = o;
+  s := ddlx_alter_role(o);
+  assert s like '%SET application_name TO ''my app 100%%'';%', 'role value not quoted: ' || s;
+  assert s like '%SET default_text_search_config TO ''pg_catalog.english'';%', 'role value not quoted: ' || s;
+  assert s like '%SET search_path TO fix_test, "Odd Schema", public;%', 'list value mangled: ' || s;
+
+  execute 'alter role "Set Role" reset all';
+  foreach l in array string_to_array(s, E'\n') loop
+    if l like 'ALTER ROLE % SET %' then execute l; end if;
+  end loop;
+  select array_agg(c order by c) into after from pg_roles, unnest(rolconfig) c where oid = o;
+  assert before = after, 'role settings differ: ' || before::text || ' <> ' || coalesce(after::text,'(null)');
+end $$;
+
+do $$
+declare s text; before text[]; after text[]; l text; o oid;
+begin
+  select oid into o from pg_database where datname = current_database();
+  execute format('alter database %I reset all', current_database());
+  execute format('alter database %I set application_name = %L', current_database(), 'my db 100%');
+  execute format('alter database %I set default_text_search_config = %L', current_database(), 'pg_catalog.simple');
+  execute format('alter database %I set search_path = fix_test, "Odd Schema", public', current_database());
+  select setconfig into before from pg_db_role_setting where setdatabase = o and setrole = 0;
+  s := ddlx_alter_database(o);
+  assert s like '%SET application_name TO ''my db 100%%'';%', 'database value not quoted: ' || s;
+  assert s like '%SET search_path TO fix_test, "Odd Schema", public;%', 'list value mangled: ' || s;
+
+  execute format('alter database %I reset all', current_database());
+  foreach l in array string_to_array(s, E'\n') loop
+    if l like 'ALTER DATABASE % SET %' then execute l; end if;
+  end loop;
+  select setconfig into after from pg_db_role_setting where setdatabase = o and setrole = 0;
+  assert (select array_agg(c order by c) from unnest(before) c)
+       = (select array_agg(c order by c) from unnest(after) c),
+         'database settings differ: ' || before::text || ' <> ' || coalesce(after::text,'(null)');
+end $$;
+rollback;
+
+-- 19. Collations: columns, domains, ranges and CREATE COLLATION use collation names,
+-- never the locale string, and nothing is written for the type's default collation
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create collation fix_c (provider = libc, locale = 'C');
+create table fix_coll (
+  a text,                       -- default collation: no clause
+  b text collate "C",           -- explicit collation
+  c text collate fix_c,
+  d name                        -- type's own collation (C): no clause
+);
+create domain fix_cdom as text collate fix_c;
+create domain fix_plain as text;
+create type fix_rng as range (subtype = text, collation = "C");
+
+do $$
+declare s text; t text;
+begin
+  s := ddlx_create_table('fix_coll'::regclass);
+  assert s like '%b text COLLATE pg_catalog."C"%', 'column collation: ' || s;
+  assert s like '%c text COLLATE fix_test.fix_c%', 'column collation: ' || s;
+  assert s not like '%a text COLLATE%' and s not like '%d name COLLATE%',
+         'default collations must not be emitted: ' || s;
+
+  -- the generated table definition is valid and keeps the collations
+  execute 'drop table fix_coll';
+  execute s;
+  assert (select array_agg(attcollation::oid order by attnum)
+            from pg_attribute where attrelid = 'fix_coll'::regclass and attnum > 0)
+         = array[100, 950, (select oid from pg_collation where collname = 'fix_c'), 950]::oid[],
+         'collations not preserved';
+
+  s := ddlx_create_type_domain('fix_cdom'::regtype);
+  assert s like '%COLLATE fix_test.fix_c%', 'domain collation: ' || s;
+  s := ddlx_create_type_domain('fix_plain'::regtype);
+  assert s not like '%COLLATE%', 'domain without own collation: ' || s;
+
+  s := ddlx_create_type_range('fix_rng'::regtype);
+  assert s like '%COLLATION = pg_catalog."C"%', 'range collation: ' || s;
+
+  -- CREATE COLLATION round trip
+  s := ddlx_create_collation((select oid from pg_collation where collname = 'fix_c'));
+  assert s like '%LC_COLLATE = ''C''%' and s like '%LC_CTYPE = ''C''%', 'libc collation: ' || s;
+  assert s not like '%NULL%', 'no NULLs in CREATE COLLATION: ' || s;
+end $$;
+rollback;
+
+-- 19b. ICU collations have no LC_COLLATE/LC_CTYPE (PG15+): LOCALE is used instead
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+do $$
+declare s text; o oid;
+begin
+  if current_setting('server_version_num')::int >= 100000
+     and exists (select 1 from pg_collation where collprovider = 'i')
+     and (select pg_encoding_to_char(encoding) from pg_database where datname = current_database())
+         not in ('SQL_ASCII') then
+    execute 'create collation fix_icu (provider = icu, locale = ''und'', deterministic = false)'
+      ;
+    select oid into o from pg_collation where collname = 'fix_icu';
+    s := ddlx_create_collation(o);
+    assert s not like '%NULL%', 'no NULLs in ICU collation: ' || s;
+    assert s like '%PROVIDER = icu%', 'provider: ' || s;
+    if current_setting('server_version_num')::int >= 150000 then
+      assert s like '%LOCALE = ''und''%' and s not like '%LC_COLLATE%', 'ICU locale: ' || s;
+    end if;
+    execute 'drop collation fix_icu';
+    execute s;
+    assert (select collprovider from pg_collation where collname = 'fix_icu') = 'i', 'not recreated as ICU';
+  end if;
+end $$;
+rollback;
+
+-- 19c. Databases: locale values are string literals, TEMPLATE template0, ICU settings (PG15+)
+-- (CREATE DATABASE cannot run in a transaction block, so this section is not wrapped)
+set client_min_messages = warning;
+drop database if exists fix_coll_db;
+reset client_min_messages;
+select current_setting('server_version_num')::int >= 150000 and exists (select 1 from pg_collation where collprovider = 'i') as has_icu \gset
+\if :has_icu
+create database fix_coll_db template template0 encoding 'UTF8' locale_provider icu icu_locale 'und' lc_collate 'C' lc_ctype 'C';
+\else
+create database fix_coll_db template template0 encoding 'UTF8' lc_collate 'C' lc_ctype 'C';
+\endif
+select ddlx_create_database(oid) as ddl from pg_database where datname = 'fix_coll_db' \gset
+select set_config('fix.ddl', :'ddl', false) is not null as ok \gset
+do $$
+declare s text := current_setting('fix.ddl');
+begin
+  assert s like '%TEMPLATE = template0%', 'template0: ' || s;
+  assert s like '%LC_COLLATE = ''C''%' and s like '%LC_CTYPE = ''C''%', 'literals: ' || s;
+  assert s not like '%NULL%', 'no NULLs: ' || s;
+end $$;
+drop database fix_coll_db;
+select regexp_replace(:'ddl', ';.*$', '') as stmt \gset
+:stmt;
+select set_config('fix.same', (ddlx_create_database(oid) = :'ddl')::text, false) is not null as ok
+  from pg_database where datname = 'fix_coll_db' \gset
+do $$ begin assert current_setting('fix.same')::boolean, 'database round trip differs'; end $$;
+drop database fix_coll_db;
+
+-- 20. 'nosecrets' leaves out passwords: role password, FDW/server/user mapping
+-- password options and the password in a subscription's connection string
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role "Sec Role" password 'topsecret1';
+create foreign data wrapper fix_fdw options (host 'fdwhost', password 'secret_fdw');
+create server fix_srv foreign data wrapper fix_fdw options (host 'srvhost', password 'secret_srv');
+create user mapping for public server fix_srv options (user 'mapuser', password 'secret_map', sslpassword 'secret_ssl');
+
+do $$
+declare s text; o oid;
+begin
+  -- role
+  select oid into o from pg_roles where rolname = 'Sec Role';
+  s := ddlx_alter_role(o);
+  assert s like '%ENCRYPTED PASSWORD%', 'password expected without nosecrets: ' || s;
+  s := ddlx_alter_role(o, '{nosecrets}');
+  assert s not like '%PASSWORD%' and s like '%ALTER ROLE "Sec Role" WITH%', 'role password leaked: ' || s;
+  s := ddlx_create(o, '{nosecrets}');
+  assert s not like '%PASSWORD%', 'ddlx_create leaked the role password: ' || s;
+  assert ddlx_create(o) like '%ENCRYPTED PASSWORD%', 'ddlx_create without nosecrets keeps the password';
+
+  -- foreign data wrapper
+  o := (select oid from pg_foreign_data_wrapper where fdwname = 'fix_fdw');
+  s := ddlx_create(o);
+  assert s like '%secret_fdw%', 'fdw password expected by default: ' || s;
+  s := ddlx_create(o, '{nosecrets}');
+  assert s not like '%secret_fdw%' and s like '%fdwhost%', 'fdw secret handling: ' || s;
+
+  -- server
+  o := (select oid from pg_foreign_server where srvname = 'fix_srv');
+  s := ddlx_create(o);
+  assert s like '%secret_srv%', 'server password expected by default: ' || s;
+  s := ddlx_create(o, '{nosecrets}');
+  assert s not like '%secret_srv%' and s like '%srvhost%', 'server secret handling: ' || s;
+
+  -- user mapping
+  o := (select umid from pg_user_mappings where srvname = 'fix_srv');
+  s := ddlx_create(o);
+  assert s like '%secret_map%' and s like '%secret_ssl%', 'mapping passwords expected by default: ' || s;
+  s := ddlx_create(o, '{nosecrets}');
+  assert s not like '%secret_map%' and s not like '%secret_ssl%' and s like '%mapuser%',
+         'mapping secret handling: ' || s;
+  -- still valid DDL
+  execute 'drop user mapping for public server fix_srv';
+  execute s;
+end $$;
+rollback;
+
+-- 20b. subscriptions (PG10+); the connection string is parsed, not just cut
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+set local client_min_messages = error;
+do $$
+declare s text; o oid;
+begin
+  if current_setting('server_version_num')::int >= 100000 then
+    execute $q$create subscription fix_sub1
+               connection 'host=localhost dbname=x password=sekrit1 port=5432'
+               publication fix_pub with (connect = false, slot_name = none)$q$;
+    execute $q$create subscription fix_sub2
+               connection 'host=localhost password = ''se kr\''et2'' dbname=y'
+               publication fix_pub with (connect = false, slot_name = none)$q$;
+
+    o := (select oid from pg_subscription where subname = 'fix_sub1');
+    s := ddlx_create_subscription(o);
+    assert s like '%password=sekrit1%', 'conninfo expected by default: ' || s;
+    s := ddlx_create_subscription(o, '{nosecrets}');
+    assert s not like '%sekrit1%' and s like '%host=localhost dbname=x port=5432%',
+           'password must be removed, the rest kept: ' || s;
+
+    o := (select oid from pg_subscription where subname = 'fix_sub2');
+    s := ddlx_create_subscription(o, '{nosecrets}');
+    assert s not like '%kr%et2%' and s not like '%se kr%' and s like '%dbname=y%',
+           'quoted password must be removed: ' || s;
+    assert ddlx_create(o, '{nosecrets}') not like '%et2%', 'ddlx_create leaked: ' || ddlx_create(o, '{nosecrets}');
+  end if;
+end $$;
+rollback;
+
+-- 21. Callers without superuser rights: policies, user mappings and subscriptions
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role fix_plain;
+grant usage on schema fix_test to fix_plain;
+create role "Pol Role";
+create table fix_pol_t (id int);
+create policy fix_pol on fix_pol_t to "Pol Role" using (true);
+create foreign data wrapper fix_fdw;
+create server fix_srv foreign data wrapper fix_fdw;
+grant usage on foreign data wrapper fix_fdw to fix_plain;
+grant usage on foreign server fix_srv to fix_plain;
+create user mapping for public server fix_srv options (user 'u', password 'p');
+
+do $$
+declare s text; o oid;
+begin
+  if current_setting('server_version_num')::int >= 90500 then
+    o := (select oid from pg_policy where polname = 'fix_pol');
+    set local role fix_plain;
+    s := ddlx_create_policy(o);
+    reset role;
+    assert s like '%"Pol Role"%', 'policy roles must be readable without superuser: ' || s;
+  end if;
+
+  o := (select umid from pg_user_mappings where srvname = 'fix_srv');
+  set local role fix_plain;
+  s := ddlx_create_user_mapping(o);
+  reset role;
+  assert s like 'CREATE USER MAPPING%', 'user mapping as plain user: ' || coalesce(s,'(null)');
+  assert s not like '%''p''%', 'options of a mapping the caller does not own must stay hidden: ' || s;
+
+  if current_setting('server_version_num')::int >= 100000 then
+    set local client_min_messages = error;
+    execute $q$create subscription fix_sub3 connection 'host=localhost dbname=x password=sekrit3'
+               publication fix_pub with (connect = false, slot_name = none)$q$;
+    o := (select oid from pg_subscription where subname = 'fix_sub3');
+    set local role fix_plain;
+    s := ddlx_create_subscription(o);
+    reset role;
+    assert s like 'CREATE SUBSCRIPTION fix_sub3%', 'subscription as plain user: ' || coalesce(s,'(null)');
+    assert s not like '%sekrit3%', 'conninfo must not be visible to a plain user: ' || s;
+  end if;
+end $$;
+rollback;
+
+-- 22. Script safety: names with CR/LF or "*/" must not break out of comments
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create table fix_victim (id int);
+create table fix_normal (id int);
+
+do $$
+declare s text; b text; ok boolean; n text;
+begin
+  -- helpers
+  assert ddlx_comment_out(E'ALTER TABLE "x\nDROP y"') = E'-- ALTER TABLE "x\n-- DROP y"\n', 'comment_out LF';
+  assert ddlx_comment_out(E'a\r\nb\rc\nd;\n') = E'-- a\r\n-- b\r-- c\n-- d;\n', 'comment_out CR/LF';
+  assert ddlx_comment_text(E'a\r\nb') = 'a\r\nb' , 'comment_text';
+
+  -- banner with line breaks in the name stays a comment
+  b := ddlx_banner(E'evil\ndrop table fix_victim;\rdrop table fix_victim;', 'TABLE', 'fix_test', E'o\nwner');
+  assert b !~ E'[\r]', 'CR in banner: ' || b;
+  assert (select bool_and(l = '' or l like '--%') from unnest(string_to_array(b, E'\n')) l),
+         'banner must consist of comment lines only: ' || b;
+
+  -- ordinary objects keep the block comment around the DROP section
+  s := ddlx_script('fix_normal'::regclass::oid, '{nowrap}');
+  assert s like E'%/*\n%DROP TABLE fix_normal;%*/\n%', 'block comment expected: ' || s;
+
+  -- a name that would close the block comment early
+  n := E'x */ ; drop table fix_victim; /* y';
+  execute format('create table %I (id int)', n);
+  s := ddlx_script(format('%I', n)::regclass::oid, '{nowrap}');
+  assert s not like E'%/*\n%', 'must not use a block comment here: ' || s;
+  execute format('drop table %I', n);
+  execute s;     -- recreates the table; the commented DROP must not run
+  assert to_regclass('fix_victim') is not null, 'script dropped an unrelated table';
+  assert to_regclass(format('%I', n)) is not null, 'script did not recreate the table';
+
+  -- a name containing a line break inside the DROP section
+  n := E'line1\nline2';
+  execute format('create table %I (id int)', n);
+  s := ddlx_script(format('%I', n)::regclass::oid, '{nowrap}');
+  execute format('drop table %I', n);
+  execute s;
+  assert to_regclass(format('%I', n)) is not null, 'table with newline not recreated';
+end $$;
+
+-- non-local (inherited) constraints are commented out as a whole (PG11+)
+do $$
+declare s text;
+begin
+  if current_setting('server_version_num')::int >= 110000 then
+    execute 'create table fix_p (id int primary key) partition by range (id)';
+    execute 'create table fix_p1 partition of fix_p for values from (1) to (10)';
+    s := ddlx_create_index('fix_p1_pkey'::regclass);
+    assert s like '-- ALTER TABLE %ADD CONSTRAINT%;' || E'\n', 'inherited constraint not commented: ' || s;
+    s := ddlx_drop_index('fix_p1_pkey'::regclass);
+    assert s like '-- ALTER TABLE %DROP CONSTRAINT%;' || E'\n', 'inherited constraint drop not commented: ' || s;
+  end if;
 end $$;
 rollback;

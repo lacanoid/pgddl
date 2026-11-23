@@ -1,8 +1,11 @@
 Version 0.33
 ------------
-- `pg_get_dependants`() improved
+- `pg_get_dependants()` improved
 - bug fixes for invalid generated DDL
 - bug fixes for collations
+- `nosecrets` options
+- fixed issues for nonsuperusers
+- script safety vs. funny table names
 
 Version 0.32
 ------------

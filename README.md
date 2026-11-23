@@ -147,6 +147,7 @@ Options are optional and are passed as text array, for example `{ine,nodcl}`. Th
 * `nogrants` - do not include `grant` statements
 * `nodcl` - include neither `alter set owner` nor grants
 * `noalter` - include neither `alter` nor DCL (grant) statements
+* `nosecrets` - exclude passwords and such
 * `ine` - add `if not exists` in bunch of places
 * `ie` - add `if exists` in a bunch of places
 * `ext` - include extension contents instead of `create extension`.
