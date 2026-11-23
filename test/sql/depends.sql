@@ -1,0 +1,69 @@
+-- Regression test for ddlx_get_dependants (classid-aware joins).
+-- Run with:  psql -v ON_ERROR_STOP=1 -f test_dependants.sql  (after loading ddlx)
+-- Everything happens in a transaction that is rolled back.
+begin;
+create schema dep_test;
+set local search_path = dep_test, public;
+
+create table t (id int primary key, v int);
+create view v1 as select id from t;
+create view v2 as select id from v1;
+create materialized view m1 as select id from v2;
+create function f(x t) returns int language sql as $f$ select 1 $f$;
+create table child (id int references t(id));
+create table p (id int) partition by range (id);
+create table p1 partition of p for values from (0) to (100);
+
+create temp table res as
+select * from ddlx_get_dependants('t'::regclass::oid);
+
+do $$
+declare
+  d_v1 int; d_v2 int; d_m1 int;
+begin
+  -- views and the materialized view are reported as pg_class entries
+  select depth into d_v1 from res where classid = 'pg_class'::regclass and objid = 'v1'::regclass::oid;
+  select depth into d_v2 from res where classid = 'pg_class'::regclass and objid = 'v2'::regclass::oid;
+  select depth into d_m1 from res where classid = 'pg_class'::regclass and objid = 'm1'::regclass::oid;
+  assert d_v1 is not null, 'v1 should depend on t';
+  assert d_v2 is not null and d_v2 > d_v1, 'v2 should come after v1';
+  assert d_m1 is not null and d_m1 > d_v2, 'm1 should come after v2';
+
+  -- function using the row type of t (reached through the type, an internal dependency)
+  assert exists (select 1 from res
+                  where classid = 'pg_proc'::regclass
+                    and objid = 'f(t)'::regprocedure::oid), 'f(t) should depend on t';
+
+  -- foreign key constraint of another table
+  assert exists (select 1 from res
+                  where classid = 'pg_constraint'::regclass
+                    and objid = (select oid from pg_constraint
+                                  where conrelid = 'child'::regclass and contype = 'f')),
+         'FK constraint should depend on t';
+
+  -- an object is never its own dependant
+  assert not exists (select 1 from ddlx_get_dependants('v1'::regclass::oid)
+                      where classid = 'pg_class'::regclass and objid = 'v1'::regclass::oid),
+         'v1 must not depend on itself';
+
+  -- the same oid in the wrong catalog has no dependants
+  assert not exists (select 1 from ddlx_get_dependants('pg_proc'::regclass, 't'::regclass::oid, '{}')),
+         'oid of t looked up as a pg_proc entry must not match pg_depend rows of t';
+
+  -- oid-only wrapper agrees with the (classid, oid) form
+  assert not exists (
+    (select * from ddlx_get_dependants('t'::regclass::oid)
+     except select * from ddlx_get_dependants('pg_class'::regclass, 't'::regclass::oid, '{}'))
+    union all
+    (select * from ddlx_get_dependants('pg_class'::regclass, 't'::regclass::oid, '{}')
+     except select * from ddlx_get_dependants('t'::regclass::oid))),
+    'wrapper and core function must agree';
+
+  -- partitions
+  assert exists (select 1 from ddlx_get_dependants('p'::regclass::oid)
+                  where objid = 'p1'::regclass::oid), 'p1 should be listed for p';
+  assert not exists (select 1 from ddlx_get_dependants('p'::regclass::oid, '{nopartitions}')
+                      where objid = 'p1'::regclass::oid), 'nopartitions should hide p1';
+end $$;
+
+rollback;

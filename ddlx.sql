@@ -135,8 +135,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE con.oid = $1
 #if 14
      AND (c.oid is null or -- hack to hide duplicated oids
-     NOT (left(c.relname,3) = 'pg_' 
-          or c.relnamespace = 'pg_catalog'::regnamespace)) 
+          c.relnamespace <> 'pg_catalog'::regnamespace)
 #end
    UNION ALL
   SELECT t.oid,'pg_trigger'::regclass,
@@ -321,12 +320,13 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
    WHERE opc.oid = $1
    UNION ALL
   SELECT e.oid, 'pg_extension'::regclass,
-         e.extname AS name, e.extnamespace::text AS namespace, 
+         e.extname AS name, n.nspname AS namespace, 
          pg_get_userbyid(e.extowner) AS owner,
          'EXTENSION'::text AS sql_kind,
-         e.extname AS sql_identifier,
+         quote_ident(e.extname) AS sql_identifier,
          NULL::aclitem[] AS acl
     FROM pg_extension e
+    JOIN pg_namespace n ON n.oid = e.extnamespace
    WHERE e.oid = $1   
 #if 9.3
    UNION ALL
@@ -508,6 +508,9 @@ SELECT  DISTINCT
 #end
    ,
    case when 'lite' ilike any($2) 
+#if 12
+        and a.attgenerated = ''
+#end
         then ' DEFAULT ' || pg_get_expr(def.adbin,def.adrelid) end,
 #if 10
   case when attidentity in ('a','d')
@@ -919,11 +922,14 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
   CASE relhasoids WHEN true THEN 'WITH OIDS' END
 #end
   ,
-    E'SERVER '||quote_ident(fs.srvname)||E' OPTIONS (\n'||
-    (select string_agg(
+    case when fs.srvname is not null
+    then E'SERVER '||quote_ident(fs.srvname)||
+         coalesce(E' OPTIONS (\n'||
+           (select string_agg(
               '    '||quote_ident(option_name)||' '||quote_nullable(option_value), 
               E',\n')
-       from pg_options_to_table(ft.ftoptions))||E'\n)'
+              from pg_options_to_table(ft.ftoptions))||E'\n)','')
+    end
     
 
   ],E'\n  ')
@@ -1828,12 +1834,12 @@ CREATE OR REPLACE FUNCTION ddlx_create_foreign_data_wrapper(oid)
  select
     'CREATE FOREIGN DATA WRAPPER ' || quote_ident(obj.fdwname) || E'\n' ||
     case 
-    when obj.fdwhandler is not null
+    when nullif(obj.fdwhandler,0) is not null
     then '  HANDLER ' || cast(obj.fdwhandler as regproc)
     else '  NO HANDLER'
     end || E'\n' ||
     case 
-    when obj.fdwvalidator is not null
+    when nullif(obj.fdwvalidator,0) is not null
     then '  VALIDATOR ' || cast(obj.fdwvalidator as regproc)
     else '  NO VALIDATOR'
     end ||
