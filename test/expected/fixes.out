@@ -857,3 +857,144 @@ begin
   end if;
 end $$;
 rollback;
+-- 23. REPLICA IDENTITY: FULL, NOTHING, USING INDEX (also a primary key index), none for default
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create table fix_ri_d (id int primary key);
+create table fix_ri_f (id int);
+alter table fix_ri_f replica identity full;
+create table fix_ri_n (id int);
+alter table fix_ri_n replica identity nothing;
+create table fix_ri_i (id int not null, "Odd Col" text);
+create unique index "Fix Ri Idx" on fix_ri_i (id);
+alter table fix_ri_i replica identity using index "Fix Ri Idx";
+create table fix_ri_pk (id int primary key);
+alter table fix_ri_pk replica identity using index fix_ri_pk_pkey;
+create materialized view fix_ri_m as select 1 as id;
+alter table fix_ri_m replica identity full;   -- matview columns are nullable: no USING INDEX
+create view fix_ri_v as select 1 as id;
+do $$
+declare s text; t text; r text; n text; before text; after text;
+begin
+  assert ddlx_create('fix_ri_d'::regclass::oid) not like '%REPLICA IDENTITY%', 'default needs no statement';
+  assert ddlx_create('fix_ri_v'::regclass::oid) not like '%REPLICA IDENTITY%', 'views have none';
+  assert ddlx_create('fix_ri_f'::regclass::oid) like '%ALTER TABLE fix_ri_f REPLICA IDENTITY FULL;%', 'FULL';
+  assert ddlx_create('fix_ri_n'::regclass::oid) like '%ALTER TABLE fix_ri_n REPLICA IDENTITY NOTHING;%', 'NOTHING';
+  s := ddlx_create('fix_ri_i'::regclass::oid);
+  assert s like '%REPLICA IDENTITY USING INDEX "Fix Ri Idx";%', 'USING INDEX: ' || s;
+  assert strpos(s, 'CREATE UNIQUE INDEX "Fix Ri Idx"') < strpos(s, 'REPLICA IDENTITY'),
+         'the index must exist before it is used: ' || s;
+  s := ddlx_create('fix_ri_pk'::regclass::oid);
+  assert s like '%REPLICA IDENTITY USING INDEX fix_ri_pk_pkey;%', 'primary key index: ' || s;
+  assert strpos(s, 'PRIMARY KEY') < strpos(s, 'REPLICA IDENTITY'), 'constraint first: ' || s;
+  assert ddlx_create('fix_ri_m'::regclass::oid) like '%ALTER TABLE fix_ri_m REPLICA IDENTITY FULL;%', 'matview';
+
+  -- options
+  assert ddlx_create('fix_ri_f'::regclass::oid, '{lite}') not like '%REPLICA IDENTITY%', 'lite';
+  assert ddlx_create('fix_ri_i'::regclass::oid, '{noindexes}') not like '%REPLICA IDENTITY%',
+         'USING INDEX is meaningless without indexes';
+  -- replica identity belongs to the indexes part, so 'noindexes' leaves all of it out
+  assert ddlx_create('fix_ri_f'::regclass::oid, '{noindexes}') not like '%REPLICA IDENTITY%',
+         'noindexes omits the indexes part';
+
+  -- round trip: the recreated tables have the same replica identity
+  foreach t in array array['fix_ri_f','fix_ri_n','fix_ri_i','fix_ri_pk'] loop
+    select relreplident::text || coalesce((select i.relname from pg_index x join pg_class i on i.oid = x.indexrelid
+                                            where x.indrelid = c.oid and x.indisreplident), '')
+      into before from pg_class c where c.oid = t::regclass;
+    s := ddlx_create(t::regclass::oid);
+    execute format('drop table %I', t);
+    execute s;
+    select relreplident::text || coalesce((select i.relname from pg_index x join pg_class i on i.oid = x.indexrelid
+                                            where x.indrelid = c.oid and x.indisreplident), '')
+      into after from pg_class c where c.oid = t::regclass;
+    assert before = after, 'replica identity of ' || t || ' differs: ' || before || ' <> ' || after;
+  end loop;
+end $$;
+rollback;
+-- 24. SECURITY LABEL: objects, columns, shared objects, several providers
+-- (no label provider is available in a plain server, so the rows are inserted into the
+--  catalogs directly; the statements must parse, and then fail only for the missing provider)
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role "Lab Role";
+create table fix_sl (id int, "Odd Col" text);
+create function fix_sl_fn(int) returns int language sql as 'select $1';
+create view fix_sl_v as select 1 as id;
+insert into pg_seclabel (objoid, classoid, objsubid, provider, label) values
+  ('fix_sl'::regclass::oid,  'pg_class'::regclass::oid, 0, 'fixprov', 'table label'),
+  ('fix_sl'::regclass::oid,  'pg_class'::regclass::oid, 2, 'fixprov', 'it''s a column'),
+  ('fix_sl'::regclass::oid,  'pg_class'::regclass::oid, 0, 'aaaprov', 'first provider'),
+  ('fix_sl_v'::regclass::oid,'pg_class'::regclass::oid, 0, 'fixprov', 'view label'),
+  ('fix_sl_fn(int)'::regprocedure::oid, 'pg_proc'::regclass::oid, 0, 'fixprov', 'function label'),
+  ('fix_test'::regnamespace::oid, 'pg_namespace'::regclass::oid, 0, 'fixprov', 'schema label');
+insert into pg_shseclabel (objoid, classoid, provider, label)
+  select oid, 'pg_authid'::regclass::oid, 'fixprov', 'role label' from pg_roles where rolname = 'Lab Role';
+do $$
+declare s text; l text; o oid;
+begin
+  s := ddlx_security_label('fix_sl'::regclass::oid);
+  assert s like E'%SECURITY LABEL FOR fixprov ON TABLE fix_sl IS ''table label'';\n%', 'table: ' || s;
+  assert s like E'%SECURITY LABEL FOR fixprov ON COLUMN fix_sl."Odd Col" IS ''it''''s a column'';\n%', 'column: ' || s;
+  assert strpos(s, 'aaaprov') < strpos(s, 'fixprov'), 'ordered by provider: ' || s;
+  assert ddlx_security_label('fix_sl_v'::regclass::oid) like '%ON VIEW fix_sl_v IS ''view label'';%', 'view';
+  assert ddlx_security_label('fix_sl_fn(int)'::regprocedure::oid) like '%ON FUNCTION fix_sl_fn(integer) IS ''function label'';%',
+         'function: ' || ddlx_security_label('fix_sl_fn(int)'::regprocedure::oid);
+  assert ddlx_security_label('fix_test'::regnamespace::oid) like '%ON SCHEMA fix_test IS ''schema label'';%', 'schema';
+  select oid into o from pg_roles where rolname = 'Lab Role';
+  assert ddlx_security_label(o) like '%SECURITY LABEL FOR fixprov ON ROLE "Lab Role" IS ''role label'';%',
+         'role: ' || ddlx_security_label(o);
+
+  -- no label, no output; another object with the same oid in a different catalog is not confused
+  assert ddlx_security_label('fix_sl_fn(int)'::regprocedure::oid) not like '%table label%', 'class aware';
+end $$;
+do $$
+declare s text; stmt text;
+begin
+  -- part of the full definition, and switchable
+  s := ddlx_create('fix_sl'::regclass::oid);
+  assert s like '%SECURITY LABEL FOR fixprov ON TABLE fix_sl%', 'ddlx_create includes labels: ' || s;
+  assert strpos(s, 'CREATE TABLE') < strpos(s, 'SECURITY LABEL'), 'labels after the object: ' || s;
+  assert ddlx_create('fix_sl'::regclass::oid, '{nolabels}') not like '%SECURITY LABEL%', 'nolabels';
+  assert ddlx_create('fix_sl'::regclass::oid, '{lite}') not like '%SECURITY LABEL%', 'lite';
+  assert ddlx_createonly('fix_sl'::regclass::oid) like '%SECURITY LABEL%', 'createonly includes labels';
+  assert ddlx_script('fix_sl'::regclass::oid) like '%SECURITY LABEL FOR fixprov ON TABLE%', 'script includes labels';
+
+  -- every statement parses: it can only fail because the provider is not loaded
+  for stmt in select unnest(string_to_array(trim(trailing E'\n' from
+                ddlx_security_label('fix_sl'::regclass::oid)), E'\n')) loop
+    begin
+      execute stmt;
+    exception when invalid_parameter_value then null;   -- "provider ... is not loaded"
+    end;
+  end loop;
+end $$;
+rollback;
+-- 25. Volatility: the generators only read the catalogs, they never write
+select p.proname, p.provolatile
+  from pg_proc p
+ where p.proname like 'ddlx\_%' and pg_function_is_visible(p.oid)
+   and p.provolatile = 'v'
+ order by 1;
+ proname | provolatile 
+---------+-------------
+(0 rows)
+
+select count(*) > 50 as many_stable
+  from pg_proc p
+ where p.proname like 'ddlx\_%' and pg_function_is_visible(p.oid) and p.provolatile = 's';
+ many_stable 
+-------------
+ t
+(1 row)
+
+select string_agg(distinct p.proname, ', ' order by p.proname) as immutable_ones
+  from pg_proc p
+ where p.proname like 'ddlx\_%' and pg_function_is_visible(p.oid) and p.provolatile = 'i';
+                      immutable_ones                      
+----------------------------------------------------------
+ ddlx_comment_out, ddlx_comment_text, ddlx_set_config_sql
+(1 row)
+
