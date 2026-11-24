@@ -44,6 +44,7 @@ select * from a
  ddlx_create_conversion(oid)                        | 
  ddlx_create_database(oid)                          | 
  ddlx_create_default(oid)                           | 
+ ddlx_create_default_acl(oid)                       | 
  ddlx_create_event_trigger(oid)                     | 
  ddlx_create_extension(oid,text[])                  | 
  ddlx_create_foreign_data_wrapper(oid,text[])       | 
@@ -87,6 +88,7 @@ select * from a
  ddlx_drop_amproc(oid)                              | 
  ddlx_drop_constraint(oid)                          | 
  ddlx_drop_default(oid)                             | 
+ ddlx_drop_default_acl(oid)                         | 
  ddlx_drop_index(regclass,text[])                   | 
  ddlx_drop_sequence(regclass)                       | 
  ddlx_drop_trigger(oid,text[])                      | 

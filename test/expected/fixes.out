@@ -998,3 +998,101 @@ select string_agg(distinct p.proname, ', ' order by p.proname) as immutable_ones
  ddlx_comment_out, ddlx_comment_text, ddlx_set_config_sql
 (1 row)
 
+-- 26. ALTER DEFAULT PRIVILEGES: objects of kind pg_default_acl
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create role "Def Owner";
+create role "Def Grantee";
+alter default privileges for role "Def Owner" in schema fix_test
+  grant select, insert on tables to "Def Grantee" with grant option;
+alter default privileges for role "Def Owner" in schema fix_test grant usage on sequences to public;
+alter default privileges for role "Def Owner" revoke execute on functions from public;
+alter default privileges for role "Def Owner" grant select on tables to "Def Grantee";
+do $$
+declare o oid; s text; creates text; drops text; before text; after text; r record;
+begin
+  select oid into o from pg_roles where rolname = 'Def Owner';
+  assert (select count(*) from pg_default_acl where defaclrole = o) = 4, 'setup';
+
+  -- identification and the generic entry points
+  for r in select oid from pg_default_acl where defaclrole = o loop
+    assert (select sql_kind from ddlx_identify(r.oid)) = 'DEFAULT PRIVILEGES', 'identify';
+    s := ddlx_create(r.oid);
+    assert s like '%ALTER DEFAULT PRIVILEGES FOR ROLE "Def Owner"%', 'create: ' || s;
+    assert s not like '%OWNER TO%', 'no OWNER TO for default privileges: ' || s;
+    assert ddlx_drop(r.oid) like '%ALTER DEFAULT PRIVILEGES FOR ROLE "Def Owner"%REVOKE ALL%', 'drop';
+  end loop;
+
+  -- spot checks of the generated statements
+  select string_agg(ddlx_create_default_acl(oid), '' order by oid) into creates
+    from pg_default_acl where defaclrole = o;
+  assert creates like '%ALTER DEFAULT PRIVILEGES FOR ROLE "Def Owner" IN SCHEMA fix_test GRANT INSERT, SELECT ON TABLES TO "Def Grantee" WITH GRANT OPTION;%',
+         'schema entry: ' || creates;
+  assert creates like '%IN SCHEMA fix_test GRANT USAGE ON SEQUENCES TO PUBLIC;%', 'PUBLIC: ' || creates;
+  assert creates like '%FOR ROLE "Def Owner" REVOKE ALL ON FUNCTIONS FROM PUBLIC;%', 'global revoke: ' || creates;
+  assert creates like '%FOR ROLE "Def Owner" GRANT SELECT ON TABLES TO "Def Grantee";%', 'global grant: ' || creates;
+  assert creates not like '%IN SCHEMA fix_test REVOKE%', 'schema entries only add: ' || creates;
+
+  -- the drop statements remove everything, the create statements restore it
+  select string_agg(defaclobjtype::text || ':' || defaclnamespace::oid::text || ':' || defaclacl::text, ';' order by defaclobjtype, defaclnamespace)
+    into before from pg_default_acl where defaclrole = o;
+  select string_agg(ddlx_drop_default_acl(oid), '' order by oid) into drops
+    from pg_default_acl where defaclrole = o;
+  execute drops;
+  assert (select count(*) from pg_default_acl where defaclrole = o) = 0,
+         'drop must restore the built-in defaults: ' || drops;
+  execute creates;
+  select string_agg(defaclobjtype::text || ':' || defaclnamespace::oid::text || ':' || defaclacl::text, ';' order by defaclobjtype, defaclnamespace)
+    into after from pg_default_acl where defaclrole = o;
+  assert before = after, 'round trip differs: ' || before || ' <> ' || coalesce(after, '(null)');
+end $$;
+rollback;
+-- 27. Table access methods (PG12+): USING is written when it is not the default
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+do $$
+declare s text; n text;
+begin
+  if current_setting('server_version_num')::int >= 120000 then
+    execute 'create access method fix_heap type table handler heap_tableam_handler';
+    execute 'create table fix_am_t (id int) using fix_heap';
+    execute 'create table fix_am_h (id int)';
+    execute 'create materialized view fix_am_m using fix_heap as select 1 as id';
+    execute 'create materialized view fix_am_mh as select 1 as id';
+    execute 'create table fix_am_p (id int) partition by range (id)';
+    execute 'create table fix_am_c partition of fix_am_p for values from (1) to (5) using fix_heap';
+
+    assert ddlx_create_table('fix_am_t'::regclass) like '%USING fix_heap;%', 'table: ' || ddlx_create_table('fix_am_t'::regclass);
+    assert ddlx_create_table('fix_am_h'::regclass) not like '%USING%', 'heap needs no USING';
+    assert ddlx_create_table('fix_am_t'::regclass, '{lite}') not like '%USING%', 'lite';
+    assert ddlx_create_table('fix_am_c'::regclass) like '%FOR VALUES FROM (1) TO (5)%USING fix_heap;%',
+           'partition: ' || ddlx_create_table('fix_am_c'::regclass);
+    assert ddlx_create_view('fix_am_m'::regclass) like 'CREATE MATERIALIZED VIEW % USING fix_heap AS%',
+           'matview: ' || ddlx_create_view('fix_am_m'::regclass);
+    assert ddlx_create_view('fix_am_mh'::regclass) not like '%USING%', 'matview heap';
+
+    -- valid DDL, same method after a round trip
+    foreach n in array array['fix_am_t','fix_am_c'] loop
+      s := ddlx_create_table(n::regclass);
+      execute format('drop table %I', n);
+      execute s;
+      assert (select am.amname from pg_class c join pg_am am on am.oid = c.relam where c.oid = n::regclass) = 'fix_heap',
+             'access method lost for ' || n;
+    end loop;
+    s := ddlx_create_view('fix_am_m'::regclass);
+    execute 'drop materialized view fix_am_m';
+    execute s;
+    assert (select am.amname from pg_class c join pg_am am on am.oid = c.relam where c.oid = 'fix_am_m'::regclass) = 'fix_heap',
+           'matview access method lost';
+
+    -- when the default was changed, heap has to be spelled out
+    execute 'set local default_table_access_method = fix_heap';
+    execute 'create table fix_am_explicit (id int) using heap';
+    s := ddlx_create_table('fix_am_explicit'::regclass);
+    assert s like '%USING heap;%', 'explicit heap under a changed default: ' || s;
+    execute 'reset default_table_access_method';
+  end if;
+end $$;
+rollback;

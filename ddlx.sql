@@ -242,6 +242,24 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
     FROM pg_cast ca
    WHERE ca.oid = $1
    UNION ALL
+  SELECT da.oid,'pg_default_acl'::regclass,
+         case da.defaclobjtype
+              when 'r' then 'TABLES' when 'S' then 'SEQUENCES' when 'f' then 'FUNCTIONS'
+              when 'T' then 'TYPES' when 'n' then 'SCHEMAS' when 'L' then 'LARGE OBJECTS' end as name,
+         n.nspname as namespace, 
+         pg_get_userbyid(da.defaclrole) as owner,
+         'DEFAULT PRIVILEGES' as sql_kind,
+         format('FOR ROLE %I%s ON %s', pg_get_userbyid(da.defaclrole),
+                case when da.defaclnamespace <> 0 
+                     then format(' IN SCHEMA %I', n.nspname) else '' end,
+                case da.defaclobjtype
+              when 'r' then 'TABLES' when 'S' then 'SEQUENCES' when 'f' then 'FUNCTIONS'
+              when 'T' then 'TYPES' when 'n' then 'SCHEMAS' when 'L' then 'LARGE OBJECTS' end) as sql_identifier,
+         null as acl   -- the ACL is not a GRANT target; see ddlx_create_default_acl
+    FROM pg_default_acl da
+    LEFT JOIN pg_namespace n ON n.oid = da.defaclnamespace
+   WHERE da.oid = $1
+   UNION ALL
   SELECT co.oid,'pg_collation'::regclass,
          co.collname as name, n.nspname as namespace, 
          pg_get_userbyid(co.collowner) as owner,
@@ -892,6 +910,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
           case obj.sql_kind
            when 'INDEX' then null
            when 'EXTENSION' then null
+           when 'DEFAULT PRIVILEGES' then null   -- belongs to the role named in the statement
            else 'ALTER '||sql_kind||' '||sql_identifier||
                  ' OWNER TO '||quote_ident(owner)||E';\n'
           end end
@@ -969,6 +988,16 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
   THEN 'PARTITION BY ' || pg_get_partkeydef($1)
   END
 #end
+#if 12
+  ,
+  -- Table access method (PG12+). heap is the default unless default_table_access_method
+  -- was changed, in which case it has to be spelled out as well.
+  CASE 
+  WHEN c.relam <> 0 AND NOT 'lite' ILIKE ANY($2)
+   AND (am.amname <> 'heap' OR current_setting('default_table_access_method') <> 'heap')
+  THEN 'USING ' || quote_ident(am.amname)
+  END
+#end
 #unless 12
   ,
   CASE relhasoids WHEN true THEN 'WITH OIDS' END
@@ -990,6 +1019,9 @@ CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
  FROM pg_class c JOIN obj ON (true)
  LEFT JOIN pg_foreign_table  ft ON (c.oid = ft.ftrelid)
  LEFT JOIN pg_foreign_server fs ON (ft.ftserver = fs.oid)
+#if 12
+ LEFT JOIN pg_am am ON am.oid = c.relam
+#end
 #if 10
  LEFT JOIN pg_partitioned_table p ON p.partrelid = c.oid
 #end
@@ -1007,7 +1039,15 @@ CREATE OR REPLACE FUNCTION ddlx_create_view(regclass, text[] default '{}')
     when 'v' THEN case when 'lite' ilike any($2) then '' else 'OR REPLACE ' end || 'VIEW '
     when 'm' THEN 'MATERIALIZED VIEW ' ||
       case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end
-  end || (oid::regclass::text) || E' AS\n' ||
+  end || (oid::regclass::text) ||
+#if 12
+  coalesce(
+    (select ' USING ' || quote_ident(am.amname) from pg_am am
+      where am.oid = t.relam and t.relkind = 'm' and not 'lite' ilike any($2)
+        and (am.amname <> 'heap' or current_setting('default_table_access_method') <> 'heap')),
+    '') ||
+#end
+  E' AS\n' ||
   trim(';' from pg_catalog.pg_get_viewdef(oid,true)) ||
 #if 9.3
   case when relkind='m' and not relispopulated
@@ -2829,6 +2869,81 @@ $function$  strict;
 
 --------------------------------------------------------------- ---------------
 
+#if 9.2
+-- ALTER DEFAULT PRIVILEGES. An entry without a schema replaces the built-in default
+-- ACL, so the owner and PUBLIC are revoked first and everything that remains is
+-- granted again; an entry with a schema only adds to the defaults.
+CREATE OR REPLACE FUNCTION ddlx_create_default_acl(oid)
+ RETURNS text LANGUAGE sql STABLE AS $function$
+ with obj as (select * from ddlx_identify($1) where sql_kind = 'DEFAULT PRIVILEGES'),
+ d as (
+  select da.*, obj.owner, obj.name as objs,
+         format('ALTER DEFAULT PRIVILEGES FOR ROLE %I%s', obj.owner,
+                case when da.defaclnamespace <> 0
+                     then format(' IN SCHEMA %I', obj.namespace) else '' end) as prefix
+    from pg_default_acl da join obj on obj.oid = da.oid
+ ),
+ g as (
+  select d.prefix, d.objs,
+         coalesce(quote_ident(r.rolname), 'PUBLIC') as grantee,
+         e.is_grantable,
+         string_agg(e.privilege_type, ', ' order by e.privilege_type) as privs
+    from d, aclexplode(d.defaclacl) e
+    left join pg_roles r on r.oid = e.grantee
+   group by d.prefix, d.objs, r.rolname, e.grantee, e.is_grantable
+ )
+ select (select case when d.defaclnamespace = 0
+              then format(E'%s REVOKE ALL ON %s FROM PUBLIC;\n%s REVOKE ALL ON %s FROM %I;\n',
+                          d.prefix, d.objs, d.prefix, d.objs, d.owner)
+              else '' end
+           from d)
+        || coalesce((select string_agg(
+                format(E'%s GRANT %s ON %s TO %s%s;\n', g.prefix, g.privs, g.objs, g.grantee,
+                       case when g.is_grantable then ' WITH GRANT OPTION' else '' end),
+                '' order by lower(g.grantee), g.is_grantable)
+              from g), '')
+$function$  strict;
+
+-- Restores the built-in default: no schema entries are left, and a global entry is
+-- made equal to acldefault() again (which removes it).
+CREATE OR REPLACE FUNCTION ddlx_drop_default_acl(oid)
+ RETURNS text LANGUAGE sql STABLE AS $function$
+ with obj as (select * from ddlx_identify($1) where sql_kind = 'DEFAULT PRIVILEGES'),
+ d as (
+  select da.*, obj.owner, obj.name as objs,
+         format('ALTER DEFAULT PRIVILEGES FOR ROLE %I%s', obj.owner,
+                case when da.defaclnamespace <> 0
+                     then format(' IN SCHEMA %I', obj.namespace) else '' end) as prefix
+    from pg_default_acl da join obj on obj.oid = da.oid
+ ),
+ cur as (   -- everybody who holds something now
+  select distinct d.prefix, d.objs, coalesce(quote_ident(r.rolname), 'PUBLIC') as grantee
+    from d, aclexplode(d.defaclacl) e left join pg_roles r on r.oid = e.grantee
+  union
+  select d.prefix, d.objs, 'PUBLIC' from d where d.defaclnamespace = 0
+  union
+  select d.prefix, d.objs, quote_ident(d.owner) from d where d.defaclnamespace = 0
+ ),
+ dflt as (  -- what a global entry goes back to
+  select d.prefix, d.objs,
+         coalesce(quote_ident(r.rolname), 'PUBLIC') as grantee, e.is_grantable,
+         string_agg(e.privilege_type, ', ' order by e.privilege_type) as privs
+    from d, aclexplode(acldefault(d.defaclobjtype, d.defaclrole)) e
+    left join pg_roles r on r.oid = e.grantee
+   where d.defaclnamespace = 0
+   group by d.prefix, d.objs, r.rolname, e.grantee, e.is_grantable
+ )
+ select coalesce((select string_agg(format(E'%s REVOKE ALL ON %s FROM %s;\n', prefix, objs, grantee),
+                                    '' order by grantee) from cur), '')
+        || coalesce((select string_agg(
+                format(E'%s GRANT %s ON %s TO %s%s;\n', prefix, privs, objs, grantee,
+                       case when is_grantable then ' WITH GRANT OPTION' else '' end),
+                '' order by lower(grantee)) from dflt), '')
+$function$  strict;
+#end
+
+--------------------------------------------------------------- ---------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_collation(oid, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
 with obj as (select * from ddlx_identify($1))
@@ -3221,6 +3336,9 @@ with obj as (select * from ddlx_identify($1))
     when 'pg_foreign_server'::regclass then ddlx_create_server(oid,$2)
     when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid,$2)
     when 'pg_cast'::regclass           then ddlx_create_cast(oid)
+#if 9.2
+    when 'pg_default_acl'::regclass    then ddlx_create_default_acl(oid)
+#end
     when 'pg_collation'::regclass      then ddlx_create_collation(oid,$2)
     when 'pg_conversion'::regclass     then ddlx_create_conversion(oid)
     when 'pg_language'::regclass       then ddlx_create_language(oid)
@@ -3420,6 +3538,9 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
    when 'pg_attrdef'::regclass    then ddlx_drop_default(oid)
    when 'pg_amproc'::regclass     then ddlx_drop_amproc(oid)
    when 'pg_amop'::regclass       then ddlx_drop_amop(oid)
+#if 9.2
+   when 'pg_default_acl'::regclass then ddlx_drop_default_acl(oid)
+#end
    else
      case
        when obj.sql_kind = 'SEQUENCE'
