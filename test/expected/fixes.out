@@ -1096,3 +1096,243 @@ begin
   end if;
 end $$;
 rollback;
+-- 28. Rules: disabled rules are left out, enabled and replica rules are kept
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create table fix_rl (id int);
+create table fix_rl_log (id int);
+create rule fix_r_on as on insert to fix_rl do also insert into fix_rl_log values (new.id);
+create rule fix_r_off as on update to fix_rl do also insert into fix_rl_log values (old.id);
+create rule fix_r_rep as on delete to fix_rl do also insert into fix_rl_log values (old.id);
+alter table fix_rl disable rule fix_r_off;
+alter table fix_rl enable replica rule fix_r_rep;
+do $$
+declare s text;
+begin
+  s := ddlx_create('fix_rl'::regclass::oid);
+  assert s like '%CREATE RULE fix_r_on %', 'enabled rule expected: ' || s;
+  assert s like '%CREATE RULE fix_r_rep %', 'replica rule expected: ' || s;
+  assert s not like '%fix_r_off%', 'disabled rule must be omitted: ' || s;
+  assert ddlx_create_rules('fix_rl'::regclass) not like '%fix_r_off%', 'ddlx_create_rules';
+  -- the rest of the table is not affected
+  assert ddlx_create('fix_rl_log'::regclass::oid) not like '%CREATE RULE%', 'no rules on the other table';
+end $$;
+rollback;
+-- 29. Event triggers: DISABLE / ENABLE REPLICA / ENABLE ALWAYS
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create function fix_etf() returns event_trigger language plpgsql as 'begin end';
+create event trigger fix_et_on on ddl_command_end execute function fix_etf();
+create event trigger fix_et_off on ddl_command_end execute function fix_etf();
+create event trigger fix_et_rep on ddl_command_end execute function fix_etf();
+create event trigger fix_et_alw on ddl_command_end execute function fix_etf();
+alter event trigger fix_et_off disable;
+alter event trigger fix_et_rep enable replica;
+alter event trigger fix_et_alw enable always;
+do $$
+declare t text; s text; o oid; before "char"; after "char";
+begin
+  assert ddlx_create((select oid from pg_event_trigger where evtname = 'fix_et_on')) not like '%ALTER EVENT TRIGGER%',
+         'enabled needs no ALTER';
+  foreach t in array array['fix_et_off','fix_et_rep','fix_et_alw'] loop
+    select oid, evtenabled into o, before from pg_event_trigger where evtname = t;
+    s := ddlx_create(o);
+    assert s like '%ALTER EVENT TRIGGER ' || t || case t when 'fix_et_off' then ' DISABLE;%'
+                                                         when 'fix_et_rep' then ' ENABLE REPLICA;%'
+                                                         else ' ENABLE ALWAYS;%' end,
+           'state of ' || t || ': ' || s;
+    execute format('drop event trigger %I', t);
+    execute s;
+    select evtenabled into after from pg_event_trigger where evtname = t;
+    assert before = after, 'state of ' || t || ' not restored';
+  end loop;
+end $$;
+rollback;
+-- 30. Extended statistics: the statistics target (PG13+)
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create table fix_st (a int, b int);
+create statistics fix_st_default (ndistinct) on a, b from fix_st;
+create statistics fix_st_target (ndistinct) on a, b from fix_st;
+do $$
+declare s text; n text;
+begin
+  if current_setting('server_version_num')::int >= 130000 then
+    execute 'alter statistics fix_st_target set statistics 250';
+    assert ddlx_create((select oid from pg_statistic_ext where stxname = 'fix_st_default')) not like '%SET STATISTICS%',
+           'default target needs no ALTER';
+    s := ddlx_create((select oid from pg_statistic_ext where stxname = 'fix_st_target'));
+    assert s like '%ALTER STATISTICS %fix_st_target SET STATISTICS 250;%', 'target: ' || s;
+    assert strpos(s, 'CREATE STATISTICS') < strpos(s, 'ALTER STATISTICS'), 'order: ' || s;
+    assert ddlx_create('fix_st'::regclass::oid) like '%SET STATISTICS 250;%', 'part of the table definition';
+
+    execute 'drop statistics fix_st_target';
+    execute s;
+    assert (select stxstattarget from pg_statistic_ext where stxname = 'fix_st_target') = 250, 'not restored';
+  end if;
+end $$;
+rollback;
+-- 31. Tablespace of indexes and of the indexes behind constraints (unless nostorage / lite)
+-- (a plain server has no usable tablespace, so pg_global is put into pg_class to get a name)
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create table fix_ts (id int primary key, v text unique, w text);
+create index fix_ts_i on fix_ts (w);
+update pg_class set reltablespace = 1664
+ where oid in ('fix_ts_i'::regclass, 'fix_ts_pkey'::regclass, 'fix_ts_v_key'::regclass);
+do $$
+declare s text;
+begin
+  assert ddlx_create_index('fix_ts_i'::regclass) like E'%(w) TABLESPACE pg_global;\n', 'index: ' || ddlx_create_index('fix_ts_i'::regclass);
+  assert ddlx_create_index('fix_ts_i'::regclass, '{nostorage}') not like '%TABLESPACE%', 'nostorage';
+  assert ddlx_create_index('fix_ts_i'::regclass, '{lite}') not like '%TABLESPACE%', 'lite';
+  s := ddlx_create('fix_ts'::regclass::oid);
+  assert s like '%PRIMARY KEY (id) USING INDEX TABLESPACE pg_global%', 'primary key: ' || s;
+  assert s like '%UNIQUE (v) USING INDEX TABLESPACE pg_global%', 'unique: ' || s;
+  assert s like '%(w) TABLESPACE pg_global;%', 'index in the table definition: ' || s;
+  s := ddlx_create('fix_ts'::regclass::oid, '{nostorage}');
+  assert s not like '%TABLESPACE%', 'nostorage: ' || s;
+  assert ddlx_create_constraint((select oid from pg_constraint where conname = 'fix_ts_pkey'))
+         like '%USING INDEX TABLESPACE pg_global;%', 'ddlx_create_constraint';
+  -- indexes in the default tablespace stay as they were
+  assert ddlx_create_index('fix_ts_i'::regclass) is not null;
+end $$;
+rollback;
+-- 31b. Storage parameters of the indexes behind constraints: WITH (...) is kept
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create table fix_wo (id int primary key with (fillfactor = 70), v text unique with (fillfactor = 80, deduplicate_items = off),
+                     w int, constraint fix_wo_ex exclude using hash (w with =) with (fillfactor = 60));
+create table fix_wo_plain (id int primary key);
+do $$
+declare s text; t text; before text; after text;
+begin
+  s := ddlx_create('fix_wo'::regclass::oid);
+  assert s like '%PRIMARY KEY (id) WITH (fillfactor=''70'')%', 'primary key: ' || s;
+  assert s like '%UNIQUE (v) WITH (deduplicate_items=''off'', fillfactor=''80'')%'
+      or s like '%UNIQUE (v) WITH (fillfactor=''80'', deduplicate_items=''off'')%'
+      or current_setting('server_version_num')::int < 130000, 'unique: ' || s;
+  assert s like '%EXCLUDE USING hash (w WITH =) WITH (fillfactor=''60'');%', 'exclusion: ' || s;
+  -- (the exclusion constraint shows its WITH in pg_get_constraintdef itself, so it stays)
+  assert ddlx_create('fix_wo'::regclass::oid, '{nostorage}') not like '%PRIMARY KEY (id) WITH%'
+     and ddlx_create('fix_wo'::regclass::oid, '{nostorage}') not like '%UNIQUE (v) WITH%', 'nostorage: ' || ddlx_create('fix_wo'::regclass::oid, '{nostorage}');
+  assert ddlx_create('fix_wo'::regclass::oid, '{lite}') not like '%fillfactor=''70''%', 'lite';
+  assert ddlx_create('fix_wo_plain'::regclass::oid) not like '%WITH (%', 'nothing to add: ' || ddlx_create('fix_wo_plain'::regclass::oid);
+  assert ddlx_create_constraint((select oid from pg_constraint where conname = 'fix_wo_pkey'))
+         like '%PRIMARY KEY (id) WITH (fillfactor=''70'');%', 'ddlx_create_constraint';
+
+  -- round trip: the indexes have the same options afterwards
+  select string_agg(c.relname || ':' || coalesce((select array_agg(o order by o) from unnest(c.reloptions) o)::text, ''), ';' order by c.relname)
+    into before from pg_class c where c.relnamespace = 'fix_test'::regnamespace and c.relname like 'fix_wo%' and c.relkind = 'i';
+  execute 'drop table fix_wo';
+  execute s;
+  select string_agg(c.relname || ':' || coalesce((select array_agg(o order by o) from unnest(c.reloptions) o)::text, ''), ';' order by c.relname)
+    into after from pg_class c where c.relnamespace = 'fix_test'::regnamespace and c.relname like 'fix_wo%' and c.relkind = 'i';
+  assert before = after, 'index options differ: ' || before || ' <> ' || after;
+end $$;
+rollback;
+-- 32. Sequences: data type, cache, identity sequences, current value
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create sequence fix_sq_big;
+create sequence fix_sq_small as smallint increment by 2 minvalue 3 maxvalue 1000 start 7 cache 20 cycle;
+create sequence fix_sq_used cache 10;
+select nextval('fix_sq_used');
+ nextval 
+---------
+       1
+(1 row)
+
+create table fix_id (id int generated by default as identity (start 10 increment 3 cache 5), v int);
+insert into fix_id (v) values (1);
+do $$
+declare s text; n text; before text; after text; q text; lv bigint;
+begin
+  assert ddlx_create('fix_sq_big'::regclass::oid) like '%CREATE SEQUENCE fix_sq_big;%', 'plain sequence stays plain';
+  s := ddlx_create('fix_sq_small'::regclass::oid);
+  assert s like '%CREATE SEQUENCE fix_sq_small AS smallint%', 'AS smallint: ' || s;
+  assert s ~ 'CREATE SEQUENCE fix_sq_small AS smallint\n  INCREMENT BY 2\n  MINVALUE 3\n  MAXVALUE 1000\n  START WITH 7\n  CACHE 20\n  CYCLE;',
+         'parameters belong to CREATE SEQUENCE: ' || s;
+
+  -- round trip of the sequence parameters
+  foreach n in array array['fix_sq_big','fix_sq_small','fix_sq_used'] loop
+    select (s.seqtypid::regtype, s.seqstart, s.seqincrement, s.seqmax, s.seqmin, s.seqcache, s.seqcycle)::text
+      into before from pg_sequence s where s.seqrelid = n::regclass;
+    q := ddlx_create(n::regclass::oid);
+    execute format('drop sequence %I', n);
+    execute q;
+    select (s.seqtypid::regtype, s.seqstart, s.seqincrement, s.seqmax, s.seqmin, s.seqcache, s.seqcycle)::text
+      into after from pg_sequence s where s.seqrelid = n::regclass;
+    assert before = after, n || ' differs: ' || before || ' <> ' || after;
+  end loop;
+
+  -- current value only on request, and only once nextval was called
+  perform nextval('fix_sq_used');    -- the round trip above started the sequence over
+  assert ddlx_create('fix_sq_used'::regclass::oid) not like '%setval%', 'no setval by default';
+  s := ddlx_create('fix_sq_used'::regclass::oid, '{setval}');
+  assert s like '%SELECT pg_catalog.setval(''fix_sq_used'', 10, true);%', 'setval: ' || s;
+  assert ddlx_create('fix_sq_used'::regclass::oid, '{data}') like '%setval%', 'data implies setval';
+  assert ddlx_create('fix_sq_big'::regclass::oid, '{setval}') not like '%setval%', 'never called: nothing to restore';
+
+  -- identity column: the sequence parameters come with the table
+  s := ddlx_create('fix_id'::regclass::oid);
+  assert s like '%ALTER SEQUENCE fix_id_id_seq%INCREMENT BY 3%START WITH 10%CACHE 5%', 'identity sequence: ' || s;
+  assert ddlx_create('fix_id'::regclass::oid, '{nosettings}') not like '%ALTER SEQUENCE%', 'nosettings';
+  assert ddlx_create('fix_id'::regclass::oid) not like '%setval%', 'no setval by default';
+  lv := pg_sequence_last_value('fix_id_id_seq'::regclass);   -- the cached range, not the last id
+  assert lv >= 10, 'sequence was used';
+  assert ddlx_create('fix_id'::regclass::oid, '{setval}') like format('%%setval(''fix_id_id_seq'', %s, true)%%', lv),
+         'setval for identity: ' || ddlx_create('fix_id'::regclass::oid, '{setval}');
+
+  select (s.seqtypid::regtype, s.seqstart, s.seqincrement, s.seqmax, s.seqmin, s.seqcache, s.seqcycle)::text
+    into before from pg_sequence s where s.seqrelid = 'fix_id_id_seq'::regclass;
+  s := ddlx_create('fix_id'::regclass::oid, '{setval}');
+  execute 'drop table fix_id';
+  execute s;
+  select (s2.seqtypid::regtype, s2.seqstart, s2.seqincrement, s2.seqmax, s2.seqmin, s2.seqcache, s2.seqcycle)::text
+    into after from pg_sequence s2 where s2.seqrelid = 'fix_id_id_seq'::regclass;
+  assert before = after, 'identity sequence differs: ' || before || ' <> ' || after;
+  assert pg_sequence_last_value('fix_id_id_seq'::regclass) = lv, 'identity value restored';
+
+  -- without setval the sequences start from their start value, not from 1
+  s := ddlx_create('fix_id'::regclass::oid);
+  execute 'drop table fix_id';
+  execute s;
+  execute 'insert into fix_id (v) values (1)';
+  assert (select id from fix_id) = 10, 'identity must start at its START value';
+  q := ddlx_create('fix_sq_small'::regclass::oid);
+  execute 'drop sequence fix_sq_small';
+  execute q;
+  assert nextval('fix_sq_small') = 7, 'sequence must start at its START value';
+end $$;
+rollback;
+-- 32b. Sequences that the bare CREATE SEQUENCE could not recreate (descending, bounds above 1)
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create sequence fix_sq_desc increment by -3 start 100 minvalue -50 maxvalue 100;
+create sequence fix_sq_high minvalue 100 maxvalue 200 start 150;
+create sequence fix_sq_int as integer start 5;
+do $$
+declare n text; before text; after text; q text;
+begin
+  foreach n in array array['fix_sq_desc','fix_sq_high','fix_sq_int'] loop
+    select (s.seqtypid::regtype, s.seqstart, s.seqincrement, s.seqmax, s.seqmin, s.seqcache, s.seqcycle)::text
+      into before from pg_sequence s where s.seqrelid = n::regclass;
+    q := ddlx_create(n::regclass::oid);
+    execute format('drop sequence %I', n);
+    execute q;
+    select (s.seqtypid::regtype, s.seqstart, s.seqincrement, s.seqmax, s.seqmin, s.seqcache, s.seqcycle)::text
+      into after from pg_sequence s where s.seqrelid = n::regclass;
+    assert before = after, n || ' differs: ' || before || ' <> ' || after;
+  end loop;
+  assert nextval('fix_sq_high') = 150, 'start value of fix_sq_high';
+  assert nextval('fix_sq_desc') = 100, 'start value of fix_sq_desc';
+end $$;
+rollback;

@@ -1063,9 +1063,31 @@ $$  strict;
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_sequence(regclass)
+-- ALTER SEQUENCE with all parameters. With the 'data' or 'setval' option the current
+-- value is restored as well (only if nextval was ever called).
+CREATE OR REPLACE FUNCTION ddlx_alter_sequence(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
  with obj as (select * from ddlx_identify($1))
+#if 10
+ select 
+    'ALTER SEQUENCE '||(obj.oid::regclass::text) 
+ ||E'\n INCREMENT BY '||s.seqincrement
+ ||E'\n MINVALUE '||s.seqmin
+ ||E'\n MAXVALUE '||s.seqmax
+ ||E'\n START WITH '||s.seqstart
+ -- identity sequences are created with defaults: bring the current value to the start
+ ||case when 'restart' ilike any($2) then E'\n RESTART WITH '||s.seqstart else '' end
+ ||E'\n CACHE '||s.seqcache
+ ||E'\n '|| case when s.seqcycle then 'CYCLE' else 'NO CYCLE' end
+ ||E';\n'
+ || case when ('data' ilike any($2) or 'setval' ilike any($2))
+          and pg_sequence_last_value($1) is not null
+         then format(E'SELECT pg_catalog.setval(%L, %s, true);\n',
+                     obj.oid::regclass::text, pg_sequence_last_value($1))
+         else '' end
+ FROM pg_sequence s JOIN obj ON (obj.oid = s.seqrelid)
+ WHERE obj.sql_kind = 'SEQUENCE'
+#else
  select 
     'ALTER SEQUENCE '||(oid::regclass::text) 
  ||E'\n INCREMENT BY '||increment
@@ -1078,6 +1100,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_sequence(regclass)
  WHERE sequence_schema = obj.namespace
    AND sequence_name = obj.name
    AND obj.sql_kind = 'SEQUENCE'
+#end
 $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_drop_sequence(regclass)
@@ -1107,17 +1130,55 @@ CREATE OR REPLACE FUNCTION ddlx_drop_sequence(regclass)
    from seq
 $$  strict;
 
+#if 10
+-- The parameters of CREATE SEQUENCE that differ from what the bare statement would give.
+-- ALTER SEQUENCE ... START WITH does not move the current value, and a MINVALUE above the
+-- initial value of 1 is refused, so the parameters have to be part of CREATE.
+CREATE OR REPLACE FUNCTION ddlx_sequence_options(regclass)
+ RETURNS text LANGUAGE sql STABLE AS $$
+ with s as (
+  select ps.*,
+         case ps.seqtypid when 'smallint'::regtype then 32767::bigint
+                          when 'integer'::regtype  then 2147483647::bigint
+                          else 9223372036854775807::bigint end as typemax,
+         ps.seqincrement > 0 as asc_
+    from pg_sequence ps where ps.seqrelid = $1
+ ),
+ d as (
+  select s.*,
+         case when asc_ then 1 else -s.typemax - 1 end as def_min,
+         case when asc_ then s.typemax else -1 end as def_max
+    from s
+ )
+ select coalesce(array_to_string(array[
+          case when seqincrement <> 1 then E'\n  INCREMENT BY ' || seqincrement end,
+          case when seqmin <> def_min then E'\n  MINVALUE ' || seqmin end,
+          case when seqmax <> def_max then E'\n  MAXVALUE ' || seqmax end,
+          case when seqstart <> case when asc_ then def_min else def_max end
+               then E'\n  START WITH ' || seqstart end,
+          case when seqcache <> 1 then E'\n  CACHE ' || seqcache end,
+          case when seqcycle then E'\n  CYCLE' end
+        ], ''), '')
+   from d
+$$ strict;
+#end
+
+--------------------------------------------------------------- ---------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $$
   with seq as (
   select sc.oid::regclass,d.refobjid::regclass,
          a.attrelid,a.attname,
 #if 10
-         a.attidentity
+         a.attidentity, ps.seqtypid
 #else
-         ''
+         '', null::oid
 #end
     from pg_class sc
+#if 10
+    left join pg_sequence ps on ps.seqrelid = sc.oid
+#end
     left join pg_depend d on d.objid = sc.oid and d.deptype in ('a','i')
     left join pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
    where relkind='S' and sc.oid = $1
@@ -1132,9 +1193,12 @@ CREATE OR REPLACE FUNCTION ddlx_create_sequence(regclass, text[] default '{}')
                       when 'a' then 'ALWAYS'
                       else attidentity::text
                       end)
-        else format(e'CREATE SEQUENCE %s%s;\n',
+        else format(e'CREATE SEQUENCE %s%s%s%s;\n',
                     case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end, 
-                    $1::text)
+                    $1::text,
+                    case when seqtypid <> 'bigint'::regtype
+                         then ' AS ' || format_type(seqtypid, null) end,
+                    ddlx_sequence_options($1))
         end
 #else
  select format(e'CREATE SEQUENCE %s%s;\n',
@@ -1283,6 +1347,32 @@ $$  strict;
 
 --------------------------------------------------------------- ---------------
 
+-- pg_get_constraintdef only includes the index's WITH (...) and USING INDEX TABLESPACE
+-- in its "full command" form, which is not available from SQL. The result is meant to be
+-- appended to the definition of a primary key, unique or exclusion constraint.
+CREATE OR REPLACE FUNCTION ddlx_constraint_index_storage(oid, text[] default '{}')
+ RETURNS text LANGUAGE sql STABLE AS $function$
+ select coalesce((
+   select coalesce(
+            -- exclusion constraints already show their WITH (...) in the definition
+            (select ' WITH (' || string_agg(quote_ident(o.option_name) || '=' ||
+                                            quote_literal(o.option_value), ', '
+                                            order by o.option_name) || ')'
+               from pg_options_to_table(i.reloptions) o
+              where c.contype in ('p','u')), '')
+          ||
+          coalesce((select ' USING INDEX TABLESPACE ' || quote_ident(t.spcname)
+                      from pg_tablespace t where t.oid = i.reltablespace), '')
+     from pg_constraint c
+     join pg_class i on i.oid = c.conindid
+    where c.oid = $1
+      and c.contype in ('p','u','x')
+      and not ('nostorage' ilike any($2) or 'lite' ilike any($2))
+ ), '')
+$function$ strict;
+
+--------------------------------------------------------------- ---------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_index(regclass,ddlx_options text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $$
  with ii as (
@@ -1291,7 +1381,14 @@ CREATE OR REPLACE FUNCTION ddlx_create_index(regclass,ddlx_options text[] defaul
             THEN 'ALTER TABLE ' || text(c.oid::regclass) 
                  || ' ADD CONSTRAINT ' || quote_ident(cc.conname) 
                  || ' ' || pg_get_constraintdef(cc.oid)
+                 || ddlx_constraint_index_storage(cc.oid, $2)
             ELSE pg_get_indexdef(i.oid)
+                 -- pg_get_indexdef leaves the tablespace out
+                 || case when i.reltablespace <> 0
+                          and not ('nostorage' ilike any($2) or 'lite' ilike any($2))
+                         then ' TABLESPACE ' || quote_ident((select t.spcname from pg_tablespace t
+                                                              where t.oid = i.reltablespace))
+                         else '' end
         END
         AS indexdef,
         not coalesce(cc.conislocal,true) as commented
@@ -1473,7 +1570,7 @@ $function$ strict;
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_table_settings(regclass)
+CREATE OR REPLACE FUNCTION ddlx_alter_table_settings(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
 with 
 obj as (select * from ddlx_identify($1)),
@@ -1503,8 +1600,22 @@ os as (
   order by att.attname
  ) as a2
 )
+#if 10
+,
+-- the sequences behind identity columns carry the identity's start, increment, cache...
+idseq as (
+ select coalesce(string_agg(ddlx_alter_sequence(d.objid::regclass, $2 || '{restart}'::text[]), E'\n' order by a.attnum) || E'\n', '') as ddl
+   from pg_depend d
+   join pg_attribute a on a.attrelid = d.refobjid and a.attnum = d.refobjsubid
+  where d.classid = 'pg_class'::regclass and d.refclassid = 'pg_class'::regclass
+    and d.refobjid = $1 and d.deptype = 'i' and a.attidentity <> ''
+)
+select ob.ddl || os.ddl || idseq.ddl
+  from ob,os,idseq
+#else
 select ob.ddl || os.ddl
   from ob,os
+#end
 $function$ strict;
 
 --------------------------------------------------------------- ---------------
@@ -1552,7 +1663,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass, text[] default '{}'
   select
    'ALTER TABLE ' || text(regclass(regclass)) ||  
    ' ADD CONSTRAINT ' || quote_ident(constraint_name) || 
-   E' ' || constraint_definition as sql
+   E' ' || constraint_definition || ddlx_constraint_index_storage(gc.oid, $2) as sql
     from ddlx_get_constraints($1) gc
     join pg_constraint co on (co.oid = gc.oid)
    where is_local
@@ -1576,7 +1687,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraint(oid, text[] default '{}')
           case when t.oid is not null then 'DOMAIN' else 'TABLE' end,
           coalesce(cast(t.oid::regtype as text),cast(r.oid::regclass as text)),
           c.conname, 
-          pg_get_constraintdef(c.oid,true))
+          pg_get_constraintdef(c.oid,true) || ddlx_constraint_index_storage(c.oid, $2))
   end
    from pg_constraint c 
    left join pg_class r on (c.conrelid = r.oid)
@@ -1607,10 +1718,11 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_rules(regclass)
  RETURNS text LANGUAGE sql STABLE AS $function$
-  select coalesce(string_agg(rule_definition,E'\n')||E'\n\n','')
-    from ddlx_get_rules()
-   where regclass = $1
-     and rule_definition is not null
+  select coalesce(string_agg(gr.rule_definition,E'\n')||E'\n\n','')
+    from ddlx_get_rules($1) gr
+    join pg_rewrite r on r.ev_class = $1 and r.rulename = gr.rule_name
+   where gr.rule_definition is not null
+     and r.ev_enabled <> 'D'   -- disabled rules are left out
 $function$  strict;
 
 --------------------------------------------------------------- ---------------
@@ -2006,7 +2118,13 @@ CREATE OR REPLACE FUNCTION ddlx_create_event_trigger(oid)
         || E'\n'
     else ''
     end ||
-    '  EXECUTE PROCEDURE ' || cast(obj.evtfoid as regprocedure) || E';\n'
+    '  EXECUTE PROCEDURE ' || cast(obj.evtfoid as regprocedure) || E';\n' ||
+    case obj.evtenabled
+      when 'D' then format(E'ALTER EVENT TRIGGER %I DISABLE;\n', obj.evtname)
+      when 'R' then format(E'ALTER EVENT TRIGGER %I ENABLE REPLICA;\n', obj.evtname)
+      when 'A' then format(E'ALTER EVENT TRIGGER %I ENABLE ALWAYS;\n', obj.evtname)
+      else ''
+    end
    from obj;
 $function$  strict;
 #end
@@ -2944,6 +3062,25 @@ $function$  strict;
 
 --------------------------------------------------------------- ---------------
 
+#if 10
+-- CREATE STATISTICS plus the statistics target (stxstattarget, PG13+; NULL or -1 = default)
+CREATE OR REPLACE FUNCTION ddlx_create_statistics(oid)
+ RETURNS text LANGUAGE sql STABLE AS $$
+ select pg_get_statisticsobjdef(stx.oid) || E';\n'
+#if 13
+        || case when stx.stxstattarget >= 0
+                then format(E'ALTER STATISTICS %s SET STATISTICS %s;\n',
+                            obj.sql_identifier, stx.stxstattarget)
+                else '' end
+#end
+   from pg_statistic_ext stx
+   join ddlx_identify(stx.oid) obj on obj.classid = 'pg_statistic_ext'::regclass
+  where stx.oid = $1
+$$ strict;
+#end
+
+--------------------------------------------------------------- ---------------
+
 CREATE OR REPLACE FUNCTION ddlx_create_collation(oid, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
 with obj as (select * from ddlx_identify($1))
@@ -3363,7 +3500,7 @@ with obj as (select * from ddlx_identify($1))
 #if 9.6
     when 'pg_am'::regclass             then ddlx_create_access_method(oid)
 #if 10
-    when 'pg_statistic_ext'::regclass  then pg_get_statisticsobjdef(oid)||E';\n' 
+    when 'pg_statistic_ext'::regclass  then ddlx_create_statistics(oid)
     when 'pg_publication'::regclass    then ddlx_create_publication(oid)
     when 'pg_subscription'::regclass   then ddlx_create_subscription(oid,$2)
 #end
@@ -3381,8 +3518,8 @@ with obj as (select * from ddlx_identify($1))
     case obj.sql_kind
       when 'ROLE' THEN ddlx_alter_role(oid,$2)
       when 'DATABASE' THEN  ddlx_alter_database(oid)
-      when 'SEQUENCE' THEN ddlx_alter_sequence(oid)
-      else ddlx_alter_table_settings(oid)
+      when 'SEQUENCE' THEN ddlx_alter_sequence(oid,$2)
+      else ddlx_alter_table_settings(oid,$2)
     end as settings,
 --    ddlx_alter_table_settings(oid) as settings,
     case when 'lite' ilike any($2) then ''

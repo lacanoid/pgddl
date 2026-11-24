@@ -22,16 +22,17 @@ select * from a
  ddlx_alter_owner(oid,text[])                       | 
  ddlx_alter_role(regrole,text[])                    | 
  ddlx_alter_role_auth(oid,text[])                   | 
- ddlx_alter_sequence(regclass)                      | 
+ ddlx_alter_sequence(regclass,text[])               | 
  ddlx_alter_table_defaults(regclass,text[])         | 
  ddlx_alter_table_replica_identity(regclass,text[]) | 
  ddlx_alter_table_rls(regclass)                     | 
- ddlx_alter_table_settings(regclass)                | 
+ ddlx_alter_table_settings(regclass,text[])         | 
  ddlx_alter_table_storage(regclass,text[])          | 
  ddlx_banner(text,text,text,text,text)              | 
  ddlx_comment(oid,text[])                           | 
  ddlx_comment_out(text)                             | 
  ddlx_comment_text(text)                            | 
+ ddlx_constraint_index_storage(oid,text[])          | 
  ddlx_create_access_method(oid)                     | 
  ddlx_create_aggregate(regproc)                     | 
  ddlx_create_amop(oid)                              | 
@@ -64,6 +65,7 @@ select * from a
  ddlx_create_schema(regnamespace,text[])            | 
  ddlx_create_sequence(regclass,text[])              | 
  ddlx_create_server(oid,text[])                     | 
+ ddlx_create_statistics(oid)                        | 
  ddlx_create_subscription(oid,text[])               | 
  ddlx_create_table(regclass,text[])                 | 
  ddlx_create_tablespace(oid)                        | 
@@ -103,6 +105,7 @@ select * from a
  ddlx_grants_columns(regclass,text[])               | 
  ddlx_script_parts(oid,text[])                      | 
  ddlx_security_label(oid,text[])                    | 
+ ddlx_sequence_options(regclass)                    | 
  ddlx_set_config_sql(text)                          | 
  ddlx_subscription_conninfo(oid,text[])             | 
 
