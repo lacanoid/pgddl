@@ -7,17 +7,27 @@ a as (
 select * from a
 ;
  ddlx_alter(oid,text[])                             | Get SQL ALTER statement for any object by object id (post-data)
+ ddlx_alter(regclass,oid,text[])                    | Get SQL ALTER statement for any object by catalog and object id (exact, post-data)
+ ddlx_alter_owner(regclass,oid,text[])              | Get SQL ALTER OWNER statement for an object by catalog and object id (exact)
  ddlx_apropos(text)                                 | Search definitions (functions and views) for a regular expression
+ ddlx_comment(regclass,oid,text[])                  | Get SQL COMMENT statement for an object by catalog and object id (exact)
  ddlx_create(oid,text[])                            | Get SQL CREATE statement for any object by object id. Includes constraints, triggers, indexes...
+ ddlx_create(regclass,oid,text[])                   | Get SQL CREATE statement for any object by catalog and object id (exact)
  ddlx_createonly(oid,text[])                        | Get SQL CREATE statement for any object by object id (pre-data)
+ ddlx_createonly(regclass,oid,text[])               | Get SQL CREATE statement for any object by catalog and object id (exact, pre-data)
  ddlx_definitions(oid,text[])                       | Get individial parts of SQL definition for any object by object id
+ ddlx_definitions(regclass,oid,text[])              | Get individial parts of SQL definition for any object by class and object id (exact)
  ddlx_describe(regclass,text[])                     | Describe columns of a class
  ddlx_drop(oid,text[])                              | Get SQL DROP statement for any object by object id
+ ddlx_drop(regclass,oid,text[])                     | Get SQL DROP statement for any object by catalog and object id (exact)
  ddlx_get_dependants(regclass,oid,text[])           | Get dependants of an object given by catalog (classid) and oid
  ddlx_grants(oid,text[])                            | Get SQL GRANT statements for any object by object id
- ddlx_identify(oid)                                 | Identify any object by object id
+ ddlx_grants(regclass,oid,text[])                   | Get SQL GRANT statements for an object by catalog and object id (exact)
+ ddlx_identify(oid)                                 | Identify any object by object id (all matches, in priority order)
+ ddlx_identify(regclass,oid)                        | Identify an object by catalog and object id (exact)
  ddlx_script(oid,text[])                            | Get SQL DDL script for any object and dependants by object id
  ddlx_script(text,text[])                           | Get SQL DDL script for any object and dependants by object name
+ ddlx_security_label(regclass,oid,text[])           | Get SECURITY LABEL statements for an object by catalog and object id (exact)
  ddlx_alter_database(oid)                           | 
  ddlx_alter_owner(oid,text[])                       | 
  ddlx_alter_role(regrole,text[])                    | 

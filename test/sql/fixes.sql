@@ -1397,3 +1397,105 @@ begin
   assert nextval('fix_sq_desc') = 100, 'start value of fix_sq_desc';
 end $$;
 rollback;
+
+-- 33. Class-aware ddlx_identify: duplicate oids across catalogs
+-- (system objects can share an oid between catalogs; a dummy schema is given
+-- the oid of a user table to provoke the same situation)
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create table fix_dup (id int primary key, v text);
+comment on table fix_dup is 'the table';
+create table fix_dup_child (id int references fix_dup);
+do $$
+declare t oid := 'fix_test.fix_dup'::regclass::oid; r record; q text; c oid;
+begin
+  insert into pg_namespace (oid, nspname, nspowner) values (t, 'fix_dup_ns', 10);
+
+  -- the set function returns every match, in priority order
+  assert (select count(*) from ddlx_identify(t)) = 2, 'two matches expected';
+  assert (select array_agg(classid::text order by ordinality)
+            from ddlx_identify(t) with ordinality) = array['pg_class','pg_namespace'],
+         'priority order: tables before schemas';
+  -- the exact function returns one row per catalog
+  assert (select name from ddlx_identify('pg_class'::regclass, t)) = 'fix_dup', 'exact pg_class';
+  assert (select name from ddlx_identify('pg_namespace'::regclass, t)) = 'fix_dup_ns', 'exact pg_namespace';
+  assert (select oid from ddlx_identify('pg_proc'::regclass, t)) is null, 'no match in other catalogs';
+  assert (select classid from ddlx_identify('pg_namespace'::regclass, t)) = 'pg_namespace'::regclass;
+
+  -- bare oid resolves by priority, exact form is unambiguous
+  assert ddlx_create(t, '{nocomments}') like '%CREATE TABLE fix_dup%', 'bare oid: table wins';
+  q := ddlx_create('pg_namespace'::regclass, t, '{nocomments}');
+  assert q like '%CREATE SCHEMA%fix_dup_ns%' and q not like '%CREATE TABLE%', 'exact: schema ' || q;
+  assert ddlx_drop('pg_namespace'::regclass, t, '{}') like 'DROP SCHEMA%fix_dup_ns%', 'exact drop';
+  assert ddlx_drop('pg_class'::regclass, t, '{}') like 'DROP TABLE%fix_dup%', 'exact drop table';
+  assert ddlx_drop(t) like 'DROP TABLE%', 'bare drop';
+  assert ddlx_comment('pg_class'::regclass, t, '{comments}') like 'COMMENT ON TABLE%the table%', 'comment of the table';
+  assert ddlx_comment('pg_namespace'::regclass, t, '{}') = '', 'schema has no comment';
+  assert ddlx_alter_owner('pg_namespace'::regclass, t, '{owner}') like 'ALTER SCHEMA fix_dup_ns OWNER TO%', 'owner of schema';
+  assert ddlx_grants('pg_namespace'::regclass, t, '{}') is not null, 'grants of schema';
+  assert ddlx_security_label('pg_namespace'::regclass, t, '{}') = '', 'labels of schema';
+  assert (select classid from ddlx_definitions('pg_namespace'::regclass, t, '{}')) = 'pg_namespace'::regclass;
+  assert (select base_ddl from ddlx_definitions('pg_namespace'::regclass, t, '{}')) like '%CREATE SCHEMA%';
+  assert (select base_ddl from ddlx_definitions(t)) like '%CREATE TABLE%', 'bare definitions: table';
+  assert ddlx_createonly('pg_namespace'::regclass, t, '{}') like '%CREATE SCHEMA%';
+  assert ddlx_alter('pg_namespace'::regclass, t, '{}') is not null;
+
+  -- dependants are processed by (classid, oid), not by oid alone:
+  -- give the foreign key constraint's oid to another schema as well
+  select oid into c from pg_constraint where conrelid = 'fix_dup_child'::regclass and contype = 'f';
+  insert into pg_namespace (oid, nspname, nspowner) values (c, 'fix_dup_ns2', 10);
+  assert (select count(*) from ddlx_identify(c)) = 2, 'constraint oid is duplicated';
+  select * into r from ddlx_script_parts('fix_dup'::regclass::oid);
+  assert r.ddl_create_deps like '%FOREIGN KEY%' and r.ddl_create_deps not like '%fix_dup_ns2%',
+         'dependant constraint must not be taken for a schema: ' || r.ddl_create_deps;
+  assert r.ddl_drop_deps like '%DROP CONSTRAINT%' or r.ddl_drop_deps like '%DROP%', 'drop deps present';
+end $$;
+rollback;
+
+-- 33b. Typed first argument with an options array must keep resolving to the bare oid versions
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create table fix_ov (id int primary key);
+do $$
+begin
+  assert ddlx_create('fix_ov'::regclass, '{lite}') like '%CREATE TABLE fix_ov%', 'create';
+  assert ddlx_createonly('fix_ov'::regclass, '{lite}') like '%CREATE TABLE fix_ov%', 'createonly';
+  assert ddlx_alter('fix_ov'::regclass, '{lite}') is not null, 'alter';
+  assert ddlx_drop('fix_ov'::regclass, '{ie}') like 'DROP TABLE IF EXISTS%', 'drop';
+  assert ddlx_comment('fix_ov'::regclass, '{}') = '', 'comment';
+  assert ddlx_alter_owner('fix_ov'::regclass, '{owner}') like 'ALTER TABLE%OWNER TO%', 'owner';
+  assert ddlx_grants('fix_ov'::regclass, '{}') is not null, 'grants';
+  assert ddlx_security_label('fix_ov'::regclass, '{}') is not null, 'labels';
+  assert (select base_ddl from ddlx_definitions('fix_ov'::regclass, '{lite}')) like '%CREATE TABLE%', 'definitions';
+  assert ddlx_script('fix_ov'::regclass::oid, '{nowrap}') like '%CREATE TABLE fix_ov%', 'script';
+end $$;
+rollback;
+
+-- 34. Bare oid functions must use the exact ddlx_identify unless they are resolvers
+-- (functions with a typed argument, or knowing their catalog, call the two argument form)
+do $$
+declare bad text;
+begin
+  select string_agg(p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')', ', ' order by p.proname)
+    into bad
+    from pg_proc p
+   where p.proname like 'ddlx\_%'
+     and p.prolang = (select oid from pg_language where lanname = 'sql')
+     and p.prosrc ~ 'ddlx_identify\(\s*[A-Za-z0-9_.$]+\s*\)'
+     and p.proname <> all (array['ddlx_comment','ddlx_security_label','ddlx_alter_owner','ddlx_grants',
+          'ddlx_alter','ddlx_createonly','ddlx_create','ddlx_drop','ddlx_definitions','ddlx_get_dependants'])
+     and p.proname not in ('ddlx_identify');
+  assert bad is null, 'single argument ddlx_identify used by: ' || bad;
+  -- and the allow-listed resolvers must be the bare oid versions only
+  select string_agg(p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')', ', ')
+    into bad
+    from pg_proc p
+   where p.proname = any (array['ddlx_comment','ddlx_security_label','ddlx_alter_owner','ddlx_grants',
+          'ddlx_alter','ddlx_createonly','ddlx_create','ddlx_drop','ddlx_definitions','ddlx_get_dependants'])
+     and p.prolang = (select oid from pg_language where lanname = 'sql')
+     and p.prosrc ~ 'ddlx_identify\(\s*[A-Za-z0-9_.$]+\s*\)'
+     and p.proargtypes[0] <> 'oid'::regtype;
+  assert bad is null, 'typed variant uses single argument ddlx_identify: ' || bad;
+end $$;

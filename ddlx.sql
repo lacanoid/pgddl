@@ -7,8 +7,16 @@
 --  Helpers for digesting system catalogs
 --------------------------------------------------------------- ---------------
 
+-- UPGRADE NOTE: ddlx_identify(oid) now returns SETOF record, which CREATE OR
+-- REPLACE cannot change. When upgrading an installed ddlx run first:
+--   DROP FUNCTION ddlx_identify(oid);
+
+-- Exact identification: the object is named by its catalog (classid) and oid.
+-- Returns at most one row.  For a table's row type (or a composite type's
+-- table) the canonical object is returned, so the returned classid may
+-- differ from the one given.
 CREATE OR REPLACE FUNCTION ddlx_identify(
-  IN oid,  
+  IN regclass, IN oid,
   OUT oid oid, OUT classid regclass, 
   OUT name name,  OUT namespace name,  
   OUT owner name, OUT sql_kind text, 
@@ -42,13 +50,13 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          c.relname AS name, n.nspname AS namespace,
          pg_get_userbyid(c.relowner) AS owner,
          coalesce(cc.v,c.relkind::text) AS sql_kind,
-         cast($1::regclass AS text) AS sql_identifier,
+         cast($2::regclass AS text) AS sql_identifier,
          relacl as acl
     FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
     LEFT JOIN pg_type t 
       ON t.typrelid=c.oid AND t.typtype='c' AND c.relkind='c'
     LEFT JOIN rel_kind AS cc on cc.k = c.relkind
-   WHERE c.oid = $1
+   WHERE $1 = 'pg_class'::regclass AND c.oid = $2
    UNION ALL
   SELECT p.oid,'pg_proc'::regclass,
          p.proname AS name, n.nspname AS namespace, 
@@ -67,10 +75,10 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          end 
 #end
          AS sql_kind,
-         cast($1::regprocedure AS text) AS sql_identifier,
+         cast($2::regprocedure AS text) AS sql_identifier,
          proacl as acl
     FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-   WHERE p.oid = $1
+   WHERE $1 = 'pg_proc'::regclass AND p.oid = $2
    UNION ALL
   SELECT coalesce(c.oid,t.oid),
          case when c.oid is not null then 'pg_class'::regclass
@@ -78,7 +86,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          t.typname AS name, n.nspname AS namespace, 
          pg_get_userbyid(t.typowner) AS owner,
          coalesce(cc.v,tt.v2,t.typtype::text) AS sql_kind,
-         format_type($1,null) AS sql_identifier,
+         format_type($2,null) AS sql_identifier,
 #if 9.2
          typacl as acl
 #else
@@ -89,7 +97,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
     LEFT JOIN pg_class AS c 
       ON c.oid = t.typrelid AND t.typtype='c' AND c.relkind<>'c'
     LEFT JOIN rel_kind AS cc ON cc.k = c.relkind
-   WHERE t.oid = $1
+   WHERE $1 = 'pg_type'::regclass AND t.oid = $2
    UNION ALL
   SELECT r.oid,'pg_roles'::regclass,
          r.rolname as name, null as namespace, null as owner,
@@ -97,7 +105,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(r.rolname) as sql_identifier,
          null as acl
     FROM pg_roles r
-   WHERE r.oid = $1
+   WHERE $1 in ('pg_roles'::regclass,'pg_authid'::regclass) AND r.oid = $2
    UNION ALL
   SELECT r.oid,'pg_rewrite'::regclass,
          r.rulename as name, null as namespace, null as owner,
@@ -106,7 +114,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
            cast(c.oid::regclass as text) sql_identifier,
          null as acl
     FROM pg_rewrite r JOIN pg_class c on (c.oid = r.ev_class)
-   WHERE r.oid = $1
+   WHERE $1 = 'pg_rewrite'::regclass AND r.oid = $2
    UNION ALL
   SELECT n.oid,'pg_namespace'::regclass,
          n.nspname as name, current_database() as namespace, 
@@ -115,7 +123,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(n.nspname) as sql_identifier,
          nspacl as acl
     FROM pg_namespace n join pg_roles r on r.oid = n.nspowner
-   WHERE n.oid = $1
+   WHERE $1 = 'pg_namespace'::regclass AND n.oid = $2
    UNION ALL
   SELECT con.oid,'pg_constraint'::regclass,
          con.conname as name,
@@ -132,7 +140,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
                 ('u','UNIQUE'), ('p','PRIMARY KEY'), ('t','TRIGGER'),
 		            ('n','NOT NULL') )
              as tt on tt.column1 = con.contype
-   WHERE con.oid = $1
+   WHERE $1 = 'pg_constraint'::regclass AND con.oid = $2
 #if 14
      AND (c.oid is null or -- hack to hide duplicated oids
           c.relnamespace <> 'pg_catalog'::regnamespace)
@@ -145,7 +153,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
            as sql_identifier,
          null as acl
     FROM pg_trigger t join pg_class c on (t.tgrelid=c.oid)
-   WHERE t.oid = $1
+   WHERE $1 = 'pg_trigger'::regclass AND t.oid = $2
    UNION ALL
   SELECT ad.oid,'pg_attrdef'::regclass,
          a.attname as name, c.relname as namespace, null as owner,
@@ -156,7 +164,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
     FROM pg_attrdef ad 
     JOIN pg_class c ON (ad.adrelid=c.oid)
     JOIN pg_attribute a ON (c.oid = a.attrelid and a.attnum=ad.adnum)
-   WHERE ad.oid = $1
+   WHERE $1 = 'pg_attrdef'::regclass AND ad.oid = $2
    UNION ALL
   SELECT op.oid,'pg_operator'::regclass,
          op.oprname as name, n.nspname as namespace, 
@@ -165,7 +173,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          cast(op.oid::regoperator as text) as sql_identifier,
          null as acl
     FROM pg_operator op JOIN pg_namespace n ON n.oid=op.oprnamespace
-   WHERE op.oid = $1
+   WHERE $1 = 'pg_operator'::regclass AND op.oid = $2
    UNION ALL
   SELECT cfg.oid,'pg_ts_config'::regclass,
          cfg.cfgname as name, n.nspname as namespace, 
@@ -174,7 +182,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          cast(cfg.oid::regconfig as text) as sql_identifier,
          null as acl
     FROM pg_ts_config cfg JOIN pg_namespace n ON n.oid=cfg.cfgnamespace
-   WHERE cfg.oid = $1
+   WHERE $1 = 'pg_ts_config'::regclass AND cfg.oid = $2
    UNION ALL
   SELECT dict.oid,'pg_ts_dict'::regclass,
          dict.dictname as name, n.nspname as namespace, 
@@ -183,7 +191,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          cast(dict.oid::regdictionary as text) as sql_identifier,
          null as acl
     FROM pg_ts_dict dict JOIN pg_namespace n ON n.oid=dict.dictnamespace
-   WHERE dict.oid = $1
+   WHERE $1 = 'pg_ts_dict'::regclass AND dict.oid = $2
    UNION ALL
   SELECT prs.oid,'pg_ts_parser'::regclass,
          prs.prsname as name, n.nspname as namespace, null as owner,
@@ -193,7 +201,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
            as sql_identifier,
          null as acl
     FROM pg_ts_parser prs JOIN pg_namespace n ON n.oid=prs.prsnamespace
-   WHERE prs.oid = $1
+   WHERE $1 = 'pg_ts_parser'::regclass AND prs.oid = $2
    UNION ALL
   SELECT tmpl.oid,'pg_ts_template'::regclass,
          tmpl.tmplname as name, n.nspname as namespace, null as owner,
@@ -203,7 +211,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
            as sql_identifier,
          null as acl
     FROM pg_ts_template tmpl JOIN pg_namespace n ON n.oid=tmpl.tmplnamespace
-   WHERE tmpl.oid = $1
+   WHERE $1 = 'pg_ts_template'::regclass AND tmpl.oid = $2
    UNION ALL
   SELECT fdw.oid,'pg_foreign_data_wrapper'::regclass,
          fdw.fdwname as name, null as namespace, 
@@ -212,7 +220,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(fdw.fdwname) as sql_identifier,
          fdwacl as acl
     FROM pg_foreign_data_wrapper fdw
-   WHERE fdw.oid = $1
+   WHERE $1 = 'pg_foreign_data_wrapper'::regclass AND fdw.oid = $2
    UNION ALL
   SELECT srv.oid,'pg_foreign_server'::regclass,
          srv.srvname as name, null as namespace, 
@@ -221,7 +229,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(srv.srvname) as sql_identifier,
          srvacl as acl
     FROM pg_foreign_server srv
-   WHERE srv.oid = $1
+   WHERE $1 = 'pg_foreign_server'::regclass AND srv.oid = $2
    UNION ALL
   SELECT ums.umid,'pg_user_mapping'::regclass,
          null as name, null as namespace, null as owner, 
@@ -230,7 +238,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          ' SERVER '||quote_ident(ums.srvname) as sql_identifier,
          null as acl
     FROM pg_user_mappings ums
-   WHERE ums.umid = $1
+   WHERE $1 = 'pg_user_mapping'::regclass AND ums.umid = $2
    UNION ALL
   SELECT ca.oid,'pg_cast'::regclass,
          null as name, null as namespace, null as owner,
@@ -240,7 +248,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
            format_type(ca.casttarget,null)) as sql_identifier,
          null as acl
     FROM pg_cast ca
-   WHERE ca.oid = $1
+   WHERE $1 = 'pg_cast'::regclass AND ca.oid = $2
    UNION ALL
   SELECT da.oid,'pg_default_acl'::regclass,
          case da.defaclobjtype
@@ -258,7 +266,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          null as acl   -- the ACL is not a GRANT target; see ddlx_create_default_acl
     FROM pg_default_acl da
     LEFT JOIN pg_namespace n ON n.oid = da.defaclnamespace
-   WHERE da.oid = $1
+   WHERE $1 = 'pg_default_acl'::regclass AND da.oid = $2
    UNION ALL
   SELECT co.oid,'pg_collation'::regclass,
          co.collname as name, n.nspname as namespace, 
@@ -269,7 +277,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
            as sql_identifier,
          null as acl
     FROM pg_collation co JOIN pg_namespace n ON n.oid=co.collnamespace
-   WHERE co.oid = $1
+   WHERE $1 = 'pg_collation'::regclass AND co.oid = $2
    UNION ALL
   SELECT co.oid,'pg_conversion'::regclass,
          co.conname as name, n.nspname as namespace, 
@@ -280,7 +288,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
            as sql_identifier,
          null as acl
     FROM pg_conversion co JOIN pg_namespace n ON n.oid=co.connamespace
-   WHERE co.oid = $1
+   WHERE $1 = 'pg_conversion'::regclass AND co.oid = $2
    UNION ALL
   SELECT lan.oid,'pg_language'::regclass,
          lan.lanname as name, null as namespace, 
@@ -289,7 +297,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(lan.lanname) as sql_identifier,
          lan.lanacl as acl
     FROM pg_language lan
-   WHERE lan.oid = $1
+   WHERE $1 = 'pg_language'::regclass AND lan.oid = $2
    UNION ALL
   SELECT opf.oid,'pg_opfamily'::regclass,
          opf.opfname as name, n.nspname as namespace, 
@@ -303,7 +311,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          null as acl
     FROM pg_opfamily opf JOIN pg_namespace n ON n.oid=opf.opfnamespace
     JOIN pg_am am on (am.oid=opf.opfmethod)
-   WHERE opf.oid = $1
+   WHERE $1 = 'pg_opfamily'::regclass AND opf.oid = $2
    UNION ALL
   SELECT dat.oid,'pg_database'::regclass,
          dat.datname as name, null as namespace, 
@@ -312,7 +320,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(dat.datname) as sql_identifier,
          dat.datacl as acl
     FROM pg_database dat
-   WHERE dat.oid = $1
+   WHERE $1 = 'pg_database'::regclass AND dat.oid = $2
    UNION ALL
   SELECT spc.oid,'pg_tablespace'::regclass,
          spc.spcname as name, null as namespace, 
@@ -321,7 +329,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(spc.spcname) as sql_identifier,
          spc.spcacl as acl
     FROM pg_tablespace spc
-   WHERE spc.oid = $1
+   WHERE $1 = 'pg_tablespace'::regclass AND spc.oid = $2
    UNION ALL
   SELECT opc.oid,'pg_opclass'::regclass,
          opcname as name, n.nspname as namespace, 
@@ -335,7 +343,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          null as acl
     FROM pg_opclass opc JOIN pg_namespace n ON n.oid=opc.opcnamespace
     JOIN pg_am am ON am.oid=opc.opcmethod
-   WHERE opc.oid = $1
+   WHERE $1 = 'pg_opclass'::regclass AND opc.oid = $2
    UNION ALL
   SELECT e.oid, 'pg_extension'::regclass,
          e.extname AS name, n.nspname AS namespace, 
@@ -345,7 +353,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          NULL::aclitem[] AS acl
     FROM pg_extension e
     JOIN pg_namespace n ON n.oid = e.extnamespace
-   WHERE e.oid = $1   
+   WHERE $1 = 'pg_extension'::regclass AND e.oid = $2   
 #if 9.3
    UNION ALL
   SELECT evt.oid,'pg_event_trigger'::regclass,
@@ -355,7 +363,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(evt.evtname) as sql_identifier,
          null as acl
     FROM pg_event_trigger evt
-   WHERE evt.oid = $1
+   WHERE $1 = 'pg_event_trigger'::regclass AND evt.oid = $2
    UNION ALL
   SELECT amproc.oid,'pg_amproc'::regclass,
          'FUNCTION '||amprocnum, null as namespace, null as owner,
@@ -366,7 +374,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          as sql_identifier,
          null as acl
     FROM pg_amproc amproc
-   WHERE amproc.oid = $1
+   WHERE $1 = 'pg_amproc'::regclass AND amproc.oid = $2
    UNION ALL
   SELECT amop.oid,'pg_amop'::regclass,
          'OPERATOR '||amopstrategy, null as namespace, null as owner,
@@ -377,7 +385,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          as sql_identifier,
          null as acl
     FROM pg_amop amop
-   WHERE amop.oid = $1
+   WHERE $1 = 'pg_amop'::regclass AND amop.oid = $2
 #if 9.5
    UNION ALL
   SELECT pol.oid,'pg_policy'::regclass,
@@ -389,7 +397,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          as sql_identifier,
          null as acl
     FROM pg_policy pol JOIN pg_class c on (c.oid=pol.polrelid)
-   WHERE pol.oid = $1
+   WHERE $1 = 'pg_policy'::regclass AND pol.oid = $2
    UNION ALL
   SELECT trf.oid,'pg_transform'::regclass,
          null as name, null as namespace, null as owner,
@@ -399,7 +407,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
                   l.lanname) as sql_identifier,
          null as acl
     FROM pg_transform trf JOIN pg_language l on (l.oid=trf.trflang)
-   WHERE trf.oid = $1
+   WHERE $1 = 'pg_transform'::regclass AND trf.oid = $2
    UNION ALL
   SELECT am.oid,'pg_am'::regclass,
          am.amname as name, NULL as namespace, NULL as owner,
@@ -407,7 +415,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(amname) as sql_identifier,
          null as acl
     FROM pg_am am
-   WHERE am.oid = $1
+   WHERE $1 = 'pg_am'::regclass AND am.oid = $2
 #if 10
    UNION ALL
   SELECT stx.oid,'pg_statistic_ext'::regclass,
@@ -419,7 +427,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
            as sql_identifier,
          null as acl
     FROM pg_statistic_ext stx join pg_namespace n on (n.oid=stxnamespace)
-   WHERE stx.oid = $1
+   WHERE $1 = 'pg_statistic_ext'::regclass AND stx.oid = $2
    UNION ALL
   SELECT pub.oid,'pg_publication'::regclass,
          pub.pubname, NULL as namespace, 
@@ -428,7 +436,7 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(pub.pubname) as sql_identifier,
          null as acl
     FROM pg_publication pub
-   WHERE pub.oid = $1
+   WHERE $1 = 'pg_publication'::regclass AND pub.oid = $2
 #if 14
    UNION ALL
   SELECT sub.oid,'pg_subscription'::regclass,
@@ -438,11 +446,73 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          quote_ident(sub.subname) as sql_identifier,
          null as acl
     FROM pg_subscription sub
-   WHERE sub.oid = $1
+   WHERE $1 = 'pg_subscription'::regclass AND sub.oid = $2
 #end
 $$  strict;
+COMMENT ON FUNCTION ddlx_identify(regclass,oid) 
+     IS 'Identify an object by catalog and object id (exact)';
+
+-- All objects with the given oid, one row per catalog, in priority order.
+-- Duplicate oids occur only among some system objects; for user defined 
+-- objects this normally returns a single row.
+CREATE OR REPLACE FUNCTION ddlx_identify(
+  IN oid,  
+  OUT oid oid, OUT classid regclass, 
+  OUT name name,  OUT namespace name,  
+  OUT owner name, OUT sql_kind text, 
+  OUT sql_identifier text, OUT acl aclitem[])
+ RETURNS SETOF record LANGUAGE sql STABLE ROWS 1 AS $$
+  SELECT i.oid, i.classid, i.name, i.namespace, i.owner, 
+         i.sql_kind, i.sql_identifier, i.acl
+    FROM unnest(array[
+              'pg_class'
+             ,'pg_proc'
+             ,'pg_type'
+             ,'pg_roles'
+             ,'pg_rewrite'
+             ,'pg_namespace'
+             ,'pg_constraint'
+             ,'pg_trigger'
+             ,'pg_attrdef'
+             ,'pg_operator'
+             ,'pg_ts_config'
+             ,'pg_ts_dict'
+             ,'pg_ts_parser'
+             ,'pg_ts_template'
+             ,'pg_foreign_data_wrapper'
+             ,'pg_foreign_server'
+             ,'pg_user_mapping'
+             ,'pg_cast'
+             ,'pg_default_acl'
+             ,'pg_collation'
+             ,'pg_conversion'
+             ,'pg_language'
+             ,'pg_opfamily'
+             ,'pg_database'
+             ,'pg_tablespace'
+             ,'pg_opclass'
+             ,'pg_extension'
+#if 9.3
+             ,'pg_event_trigger'
+             ,'pg_amproc'
+             ,'pg_amop'
+#if 9.5
+             ,'pg_policy'
+             ,'pg_transform'
+             ,'pg_am'
+#if 10
+             ,'pg_statistic_ext'
+             ,'pg_publication'
+#if 14
+             ,'pg_subscription'
+#end
+         ]::regclass[]) WITH ORDINALITY AS c(cls,n),
+         LATERAL ddlx_identify(c.cls, $1) AS i
+   WHERE i.oid IS NOT NULL
+   ORDER BY c.n
+$$  strict;
 COMMENT ON FUNCTION ddlx_identify(oid) 
-     IS 'Identify any object by object id';
+     IS 'Identify any object by object id (all matches, in priority order)';
 
 --------------------------------------------------------------- ---------------
 
@@ -822,9 +892,9 @@ $$;
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{comments}')
+CREATE OR REPLACE FUNCTION ddlx_comment(regclass, oid, text[])
  RETURNS text LANGUAGE sql STABLE AS $$
- select case when comment is not null or 'comments' ilike any($2)
+ select case when comment is not null or 'comments' ilike any($3)
         then format(
           E'COMMENT ON %s %s IS %L;\n',
     sql_kind, sql_identifier, comment
@@ -837,11 +907,27 @@ CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{comments}')
             then shobj_description(oid,classid::name)
             when obj.classid='pg_tablespace'::regclass
             then shobj_description(oid,classid::name)
-            else obj_description(oid)
+            -- role comments are emitted by ddlx_alter_role
+            when obj.classid='pg_roles'::regclass then null
+#if 10
+            -- subscriptions are shared objects too (no comment lookup here)
+            when obj.classid='pg_subscription'::regclass then null
+#end
+            else obj_description(oid,classid::name)
           end as comment
-     from ddlx_identify($1) as obj
+     from ddlx_identify($1,$2) as obj
    ) as c
 $$ strict;
+COMMENT ON FUNCTION ddlx_comment(regclass, oid, text[]) 
+     IS 'Get SQL COMMENT statement for an object by catalog and object id (exact)';
+
+-- Bare oid version: resolves the oid through ddlx_identify(oid) (first match,
+-- in priority order) and calls the exact version above.
+CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{comments}')
+ RETURNS text LANGUAGE sql STABLE AS $w$
+  select ddlx_comment(i.classid, i.oid, $2)
+    from (select * from ddlx_identify($1) limit 1) i
+$w$ strict;
 
 #if 9.1
 --------------------------------------------------------------- ---------------
@@ -849,9 +935,9 @@ $$ strict;
 -- SECURITY LABEL statements for an object and, for classes, its columns.
 -- Labels of roles, databases, tablespaces and subscriptions live in the shared
 -- catalog pg_shseclabel, all others in pg_seclabel (matched by class as well as oid).
-CREATE OR REPLACE FUNCTION ddlx_security_label(oid, text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_security_label(regclass, oid, text[])
  RETURNS text LANGUAGE sql STABLE AS $$
- with obj as (select * from ddlx_identify($1)),
+ with obj as (select * from ddlx_identify($1,$2)),
  l as (
   select s.provider, s.label, s.objsubid,
          case when s.objsubid > 0 then 'COLUMN' else obj.sql_kind end as kind,
@@ -871,7 +957,7 @@ CREATE OR REPLACE FUNCTION ddlx_security_label(oid, text[] default '{}')
      and s.classoid = case when obj.classid = 'pg_roles'::regclass
                            then 'pg_authid'::regclass else obj.classid end
  )
- select case when 'lite' ilike any($2) or 'nolabels' ilike any($2) then ''
+ select case when 'lite' ilike any($3) or 'nolabels' ilike any($3) then ''
         else coalesce(string_agg(
                format(E'SECURITY LABEL FOR %I ON %s %s IS %L;\n',
                       provider, kind, ident, label),
@@ -879,6 +965,16 @@ CREATE OR REPLACE FUNCTION ddlx_security_label(oid, text[] default '{}')
         end
    from l
 $$ strict;
+COMMENT ON FUNCTION ddlx_security_label(regclass, oid, text[]) 
+     IS 'Get SECURITY LABEL statements for an object by catalog and object id (exact)';
+
+-- Bare oid version: resolves the oid through ddlx_identify(oid) (first match,
+-- in priority order) and calls the exact version above.
+CREATE OR REPLACE FUNCTION ddlx_security_label(oid, text[] default '{}')
+ RETURNS text LANGUAGE sql STABLE AS $w$
+  select ddlx_security_label(i.classid, i.oid, $2)
+    from (select * from ddlx_identify($1) limit 1) i
+$w$ strict;
 #end
 
 --------------------------------------------------------------- ---------------
@@ -899,13 +995,13 @@ CREATE OR REPLACE FUNCTION ddlx_data_restore(regclass, text[] default '{}')
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
+CREATE OR REPLACE FUNCTION ddlx_alter_owner(regclass, oid, text[])
  RETURNS text LANGUAGE sql STABLE AS $$
- select case when 'nodcl' ilike any($2) 
-               or 'noowner' ilike any($2) or 'lite' ilike any($2) 
+ select case when 'nodcl' ilike any($3) 
+               or 'noowner' ilike any($3) or 'lite' ilike any($3) 
              then null
         else case 
-          when 'owner' ilike any($2) or obj.owner is distinct from current_role
+          when 'owner' ilike any($3) or obj.owner is distinct from current_role
           then
           case obj.sql_kind
            when 'INDEX' then null
@@ -915,14 +1011,24 @@ CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
                  ' OWNER TO '||quote_ident(owner)||E';\n'
           end end
         end
-  from ddlx_identify($1) obj 
+  from ddlx_identify($1,$2) obj 
 $$  strict;
+COMMENT ON FUNCTION ddlx_alter_owner(regclass, oid, text[]) 
+     IS 'Get SQL ALTER OWNER statement for an object by catalog and object id (exact)';
+
+-- Bare oid version: resolves the oid through ddlx_identify(oid) (first match,
+-- in priority order) and calls the exact version above.
+CREATE OR REPLACE FUNCTION ddlx_alter_owner(oid, text[] default '{owner}')
+ RETURNS text LANGUAGE sql STABLE AS $w$
+  select ddlx_alter_owner(i.classid, i.oid, $2)
+    from (select * from ddlx_identify($1) limit 1) i
+$w$ strict;
 
 --------------------------------------------------------------- ---------------
 
 CREATE OR REPLACE FUNCTION ddlx_create_table(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $$
-  with obj as (select * from ddlx_identify($1))
+  with obj as (select * from ddlx_identify('pg_class'::regclass,$1))
   select   
     array_to_string(array[
       'CREATE '||
@@ -1067,7 +1173,7 @@ $$  strict;
 -- value is restored as well (only if nextval was ever called).
 CREATE OR REPLACE FUNCTION ddlx_alter_sequence(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
- with obj as (select * from ddlx_identify($1))
+ with obj as (select * from ddlx_identify('pg_class'::regclass,$1))
 #if 10
  select 
     'ALTER SEQUENCE '||(obj.oid::regclass::text) 
@@ -1452,7 +1558,7 @@ $$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_class(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
- with obj as (select * from ddlx_identify($1)),
+ with obj as (select * from ddlx_identify('pg_class'::regclass,$1)),
 
  comments as (
    select 'COMMENT ON COLUMN ' || text($1) || '.' || quote_ident(name) ||
@@ -1518,7 +1624,7 @@ seq as (
        '',
 #end
                    "sequence",
-       ddlx_alter_owner("sequence",$2)
+       ddlx_alter_owner('pg_class'::regclass,"sequence",$2)
            ) else '' end ||
       format(e'ALTER SEQUENCE %s OWNED BY %s;',"sequence",sql_identifier),
   E'\n') || E'\n\n', '') as ddl
@@ -1535,7 +1641,7 @@ $function$ strict;
 CREATE OR REPLACE FUNCTION ddlx_alter_table_storage(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
 with 
-obj as (select * from ddlx_identify($1)),
+obj as (select * from ddlx_identify('pg_class'::regclass,$1)),
 d as (select * from ddlx_describe($1,$2) order by name),
 cs as (
   select 
@@ -1573,7 +1679,7 @@ $function$ strict;
 CREATE OR REPLACE FUNCTION ddlx_alter_table_settings(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
 with 
-obj as (select * from ddlx_identify($1)),
+obj as (select * from ddlx_identify('pg_class'::regclass,$1)),
 ob as (
  select coalesce(string_agg(a.ddl, E'\n') || E'\n\n', '')
         as ddl
@@ -1790,7 +1896,7 @@ CREATE OR REPLACE FUNCTION ddlx_alter_table_replica_identity(regclass, text[] de
                    where x.indrelid = c.oid and x.indisreplident)
             end
         end
-   from pg_class c, ddlx_identify($1) obj
+   from pg_class c, ddlx_identify('pg_class'::regclass,$1) obj
   where c.oid = $1
     and c.relkind in ('r','p','m')   -- other kinds report 'n' without meaning it
     and c.relreplident <> 'd'
@@ -1850,7 +1956,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_aggregate(regproc)
  RETURNS text LANGUAGE sql STABLE AS $function$ 
-  with obj as (select * from ddlx_identify($1))
+  with obj as (select * from ddlx_identify('pg_proc'::regclass,$1))
 select 'CREATE AGGREGATE ' ||
 #if 9.4
         case
@@ -1933,7 +2039,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_function(regproc, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$ 
- with obj as (select * from ddlx_identify($1))
+ with obj as (select * from ddlx_identify('pg_proc'::regclass,$1))
  select
   case when 'compact' ilike any($2) then '' else ddlx_banner(sql_identifier,obj.sql_kind,namespace,owner) end 
   ||
@@ -2185,7 +2291,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_user_mapping(oid, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$ 
- with obj as (select * from ddlx_identify($1) where sql_kind='USER MAPPING')
+ with obj as (select * from ddlx_identify('pg_user_mapping'::regclass,$1) where sql_kind='USER MAPPING')
  select
     'CREATE USER MAPPING '
     || case when 'ine' ilike any($2) then 'IF NOT EXISTS ' else '' end 
@@ -2209,7 +2315,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_policy(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$ 
- with obj as (select * from ddlx_identify($1)),
+ with obj as (select * from ddlx_identify('pg_policy'::regclass,$1)),
  pol1 as (
  SELECT
     pol.oid,
@@ -2437,7 +2543,7 @@ $$;
 CREATE OR REPLACE FUNCTION ddlx_grants_columns(regclass, text[] default '{}') 
  RETURNS text LANGUAGE sql STABLE AS $function$
 with
-obj as (select * from ddlx_identify($1)),
+obj as (select * from ddlx_identify('pg_class'::regclass,$1)),
 e as (
 select attrelid::regclass,attname,
        (aclexplode(attacl)).* 
@@ -2484,7 +2590,7 @@ CREATE OR REPLACE FUNCTION ddlx_grants(regproc, text[] default '{}')
 #else
           p.proacl as acl
 #end
-     from pg_proc p, ddlx_identify($1) i
+     from pg_proc p, ddlx_identify('pg_proc'::regclass,$1) i
     where p.oid = $1
  ),
  a as (
@@ -2521,9 +2627,9 @@ $function$  strict;
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_grants(oid, text[] default '{}') 
+CREATE OR REPLACE FUNCTION ddlx_grants(regclass, oid, text[]) 
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1)),
+with obj as (select * from ddlx_identify($1,$2)),
 a as (
  select coalesce(quote_ident(r1.rolname),'PUBLIC') as grantor,
         coalesce(quote_ident(r2.rolname),'PUBLIC') as grantee,
@@ -2552,7 +2658,7 @@ select format('GRANT %s ON %s%s TO %s%s%s;',
               grant_option,
 #if 14
               case
-	              when 'grantor' ilike any($2) 
+	              when 'grantor' ilike any($3) 
                 then ' GRANTED BY '||nullif(grantor,quote_ident(current_role))
 	            end
 #else
@@ -2569,19 +2675,29 @@ c as (
 )
 select case obj.classid
        when 'pg_class'::regclass 
-       then c.grants || ddlx_grants_columns(obj.oid::regclass,$2)
---       when 'pg_class'::regclass then ddlx_grants(obj.oid::regclass,$2)
-       when 'pg_proc'::regclass then ddlx_grants(obj.oid::regproc,$2)
+       then c.grants || ddlx_grants_columns(obj.oid::regclass,$3)
+--       when 'pg_class'::regclass then ddlx_grants(obj.oid::regclass,$3)
+       when 'pg_proc'::regclass then ddlx_grants(obj.oid::regproc,$3)
        when 'pg_roles'::regclass
 #if 9.5
-       then ddlx_grants(obj.oid::regrole,$2)
+       then ddlx_grants(obj.oid::regrole,$3)
 #else
-       then ddlx_grants_to_role(obj.oid,$2)
+       then ddlx_grants_to_role(obj.oid,$3)
 #end
        else c.grants
        end
   from obj full join c on true
 $function$  strict;
+COMMENT ON FUNCTION ddlx_grants(regclass, oid, text[]) 
+     IS 'Get SQL GRANT statements for an object by catalog and object id (exact)';
+
+-- Bare oid version: resolves the oid through ddlx_identify(oid) (first match,
+-- in priority order) and calls the exact version above.
+CREATE OR REPLACE FUNCTION ddlx_grants(oid, text[] default '{}') 
+ RETURNS text LANGUAGE sql STABLE AS $w$
+  select ddlx_grants(i.classid, i.oid, $2)
+    from (select * from ddlx_identify($1) limit 1) i
+$w$ strict;
 COMMENT ON FUNCTION ddlx_grants(oid, text[]) 
      IS 'Get SQL GRANT statements for any object by object id';
 
@@ -2721,7 +2837,7 @@ create or replace function ddlx_get_dependants(
 )
 returns setof record as $$
 select gd.depth, gd.classid, gd.objid, gd.extid
-  from ddlx_identify($1) i,
+  from (select * from ddlx_identify($1) limit 1) i,
        ddlx_get_dependants(i.classid, i.oid, $2) gd;
 $$ language sql stable;
 
@@ -2847,7 +2963,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_operator(regoper)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_operator'::regclass,$1))
 select format(
          E'CREATE OPERATOR %s%s (\n%s%s%s%s%s%s%s%s%s\n);\n\n',
    nullif(obj.namespace,current_schema())||'.',
@@ -2884,7 +3000,7 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_config(regconfig)
  RETURNS text LANGUAGE sql STABLE AS $function$
 with cfg as (select * from pg_ts_config where oid = $1),
-     prs as (select * from ddlx_identify(
+     prs as (select * from ddlx_identify('pg_ts_parser'::regclass,
               (select p.oid 
                  from pg_ts_parser p
                  join cfg on p.oid = cfg.cfgparser
@@ -2916,7 +3032,7 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_dict(regdictionary)
  RETURNS text LANGUAGE sql STABLE AS $function$
 with dict as (select * from pg_ts_dict where oid = $1),
-     tmpl as (select * from ddlx_identify(
+     tmpl as (select * from ddlx_identify('pg_ts_template'::regclass,
               (select t.oid 
                  from pg_ts_template t
                  join dict on t.oid = dict.dicttemplate
@@ -2932,7 +3048,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_parser(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_ts_parser'::regclass,$1))
 select format(E'CREATE TEXT SEARCH PARSER %s (\n  %s\n);\n',obj.sql_identifier,
          array_to_string(array[
            'START = '    || cast(nullif(p.prsstart,0)::regproc as text), 
@@ -2950,7 +3066,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_text_search_template(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_ts_template'::regclass,$1))
 select format(E'CREATE TEXT SEARCH TEMPLATE %s (\n  %s\n);\n',
          obj.sql_identifier,
          array_to_string(array[
@@ -2966,7 +3082,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_cast(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_cast'::regclass,$1))
 select format(E'CREATE CAST %s\n  ',obj.sql_identifier)
         || case
            when c.castmethod = 'i'
@@ -2993,7 +3109,7 @@ $function$  strict;
 -- granted again; an entry with a schema only adds to the defaults.
 CREATE OR REPLACE FUNCTION ddlx_create_default_acl(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
- with obj as (select * from ddlx_identify($1) where sql_kind = 'DEFAULT PRIVILEGES'),
+ with obj as (select * from ddlx_identify('pg_default_acl'::regclass,$1) where sql_kind = 'DEFAULT PRIVILEGES'),
  d as (
   select da.*, obj.owner, obj.name as objs,
          format('ALTER DEFAULT PRIVILEGES FOR ROLE %I%s', obj.owner,
@@ -3026,7 +3142,7 @@ $function$  strict;
 -- made equal to acldefault() again (which removes it).
 CREATE OR REPLACE FUNCTION ddlx_drop_default_acl(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
- with obj as (select * from ddlx_identify($1) where sql_kind = 'DEFAULT PRIVILEGES'),
+ with obj as (select * from ddlx_identify('pg_default_acl'::regclass,$1) where sql_kind = 'DEFAULT PRIVILEGES'),
  d as (
   select da.*, obj.owner, obj.name as objs,
          format('ALTER DEFAULT PRIVILEGES FOR ROLE %I%s', obj.owner,
@@ -3074,7 +3190,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_statistics(oid)
                 else '' end
 #end
    from pg_statistic_ext stx
-   join ddlx_identify(stx.oid) obj on obj.classid = 'pg_statistic_ext'::regclass
+   join ddlx_identify('pg_statistic_ext'::regclass,stx.oid) obj on obj.classid = 'pg_statistic_ext'::regclass
   where stx.oid = $1
 $$ strict;
 #end
@@ -3083,7 +3199,7 @@ $$ strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_collation(oid, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_collation'::regclass,$1))
 select format(E'CREATE COLLATION %s%s (\n  %s\n);\n',
          case when 'ine' ilike any($2) then 'IF NOT EXISTS ' end,
          obj.sql_identifier,
@@ -3123,7 +3239,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_conversion(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_conversion'::regclass,$1))
 select format(E'CREATE %sCONVERSION %s\n  FOR %L TO %L FROM %s;\n',
         case when c.condefault then 'DEFAULT ' end,
         obj.sql_identifier,
@@ -3140,7 +3256,7 @@ $function$  strict;
 #if 9.2
 CREATE OR REPLACE FUNCTION ddlx_create_tablespace(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_tablespace'::regclass,$1))
 select format(E'CREATE TABLESPACE %s%s;\n',
          obj.sql_identifier,
      ' LOCATION '||quote_literal(pg_tablespace_location(t.oid))
@@ -3161,7 +3277,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_database(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_database'::regclass,$1))
 select format(E'CREATE DATABASE %s WITH\n  %s;\n\n',
               obj.sql_identifier,
               array_to_string(array[
@@ -3196,7 +3312,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_alter_database(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_database'::regclass,$1))
 select format(E'ALTER DATABASE %s WITH ALLOW_CONNECTIONS %s;\n',
               obj.sql_identifier, d.datallowconn::text) ||
        case when d.datconnlimit>0 then
@@ -3221,7 +3337,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_access_method(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_am'::regclass,$1))
 #if 9.6
 select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
         amname,
@@ -3242,7 +3358,7 @@ $function$  strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_operator_class(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_opclass'::regclass,$1))
 select format(E'CREATE OPERATOR CLASS %s\n  %sFOR TYPE %s USING %I%s AS %s;\n\n',
         format('%s%I',quote_ident(nullif(obj.namespace,current_schema()))||'.',
                 obj.name),
@@ -3283,7 +3399,7 @@ $function$ strict;
 
 CREATE OR REPLACE FUNCTION ddlx_create_operator_family(oid)
  RETURNS text LANGUAGE sql STABLE AS $function$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify('pg_opfamily'::regclass,$1))
 select format(E'CREATE OPERATOR FAMILY %s;\n',
         obj.sql_identifier,
         amname
@@ -3304,8 +3420,8 @@ a as (
    join pg_opfamily opf on (opf.oid=amp.amprocfamily) 
    join pg_am am on (am.oid=opf.opfmethod)
   where amp.oid = $1),
-f as (select * from ddlx_identify((select amprocfamily from a)) ),
-obj as (select * from ddlx_identify($1))
+f as (select * from ddlx_identify('pg_opfamily'::regclass,(select amprocfamily from a)) ),
+obj as (select * from ddlx_identify('pg_amproc'::regclass,$1))
 select format(E'ALTER OPERATOR FAMILY %s ADD %s %s;\n',
         f.sql_identifier, obj.sql_identifier,
   cast(a.amproc::regprocedure as text)
@@ -3324,8 +3440,8 @@ a as (
    join pg_opfamily opf on (opf.oid=amp.amprocfamily) 
    join pg_am am on (am.oid=opf.opfmethod)
   where amp.oid = $1),
-f as (select * from ddlx_identify((select amprocfamily from a)) ),
-obj as (select * from ddlx_identify($1))
+f as (select * from ddlx_identify('pg_opfamily'::regclass,(select amprocfamily from a)) ),
+obj as (select * from ddlx_identify('pg_amproc'::regclass,$1))
 select format(E'ALTER OPERATOR FAMILY %s DROP %s;\n',
         f.sql_identifier,
         obj.sql_identifier
@@ -3344,8 +3460,8 @@ a as (
    join pg_opfamily opf on opf.oid=amp.amopfamily
    join pg_am am on am.oid=opf.opfmethod
   where amp.oid = $1),
-f as (select * from ddlx_identify((select amopfamily from a)) ),
-obj as (select * from ddlx_identify($1))
+f as (select * from ddlx_identify('pg_opfamily'::regclass,(select amopfamily from a)) ),
+obj as (select * from ddlx_identify('pg_amop'::regclass,$1))
 select format(E'ALTER OPERATOR FAMILY %s ADD OPERATOR %s %s (%s) %s;\n',
         f.sql_identifier,
   amopstrategy,
@@ -3373,8 +3489,8 @@ a as (
    join pg_opfamily opf on (opf.oid=amp.amopfamily) 
    join pg_am am on (am.oid=opf.opfmethod)
   where amp.oid = $1),
-f as (select * from ddlx_identify((select amopfamily from a)) ),
-obj as (select * from ddlx_identify($1))
+f as (select * from ddlx_identify('pg_opfamily'::regclass,(select amopfamily from a)) ),
+obj as (select * from ddlx_identify('pg_amop'::regclass,$1))
 select format(E'ALTER OPERATOR FAMILY %s DROP %s;\n',
         f.sql_identifier,
         obj.sql_identifier
@@ -3443,7 +3559,7 @@ $function$  strict;
 --------------------------------------------------------------- ---------------
 
 CREATE OR REPLACE FUNCTION ddlx_definitions(
-   in oid, in options text[] default '{}',
+   in regclass, in oid, in options text[],
    out oid oid, out classid regclass, out sql_kind text, out sql_identifier text,
    out base_ddl text, out comment text, out owner text, out storage text, 
    out defaults text, out settings text, out constraints text, out indexes text,
@@ -3451,12 +3567,12 @@ CREATE OR REPLACE FUNCTION ddlx_definitions(
    out seclabels text
 )
  RETURNS record LANGUAGE sql STABLE AS $$
-with obj as (select * from ddlx_identify($1))
+with obj as (select * from ddlx_identify($1,$2))
   select 
     obj.oid, obj.classid, obj.sql_kind, obj.sql_identifier,
     case obj.classid
-    when 'pg_class'::regclass          then ddlx_create_class(oid::regclass,$2)
-    when 'pg_type'::regclass           then ddlx_create_type(oid::regtype,$2)
+    when 'pg_class'::regclass          then ddlx_create_class(oid::regclass,$3)
+    when 'pg_type'::regclass           then ddlx_create_type(oid::regtype,$3)
     when 'pg_proc'::regclass           then ddlx_create_function(oid::regproc)
     when 'pg_operator'::regclass       then ddlx_create_operator(oid::regoper)
     when 'pg_opfamily'::regclass       then ddlx_create_operator_family(oid)
@@ -3466,27 +3582,27 @@ with obj as (select * from ddlx_identify($1))
     when 'pg_ts_parser'::regclass      then ddlx_create_text_search_parser(oid)
     when 'pg_ts_template'::regclass    then ddlx_create_text_search_template(oid)
     when 'pg_database'::regclass       then ddlx_create_database(oid)
-    when 'pg_constraint'::regclass     then ddlx_create_constraint(oid,$2)
-    when 'pg_trigger'::regclass        then ddlx_create_trigger(oid,$2)
+    when 'pg_constraint'::regclass     then ddlx_create_constraint(oid,$3)
+    when 'pg_trigger'::regclass        then ddlx_create_trigger(oid,$3)
     when 'pg_attrdef'::regclass        then ddlx_create_default(oid)
-    when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid,$2)
-    when 'pg_foreign_server'::regclass then ddlx_create_server(oid,$2)
-    when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid,$2)
+    when 'pg_foreign_data_wrapper'::regclass then ddlx_create_foreign_data_wrapper(oid,$3)
+    when 'pg_foreign_server'::regclass then ddlx_create_server(oid,$3)
+    when 'pg_user_mapping'::regclass   then ddlx_create_user_mapping(oid,$3)
     when 'pg_cast'::regclass           then ddlx_create_cast(oid)
 #if 9.2
     when 'pg_default_acl'::regclass    then ddlx_create_default_acl(oid)
 #end
-    when 'pg_collation'::regclass      then ddlx_create_collation(oid,$2)
+    when 'pg_collation'::regclass      then ddlx_create_collation(oid,$3)
     when 'pg_conversion'::regclass     then ddlx_create_conversion(oid)
     when 'pg_language'::regclass       then ddlx_create_language(oid)
     when 'pg_opclass'::regclass        then ddlx_create_operator_class(oid)
-    when 'pg_extension'::regclass      then ddlx_create_extension(oid,$2)
+    when 'pg_extension'::regclass      then ddlx_create_extension(oid,$3)
 #if 9.5
     when 'pg_roles'::regclass          then ddlx_create_role(oid::regrole)
-    when 'pg_namespace'::regclass      then ddlx_create_schema(oid::regnamespace,$2)
+    when 'pg_namespace'::regclass      then ddlx_create_schema(oid::regnamespace,$3)
 #else
     when 'pg_roles'::regclass          then ddlx_create_role(oid)
-    when 'pg_namespace'::regclass      then ddlx_create_schema(oid,$2)
+    when 'pg_namespace'::regclass      then ddlx_create_schema(oid,$3)
 #end
 #if 9.2
     when 'pg_tablespace'::regclass     then ddlx_create_tablespace(oid)
@@ -3502,176 +3618,224 @@ with obj as (select * from ddlx_identify($1))
 #if 10
     when 'pg_statistic_ext'::regclass  then ddlx_create_statistics(oid)
     when 'pg_publication'::regclass    then ddlx_create_publication(oid)
-    when 'pg_subscription'::regclass   then ddlx_create_subscription(oid,$2)
+    when 'pg_subscription'::regclass   then ddlx_create_subscription(oid,$3)
 #end
     else
       case
         when obj.sql_kind is not null
-        then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($1),sql_kind)
-        else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($1))      
+        then format(E'-- CREATE UNSUPPORTED OBJECT: %s %s\n',text($2),sql_kind)
+        else format(E'-- CREATE UNIDENTIFIED OBJECT: %s\n',text($2))      
       end
     end as base_ddl,
-    ddlx_comment(oid,$2) as comment,
-    ddlx_alter_owner(oid,$2) as owner,
+    ddlx_comment(obj.classid,obj.oid,$3) as comment,
+    ddlx_alter_owner(obj.classid,obj.oid,$3) as owner,
     ddlx_alter_table_storage(oid) as storage,
-    ddlx_alter_table_defaults(oid,$2) as defaults,
+    ddlx_alter_table_defaults(oid,$3) as defaults,
     case obj.sql_kind
-      when 'ROLE' THEN ddlx_alter_role(oid,$2)
+      when 'ROLE' THEN ddlx_alter_role(oid,$3)
       when 'DATABASE' THEN  ddlx_alter_database(oid)
-      when 'SEQUENCE' THEN ddlx_alter_sequence(oid,$2)
-      else ddlx_alter_table_settings(oid,$2)
+      when 'SEQUENCE' THEN ddlx_alter_sequence(oid,$3)
+      else ddlx_alter_table_settings(oid,$3)
     end as settings,
 --    ddlx_alter_table_settings(oid) as settings,
-    case when 'lite' ilike any($2) then ''
-         else ddlx_create_constraints(oid,$2) end as constraints,
-    ddlx_create_indexes(oid,$2) as indexes,
-    ddlx_create_triggers(oid,$2) as triggers,
+    case when 'lite' ilike any($3) then ''
+         else ddlx_create_constraints(oid,$3) end as constraints,
+    ddlx_create_indexes(oid,$3) as indexes,
+    ddlx_create_triggers(oid,$3) as triggers,
     ddlx_create_rules(oid) as rules,
 #if 9.5
      ddlx_alter_table_rls(oid) as rls,
 #else
      null::text as rls,
 #end
-     ddlx_grants(oid,$2) as grants,
+     ddlx_grants(obj.classid,obj.oid,$3) as grants,
 #if 9.1
-     ddlx_security_label(oid,$2) as seclabels
+     ddlx_security_label(obj.classid,obj.oid,$3) as seclabels
 #else
      null::text as seclabels
 #end
     from obj
 $$  strict;
+comment on function ddlx_definitions(regclass,oid,text[]) 
+     is 'Get individial parts of SQL definition for any object by class and object id (exact)';
+
+-- Bare oid version: resolves the oid through ddlx_identify(oid) (first match, 
+-- in priority order) and calls the exact version.
+CREATE OR REPLACE FUNCTION ddlx_definitions(
+   in oid, in options text[] default '{}',
+   out oid oid, out classid regclass, out sql_kind text, out sql_identifier text,
+   out base_ddl text, out comment text, out owner text, out storage text, 
+   out defaults text, out settings text, out constraints text, out indexes text,
+   out triggers text, out rules text, out rls text, out grants text,
+   out seclabels text
+)
+ RETURNS record LANGUAGE sql STABLE AS $$
+  select d.*
+    from (select * from ddlx_identify($1) limit 1) i,
+         lateral ddlx_definitions(i.classid, i.oid, $2) d
+$$ strict;
 comment on function ddlx_definitions(oid,text[]) 
      is 'Get individial parts of SQL definition for any object by object id';
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_alter(oid, text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_alter(regclass, oid, text[])
  RETURNS text LANGUAGE sql STABLE AS $$
 with 
-obj as (select * from ddlx_identify($1)),
-parts as (select * from ddlx_definitions($1,$2))
+obj as (select * from ddlx_identify($1,$2)),
+parts as (select * from ddlx_definitions($1,$2,$3))
   select array_to_string( array[
-           case when 'lite' ilike any($2) or 'nostorage' ilike any($2) 
+           case when 'lite' ilike any($3) or 'nostorage' ilike any($3) 
                 then null else storage end,
-           case when 'nodcl' ilike any($2) 
-                  or 'noowner' ilike any($2) 
-                  or 'lite' ilike any($2) 
+           case when 'nodcl' ilike any($3) 
+                  or 'noowner' ilike any($3) 
+                  or 'lite' ilike any($3) 
                 then null
                 else case when obj.sql_kind='TABLE' then parts.owner end || e'\n' end,
            defaults,
-           case when 'lite' ilike any($2) or 'nosettings' ilike any($2) 
+           case when 'lite' ilike any($3) or 'nosettings' ilike any($3) 
                 then null else settings end,
-           case when 'lite' ilike any($2) or 'noconstraints' ilike any($2) 
+           case when 'lite' ilike any($3) or 'noconstraints' ilike any($3) 
                 then null else constraints end,
-           case when 'noindexes' ilike any($2) 
+           case when 'noindexes' ilike any($3) 
                 then null else indexes end,
-           case when 'lite' ilike any($2) or 'notriggers' ilike any($2) 
+           case when 'lite' ilike any($3) or 'notriggers' ilike any($3) 
                 then null else triggers end,
-           case when 'lite' ilike any($2) 
+           case when 'lite' ilike any($3) 
                 then null else rules end,
-           case when 'lite' ilike any($2) or 'nodcl' ilike any($2) 
+           case when 'lite' ilike any($3) or 'nodcl' ilike any($3) 
                 then null else rls end
          ],'')
     from obj,parts
 $$  strict;
+COMMENT ON FUNCTION ddlx_alter(regclass, oid, text[]) 
+     IS 'Get SQL ALTER statement for any object by catalog and object id (exact, post-data)';
+
+-- Bare oid version: resolves the oid through ddlx_identify(oid) (first match,
+-- in priority order) and calls the exact version above.
+CREATE OR REPLACE FUNCTION ddlx_alter(oid, text[] default '{}')
+ RETURNS text LANGUAGE sql STABLE AS $w$
+  select ddlx_alter(i.classid, i.oid, $2)
+    from (select * from ddlx_identify($1) limit 1) i
+$w$ strict;
 
 COMMENT ON FUNCTION ddlx_alter(oid, text[]) 
      IS 'Get SQL ALTER statement for any object by object id (post-data)';
      
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_createonly(oid, text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_createonly(regclass, oid, text[])
  RETURNS text LANGUAGE sql STABLE AS $$
 with 
-obj as (select * from ddlx_identify($1)),
-parts as (select * from ddlx_definitions($1,$2))
+obj as (select * from ddlx_identify($1,$2)),
+parts as (select * from ddlx_definitions($1,$2,$3))
 select array_to_string(array[
         base_ddl,           
-  case when 'nocomments' ilike any($2) then null else 
+  case when 'nocomments' ilike any($3) then null else 
           case when obj.sql_kind is distinct from 'DEFAULT' 
                then parts.comment end
   end || e'\n',
-        case when 'nodcl' ilike any($2) 
-               or 'noowner' ilike any($2)
-               or 'lite' ilike any($2) 
+        case when 'nodcl' ilike any($3) 
+               or 'noowner' ilike any($3)
+               or 'lite' ilike any($3) 
         then null
         else case 
-          when 'owner' ilike any($2) 
+          when 'owner' ilike any($3) 
             or obj.owner is distinct from current_role
           then parts.owner end
         end,
-        case when 'lite' ilike any($2) or 'nostorage' ilike any($2) 
+        case when 'lite' ilike any($3) or 'nostorage' ilike any($3) 
              then null else storage end,
         defaults,
-        case when 'lite' ilike any($2) or 'nosettings' ilike any($2) 
+        case when 'lite' ilike any($3) or 'nosettings' ilike any($3) 
              then null else settings end,
         seclabels
       ],'')
   from obj,parts
 $$ strict;
+COMMENT ON FUNCTION ddlx_createonly(regclass, oid, text[]) 
+     IS 'Get SQL CREATE statement for any object by catalog and object id (exact, pre-data)';
+
+-- Bare oid version: resolves the oid through ddlx_identify(oid) (first match,
+-- in priority order) and calls the exact version above.
+CREATE OR REPLACE FUNCTION ddlx_createonly(oid, text[] default '{}')
+ RETURNS text LANGUAGE sql STABLE AS $w$
+  select ddlx_createonly(i.classid, i.oid, $2)
+    from (select * from ddlx_identify($1) limit 1) i
+$w$ strict;
 
 COMMENT ON FUNCTION ddlx_createonly(oid, text[]) 
      IS 'Get SQL CREATE statement for any object by object id (pre-data)';
 
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_create(regclass, oid, text[])
  RETURNS text LANGUAGE sql STABLE AS $$
 with 
-obj as (select * from ddlx_identify($1)),
-parts as (select * from ddlx_definitions($1,$2))
+obj as (select * from ddlx_identify($1,$2)),
+parts as (select * from ddlx_definitions($1,$2,$3))
 select array_to_string(array[
         base_ddl,
-  case when 'nocomments' ilike any($2) then null else 
+  case when 'nocomments' ilike any($3) then null else 
           case when obj.sql_kind is distinct from 'DEFAULT' 
           then parts.comment end
   end || e'\n',
-        case when 'noalter' ilike any($2) then null
+        case when 'noalter' ilike any($3) then null
         else array_to_string(array[
-          case when 'nodcl' ilike any($2) 
-                 or 'noowner' ilike any($2) 
-                 or 'lite' ilike any($2) 
+          case when 'nodcl' ilike any($3) 
+                 or 'noowner' ilike any($3) 
+                 or 'lite' ilike any($3) 
                then null
-               else case when 'owner' ilike any($2) 
+               else case when 'owner' ilike any($3) 
                            or obj.owner is distinct from current_role 
                     then parts.owner end
           end,
-          case when 'lite' ilike any($2) or 'nostorage' ilike any($2) 
+          case when 'lite' ilike any($3) or 'nostorage' ilike any($3) 
                then null else storage end,
           defaults,
-          case when obj.sql_kind='TABLE' and 'data' ilike any($2)  
+          case when obj.sql_kind='TABLE' and 'data' ilike any($3)  
                then E'\n' || ddlx_data_restore(obj.oid) || E'\n' end,
-          case when 'lite' ilike any($2) or 'nosettings' ilike any($2) 
+          case when 'lite' ilike any($3) or 'nosettings' ilike any($3) 
                then null else settings end,
-          case when 'noconstraints' ilike any($2) 
+          case when 'noconstraints' ilike any($3) 
                then null else constraints end, 
-           case when 'noindexes' ilike any($2) 
+           case when 'noindexes' ilike any($3) 
                 then null else indexes end,
-           case when 'lite' ilike any($2) or 'notriggers' ilike any($2) 
+           case when 'lite' ilike any($3) or 'notriggers' ilike any($3) 
                 then null else triggers end,
-           case when 'lite' ilike any($2) then null else rules end,
-           case when 'lite' ilike any($2) or 'nodcl' ilike any($2) 
+           case when 'lite' ilike any($3) then null else rules end,
+           case when 'lite' ilike any($3) or 'nodcl' ilike any($3) 
                 then null else rls end
         ],'') end,
-        case when 'nodcl' ilike any($2) or 'nogrants' ilike any($2) 
+        case when 'nodcl' ilike any($3) or 'nogrants' ilike any($3) 
              then null else grants end,
         seclabels
         ],'')
   from obj,parts
 $$ strict;
+COMMENT ON FUNCTION ddlx_create(regclass, oid, text[]) 
+     IS 'Get SQL CREATE statement for any object by catalog and object id (exact)';
+
+-- Bare oid version: resolves the oid through ddlx_identify(oid) (first match,
+-- in priority order) and calls the exact version above.
+CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}')
+ RETURNS text LANGUAGE sql STABLE AS $w$
+  select ddlx_create(i.classid, i.oid, $2)
+    from (select * from ddlx_identify($1) limit 1) i
+$w$ strict;
 
 COMMENT ON FUNCTION ddlx_create(oid, text[]) 
      IS 'Get SQL CREATE statement for any object by object id. Includes constraints, triggers, indexes...';
      
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}') 
+CREATE OR REPLACE FUNCTION ddlx_drop(regclass, oid, ddlx_options text[]) 
  RETURNS text LANGUAGE sql STABLE AS $$
- with obj as (select * from ddlx_identify($1))
+ with obj as (select * from ddlx_identify($1,$2))
  select 
    case obj.classid
    when 'pg_constraint'::regclass then ddlx_drop_constraint(oid)
-   when 'pg_trigger'::regclass    then ddlx_drop_trigger(oid,$2)
+   when 'pg_trigger'::regclass    then ddlx_drop_trigger(oid,$3)
    when 'pg_attrdef'::regclass    then ddlx_drop_default(oid)
    when 'pg_amproc'::regclass     then ddlx_drop_amproc(oid)
    when 'pg_amop'::regclass       then ddlx_drop_amop(oid)
@@ -3686,20 +3850,30 @@ CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}')
        then ddlx_drop_index(oid)
        when obj.sql_kind is not null
        then format(E'%sDROP %s %s%s;%s\n',
-                   case when obj.sql_kind = 'TABLE' and 'data' ilike any($2) 
+                   case when obj.sql_kind = 'TABLE' and 'data' ilike any($3) 
                    then ddlx_data_backup(obj.oid) end,
                    obj.sql_kind, 
-                   case when 'ie' ilike any($2) then 'IF EXISTS ' end,
+                   case when 'ie' ilike any($3) then 'IF EXISTS ' end,
                    obj.sql_identifier,
-                   case when obj.sql_kind = 'TABLE' and (not 'data' ilike any($2))
+                   case when obj.sql_kind = 'TABLE' and (not 'data' ilike any($3))
                         then ' --==>> !!! ATTENTION !!! <<==--' end
                    )
-       else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($1))
+       else format(E'-- DROP UNIDENTIFIED OBJECT: %s\n',text($2))
       end
     end 
     as ddl
    from obj
 $$  strict;
+COMMENT ON FUNCTION ddlx_drop(regclass,oid,text[]) 
+     IS 'Get SQL DROP statement for any object by catalog and object id (exact)';
+
+-- Bare oid version: resolves the oid through ddlx_identify(oid) (first match,
+-- in priority order) and calls the exact version above.
+CREATE OR REPLACE FUNCTION ddlx_drop(oid,ddlx_options text[] default '{}') 
+ RETURNS text LANGUAGE sql STABLE AS $$
+  select ddlx_drop(i.classid, i.oid, $2)
+    from (select * from ddlx_identify($1) limit 1) i
+$$ strict;
 
 COMMENT ON FUNCTION ddlx_drop(oid,text[]) 
      IS 'Get SQL DROP statement for any object by object id';
@@ -3709,7 +3883,7 @@ COMMENT ON FUNCTION ddlx_drop(oid,text[])
 CREATE OR REPLACE FUNCTION ddlx_data_backup(
   IN regclass, ddlx_options text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $$
- with obj as (select * from ddlx_identify($1))
+ with obj as (select * from ddlx_identify('pg_class'::regclass,$1))
  select format(E'CREATE TEMPORARY TABLE %I AS SELECT * FROM %s;\n',
                obj.name||'$'||obj.oid, obj.sql_identifier)
    from obj
@@ -3720,7 +3894,7 @@ $$;
 CREATE OR REPLACE FUNCTION ddlx_data_restore(
   IN regclass, ddlx_options text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $$
- with obj as (select * from ddlx_identify($1)),
+ with obj as (select * from ddlx_identify('pg_class'::regclass,$1)),
       cols as (select string_agg(quote_ident(name),',' order by ord) as cols 
                  from ddlx_describe($1) where gen is null)
  select format(E'INSERT INTO %s(%s)%s\n       SELECT %s\n         FROM %I;\n',
@@ -3746,8 +3920,8 @@ CREATE OR REPLACE FUNCTION ddlx_script_parts(
 with 
 ddl as (
 select row_number() over(order by gd.depth,gd.objid) as n,
-       ddlx_drop(gd.objid,$2||'{script}'::text[]),
-       ddlx_create(gd.objid,$2||'{script}'::text[]),
+       ddlx_drop(gd.classid,gd.objid,$2||'{script}'::text[]),
+       ddlx_create(gd.classid,gd.objid,$2||'{script}'::text[]),
        gd.objid
   from ddlx_get_dependants($1,$2) gd
  where case when 'ext' ilike any($2)
