@@ -1499,3 +1499,21 @@ begin
      and p.proargtypes[0] <> 'oid'::regtype;
   assert bad is null, 'typed variant uses single argument ddlx_identify: ' || bad;
 end $$;
+
+-- 35. pg_attver (an internal column option of some servers) is never output
+begin;
+create schema fix_test;
+set local search_path = fix_test, public;
+create table fix_av (a int, b text);
+alter table fix_av alter a set (n_distinct = 5);
+update pg_attribute set attoptions = coalesce(attoptions, '{}') || 'pg_attver=123456'::text
+ where attrelid = 'fix_av'::regclass and attnum > 0;
+do $$
+begin
+  assert ddlx_create('fix_av'::regclass::oid) not like '%pg_attver%', 'create';
+  assert ddlx_create('fix_av'::regclass::oid) like '%n_distinct%', 'real column options are kept';
+  assert ddlx_script('fix_av'::regclass::oid) not like '%pg_attver%', 'script';
+  assert ddlx_alter_table_settings('fix_av'::regclass) not like '%pg_attver%', 'settings';
+  assert not (select bool_or(options::text like '%pg_attver%') from ddlx_describe('fix_av'::regclass)), 'describe';
+end $$;
+rollback;

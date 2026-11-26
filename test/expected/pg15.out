@@ -38,10 +38,11 @@ CREATE TABLE tab_generated12 (
   );
 
 
-ALTER TABLE tab_generated12 ALTER d SET DEFAULT 42;
-
 CREATE SEQUENCE IF NOT EXISTS tab_generated12_e_seq;
 ALTER SEQUENCE tab_generated12_e_seq OWNED BY tab_generated12.e;
+
+ALTER TABLE tab_generated12 ALTER d SET DEFAULT 42;
+ALTER TABLE tab_generated12 ALTER e SET DEFAULT nextval('tab_generated12_e_seq'::regclass);
 
 ALTER SEQUENCE tab_generated12_a_seq
  INCREMENT BY 1

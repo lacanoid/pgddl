@@ -130,7 +130,8 @@ CREATE OR REPLACE FUNCTION ddlx_identify(
          c.relname as namespace, null as owner, 
          'CONSTRAINT' as sql_kind,
          quote_ident(con.conname)
-         ||coalesce(' ON '||cast(c.oid::regclass as text),'') 
+         ||coalesce(' ON '||cast(c.oid::regclass as text),
+                    ' ON DOMAIN '||cast(con.contypid::regtype as text),'') 
            as sql_identifier,
          null as acl
     FROM pg_constraint con 
@@ -567,9 +568,10 @@ SELECT  DISTINCT
         format('%s.%I',text(c.oid::regclass),a.attname) AS sql_identifier,
         c.oid as relid,
 #if 9.2
-        attoptions||attfdwoptions as options,
+        -- pg_attver is an internal option of some servers, never part of the DDL
+        array(select o from unnest(attoptions) o where o not like 'pg\_attver=%')||attfdwoptions as options,
 #else
-        attoptions as options,
+        array(select o from unnest(attoptions) o where o not like 'pg\_attver=%') as options,
 #end
   format('%I %s%s%s%s%s%s%s',a.attname::text,format_type(t.oid, a.atttypmod),
 #if 9.2
@@ -894,7 +896,8 @@ $$;
 
 CREATE OR REPLACE FUNCTION ddlx_comment(regclass, oid, text[])
  RETURNS text LANGUAGE sql STABLE AS $$
- select case when comment is not null or 'comments' ilike any($3)
+ select case when not 'nocomments' ilike any($3)
+             and (comment is not null or 'comments' ilike any($3))
         then format(
           E'COMMENT ON %s %s IS %L;\n',
     sql_kind, sql_identifier, comment
@@ -923,7 +926,7 @@ COMMENT ON FUNCTION ddlx_comment(regclass, oid, text[])
 
 -- Bare oid version: resolves the oid through ddlx_identify(oid) (first match,
 -- in priority order) and calls the exact version above.
-CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{comments}')
+CREATE OR REPLACE FUNCTION ddlx_comment(oid, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $w$
   select ddlx_comment(i.classid, i.oid, $2)
     from (select * from ddlx_identify($1) limit 1) i
@@ -1548,7 +1551,7 @@ $$  strict;
 CREATE OR REPLACE FUNCTION ddlx_drop_trigger(oid,ddlx_options text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $$
 select format(e'DROP TRIGGER %I ON %s;\n',
-               tgname, tgrelid::text)
+               tgname, tgrelid::regclass::text)
   from pg_trigger t
  where t.oid = $1
    and not ('script' ilike any($2) and t.tgisinternal)
@@ -1564,7 +1567,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_class(regclass, text[] default '{}')
    select 'COMMENT ON COLUMN ' || text($1) || '.' || quote_ident(name) ||
           ' IS ' || quote_nullable(comment) || ';' as cc
      from ddlx_describe($1,$2) 
-    where comment IS NOT NULL 
+    where comment IS NOT NULL or 'comments' ilike any($2)
  ),
 
  settings as (
@@ -1610,7 +1613,15 @@ def as (
     '') as ddl
    from ddlx_describe($1,$2)
   where "default" is not null
-    and "sequence" is null and gen is null
+    and gen is null
+),
+-- columns of a typed table (CREATE TABLE ... OF type) have no column list to carry NOT NULL
+nn as (
+ select coalesce(string_agg(format('ALTER TABLE %s ALTER %I SET NOT NULL;', text($1), a.attname),
+                            E'\n' order by a.attnum) || E'\n\n', '') as ddl
+   from pg_attribute a join pg_class c on c.oid = a.attrelid
+  where a.attrelid = $1 and c.reloftype <> 0 and a.attnum > 0 and not a.attisdropped
+    and a.attnotnull and not 'noconstraints' ilike any($2)
 ),
 seq as (
  select 
@@ -1632,8 +1643,9 @@ seq as (
   where "sequence" is not null and ident is null
 )
 select case when 'lite' ilike any($2) then ''
-            else array_to_string(array[def.ddl,seq.ddl],'') end
-  from def,seq
+            -- sequences first: the defaults of serial columns refer to them
+            else array_to_string(array[seq.ddl,def.ddl,nn.ddl],'') end
+  from def,seq,nn
 $function$ strict;
 
 --------------------------------------------------------------- ---------------
@@ -1769,16 +1781,23 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass, text[] default '{}'
   select
    'ALTER TABLE ' || text(regclass(regclass)) ||  
    ' ADD CONSTRAINT ' || quote_ident(constraint_name) || 
-   E' ' || constraint_definition || ddlx_constraint_index_storage(gc.oid, $2) as sql
+   E' ' || constraint_definition || ddlx_constraint_index_storage(gc.oid, $2) as sql,
+   case when not 'nocomments' ilike any($2)
+             and (obj_description(gc.oid,'pg_constraint') is not null or 'comments' ilike any($2))
+        then format(E'COMMENT ON CONSTRAINT %I ON %s IS %L',
+                    constraint_name, text(regclass(regclass)),
+                    obj_description(gc.oid,'pg_constraint'))
+        end as cmt
     from ddlx_get_constraints($1) gc
     join pg_constraint co on (co.oid = gc.oid)
    where is_local
      and (constraint_type <> 'CHECK' or not 'script' ilike any($2))
      and (constraint_type <> 'NOT NULL')
+     and (constraint_type <> 'TRIGGER')   -- created together with the constraint trigger
      and (co.conrelid is distinct from co.confrelid or not 'script' ilike any($2))
    order by constraint_type desc, constraint_name
  )
- select coalesce(string_agg(sql,E';\n') || E';\n\n','')
+ select coalesce(string_agg(sql || coalesce(E';\n' || cmt, ''), E';\n') || E';\n\n','')
    from cs
 $function$  strict;
 
@@ -1787,6 +1806,10 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_create_constraint(oid, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
  select case
+        when not 'noconstraints' ilike any($2) and c.contype = 't'
+        then -- a constraint trigger is created by CREATE CONSTRAINT TRIGGER
+          (select pg_get_triggerdef(tg.oid,true) || E';\n'
+             from pg_trigger tg where tg.tgconstraint = c.oid)
         when not 'noconstraints' ilike any($2)
         then format(
           E'ALTER %s %s ADD CONSTRAINT %I\n      %s;\n',
@@ -1868,7 +1891,12 @@ $function$  strict;
 CREATE OR REPLACE FUNCTION ddlx_create_triggers(regclass, text[] default '{}')
  RETURNS text LANGUAGE sql STABLE AS $function$
  with tg as (
-  select ddlx_create_trigger(oid,$2) as sql 
+  select ddlx_create_trigger(oid,$2) ||
+         case when not 'nocomments' ilike any($2)
+                   and (obj_description(oid,'pg_trigger') is not null or 'comments' ilike any($2))
+              then format(E'COMMENT ON TRIGGER %I ON %s IS %L;\n', trigger_name,
+                          text($1), obj_description(oid,'pg_trigger'))
+              else '' end as sql 
  from ddlx_get_triggers($1) where is_constraint is null
  order by trigger_name 
  -- per SQL triggers get called in order created vs name as in PostgreSQL
@@ -1915,8 +1943,14 @@ CREATE OR REPLACE FUNCTION ddlx_create_indexes(regclass,ddlx_options text[] defa
  ii as (select * from ddlx_get_indexes($1) order by name),
  -- just indexes
  a as (
-  select coalesce(string_agg(ddlx_create_index(oid,$2),'') || E'\n' , E'') as ddl_idx
-    from ii where constraint_name is null and not 'noindexes' ilike any($2)
+  select coalesce(string_agg(ddlx_create_index(oid,$2) ||
+                             case when not 'nocomments' ilike any($2)
+                                       and (obj_description(oid,'pg_class') is not null or 'comments' ilike any($2))
+                                  then format(E'COMMENT ON INDEX %s IS %L;\n', oid::regclass::text,
+                                              obj_description(oid,'pg_class'))
+                                  else '' end,'') || E'\n' , E'') as ddl_idx
+    from ii where constraint_name is null and is_local   -- partition indexes come with the parent index
+     and not 'noindexes' ilike any($2)
  ),
  -- constraints
  c as (
@@ -2169,9 +2203,10 @@ q1 as (
                 ],E'\n  ')) ||
        array_to_string(array[
    case 
-     when description is not null 
+     when not 'nocomments' ilike any($2)
+          and (description is not null or 'comments' ilike any($2))
      then 'COMMENT ON ROLE '||quote_ident(rolname)||
-          ' IS '||quote_literal(description)||E';\n'
+          ' IS '||quote_nullable(description)||E';\n'
    end,
    case when has_table_privilege('pg_catalog.pg_authid'::regclass, 'select')
         then ddlx_alter_role_auth(a.oid,$2)||E';\n'
@@ -2527,7 +2562,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_subscription(oid, text[] default '{}')
       else obj.subfailover::text
       end,
 #if 10
-    'slot_name='||quote_literal(obj.subslotname),
+    'slot_name='||coalesce(quote_literal(obj.subslotname),'NONE'),
     'synchronous_commit='||quote_literal(obj.subsynccommit)
      ],E',\n         ')	   
      )
@@ -3343,6 +3378,7 @@ select format(E'CREATE ACCESS METHOD %I\n  TYPE %s HANDLER %s;\n\n',
         amname,
         case amtype
           when 'i' then 'INDEX'::text
+          when 't' then 'TABLE'::text   -- PG12+
           else amtype::text
         end,
         cast(amhandler as regproc)

@@ -73,12 +73,13 @@ COMMENT ON TABLE test_class_r IS 'Comment1';
 ALTER TABLE test_class_r OWNER TO postgres;
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
-ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
-'::text;
-
 CREATE SEQUENCE IF NOT EXISTS test_class_r_a_seq;
 ALTER SEQUENCE test_class_r_a_seq OWNER TO postgres;
 ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
+
+ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
+ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
+'::text;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
 ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
@@ -146,12 +147,13 @@ COMMENT ON TABLE test_class_r IS 'Comment1';
 ALTER TABLE test_class_r OWNER TO postgres;
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
-ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
-'::text;
-
 CREATE SEQUENCE IF NOT EXISTS test_class_r_a_seq;
 ALTER SEQUENCE test_class_r_a_seq OWNER TO postgres;
 ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
+
+ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
+ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
+'::text;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
 ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
@@ -257,6 +259,8 @@ CREATE UNLOGGED TABLE test_class_r2 (
 
 CREATE SEQUENCE IF NOT EXISTS test_class_r2_i_seq;
 ALTER SEQUENCE test_class_r2_i_seq OWNED BY test_class_r2.i;
+
+ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
 
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah FOREIGN KEY (a) REFERENCES test_class_r(a);
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah2 FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED NOT VALID;
@@ -550,6 +554,8 @@ CREATE TABLE test_collation (
 CREATE SEQUENCE IF NOT EXISTS test_collation_id_seq;
 ALTER SEQUENCE test_collation_id_seq OWNED BY test_collation.id;
 
+ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
+
 
 -- DEPENDANTS
 
@@ -778,6 +784,8 @@ CREATE TABLE test_parent (
 
 ALTER SEQUENCE test_parent_i_seq OWNED BY test_parent.i;
 
+ALTER TABLE test_parent ALTER i SET DEFAULT nextval('test_parent_i_seq'::regclass);
+
 
 (1 row)
 select ddlx_create('test_child'::regclass); 
@@ -816,10 +824,11 @@ COMMENT ON TABLE test_class_r IS 'Comment1';
 
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
+ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
+
+ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
-
-ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
 ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
@@ -832,10 +841,11 @@ select replace(ddlx_alter('test_class_r'::regclass),'FUNCTION','PROCEDURE') as d
 ddlx_alter
 ALTER TABLE test_class_r ALTER h SET STORAGE external;
 
+ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
+
+ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 ALTER TABLE test_class_r ALTER b SET DEFAULT 'Hello, world!
 '::text;
-
-ALTER SEQUENCE test_class_r_a_seq OWNED BY test_class_r.a;
 
 ALTER TABLE test_class_r ALTER e SET ( n_distinct = '10' );
 ALTER TABLE test_class_r ALTER f SET ( n_distinct = '100' );
