@@ -186,8 +186,8 @@ ddlx_script
 BEGIN;
 
 /*
-DROP FUNCTION int_t4recv(internal);
 DROP FUNCTION int_t4send(int_t);
+DROP FUNCTION int_t4recv(internal);
 DROP FUNCTION int_t4out(int_t);
 DROP FUNCTION int_t4in(cstring);
 
@@ -264,18 +264,6 @@ AS $function$int4out$function$;
 REVOKE ALL ON FUNCTION int_t4out(int_t) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION int_t4out(int_t) TO PUBLIC;
 
--- Type: FUNCTION ; Name: int_t4send(int_t); Owner: postgres
-
-CREATE OR REPLACE FUNCTION public.int_t4send(int_t)
- RETURNS bytea
- LANGUAGE internal
- IMMUTABLE STRICT
-AS $function$int4send$function$;
-
-
-REVOKE ALL ON FUNCTION int_t4send(int_t) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION int_t4send(int_t) TO PUBLIC;
-
 -- Type: FUNCTION ; Name: int_t4recv(internal); Owner: postgres
 
 CREATE OR REPLACE FUNCTION public.int_t4recv(internal)
@@ -287,6 +275,18 @@ AS $function$int4recv$function$;
 
 REVOKE ALL ON FUNCTION int_t4recv(internal) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION int_t4recv(internal) TO PUBLIC;
+
+-- Type: FUNCTION ; Name: int_t4send(int_t); Owner: postgres
+
+CREATE OR REPLACE FUNCTION public.int_t4send(int_t)
+ RETURNS bytea
+ LANGUAGE internal
+ IMMUTABLE STRICT
+AS $function$int4send$function$;
+
+
+REVOKE ALL ON FUNCTION int_t4send(int_t) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION int_t4send(int_t) TO PUBLIC;
 
 END;
 

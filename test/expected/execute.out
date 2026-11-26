@@ -145,9 +145,9 @@ NOTICE:  REBUILD INDEX test_class_r_pkey
 NOTICE:  REBUILD INDEX idx1
 NOTICE:  REBUILD INDEX idx2
 NOTICE:  REBUILD INDEX idx3
-NOTICE:  REBUILD VIEW test_class_v
 NOTICE:  REBUILD MATERIALIZED VIEW test_class_m
 NOTICE:  REBUILD INDEX test_class_mi
+NOTICE:  REBUILD VIEW test_class_v
 NOTICE:  REBUILD VIEW test_class_v2
 NOTICE:  REBUILD VIEW test_class_v_opt2
  rebuild |     sql_kind      |    sql_identifier     
@@ -174,9 +174,9 @@ NOTICE:  REBUILD VIEW test_class_v_opt2
        0 | INDEX             | idx1
        0 | INDEX             | idx2
        0 | INDEX             | idx3
-       0 | VIEW              | test_class_v
        0 | MATERIALIZED VIEW | test_class_m
        0 | INDEX             | test_class_mi
+       0 | VIEW              | test_class_v
        0 | VIEW              | test_class_v2
        0 | VIEW              | test_class_v_opt2
 (27 rows)

@@ -47,7 +47,6 @@ ddlx_script
 BEGIN;
 
 /*
-ALTER TABLE test_class_r ALTER a DROP DEFAULT;
 ALTER TABLE test_class_r DROP CONSTRAINT test_class_r_c_check;
 
 DROP TABLE test_class_r; --==>> !!! ATTENTION !!! <<==--
@@ -110,7 +109,6 @@ GRANT UPDATE ON test_class_r TO PUBLIC;
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
       CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
 
-ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 
 END;
 
@@ -121,7 +119,6 @@ ddlx_script
 BEGIN;
 
 /*
-ALTER TABLE test_class_r ALTER a DROP DEFAULT;
 ALTER TABLE test_class_r DROP CONSTRAINT test_class_r_c_check;
 
 DROP TABLE test_class_r; --==>> !!! ATTENTION !!! <<==--
@@ -184,7 +181,6 @@ GRANT UPDATE ON test_class_r TO PUBLIC;
 ALTER TABLE test_class_r ADD CONSTRAINT test_class_r_c_check
       CHECK (c > 'Mon Jan 01 00:00:00 2001'::timestamp without time zone);
 
-ALTER TABLE test_class_r ALTER a SET DEFAULT nextval('test_class_r_a_seq'::regclass);
 
 END;
 
@@ -240,8 +236,6 @@ ddlx_script
 BEGIN;
 
 /*
-ALTER TABLE test_class_r2 ALTER i DROP DEFAULT;
-
 DROP TABLE test_class_r2; --==>> !!! ATTENTION !!! <<==--
 */
 
@@ -265,10 +259,6 @@ ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::reg
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah FOREIGN KEY (a) REFERENCES test_class_r(a);
 ALTER TABLE test_class_r2 ADD CONSTRAINT blah2 FOREIGN KEY (a) REFERENCES test_class_r(a) DEFERRABLE INITIALLY DEFERRED NOT VALID;
 
-
--- DEPENDANTS
-
-ALTER TABLE test_class_r2 ALTER i SET DEFAULT nextval('test_class_r2_i_seq'::regclass);
 
 END;
 
@@ -536,8 +526,6 @@ ddlx_script
 BEGIN;
 
 /*
-ALTER TABLE test_collation ALTER id DROP DEFAULT;
-
 DROP TABLE test_collation; --==>> !!! ATTENTION !!! <<==--
 */
 
@@ -556,10 +544,6 @@ ALTER SEQUENCE test_collation_id_seq OWNED BY test_collation.id;
 
 ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
 
-
--- DEPENDANTS
-
-ALTER TABLE test_collation ALTER id SET DEFAULT nextval('test_collation_id_seq'::regclass);
 
 END;
 

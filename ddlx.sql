@@ -1794,6 +1794,7 @@ CREATE OR REPLACE FUNCTION ddlx_create_constraints(regclass, text[] default '{}'
      and (constraint_type <> 'CHECK' or not 'script' ilike any($2))
      and (constraint_type <> 'NOT NULL')
      and (constraint_type <> 'TRIGGER')   -- created together with the constraint trigger
+     and (constraint_type <> 'FOREIGN KEY' or not 'nofkeys' ilike any($2))   -- listed on their own
      and (co.conrelid is distinct from co.confrelid or not 'script' ilike any($2))
    order by constraint_type desc, constraint_name
  )
@@ -3948,29 +3949,275 @@ $$;
 
 --------------------------------------------------------------- ---------------
 
+--------------------------------------------------------------- ---------------
+-- Order of the objects in a script
+--
+-- The objects of a script are the dependants of the root object. The ones
+-- which are part of the DDL of another object (indexes, triggers, rules,
+-- column defaults, statistics, primary key, unique and exclusion constraints,
+-- identity sequences, auto created range functions and the like) are not
+-- listed on their own, but their dependencies count as dependencies of the
+-- object they belong to. The remaining objects are ordered topologically.
+-- A foreign key of a table is part of that table, unless the table is in a
+-- cycle of foreign keys: then all the foreign keys of such tables are listed on
+-- their own and come after all the tables (the tables are created with the
+-- 'nofkeys' option). Foreign keys of tables which are not in the script
+-- are listed as dependants of the table they refer to.
+--
+-- row n = 0 describes the root object itself
+--------------------------------------------------------------- ---------------
+
+CREATE OR REPLACE FUNCTION ddlx_script_order(
+ in regclass, in oid, in text[],
+ out n int, out classid regclass, out objid oid,
+ out nofkeys boolean, out cyclic boolean)
+ RETURNS SETOF record LANGUAGE sql STABLE AS $$
+with recursive
+root as (select $1::oid as c, $2::oid as o),
+cand00 as (
+  select gd.classid::oid as c, gd.objid as o
+    from ddlx_get_dependants($1,$2,$3) gd
+   where case when 'ext' ilike any($3)
+              then gd.classid is distinct from 'pg_extension'::regclass
+              else gd.extid is null end
+     and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
+),
+-- objects which have no dependency of their own on what they use
+-- (a policy without expressions, the default privileges of a schema)
+cand0 as (
+  select c, o from cand00
+  union
+  select 'pg_policy'::regclass::oid, p.oid
+    from pg_policy p
+   where (p.polrelid in (select o from cand00 where c = 'pg_class'::regclass::oid)
+          or ($1 = 'pg_class'::regclass and p.polrelid = $2))
+#if 9.2
+  union
+  select 'pg_default_acl'::regclass::oid, a.oid
+    from pg_default_acl a
+   where $1 = 'pg_namespace'::regclass and a.defaclnamespace = $2
+#end
+),
+setnodes as (select c, o from cand0 union select c, o from root),
+-- internal objects are created together with their owner
+internal as (
+  select c.c, c.o, d.refclassid::oid as pc, d.refobjid as po
+    from cand0 c
+    join pg_depend d on d.classid = c.c and d.objid = c.o and d.deptype = 'i'
+   -- (a partitioned table has an internal dependency on itself)
+   where (d.refclassid::oid, d.refobjid) <> (c.c, c.o)
+  union all
+  -- constraints which are only inherited come with the constraint of the parent
+  select c.c, c.o, 'pg_class'::regclass::oid, co.conrelid
+    from cand0 c join pg_constraint co on co.oid = c.o
+   where c.c = 'pg_constraint'::regclass::oid and co.conrelid <> 0 and not co.conislocal
+),
+tbl as (
+  select s.o
+    from setnodes s join pg_class k on k.oid = s.o
+   where s.c = 'pg_class'::regclass::oid and k.relkind in ('r','p')
+),
+fkc as (
+  select co.oid, co.conrelid, co.confrelid
+    from cand0 c join pg_constraint co on co.oid = c.o
+   where c.c = 'pg_constraint'::regclass::oid
+     and co.contype = 'f' and co.conrelid <> co.confrelid
+),
+fkedge as (
+  select f.conrelid as src, f.confrelid as dst from fkc f
+   where f.conrelid in (select o from tbl) and f.confrelid in (select o from tbl)
+),
+fkreach(src,dst) as (
+  select src, dst from fkedge
+  union
+  select r.src, e.dst from fkreach r join fkedge e on e.src = r.dst
+),
+cyc as (select src as o from fkreach where src = dst),
+rootcyc as (
+  select ($1 = 'pg_class'::regclass
+          and ($2 in (select o from cyc)
+               or exists (select 1 from pg_constraint co
+                           where co.contype = 'f' and co.conrelid = $2
+                             and co.confrelid <> $2
+                             and co.confrelid in (select o from tbl)))) as v
+),
+-- parts of the DDL of another object
+embedded as (
+  select c.c, c.o, p.pc, p.po
+    from cand0 c
+   cross join lateral (
+     select 'pg_class'::regclass::oid as pc, i.indrelid as po
+       from pg_index i
+      where c.c = 'pg_class'::regclass::oid and i.indexrelid = c.o
+     union all
+     select 'pg_class'::regclass::oid, t.tgrelid
+       from pg_trigger t
+      where c.c = 'pg_trigger'::regclass::oid and t.oid = c.o
+     union all
+     select 'pg_class'::regclass::oid, r.ev_class
+       from pg_rewrite r
+      where c.c = 'pg_rewrite'::regclass::oid and r.oid = c.o
+     union all
+     select 'pg_class'::regclass::oid, a.adrelid
+       from pg_attrdef a
+      where c.c = 'pg_attrdef'::regclass::oid and a.oid = c.o
+     union all
+     select 'pg_class'::regclass::oid, s.stxrelid
+       from pg_statistic_ext s
+      where c.c = 'pg_statistic_ext'::regclass::oid and s.oid = c.o
+     union all
+     select 'pg_class'::regclass::oid, co.conrelid
+       from pg_constraint co
+      where c.c = 'pg_constraint'::regclass::oid and co.oid = c.o
+        and co.conrelid <> 0 and co.contype in ('p','u','x','t')
+     union all
+     select 'pg_type'::regclass::oid, co.contypid
+       from pg_constraint co
+      where c.c = 'pg_constraint'::regclass::oid and co.oid = c.o
+        and co.contypid <> 0
+     union all
+     select 'pg_class'::regclass::oid, co.conrelid
+       from pg_constraint co
+      where c.c = 'pg_constraint'::regclass::oid and co.oid = c.o
+        and co.contype = 'f' and co.conrelid <> co.confrelid
+        and co.conrelid not in (select o from cyc)
+        and not (co.conrelid = $2 and (select v from rootcyc))
+   ) p
+  where (p.pc, p.po) in (select c, o from setnodes)
+    and (c.c, c.o) not in (select c, o from internal)
+),
+-- foreign keys of the tables in cycles which are not dependants themselves
+extra as (
+  select 'pg_constraint'::regclass::oid as c, co.oid as o
+    from pg_constraint co
+   where co.contype = 'f' and co.conrelid <> co.confrelid
+     and (co.conrelid in (select o from cyc)
+          or (co.conrelid = $2 and (select v from rootcyc)))
+     and not exists (select 1 from cand0 x
+                      where x.c = 'pg_constraint'::regclass::oid and x.o = co.oid)
+),
+nodes as (
+  select c, o from cand0
+   where (c, o) not in (select c, o from internal)
+     and (c, o) not in (select c, o from embedded)
+  union
+  select c, o from extra
+),
+-- every object is represented by the object which is emitted for it
+canon as (
+  select c, o, c as nc, o as no from nodes
+  union all select c, o, pc, po from embedded
+  union all select c, o, pc, po from internal
+  union all select c, o, c, o from root
+),
+edges0 as (
+  select m1.nc as sc, m1.no as so, m2.nc as dc, m2.no as do_
+    from pg_depend d
+    left join pg_rewrite r
+      on d.classid = 'pg_rewrite'::regclass::oid and r.oid = d.objid
+     and r.ev_type = '1' and r.rulename = '_RETURN'
+   cross join lateral (
+     select case when r.oid is not null then 'pg_class'::regclass::oid else d.classid end as c,
+            coalesce(r.ev_class, d.objid) as o) n
+    join canon m1 on m1.c = n.c and m1.o = n.o
+    join canon m2 on m2.c = d.refclassid and m2.o = d.refobjid
+   where d.deptype = 'n'
+  union all
+  -- objects which belong to a table (the table has to exist)
+  select n.c, n.o, 'pg_class'::regclass::oid, co.conrelid
+    from nodes n join pg_constraint co on co.oid = n.o
+   where n.c = 'pg_constraint'::regclass::oid and co.conrelid <> 0
+  union all
+  select n.c, n.o, 'pg_class'::regclass::oid, co.confrelid
+    from nodes n join pg_constraint co on co.oid = n.o
+   where n.c = 'pg_constraint'::regclass::oid and co.contype = 'f'
+  union all
+  select n.c, n.o, 'pg_class'::regclass::oid, p.polrelid
+    from nodes n join pg_policy p on p.oid = n.o
+   where n.c = 'pg_policy'::regclass::oid
+  union all
+  -- an operator class refers to its family with an automatic dependency
+  select n.c, n.o, 'pg_opfamily'::regclass::oid, oc.opcfamily
+    from nodes n join pg_opclass oc on oc.oid = n.o
+   where n.c = 'pg_opclass'::regclass::oid
+  union all
+  -- inheritance and partitions
+  select 'pg_class'::regclass::oid, i.inhrelid, 'pg_class'::regclass::oid, i.inhparent
+    from pg_inherits i
+),
+edges as (
+  select distinct m1.nc as sc, m1.no as so, m2.nc as dc, m2.no as do_
+    from edges0 e
+    join canon m1 on m1.c = e.sc and m1.o = e.so
+    join canon m2 on m2.c = e.dc and m2.o = e.do_
+   where (m1.nc, m1.no) in (select c, o from nodes)
+     and (m2.nc, m2.no) in (select c, o from nodes)
+     and (m1.nc, m1.no) <> (m2.nc, m2.no)
+),
+nn as (select count(*) as v from nodes),
+lvl(c, o, d) as (
+  select n.c, n.o, 0
+    from nodes n
+   where not exists (select 1 from edges e where e.sc = n.c and e.so = n.o)
+  union
+  select e.sc, e.so, l.d + 1
+    from lvl l join edges e on e.dc = l.c and e.do_ = l.o
+   where l.d < (select v from nn)
+),
+layer as (select c, o, max(d) as d from lvl group by c, o),
+ordered as (
+  select n.c, n.o,
+         coalesce(l.d, (select v from nn)) as d,
+         coalesce(l.d, (select v from nn)) >= (select v from nn) as cyclic,
+         i.sql_identifier as ident
+    from nodes n
+    left join layer l on l.c = n.c and l.o = n.o
+   cross join lateral ddlx_identify(n.c::regclass, n.o) i
+)
+select 0, $1, $2,
+       (select v from rootcyc), false
+union all
+-- default privileges only apply to objects created after them: they come last
+select (row_number() over (order by c = 'pg_default_acl'::regclass::oid, d, c, ident, o))::int,
+       c::regclass, o,
+       o in (select o from cyc) and c = 'pg_class'::regclass::oid,
+       cyclic
+  from ordered
+ order by 1
+$$ strict;
+
+COMMENT ON FUNCTION ddlx_script_order(regclass, oid, text[])
+     IS 'Order in which the dependants of an object are created in a script';
+
+
 CREATE OR REPLACE FUNCTION ddlx_script_parts(
  IN oid, ddlx_options text[] default '{}',
  OUT ddl_create text, OUT ddl_drop text,
  OUT ddl_create_deps text, OUT ddl_drop_deps text)
  RETURNS record LANGUAGE sql STABLE AS $$
-with 
+with
+root as (select * from ddlx_identify($1) limit 1),
+ord as (select o.* from root, lateral ddlx_script_order(root.classid, root.oid, $2) o),
 ddl as (
-select row_number() over(order by gd.depth,gd.objid) as n,
-       ddlx_drop(gd.classid,gd.objid,$2||'{script}'::text[]),
-       ddlx_create(gd.classid,gd.objid,$2||'{script}'::text[]),
-       gd.objid
-  from ddlx_get_dependants($1,$2) gd
- where case when 'ext' ilike any($2)
-            then gd.classid is distinct from 'pg_extension'::regclass
-            else gd.extid is null end
-   and gd.classid not in ('pg_amproc'::regclass,'pg_amop'::regclass)
- order by depth,objid
+select o.n,
+       ddlx_drop(o.classid, o.objid, $2||'{script}'::text[]) as dr,
+       ddlx_create(o.classid, o.objid,
+                   $2||'{script}'::text[]||case when o.nofkeys then '{nofkeys}'::text[] else '{}'::text[] end) as cr,
+       o.cyclic
+  from ord o
+ where o.n > 0
 )
-select ddlx_create($1,$2||'{script}'::text[]) as ddl_create,
-       ddlx_drop($1,$2||'{script}'::text[]) as ddl_drop,
-       string_agg(ddlx_create,E'' order by n) as ddl_create_deps,
-       string_agg(ddlx_drop,'' order by n desc) as ddl_drop_deps
-  from ddl 
+select ddlx_create(root.classid, root.oid,
+                   $2||'{script}'::text[]||case when (select nofkeys from ord where n = 0)
+                                                then '{nofkeys}'::text[] else '{}'::text[] end) as ddl_create,
+       ddlx_drop(root.classid, root.oid, $2||'{script}'::text[]) as ddl_drop,
+       case when bool_or(ddl.cyclic)
+            then E'-- WARNING: circular dependencies, the order of the statements below may need changes\n\n'
+            else '' end
+       || string_agg(ddl.cr, E'' order by ddl.n) as ddl_create_deps,
+       string_agg(ddl.dr, '' order by ddl.n desc) as ddl_drop_deps
+  from root left join ddl on true
+ group by root.classid, root.oid
 $$ strict;
 
 --------------------------------------------------------------- ---------------

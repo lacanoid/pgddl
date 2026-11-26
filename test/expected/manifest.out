@@ -27,6 +27,7 @@ select * from a
  ddlx_identify(regclass,oid)                        | Identify an object by catalog and object id (exact)
  ddlx_script(oid,text[])                            | Get SQL DDL script for any object and dependants by object id
  ddlx_script(text,text[])                           | Get SQL DDL script for any object and dependants by object name
+ ddlx_script_order(regclass,oid,text[])             | Order in which the dependants of an object are created in a script
  ddlx_security_label(regclass,oid,text[])           | Get SECURITY LABEL statements for an object by catalog and object id (exact)
  ddlx_alter_database(oid)                           | 
  ddlx_alter_owner(oid,text[])                       | 

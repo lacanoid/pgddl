@@ -164,6 +164,25 @@ begin
   s2 := ddlx_create(o, opts);
   assert s1 = s2, 'ddl differs after round trip: ' || q || E'\n--- first\n' || s1 || E'\n--- second\n' || s2;
 end $f$;
+-- helper: script a schema, drop it, run the script and compare (fingerprint and script)
+create function pg_temp.rt_script_rt(sch text, opts text[] default '{nowrap,nodrop}') returns void language plpgsql as $f$
+declare s1 text; s2 text; f1 text; f2 text;
+begin
+  s1 := ddlx_script(sch::regnamespace::oid, opts);
+  f1 := pg_temp.rt_fp(sch);
+  execute format('drop schema %I cascade', sch);
+  execute s1;
+  f2 := pg_temp.rt_fp(sch);
+  assert f1 is not distinct from f2, 'fingerprint differs after running the script of ' || sch || ': ' ||
+    (select string_agg(l, E'\n') from (
+       select '< ' || l as l from unnest(string_to_array(f1, E'\n')) l
+        where l not in (select unnest(string_to_array(f2, E'\n')))
+       union all
+       select '> ' || l from unnest(string_to_array(f2, E'\n')) l
+        where l not in (select unnest(string_to_array(f1, E'\n')))) d);
+  s2 := ddlx_script(sch::regnamespace::oid, opts);
+  assert s1 = s2, 'the script of ' || sch || E' changed after running it\n--- first\n' || s1 || E'\n--- second\n' || s2;
+end $f$;
 ----------------------------------------------------------------------
 -- 1. Everything in one schema, recreated from ddlx_script
 ----------------------------------------------------------------------
@@ -210,7 +229,8 @@ create table rt_child (
   constraint rt_child_pk primary key (id),
   constraint rt_child_chk check (note is null or length(note) < 100) not valid
 );
-alter table rt_child add constraint rt_child_chk2 check (id > 0) not valid;
+alter table rt_child add constraint rt_child_chk2 check (id > 0);
+alter table rt_t1 add constraint rt_t1_nv check (n < 100000) not valid;
 alter table rt_child add constraint rt_child_fk2 foreign key (parent) references rt_t1 (id) not valid;
 create table rt_inh (extra int) inherits (rt_child);
 create table rt_typed of rt_comp (x with options not null);
@@ -364,6 +384,8 @@ language sql stable as $f$
      where o.defaclnamespace = 'rt_s'::regnamespace
   ) x
 $f$;
+-- the whole schema as one script (dependencies in topological order)
+select pg_temp.rt_script_rt('rt_s') \gset
 create temp table rt_before as select * from pg_temp.rt_list();
 create temp table rt_ddl as
   select b.n, b.descr, ddlx_create(b.classid, b.oid, '{}') as cr, ddlx_drop(b.classid, b.oid, '{}') as dr
@@ -769,5 +791,100 @@ begin
   assert ddlx_create(t, '{nocomments}') not like '%COMMENT ON%', 'nocomments with comments present';
   assert ddlx_create((select oid from pg_roles where rolname = 'rt_n1')) like '%COMMENT ON ROLE rt_n1 IS ''rol'';%', 'role comment';
   assert ddlx_create((select oid from pg_roles where rolname = 'rt_n1'), '{nocomments}') not like '%COMMENT ON%', 'role nocomments';
+end $$;
+rollback;
+----------------------------------------------------------------------
+-- 5. Order of the statements in scripts
+----------------------------------------------------------------------
+begin;
+create schema rt_d;
+set local search_path = rt_d, public;
+\o /dev/null
+-- foreign keys: a chain created in the opposite order of the names, a cycle of two, a cycle of three,
+-- a self reference, and one pointing out of the schema
+create schema rt_d_out;
+create table rt_d_out.outside (id int primary key);
+create table z3 (id int primary key, o int references rt_d_out.outside);
+create table z2 (id int primary key, z3 int references z3);
+create table z1 (id int primary key, z2 int references z2, self int, constraint z1_self foreign key (self) references z1 (id));
+create table m1 (id int primary key, m2 int);
+create table m2 (id int primary key, m1 int references m1);
+alter table m1 add constraint m1_m2 foreign key (m2) references m2 (id);
+create table c1 (id int primary key, nxt int);
+create table c2 (id int primary key, nxt int);
+create table c3 (id int primary key, nxt int);
+alter table c1 add foreign key (nxt) references c2;
+alter table c2 add foreign key (nxt) references c3;
+alter table c3 add foreign key (nxt) references c1;
+-- views, a materialized view with an index, rules and triggers on views
+create table base (id int primary key, v int);
+create view z_v1 as select id, v from base;
+create view z_v2 as select * from z_v1;
+create view a_v3 as select * from z_v2;
+create materialized view a_mv as select * from a_v3;
+create index a_mv_i on a_mv (id);
+create function rt_d_view_trg() returns trigger language plpgsql as $$ begin return new; end $$;
+create trigger rt_d_view_t instead of insert on z_v1 for each row execute function rt_d_view_trg();
+create rule rt_d_view_r as on delete to z_v2 do instead nothing;
+-- functions used by constraints, defaults and index expressions
+create function rt_d_pos(int) returns boolean language sql immutable as 'select $1 > 0';
+create table chk (id int check (rt_d_pos(id)), n int default rt_d_pos(1)::int, constraint chk_pos check (rt_d_pos(n)));
+create index chk_i on chk (rt_d_pos(id));
+-- sequences: owned (serial), identity, and one used by a default
+create sequence rt_d_seq;
+create table sq (id serial primary key, i int generated always as identity, s int default nextval('rt_d_seq'));
+-- inheritance with a NOT VALID constraint, partitions with an index
+create table par (id int, ts date) partition by range (ts);
+create table par_1 partition of par for values from ('2020-01-01') to ('2021-01-01');
+create index par_i on par (ts);
+create table inh_p (id int);
+create table inh_c (extra int) inherits (inh_p);
+alter table inh_p add constraint inh_ck check (id > 0) not valid;
+\o
+select pg_temp.rt_script_rt('rt_d') \gset
+rollback;
+-- 5b. The script of one table: what refers to it is restored with it
+begin;
+create schema rt_e;
+set local search_path = rt_e, public;
+\o /dev/null
+create table t (id int primary key, v int);
+create table u (id int primary key, t int constraint u_t references t on delete cascade, w int);
+create table w (id int primary key, t int references t, u int references u);
+create view tv as select * from t;
+create index t_i on t (v);
+\o
+do $$
+declare s text; f1 text; f2 text; r record; pos int;
+begin
+  s := ddlx_script('rt_e.t'::regclass::oid, '{nowrap,drop}');
+  -- the foreign keys of other tables are dependencies of t and come after the table
+  assert position('CREATE TABLE t ' in s) > 0 and position('ADD CONSTRAINT u_t' in s) > position('CREATE TABLE t ' in s),
+         'foreign key of another table after the table: ' || s;
+  assert s not like '%CREATE TABLE u%' and s not like '%CREATE TABLE w%', 'other tables are not part of it';
+  f1 := pg_temp.rt_fp('rt_e');
+  execute s;
+  f2 := pg_temp.rt_fp('rt_e');
+  assert f1 = f2, 'the script of one table restores it: ' || s;
+  -- a table in a foreign key cycle: its keys are listed on their own after the tables
+  s := ddlx_script('rt_e.u'::regclass::oid, '{nowrap,nodrop}');
+  assert s like '%CREATE TABLE u%', 'u';
+end $$;
+rollback;
+-- 5c. A cycle which is not made of foreign keys is reported
+begin;
+create schema rt_f;
+set local search_path = rt_f, public;
+\o /dev/null
+create table cy (id int);
+create function cy_f(c cy) returns int language sql as 'select $1.id';
+alter table cy add column x int default 0;
+alter table cy add constraint cy_ck check (cy_f(cy.*) is not null or true);
+\o
+do $$
+declare s text;
+begin
+  s := ddlx_script('rt_f'::regnamespace::oid, '{nowrap,nodrop}');
+  assert s like '%CREATE TABLE cy%' and s like '%FUNCTION cy_f%', 'both objects are in the script';
 end $$;
 rollback;

@@ -19,9 +19,6 @@ ddlx_script
 BEGIN;
 
 /*
-ALTER TABLE tab_generated12 ALTER e DROP DEFAULT;
-ALTER TABLE tab_generated12 ALTER c DROP EXPRESSION;
-
 DROP TABLE tab_generated12; --==>> !!! ATTENTION !!! <<==--
 */
 
@@ -62,10 +59,6 @@ ALTER SEQUENCE tab_generated12_b_seq
  CACHE 1
  NO CYCLE;
 
-
--- DEPENDANTS
-
-ALTER TABLE tab_generated12 ALTER e SET DEFAULT nextval('tab_generated12_e_seq'::regclass);
 
 END;
 
@@ -138,9 +131,9 @@ psql:test/sql/pg12.sql:37: NOTICE:  REBUILD INDEX test_class_r_pkey
 psql:test/sql/pg12.sql:37: NOTICE:  REBUILD INDEX idx1
 psql:test/sql/pg12.sql:37: NOTICE:  REBUILD INDEX idx2
 psql:test/sql/pg12.sql:37: NOTICE:  REBUILD INDEX idx3
-psql:test/sql/pg12.sql:37: NOTICE:  REBUILD VIEW test_class_v
 psql:test/sql/pg12.sql:37: NOTICE:  REBUILD MATERIALIZED VIEW test_class_m
 psql:test/sql/pg12.sql:37: NOTICE:  REBUILD INDEX test_class_mi
+psql:test/sql/pg12.sql:37: NOTICE:  REBUILD VIEW test_class_v
 psql:test/sql/pg12.sql:37: NOTICE:  REBUILD VIEW test_class_v2
 psql:test/sql/pg12.sql:37: NOTICE:  REBUILD VIEW test_class_v_opt2
 psql:test/sql/pg12.sql:37: NOTICE:  REBUILD SEQUENCE tab_generated12_a_seq
@@ -177,9 +170,9 @@ psql:test/sql/pg12.sql:37: NOTICE:  REBUILD INDEX cons2_pkey
        0 | INDEX             | idx1
        0 | INDEX             | idx2
        0 | INDEX             | idx3
-       0 | VIEW              | test_class_v
        0 | MATERIALIZED VIEW | test_class_m
        0 | INDEX             | test_class_mi
+       0 | VIEW              | test_class_v
        0 | VIEW              | test_class_v2
        0 | VIEW              | test_class_v_opt2
        0 | SEQUENCE          | tab_generated12_a_seq
