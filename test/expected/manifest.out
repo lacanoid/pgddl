@@ -25,9 +25,13 @@ select * from a
  ddlx_grants(regclass,oid,text[])                   | Get SQL GRANT statements for an object by catalog and object id (exact)
  ddlx_identify(oid)                                 | Identify any object by object id (all matches, in priority order)
  ddlx_identify(regclass,oid)                        | Identify an object by catalog and object id (exact)
+ ddlx_identify(text,text)                           | Identify an object by kind (sql_kind) and name (sql_identifier)
  ddlx_script(oid,text[])                            | Get SQL DDL script for any object and dependants by object id
+ ddlx_script(regclass,oid,text[])                   | Get SQL DDL script for an object given by catalog (classid) and oid, and its dependants
+ ddlx_script(text,text,text[])                      | Get SQL DDL script for an object given by kind (sql_kind) and name, and its dependants
  ddlx_script(text,text[])                           | Get SQL DDL script for any object and dependants by object name
  ddlx_script_order(regclass,oid,text[])             | Order in which the dependants of an object are created in a script
+ ddlx_script_parts(regclass,oid,text[])             | Parts of the SQL DDL script for an object given by catalog (classid) and oid
  ddlx_security_label(regclass,oid,text[])           | Get SECURITY LABEL statements for an object by catalog and object id (exact)
  ddlx_alter_database(oid)                           | 
  ddlx_alter_owner(oid,text[])                       | 

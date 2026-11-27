@@ -1421,7 +1421,7 @@ begin
      and p.prolang = (select oid from pg_language where lanname = 'sql')
      and p.prosrc ~ 'ddlx_identify\(\s*[A-Za-z0-9_.$]+\s*\)'
      and p.proname <> all (array['ddlx_comment','ddlx_security_label','ddlx_alter_owner','ddlx_grants',
-          'ddlx_alter','ddlx_createonly','ddlx_create','ddlx_drop','ddlx_definitions','ddlx_get_dependants','ddlx_script_parts'])
+          'ddlx_alter','ddlx_createonly','ddlx_create','ddlx_drop','ddlx_definitions','ddlx_get_dependants','ddlx_script_parts','ddlx_script'])
      and p.proname not in ('ddlx_identify');
   assert bad is null, 'single argument ddlx_identify used by: ' || bad;
   -- and the allow-listed resolvers must be the bare oid versions only
@@ -1429,7 +1429,7 @@ begin
     into bad
     from pg_proc p
    where p.proname = any (array['ddlx_comment','ddlx_security_label','ddlx_alter_owner','ddlx_grants',
-          'ddlx_alter','ddlx_createonly','ddlx_create','ddlx_drop','ddlx_definitions','ddlx_get_dependants','ddlx_script_parts'])
+          'ddlx_alter','ddlx_createonly','ddlx_create','ddlx_drop','ddlx_definitions','ddlx_get_dependants','ddlx_script_parts','ddlx_script'])
      and p.prolang = (select oid from pg_language where lanname = 'sql')
      and p.prosrc ~ 'ddlx_identify\(\s*[A-Za-z0-9_.$]+\s*\)'
      and p.proargtypes[0] <> 'oid'::regtype;

@@ -515,6 +515,86 @@ $$  strict;
 COMMENT ON FUNCTION ddlx_identify(oid) 
      IS 'Identify any object by object id (all matches, in priority order)';
 
+-- Find an object by its kind (the sql_kind column of the result) and its name.
+-- The name is written as in the sql_identifier column: a relation, type or
+-- function name which may be schema qualified (functions with their argument
+-- types), 'name ON table' for constraints, triggers, policies and so on.
+-- Returns no rows if there is no such object.
+CREATE OR REPLACE FUNCTION ddlx_identify(
+  IN text, IN text,
+  OUT oid oid, OUT classid regclass,
+  OUT name name,  OUT namespace name,
+  OUT owner name, OUT sql_kind text,
+  OUT sql_identifier text, OUT acl aclitem[])
+ RETURNS SETOF record LANGUAGE plpgsql STABLE ROWS 1 AS $$
+declare
+  kind text := upper(btrim($1));
+  nm text := $2;
+  cls regclass;
+  ids oid[];
+  parsed boolean;
+begin
+  for cls in
+    select m.cn::regclass
+      from (values
+             ('TABLE','pg_class'),('VIEW','pg_class'),('MATERIALIZED VIEW','pg_class'),
+             ('INDEX','pg_class'),('SEQUENCE','pg_class'),('FOREIGN TABLE','pg_class'),
+             ('TYPE','pg_type'),('DOMAIN','pg_type'),
+             ('FUNCTION','pg_proc'),('AGGREGATE','pg_proc'),('PROCEDURE','pg_proc'),
+             ('WINDOW FUNCTION','pg_proc'),
+             ('ROLE','pg_roles'),('RULE','pg_rewrite'),('SCHEMA','pg_namespace'),
+             ('CONSTRAINT','pg_constraint'),('TRIGGER','pg_trigger'),('DEFAULT','pg_attrdef'),
+             ('OPERATOR','pg_operator'),
+             ('TEXT SEARCH CONFIGURATION','pg_ts_config'),('TEXT SEARCH DICTIONARY','pg_ts_dict'),
+             ('TEXT SEARCH PARSER','pg_ts_parser'),('TEXT SEARCH TEMPLATE','pg_ts_template'),
+             ('FOREIGN DATA WRAPPER','pg_foreign_data_wrapper'),('SERVER','pg_foreign_server'),
+             ('USER MAPPING','pg_user_mapping'),('CAST','pg_cast'),
+             ('DEFAULT PRIVILEGES','pg_default_acl'),('COLLATION','pg_collation'),
+             ('CONVERSION','pg_conversion'),('LANGUAGE','pg_language'),
+             ('OPERATOR FAMILY','pg_opfamily'),('DATABASE','pg_database'),
+             ('TABLESPACE','pg_tablespace'),('OPERATOR CLASS','pg_opclass'),
+             ('EXTENSION','pg_extension')
+#if 9.3
+            ,('EVENT TRIGGER','pg_event_trigger'),('AMPROC','pg_amproc'),('AMOP','pg_amop')
+#if 9.5
+            ,('POLICY','pg_policy'),('TRANSFORM','pg_transform'),('ACCESS METHOD','pg_am')
+#if 10
+            ,('STATISTICS','pg_statistic_ext'),('PUBLICATION','pg_publication')
+#if 14
+            ,('SUBSCRIPTION','pg_subscription')
+#end
+           ) m(kd, cn)
+     where m.kd = kind
+  loop
+    parsed := false;
+    ids := null;
+#if 9.6
+    -- the name of a relation, type or function is parsed by the server
+    if cls = 'pg_class'::regclass then
+      ids := array[to_regclass(nm)::oid]; parsed := true;
+    elsif cls = 'pg_type'::regclass then
+      ids := array[to_regtype(nm)::oid]; parsed := true;
+    elsif cls = 'pg_proc'::regclass then
+      ids := case when strpos(nm,'(') > 0 then array[to_regprocedure(nm)::oid] else '{}'::oid[] end;
+      parsed := true;
+    end if;
+#end
+    if ids is null then
+      execute format('select coalesce(array_agg(oid),''{}'') from %s', cls) into ids;
+    end if;
+    return query
+      select i.oid, i.classid, i.name, i.namespace, i.owner,
+             i.sql_kind, i.sql_identifier, i.acl
+        from unnest(ids) as u(x),
+             lateral ddlx_identify(cls, u.x) as i
+       where i.oid is not null and i.sql_kind = kind
+         and (parsed or i.sql_identifier = nm or i.sql_identifier = quote_ident(nm));
+  end loop;
+end
+$$;
+COMMENT ON FUNCTION ddlx_identify(text,text)
+     IS 'Identify an object by kind (sql_kind) and name (sql_identifier)';
+
 --------------------------------------------------------------- ---------------
 
 CREATE OR REPLACE FUNCTION ddlx_describe(
@@ -990,10 +1070,10 @@ CREATE OR REPLACE FUNCTION ddlx_create(oid, text[] default '{}')
 CREATE OR REPLACE FUNCTION ddlx_create_function(regproc, text[] default '{}') 
   RETURNS text LANGUAGE sql STABLE AS $$ select null::text $$;
 
-CREATE OR REPLACE FUNCTION ddlx_data_backup(regclass, text[] default '{}') 
+CREATE OR REPLACE FUNCTION ddlx_data_backup(regclass, ddlx_options text[] default '{}') 
   RETURNS text LANGUAGE sql STABLE AS $$ select null::text $$;
 
-CREATE OR REPLACE FUNCTION ddlx_data_restore(regclass, text[] default '{}') 
+CREATE OR REPLACE FUNCTION ddlx_data_restore(regclass, ddlx_options text[] default '{}') 
   RETURNS text LANGUAGE sql STABLE AS $$ select null::text $$;
 
 --------------------------------------------------------------- ---------------
@@ -4191,26 +4271,26 @@ COMMENT ON FUNCTION ddlx_script_order(regclass, oid, text[])
 
 
 CREATE OR REPLACE FUNCTION ddlx_script_parts(
- IN oid, ddlx_options text[] default '{}',
+ IN regclass, IN oid, IN text[],
  OUT ddl_create text, OUT ddl_drop text,
  OUT ddl_create_deps text, OUT ddl_drop_deps text)
  RETURNS record LANGUAGE sql STABLE AS $$
 with
-root as (select * from ddlx_identify($1) limit 1),
-ord as (select o.* from root, lateral ddlx_script_order(root.classid, root.oid, $2) o),
+root as (select * from ddlx_identify($1,$2) where oid is not null),
+ord as (select o.* from root, lateral ddlx_script_order(root.classid, root.oid, $3) o),
 ddl as (
 select o.n,
-       ddlx_drop(o.classid, o.objid, $2||'{script}'::text[]) as dr,
+       ddlx_drop(o.classid, o.objid, $3||'{script}'::text[]) as dr,
        ddlx_create(o.classid, o.objid,
-                   $2||'{script}'::text[]||case when o.nofkeys then '{nofkeys}'::text[] else '{}'::text[] end) as cr,
+                   $3||'{script}'::text[]||case when o.nofkeys then '{nofkeys}'::text[] else '{}'::text[] end) as cr,
        o.cyclic
   from ord o
  where o.n > 0
 )
 select ddlx_create(root.classid, root.oid,
-                   $2||'{script}'::text[]||case when (select nofkeys from ord where n = 0)
+                   $3||'{script}'::text[]||case when (select nofkeys from ord where n = 0)
                                                 then '{nofkeys}'::text[] else '{}'::text[] end) as ddl_create,
-       ddlx_drop(root.classid, root.oid, $2||'{script}'::text[]) as ddl_drop,
+       ddlx_drop(root.classid, root.oid, $3||'{script}'::text[]) as ddl_drop,
        case when bool_or(ddl.cyclic)
             then E'-- WARNING: circular dependencies, the order of the statements below may need changes\n\n'
             else '' end
@@ -4220,29 +4300,54 @@ select ddlx_create(root.classid, root.oid,
  group by root.classid, root.oid
 $$ strict;
 
+COMMENT ON FUNCTION ddlx_script_parts(regclass, oid, text[])
+     IS 'Parts of the SQL DDL script for an object given by catalog (classid) and oid';
+
+-- Object given by oid only: the first match
+CREATE OR REPLACE FUNCTION ddlx_script_parts(
+ IN oid, ddlx_options text[] default '{}',
+ OUT ddl_create text, OUT ddl_drop text,
+ OUT ddl_create_deps text, OUT ddl_drop_deps text)
+ RETURNS record LANGUAGE sql STABLE AS $$
+select p.*
+  from (select * from ddlx_identify($1) limit 1) i,
+       ddlx_script_parts(i.classid, i.oid, $2) p
+$$ strict;
+
 --------------------------------------------------------------- ---------------
 
-CREATE OR REPLACE FUNCTION ddlx_script(oid, ddlx_options text[] default '{}')
+CREATE OR REPLACE FUNCTION ddlx_script(regclass, oid, text[])
  RETURNS text LANGUAGE sql STABLE AS $$
 with p as (
   select *, coalesce(ddl_drop_deps||E'\n','') || coalesce(ddl_drop,'') as drops
-    from ddlx_script_parts($1,$2)
+    from ddlx_script_parts($1,$2,$3)
 )
 select array_to_string(array[
-       case when 'nowrap' ilike any($2) then null else E'BEGIN;\n' end,
-       case when 'nodrop' not ilike all($2) then
+       case when 'nowrap' ilike any($3) then null else E'BEGIN;\n' end,
+       case when 'nodrop' not ilike all($3) then
          case
-           when 'drop' ilike any($2) then drops
+           when 'drop' ilike any($3) then drops
            -- a block comment cannot be used if the text could close or nest it
            when drops like '%*/%' or drops like '%/*%' then ddlx_comment_out(drops)
            else E'/*\n' || drops || E'*/\n'
          end
        end,
        ddl_create,
-       E'-- DEPENDANTS\n\n'||ddl_create_deps,       
-       case when 'nowrap' ilike any($2) then null else E'END;\n' end
+       E'-- DEPENDANTS\n\n'||ddl_create_deps,
+       case when 'nowrap' ilike any($3) then null else E'END;\n' end
        ],E'\n')
   from p
+ where (select i.oid from ddlx_identify($1,$2) i) is not null   -- no such object: no script
+$$ strict;
+
+COMMENT ON FUNCTION ddlx_script(regclass, oid, text[])
+     IS 'Get SQL DDL script for an object given by catalog (classid) and oid, and its dependants';
+
+-- Object given by oid only: the first match
+CREATE OR REPLACE FUNCTION ddlx_script(oid, ddlx_options text[] default '{}')
+ RETURNS text LANGUAGE sql STABLE AS $$
+  select ddlx_script(i.classid, i.oid, $2)
+    from (select * from ddlx_identify($1) limit 1) i
 $$ strict;
 
 COMMENT ON FUNCTION ddlx_script(oid, text[]) 
@@ -4266,3 +4371,16 @@ $$  strict;
 
 COMMENT ON FUNCTION ddlx_script(text, text[]) 
      IS 'Get SQL DDL script for any object and dependants by object name';
+
+-- Object given by its kind and name, like ddlx_identify(kind, name).
+-- (the options are not optional: with a default this could be mistaken
+-- for ddlx_script(name, options))
+CREATE OR REPLACE FUNCTION ddlx_script(text, text, text[])
+ RETURNS text LANGUAGE sql STABLE AS $$
+  select ddlx_script(i.classid, i.oid, $3)
+    from ddlx_identify($1, $2) i
+   limit 1
+$$ strict;
+
+COMMENT ON FUNCTION ddlx_script(text, text, text[])
+     IS 'Get SQL DDL script for an object given by kind (sql_kind) and name, and its dependants';

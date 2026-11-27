@@ -888,3 +888,69 @@ begin
   assert s like '%CREATE TABLE cy%' and s like '%FUNCTION cy_f%', 'both objects are in the script';
 end $$;
 rollback;
+----------------------------------------------------------------------
+-- 6. Objects given by kind and name, scripts by catalog and oid
+----------------------------------------------------------------------
+begin;
+create schema rt_g;
+set local search_path = rt_g, public;
+\o /dev/null
+create table tg (id int primary key, v int);
+create view vg as select * from tg;
+create materialized view mg as select * from tg;
+create index ig on tg (v);
+create sequence sg;
+create type eg as enum ('a','b');
+create type cg as (x int);
+create domain dg as int check (value > 0);
+create function fg(a int, b text) returns int language sql as 'select 1';
+create role rt_g_role;
+alter table tg add constraint tg_ck check (v > 0);
+create function tgf() returns trigger language plpgsql as $$ begin return new; end $$;
+create trigger tg_t before insert on tg for each row execute function tgf();
+create policy tg_p on tg using (true);
+create rule vg_r as on delete to vg do instead nothing;
+\o
+do $$
+declare r record; n int; s1 text; s2 text; s3 text;
+begin
+  for r in select * from (values
+      ('TABLE','tg','pg_class'),('table','rt_g.tg','pg_class'),(' Table ','"tg"','pg_class'),
+      ('VIEW','vg','pg_class'),('MATERIALIZED VIEW','mg','pg_class'),('INDEX','ig','pg_class'),
+      ('SEQUENCE','sg','pg_class'),('TYPE','eg','pg_type'),('TYPE','cg','pg_type'),
+      ('DOMAIN','dg','pg_type'),('FUNCTION','fg(integer,text)','pg_proc'),
+      ('FUNCTION','rt_g.fg(integer, text)','pg_proc'),
+      ('ROLE','rt_g_role','pg_roles'),('SCHEMA','rt_g','pg_namespace'),
+      ('CONSTRAINT','tg_ck ON tg','pg_constraint'),('TRIGGER','tg_t ON tg','pg_trigger'),
+      ('POLICY','tg_p ON tg','pg_policy'),('RULE','vg_r ON vg','pg_rewrite'),
+      ('LANGUAGE','plpgsql','pg_language')) v(kind,nm,cls)
+  loop
+    select count(*) into n from ddlx_identify(r.kind, r.nm);
+    assert n = 1, format('%s %s is found once, not %s times', r.kind, r.nm, n);
+    assert (select i.classid::text from ddlx_identify(r.kind, r.nm) i) = r.cls,
+           format('%s %s is in %s', r.kind, r.nm, r.cls);
+    -- the same script by kind and name, by catalog and oid, and by oid
+    select ddlx_script(i.classid, i.oid, '{nowrap}'),
+           ddlx_script(r.kind, r.nm, '{nowrap}'),
+           ddlx_script(i.oid, '{nowrap}')
+      into s1, s2, s3
+      from ddlx_identify(r.kind, r.nm) i;
+    assert s1 is not null and s1 = s2 and s1 = s3, format('script of %s %s: %s', r.kind, r.nm, s1);
+    assert s1 like '%' || (select i.sql_kind from ddlx_identify(r.kind, r.nm) i) || '%'
+           or r.kind in ('DEFAULT','SERVER'), format('script of %s %s mentions its kind: %s', r.kind, r.nm, s1);
+  end loop;
+  -- nothing is found for a wrong kind, a missing name or an unknown kind
+  assert not exists (select 1 from ddlx_identify('TABLE','vg')), 'a view is not a table';
+  assert not exists (select 1 from ddlx_identify('VIEW','tg')), 'a table is not a view';
+  assert not exists (select 1 from ddlx_identify('TABLE','no_such_table')), 'missing table';
+  assert not exists (select 1 from ddlx_identify('NO SUCH KIND','tg')), 'unknown kind';
+  assert not exists (select 1 from ddlx_identify('FUNCTION','fg')), 'function without arguments';
+  assert ddlx_script('TABLE','no_such_table','{}') is null, 'script of a missing object';
+  -- a script of a table is the same as before
+  assert ddlx_script('TABLE','tg','{nowrap,nodrop}') = ddlx_script('rt_g.tg','{nowrap,nodrop}'),
+         'by kind and by name';
+  -- the exact versions do not guess: a catalog and an oid which do not match give nothing
+  assert ddlx_script('pg_proc'::regclass, 'rt_g.tg'::regclass::oid, '{}') is null,
+         'oid of a table is not a function';
+end $$;
+rollback;
